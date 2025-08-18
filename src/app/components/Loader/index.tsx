@@ -1,9 +1,10 @@
-import streambyLogo from "../../../assets/streamby-logo.svg";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faHeadphonesSimple } from "@fortawesome/free-solid-svg-icons";
 
 export const Loader = () => {
   return (
     <div className="loader d-flex pl-3 pr-3">
-      <img src={streambyLogo} className="logo d-flex" width={"50%"} alt="" />
+      <FontAwesomeIcon size="2xl" icon={faHeadphonesSimple} />
     </div>
   )
 }
