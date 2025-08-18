@@ -1,0 +1,29 @@
+.skeleton {
+  animation: skeleton-loading 1s linear infinite alternate;
+  background-color: #333;
+}
+
+.scan {
+  background: linear-gradient(to right, transparent, var(--color-secondary), transparent);
+  animation: scanBorder 2s linear infinite;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-color: hsl(0, 0%, 20%);
+  }
+
+  100% {
+    background-color: hsl(0, 0%, 30%);
+  }
+}
+
+@keyframes scanBorder {
+  0% {
+    left: -100%;
+  }
+
+  100% {
+    left: 100%;
+  }
+}

@@ -1,0 +1,16 @@
+.container {
+  gap: 1rem;
+  width: 100%;
+  padding-inline: 2rem;
+  display: flex;
+  text-align: center;
+  align-items: center;
+  flex-direction: column;
+}
+
+.container p {
+  gap: 1rem;
+  font-weight: 500;
+  display: flex;
+  text-align: start;
+}

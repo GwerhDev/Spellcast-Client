@@ -1,0 +1,10 @@
+.container {
+  width: 100%;
+  padding: .5rem;
+  color: var(--color-light-300);
+}
+
+.container li {
+  display: flex;
+  justify-content: flex-start;
+}

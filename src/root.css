@@ -1,0 +1,62 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-primary: #38B6FF;
+  --color-secondary: #54c0ff;
+  --color-button-primary: #38B6FF;
+  --color-button-primary-hover: #54c0ff;
+  --color-dark-100: #515151;
+  --color-dark-200: #464646;
+  --color-dark-300: #3c3c3c;
+  --color-dark-400: #2f2f2f;
+  --color-dark-500: #212121;
+  --color-dark-600: #232323;
+  --color-dark-700: #1b1b1b;
+  --color-dark-800: #1a1a1c;
+  --color-dark-900: #262626;
+
+  --color-light-100: #e4e4e4;
+  --color-light-200: #BEBEBE;
+  --color-light-300: #adadad;
+  --color-light-400: #7b7b7b;
+
+  --color-danger-100: rgb(157, 86, 86);
+  --color-danger-200: rgb(157, 57, 57);
+  --color-danger-300: rgb(147, 63, 63);
+  --color-danger-400: rgb(147, 63, 63);
+  --color-danger-500: rgb(74, 33, 33);
+
+  --background-color-dark: #1a1a1c;
+  --background-color-light: #2f2f2f;
+  --background-color-dark-transparency: #1e1e1ead;
+  --background-gradient-color: linear-gradient(to right top, var(--background-color-dark), var(--background-color-light));
+
+  --size-1: 4px;
+  --size-2: 8px;
+  --size-3: 12px;
+  --size-4: 16px;
+  --size-5: 20px;
+  --size-6: 24px;
+  --size-7: 28px;
+  --size-8: 32px;
+  --size-9: 36px;
+  --size-10: 40px;
+  --size-11: 44px;
+  --size-12: 48px;
+
+  background: var(--background-gradient-color);
+  background-position: center;
+  background-repeat: no-repeat;
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+#root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}

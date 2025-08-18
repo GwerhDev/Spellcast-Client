@@ -1,0 +1,50 @@
+.container {
+  gap: 1rem;
+  width: 100%;
+  height: 100%;
+  padding: 1rem;
+  display: flex;
+  overflow-y: auto;
+  text-align: center;
+  align-items: center;
+  flex-direction: column;
+  background-color: var(--color-dark-900);
+}
+
+.createContainer {
+  gap: 1rem;
+  width: 100%;
+  max-width: 1024px;
+  padding-top: 2rem;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+}
+
+.createContainer ul {
+  gap: 1rem;
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.createContainer ul li {
+  gap: 1rem;
+  padding: 1rem;
+  padding-inline: 2rem;
+  border-radius: 1rem;
+  background-color: var(--color-dark-300);
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+}
+
+.createContainer ul li:hover {
+  background-color: var(--color-dark-200);
+}
+
+.createContainer ul .createProject {
+  background-color: transparent;
+  border: dashed .2rem;
+  justify-content: center;
+}

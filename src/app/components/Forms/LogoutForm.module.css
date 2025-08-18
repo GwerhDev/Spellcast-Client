@@ -1,0 +1,12 @@
+.container {
+  width: 100%;
+  max-width: 500px;
+  text-align: center;
+}
+
+.buttonContainer {
+  gap: 1rem;
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}

@@ -1,0 +1,163 @@
+.container {
+  gap: 1rem;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+}
+
+.header {
+  gap: 3rem;
+  width: 100%;
+  padding: 1rem;
+  border-radius: 1rem;
+  background-color: var(--color-dark-300);
+  display: flex;
+  justify-content: center;
+}
+
+.stats {
+  gap: 1rem;
+  width: 100%;
+  max-width: 1024px;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+}
+
+@media screen and (max-width: 1024px) {
+  .header {
+    flex-direction: column;
+    justify-content: start;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .details {
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+  }
+}
+
+.details {
+  display: flex;
+}
+
+.buttonContainer {
+  gap: 1rem;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+@media screen and (max-width: 720px) {
+  .buttonContainer {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+.imgContainer {
+  width: 10rem;
+  height: 10rem;
+  padding: .2rem;
+  border-radius: 100%;
+  transition-duration: .3s;
+  display: flex;
+  border: solid;
+  position: relative;
+  align-items: center;
+  justify-content: center;
+  border-color: var(--color-primary);
+}
+
+.plusContainer {
+  bottom: 0;
+  right: 1rem;
+  padding: .3rem;
+  border-radius: 100%;
+  display: flex;
+  position: absolute;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-primary);
+}
+
+.imageContainer {
+  width: 100%;
+  height: 100%;
+  border-radius: 100%;
+  display: flex;
+  overflow: hidden;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 5rem;
+  color: white;
+  opacity: .7;
+  text-transform: uppercase;
+}
+
+.image {
+  width: 100%;
+  object-fit: cover;
+  aspect-ratio: 1/1;
+}
+
+.title {
+  gap: 1rem;
+  max-width: 100%;
+  display: flex;
+  overflow: hidden;
+  align-items: center;
+  text-overflow: ellipsis;
+  position: relative;
+}
+
+.dbType {
+  gap: .5rem;
+  background-color: var(--color-dark-400);
+  border-radius: 1rem;
+  padding: .2rem;
+  font-size: 0.8rem;
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-primary);
+}
+
+.borderAnimate {
+  border: 2px solid var(--color-primary);
+  position: relative;
+  overflow: hidden;
+  /* Para que el pseudo-elemento no se desborde */
+}
+
+.borderAnimate::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  /* Empieza fuera del elemento */
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(to right, transparent, var(--color-secondary), transparent);
+  /* Gradiente de escaneo */
+  animation: scanBorder 2s linear infinite;
+}
+
+@keyframes scanBorder {
+  0% {
+    left: -100%;
+  }
+
+  100% {
+    left: 100%;
+  }
+}

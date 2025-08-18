@@ -1,0 +1,18 @@
+.copyButton {
+  background-color: var(--color-dark-400);
+  color: var(--color-light-300);
+  border: none;
+  border-radius: var(--size-1);
+  padding: var(--size-1) var(--size-2);
+  cursor: pointer;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: var(--size-1);
+  transition: background-color 0.2s ease-in-out;
+}
+
+.copyButton:hover {
+  background-color: var(--color-dark-200);
+  color: var(--color-primary);
+}
