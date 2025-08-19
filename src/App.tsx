@@ -6,20 +6,16 @@ import { Loader } from './app/components/Loader';
 import { Toast } from './app/components/Toast/Toast';
 import { RootBackground } from './app/components/Backgrounds/RootBackground';
 import { Home } from './app/pages/Home';
-import { Images } from './app/pages/Images';
-import { Videos } from './app/pages/Videos';
 import { Audios } from './app/pages/Audios';
 import { Storage } from './app/pages/Storage';
 import { Groups } from './app/pages/Groups';
 import { Overview } from './app/pages/Overview';
 import { NotFound } from './app/pages/NotFound';
-import { Database } from './app/pages/Database';
 import { Settings } from './app/pages/Settings';
 import { Dashboard } from './app/pages/Dashboard';
 import { UserAccount } from './app/pages/UserAccount';
 import { UserArchive } from './app/pages/UserArchive';
 import { Unauthorized } from './app/pages/Unauthorized';
-import { ThreeDModels } from './app/pages/ThreeDModels';
 import { userData } from './interfaces';
 import DefaultLayout from './app/layouts/DefaultLayout';
 import LibraryLayout from './app/layouts/LibraryLayout';
@@ -50,13 +46,8 @@ function App() {
                 <Route path="/library/dashboard/groups" element={<Groups />} />
 
                 <Route path="/library/storage" element={<Storage />} />
-                <Route path="/library/storage/images" element={<Images />} />
-                <Route path="/library/storage/videos" element={<Videos />} />
                 <Route path="/library/storage/audios" element={<Audios />} />
-                <Route path="/library/storage/3dmodels" element={<ThreeDModels />} />
-
-                <Route path="/library/:id/database" element={<Database />} />
-
+                
                 <Route path="/library/settings" element={<Settings />} />
                 <Route path="/library/not-found" element={<NotFound />} />
                 <Route path="/library/*" element={<NotFound />} />
