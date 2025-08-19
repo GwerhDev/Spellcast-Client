@@ -1,6 +1,6 @@
 import s from './LateralTab.module.css';
 import { useNavigate } from 'react-router-dom';
-import { faArchive, faBook, faHome, faShop } from '@fortawesome/free-solid-svg-icons';
+import { faArchive, faBook, faCompass, faHome, faShop } from '@fortawesome/free-solid-svg-icons';
 import { Tab, userData } from '../../../interfaces';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { TabButton } from '../Buttons/TabButton';
@@ -25,16 +25,18 @@ export const LateralTab = (props: { userData: userData }) => {
       title: 'Home',
       route: '/',
       icon: faHome,
-    },
-    {
+    }, {
       title: 'Library',
       route: '/library',
       icon: faBook,
-    },
-    {
+    }, {
       title: 'Store',
       route: '/store',
       icon: faShop
+    }, {
+      title: 'Explore',
+      route: '/explore',
+      icon: faCompass
     }
   ];
 

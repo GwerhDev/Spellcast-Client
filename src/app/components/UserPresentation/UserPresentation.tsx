@@ -3,9 +3,11 @@ import skeleton from '../Loader/Skeleton.module.css';
 import { UserStats } from '../UserStats/UserStats';
 import { LibraryCharts } from '../LibraryCharts/LibraryCharts';
 import { userData } from '../../../interfaces';
+import { useSelector } from 'react-redux';
+import { RootState } from '../../../store';
 
-export const UserPresentation = (props: { userData: userData }) => {
-  const { userData } = props;
+export const UserPresentation = () => {
+  const userData: userData = useSelector((state: RootState) => state.session.userData);
   const { loader, profilePic, username, email } = userData || {};
 
   return (
