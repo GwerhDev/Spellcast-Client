@@ -9,16 +9,16 @@ export const UserStats = () => {
   };
 
   const handleExportsClick = () => {
-    navigate(`/library/dashboard/exports`);
+    navigate(`/library/dashboard/shared`);
   };
 
   return (
     <div className={s.statsContainer}>
       <div className={`${s.statCard} ${s.clickable}`} onClick={handleMembersClick}>
-        <h4>Members</h4>
+        <h4>Groups</h4>
       </div>
       <div className={`${s.statCard} ${s.clickable}`} onClick={handleExportsClick}>
-        <h4>Exports</h4>
+        <h4>Shared</h4>
         <p></p>
       </div>
     </div>
