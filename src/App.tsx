@@ -10,7 +10,7 @@ import { Images } from './app/pages/Images';
 import { Videos } from './app/pages/Videos';
 import { Audios } from './app/pages/Audios';
 import { Storage } from './app/pages/Storage';
-import { Members } from './app/pages/Members';
+import { Groups } from './app/pages/Groups';
 import { Overview } from './app/pages/Overview';
 import { NotFound } from './app/pages/NotFound';
 import { Database } from './app/pages/Database';
@@ -47,7 +47,7 @@ function App() {
                 <Route path="/library" element={<RootBackground />} />
                 <Route path="/library/dashboard" element={<Dashboard />} />
                 <Route path="/library/dashboard/overview" element={<Overview />} />
-                <Route path="/library/dashboard/members" element={<Members />} />
+                <Route path="/library/dashboard/groups" element={<Groups />} />
 
                 <Route path="/library/storage" element={<Storage />} />
                 <Route path="/library/storage/images" element={<Images />} />

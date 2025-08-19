@@ -2,8 +2,8 @@ import s from './LateralMenu.module.css';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBox, faChevronDown, faDatabase, faGear, faTableColumns } from '@fortawesome/free-solid-svg-icons';
-import { dashboardDirectoryList, databaseDirectoryList, settingsDirectoryList, storageDirectoryList } from '../../../config/consts';
+import { faBox, faChevronDown, faGear, faTableColumns } from '@fortawesome/free-solid-svg-icons';
+import { dashboardDirectoryList, settingsDirectoryList, storageDirectoryList } from '../../../config/consts';
 import { CustomCanvas } from '../Canvas/CustomCanvas';
 
 export const LateralMenu = () => {
@@ -65,29 +65,6 @@ export const LateralMenu = () => {
           <ul className={s.menuList}>
             {
               storageDirectoryList.map(({ name, icon, path }, index) => {
-                const linkPath = `/library/${path}`;
-                const isActive = location.pathname === linkPath || location.pathname.startsWith(`${linkPath}/`);
-                return (
-                  <Link key={index} to={linkPath}>
-                    <li className={isActive ? s.activeLink : ''}>
-                      {icon && <FontAwesomeIcon icon={icon} />}
-                      {name}
-                    </li>
-                  </Link>
-                );
-              })
-            }
-          </ul>
-
-          <span className={s.section}>
-            <Link to={`/library/database`}>
-              <h4>DATABASE</h4>
-            </Link>
-            <FontAwesomeIcon icon={faDatabase} />
-          </span>
-          <ul className={s.menuList}>
-            {
-              databaseDirectoryList.map(({ name, icon, path }, index) => {
                 const linkPath = `/library/${path}`;
                 const isActive = location.pathname === linkPath || location.pathname.startsWith(`${linkPath}/`);
                 return (

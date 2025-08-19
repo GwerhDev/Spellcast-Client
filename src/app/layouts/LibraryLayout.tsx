@@ -1,16 +1,14 @@
-import { Outlet, useLocation, useParams } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { LogoutModal } from '../components/Modals/LogoutModal';
 import { LateralMenu } from '../components/LateralMenu/LateralMenu';
 import { useEffect, useState } from 'react';
 import { Browser } from '../components/Browser/Browser';
 
 export default function LibraryLayout() {
-
-  const { id } = useParams();
   const location = useLocation();
   const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth < 1024);
-  const shouldHideMenu = isSmallScreen && location.pathname !== `/project/${id}`;
-  const shouldHideBrowser = !isSmallScreen || location.pathname !== `/project/${id}`;
+  const shouldHideMenu = isSmallScreen && location.pathname !== `/library`;
+  const shouldHideBrowser = !isSmallScreen || location.pathname !== `/library`;
 
   useEffect(() => {
     const handleResize = () => {

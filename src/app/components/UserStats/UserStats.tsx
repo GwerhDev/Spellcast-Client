@@ -5,7 +5,7 @@ export const UserStats = () => {
   const navigate = useNavigate();
 
   const handleMembersClick = () => {
-    navigate(`/library/dashboard/members`);
+    navigate(`/library/dashboard/groups`);
   };
 
   const handleExportsClick = () => {

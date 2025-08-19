@@ -1,6 +1,6 @@
 import s from './Browser.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { useLocation, useParams, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { faChevronRight, faFolder } from '@fortawesome/free-solid-svg-icons';
 import { PropsWithChildren } from 'react';
 
@@ -8,10 +8,9 @@ export const Browser = (props: PropsWithChildren) => {
   const { children } = props;
   const location = useLocation();
   const navigate = useNavigate();
-  const { id } = useParams();
 
   const path = decodeURIComponent(location.pathname);
-  const basePath = `/project/${id}`;
+  const basePath = `/library`;
   const relativePath = path.replace(basePath, '');
 
   const segments = relativePath.split('/').filter(Boolean);
