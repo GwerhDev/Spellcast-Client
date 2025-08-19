@@ -46,13 +46,13 @@ export const Start = () => {
 
         <div className={s.tabs}>
           <button
-            className={`${s.tab} ${inputType === 'text' ? s.active : ''}`}
+            className={`${s.tab} ${s.left} ${inputType === 'text' ? s.active : ''}`}
             onClick={() => setInputType('text')}
           >
             Text
           </button>
           <button
-            className={`${s.tab} ${inputType === 'pdf' ? s.active : ''}`}
+            className={`${s.tab} ${s.right} ${inputType === 'pdf' ? s.active : ''}`}
             onClick={() => setInputType('pdf')}
           >
             PDF

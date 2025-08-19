@@ -13,6 +13,7 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
+  gap: 1rem;
 }
 
 .createContainer h1 {
@@ -40,10 +41,21 @@
   border-radius: 6px;
 }
 
+.tab.left {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.tab.right {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+
+}
+
 .tab.active {
   background-color: var(--color-primary);
   color: var(--color-dark-900);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .form {

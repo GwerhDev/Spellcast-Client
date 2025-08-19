@@ -163,6 +163,7 @@ button {
 
 button:hover {
   cursor: pointer;
+  color: var(--color-dark-800);
   background-color: var(--color-button-primary-hover);
 }
 
