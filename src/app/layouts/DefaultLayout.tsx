@@ -12,7 +12,7 @@ export default function DefaultLayout() {
     <main>
       <div className='dashboard-container'>
         <LateralTab userData={userData} />
-        <div className="library-viewer">
+        <div className="project-viewer">
           <div className="header-app">
             <span className="title-container">
               <small className="font-bold nowrap">{"Spellcast"}</small>

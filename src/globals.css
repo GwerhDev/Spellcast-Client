@@ -182,10 +182,9 @@ main {
   max-width: var(--max-width);
   display: flex;
   flex-direction: column;
-  background: var(--background-color-light);
 }
 
-.library-viewer {
+.project-viewer {
   width: 100%;
   margin-bottom: 1.6rem;
 
@@ -260,7 +259,6 @@ a:hover {
   height: 100%;
   overflow-y: auto;
   display: flex;
-  background: var(--background-color-light);
 }
 
 .flex-dir-col {
