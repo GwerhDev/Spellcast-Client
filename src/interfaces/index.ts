@@ -8,7 +8,7 @@ export interface Tab {
 
 export interface userData {
   loader: boolean;
-  email: string;
+  email?: string;
   id?: string;
   role?: string;
   username?: string;
