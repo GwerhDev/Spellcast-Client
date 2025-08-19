@@ -47,12 +47,13 @@ function App() {
 
                 <Route path="/library/storage" element={<Storage />} />
                 <Route path="/library/storage/audios" element={<Audios />} />
-                
+
                 <Route path="/library/settings" element={<Settings />} />
                 <Route path="/library/not-found" element={<NotFound />} />
                 <Route path="/library/*" element={<NotFound />} />
 
               </Route>
+              <Route path="/explore/*" element={<NotFound />} />
               <Route path="/store/*" element={<NotFound />} />
               <Route path="/library/not-found" element={<NotFound />} />
               <Route path="/library/*" element={<NotFound />} />
