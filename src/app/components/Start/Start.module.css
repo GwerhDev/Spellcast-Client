@@ -1,57 +1,102 @@
 .container {
-  gap: 1rem;
-  width: 100%;
-  height: 100%;
-  padding: 1rem;
   display: flex;
-  overflow-y: auto;
-  text-align: center;
-  align-items: center;
-  flex-direction: column;
-  background-color: var(--color-dark-900);
-}
-
-.projectCardSkeleton {
+  justify-content: center;
+  align-items: flex-start;
+  padding: 2rem;
   width: 100%;
-  height: 60px;
-  border-radius: 1rem;
 }
 
 .createContainer {
-  gap: 1rem;
   width: 100%;
-  max-width: 1024px;
-  padding-top: 2rem;
+  max-width: 600px;
   display: flex;
-  align-items: center;
   flex-direction: column;
+  align-items: center;
+  text-align: center;
 }
 
-.createContainer ul {
-  gap: 1rem;
+.createContainer h1 {
+  color: var(--color-primary);
+  font-size: var(--size-12);
+}
+
+.tabs {
+  display: flex;
+  margin-bottom: 1.5rem;
+  border-radius: 8px;
+  background-color: var(--color-dark-400);
+  padding: 5px;
+}
+
+.tab {
+  padding: 10px 20px;
+  border: none;
+  background-color: transparent;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--color-light-300);
+  transition: all 0.3s ease;
+  border-radius: 6px;
+}
+
+.tab.active {
+  background-color: var(--color-primary);
+  color: var(--color-dark-900);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.form {
   width: 100%;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
-.createContainer ul li {
-  gap: 1rem;
+.textarea {
+  width: 100%;
+  min-height: 150px;
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--color-dark-300);
+  background-color: var(--color-dark-500);
+  color: var(--color-light-100);
+  resize: vertical;
+  font-size: 1rem;
+  box-sizing: border-box;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px #d7ab6d3f;
+}
+
+.fileInput {
   width: 100%;
   padding: 1rem;
-  border-radius: 1rem;
-  padding-inline: 2rem;
-  background-color: var(--color-dark-300);
+  border-radius: 8px;
+  border: 2px dashed var(--color-dark-300);
+  background-color: var(--color-dark-500);
+  color: var(--color-light-300);
   cursor: pointer;
-  display: flex;
-  justify-content: space-between;
+  transition: border-color 0.3s ease, background-color 0.3s ease;
+  text-align: center;
+  box-sizing: border-box;
 }
 
-.createContainer ul li:hover {
-  background-color: var(--color-dark-200);
+.fileInput:hover {
+  border-color: var(--color-primary);
+  background-color: var(--color-dark-400);
 }
 
-.createContainer ul .createProject {
-  background-color: transparent;
-  border: dashed .2rem;
-  justify-content: center;
+.audioPlayer {
+  margin-top: 2rem;
+  width: 100%;
+}
+
+.audioPlayer audio {
+  width: 100%;
+  filter: invert(1);
 }
