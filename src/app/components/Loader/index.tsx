@@ -1,10 +1,9 @@
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faHeadphonesSimple } from "@fortawesome/free-solid-svg-icons";
+import spellcastIcon from '../../../assets/spellcast-logo.svg';
 
 export const Loader = () => {
   return (
     <div className="loader d-flex pl-3 pr-3">
-      <FontAwesomeIcon size="2xl" icon={faHeadphonesSimple} />
+      <img width={"50%"} src={spellcastIcon} />
     </div>
   )
 }

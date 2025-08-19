@@ -5,7 +5,7 @@ import { Tab, userData } from '../../../interfaces';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { TabButton } from '../Buttons/TabButton';
 import { ProfileButton } from '../Buttons/ProfileButton';
-import streambyIcon from '../../../assets/streamby-icon.svg';
+import spellcastIcon from '../../../assets/spellcast-logo.svg';
 
 export const LateralTab = (props: { userData: userData }) => {
   const { userData } = props || {};
@@ -43,7 +43,7 @@ export const LateralTab = (props: { userData: userData }) => {
   return (
     <div className={s.container}>
       <span className={s.iconContainer}>
-        <img onClick={handleGoHome} src={streambyIcon} alt="StreamBy Icon" height={25} />
+        <img onClick={handleGoHome} src={spellcastIcon} alt="StreamBy Icon" height={25} />
       </span>
       <ul className={s.tabs}>
         {

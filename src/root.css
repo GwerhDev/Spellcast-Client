@@ -3,10 +3,10 @@
 @tailwind utilities;
 
 :root {
-  --color-primary: #38B6FF;
-  --color-secondary: #54c0ff;
-  --color-button-primary: #38B6FF;
-  --color-button-primary-hover: #54c0ff;
+  --color-primary: #D7AB6D;
+  --color-secondary: #9B7644;
+  --color-button-primary: #D7AB6D;
+  --color-button-primary-hover: #d69f51;
   --color-dark-100: #515151;
   --color-dark-200: #464646;
   --color-dark-300: #3c3c3c;
