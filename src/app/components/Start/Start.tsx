@@ -2,13 +2,15 @@ import { useState } from 'react';
 import { textToSpeechService } from '../../../services/tts';
 import { PrimaryButton } from '../Buttons/PrimaryButton';
 import s from './Start.module.css';
+import { useDispatch } from 'react-redux';
+import { setPlaylist, play } from '../../../store/audioPlayerSlice';
 
 export const Start = () => {
   const [inputType, setInputType] = useState('text'); // 'text' or 'pdf'
   const [text, setText] = useState('');
   const [file, setFile] = useState<File | null>(null);
-  const [audioSrc, setAudioSrc] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const dispatch = useDispatch();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -19,7 +21,6 @@ export const Start = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setAudioSrc(null);
 
     let data = {};
     if (inputType === 'pdf' && file) {
@@ -30,7 +31,8 @@ export const Start = () => {
 
     try {
       const audioUrl = await textToSpeechService(data);
-      setAudioSrc(audioUrl);
+      dispatch(setPlaylist({ playlist: [audioUrl], startIndex: 0 }));
+      dispatch(play());
     } catch (error) {
       console.error('Failed to generate audio', error);
     } finally {
@@ -81,12 +83,6 @@ export const Start = () => {
             {isLoading ? 'Generating Audio...' : 'Generate Audio'}
           </PrimaryButton>
         </form>
-
-        {audioSrc && (
-          <div className={s.audioPlayer}>
-            <audio controls src={audioSrc} />
-          </div>
-        )}
       </div>
     </div>
   );

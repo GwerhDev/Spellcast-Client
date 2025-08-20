@@ -185,10 +185,12 @@ main {
   flex-direction: column;
 }
 
-.project-viewer {
+.app-viewer {
+  display: flex;
+  position: relative;
+  flex-direction: column;
   width: 100%;
-  margin-bottom: 1.6rem;
-
+  height: 100%;
 }
 
 .header-app {

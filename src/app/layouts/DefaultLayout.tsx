@@ -3,6 +3,7 @@ import { RootState } from '../../store';
 import { useSelector } from 'react-redux';
 import { LateralTab } from '../components/LateralTab/LateralTab';
 import { LogoutModal } from '../components/Modals/LogoutModal';
+import { AudioPlayer } from '../components/AudioPlayer/AudioPlayer';
 import { userData } from '../../interfaces';
 
 export default function DefaultLayout() {
@@ -12,13 +13,14 @@ export default function DefaultLayout() {
     <main>
       <div className='dashboard-container'>
         <LateralTab userData={userData} />
-        <div className="project-viewer">
+        <div className="app-viewer">
           <div className="header-app">
             <span className="title-container">
               <small className="font-bold nowrap">{"Spellcast"}</small>
             </span>
           </div>
           <Outlet />
+          <AudioPlayer />
         </div>
       </div>
       <LogoutModal />
