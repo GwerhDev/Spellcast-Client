@@ -2,7 +2,6 @@
   position: absolute;
   width: 100%;
   bottom: 0;
-  color: var(--color-light-100);
   padding: 15px 20px;
   display: flex;
   align-items: center;
@@ -22,14 +21,12 @@
   flex-direction: column;
   align-items: center;
   margin-bottom: 15px;
-  /* Space between progress bar and controls */
 }
 
 .progressBar {
   width: 100%;
-  height: 8px;
+  height: 4px;
   background: var(--color-dark-500);
-  /* Default background for the track */
   outline: none;
   border-radius: 5px;
   -webkit-appearance: none;
@@ -37,7 +34,6 @@
   cursor: pointer;
 }
 
-/* Webkit (Chrome, Safari) */
 .progressBar::-webkit-slider-runnable-track {
   width: 100%;
   height: 8px;
@@ -49,16 +45,11 @@
   -webkit-appearance: none;
   appearance: none;
   width: 0;
-  /* Hide the thumb */
   height: 0;
-  /* Hide the thumb */
   background: transparent;
-  /* Make it transparent */
   border: none;
-  /* Remove border */
 }
 
-/* Firefox */
 .progressBar::-moz-range-track {
   width: 100%;
   height: 8px;
@@ -68,13 +59,9 @@
 
 .progressBar::-moz-range-thumb {
   width: 0;
-  /* Hide the thumb */
   height: 0;
-  /* Hide the thumb */
   background: transparent;
-  /* Make it transparent */
   border: none;
-  /* Remove border */
 }
 
 .timeDisplay {
@@ -90,22 +77,17 @@
   gap: 15px;
   align-items: center;
   justify-content: center;
-  /* Center the control buttons */
   width: 100%;
 }
 
 .controlButton {
   background-color: transparent;
-  /* Transparent background */
-  color: var(--color-light-100);
-  /* App font color */
   border: none;
   padding: 10px 15px;
   border-radius: 5px;
   cursor: pointer;
   font-size: 18px;
   transition: color 0.3s ease;
-  /* Transition for color change */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -118,16 +100,11 @@
 
 .playPauseButton {
   background-color: var(--color-primary);
-  /* Primary color background */
   color: var(--color-dark-900);
-  /* Text color for primary button */
   border: none;
   width: 40px;
-  /* Make it circular */
   height: 40px;
-  /* Make it circular */
   border-radius: 50%;
-  /* Fully circular */
   cursor: pointer;
   font-size: 18px;
   transition: background-color 0.3s ease;
@@ -138,7 +115,6 @@
 
 .playPauseButton:hover {
   background-color: var(--color-button-primary-hover);
-  /* Hover color */
 }
 
 .volumeControlContainer {
@@ -146,23 +122,17 @@
   align-items: center;
   justify-content: flex-end;
   margin-left: 20px;
-  /* Space from other controls */
-  gap: 1rem; /* Space between icon and slider */
+  gap: 1rem;
 }
 
 .volumeIcon {
   background-color: transparent;
-  /* Make icon button transparent */
-  color: var(--color-light-100);
-  /* Icon color */
   border: none;
   cursor: pointer;
   font-size: 18px;
   width: 18px;
   padding: 5px;
-  /* Smaller padding for icon button */
   transition: color 0.3s ease;
-  /* Transition for color change */
 }
 
 .volumeIcon:hover {
@@ -174,7 +144,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 100px; /* Adjust width as needed */
+  width: 100px;
 }
 
 .volumeSliderWrapper input[type="range"] {
@@ -198,6 +168,5 @@
 }
 
 .volumeSliderWrapper input[type="range"]::-moz-range-thumb {
-  background: var(--color-primary);
   cursor: pointer;
 }
