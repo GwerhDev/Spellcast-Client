@@ -2,7 +2,7 @@ import { API_BASE } from '../config/api';
 
 export async function fetchAuth() {
   try {
-    const res = await fetch(`${API_BASE}/accounts`, {
+    const res = await fetch(`${API_BASE}/accounts/`, {
       credentials: 'include',
     });
   
@@ -17,7 +17,7 @@ export async function fetchAuth() {
 
 export async function fetchLogout() {
   try {
-    const res = await fetch(`${API_BASE}/logout`, {
+    const res = await fetch(`${API_BASE}/logout/`, {
       credentials: 'include',
     });
 
