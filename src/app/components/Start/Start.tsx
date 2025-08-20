@@ -21,15 +21,15 @@ export const Start = () => {
     setIsLoading(true);
     setAudioSrc(null);
 
-    const formData = new FormData();
+    let data = {};
     if (inputType === 'pdf' && file) {
-      formData.append('file', file);
+      data = { file: file.name };
     } else {
-      formData.append('text', text);
+      data = { text };
     }
 
     try {
-      const audioUrl = await textToSpeechService(formData);
+      const audioUrl = await textToSpeechService(data);
       setAudioSrc(audioUrl);
     } catch (error) {
       console.error('Failed to generate audio', error);
