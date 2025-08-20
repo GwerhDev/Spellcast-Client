@@ -1,9 +1,9 @@
 import { useEffect } from 'react';
 import { useDispatch } from 'react-redux';
-import { fetchAuth } from '../services/auth';
-import { setLoader, setSession } from '../store/sessionSlice';
 import { useNavigate } from 'react-router-dom';
+import { fetchAuth } from '../services/auth';
 import { addApiResponse } from '../store/apiResponsesSlice';
+import { setLoader, setSession } from '../store/sessionSlice';
 
 export function useInitSession() {
   const dispatch = useDispatch();
