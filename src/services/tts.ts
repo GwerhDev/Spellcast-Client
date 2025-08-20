@@ -3,6 +3,7 @@ import { API_BASE } from "../config/api";
 export const textToSpeechService = async (formData: FormData) => {
   try {
     const response = await fetch(`${API_BASE}/tts/`, {
+      credentials: 'include',
       method: 'POST',
       body: formData,
     });
