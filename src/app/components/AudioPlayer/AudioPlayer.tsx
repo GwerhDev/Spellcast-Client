@@ -100,10 +100,6 @@ export const AudioPlayer = () => {
     return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
   };
 
-  if (currentTrackIndex === null) {
-    return null; // Don't render if no track is set
-  }
-
   return (
     <div className={s.audioPlayerContainer}>
       <audio
@@ -140,7 +136,7 @@ export const AudioPlayer = () => {
           <button onClick={() => dispatch(playPrevious())} disabled={currentTrackIndex === 0} className={s.controlButton}>
             <FontAwesomeIcon icon={faStepBackward} />
           </button>
-          <button onClick={() => dispatch(togglePlayPause())} className={s.playPauseButton}>
+          <button onClick={() => dispatch(togglePlayPause())} disabled={currentTrackIndex === null} className={s.playPauseButton} style={currentTrackIndex === null ? { opacity: '0.5', cursor: 'not-allowed' } : {}}>
             <FontAwesomeIcon icon={isPlaying ? faPause : faPlay} />
           </button>
           <button onClick={() => dispatch(playNext())} disabled={currentTrackIndex === playlist.length - 1} className={s.controlButton}>
