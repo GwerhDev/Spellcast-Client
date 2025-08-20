@@ -2,7 +2,7 @@ import { API_BASE } from '../config/api';
 
 export async function fetchAuth() {
   try {
-    const res = await fetch(`${API_BASE}/account`, {
+    const res = await fetch(`${API_BASE}/accounts`, {
       credentials: 'include',
     });
   
