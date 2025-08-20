@@ -35,10 +35,10 @@
   background-color: transparent;
   cursor: pointer;
   font-size: 1rem;
-  font-weight: 500;
   color: var(--color-light-300);
   transition: all 0.3s ease;
   border-radius: 6px;
+  font-weight: 900;
 }
 
 .tab.left {
@@ -49,12 +49,11 @@
 .tab.right {
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
-
 }
 
 .tab.active {
   background-color: var(--color-primary);
-  color: var(--color-dark-900);
+  color: var(--color-light-100);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
