@@ -36,9 +36,24 @@ export const AudioPlayer = (props: { userData: userData }) => {
   } = useSelector((state: RootState) => state.pdfReader);
 
   const [lastVolume, setLastVolume] = useState(volume);
+  const [isMobile, setIsMobile] = useState(false);
+  const [showMobileVolumeSlider, setShowMobileVolumeSlider] = useState(false);
   const currentTrackUrl = currentTrackIndex !== null ? playlist[currentTrackIndex] : null;
   const progressPercentage = duration > 0 ? (currentTime / duration) * 100 : 0;
   const volumePercentage = volume * 100;
+
+  useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobile(window.matchMedia('(max-width: 768px)').matches);
+    };
+
+    checkIsMobile();
+    window.addEventListener('resize', checkIsMobile);
+
+    return () => {
+      window.removeEventListener('resize', checkIsMobile);
+    };
+  }, []);
 
   useEffect(() => {
     if (audioRef.current) {
@@ -181,21 +196,42 @@ export const AudioPlayer = (props: { userData: userData }) => {
       </section>
 
       <section>
-        <div className={s.volumeControlContainer}>
-          <button className={s.volumeIcon} onClick={handleVolumeToggle}>
-            <FontAwesomeIcon icon={volume === 0 ? faVolumeMute : faVolumeUp} />
-          </button>
-          <div className={s.volumeSliderWrapper} style={{ '--volume-value': `${volumePercentage}%` } as React.CSSProperties}>
-            <input
-              type="range"
-              min="0"
-              max="1"
-              step="0.01"
-              value={volume}
-              onChange={(e) => dispatch(setVolume(parseFloat(e.target.value)))}>
-            </input>
+        {!isMobile ? (
+          <div className={s.volumeControlContainer}>
+            <button className={s.volumeIcon} onClick={handleVolumeToggle}>
+              <FontAwesomeIcon icon={volume === 0 ? faVolumeMute : faVolumeUp} />
+            </button>
+            <div className={s.volumeSliderWrapper} style={{ '--volume-value': `${volumePercentage}%` } as React.CSSProperties}>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={volume}
+                onChange={(e) => dispatch(setVolume(parseFloat(e.target.value)))}>
+              </input>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className={s.mobileVolumeControlContainer}>
+            <button className={s.volumeIcon} onClick={() => setShowMobileVolumeSlider(!showMobileVolumeSlider)}>
+              <FontAwesomeIcon icon={volume === 0 ? faVolumeMute : faVolumeUp} />
+            </button>
+            {showMobileVolumeSlider && (
+              <div className={s.mobileVolumeSliderWrapper} style={{ '--volume-value': `${volumePercentage}%` } as React.CSSProperties}>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value={volume}
+                  onChange={(e) => dispatch(setVolume(parseFloat(e.target.value)))}
+                  className={s.verticalSlider}>
+                </input>
+              </div>
+            )}
+          </div>
+        )}
       </section>
     </div>
   );

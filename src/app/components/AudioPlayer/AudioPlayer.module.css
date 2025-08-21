@@ -191,3 +191,79 @@
   align-items: center;
   gap: 1rem;
 }
+
+/* Mobile styles */
+@media (max-width: 768px) {
+  .volumeControlContainer {
+    display: none;
+  }
+
+  .mobileVolumeControlContainer {
+    display: flex;
+    position: relative;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 1rem;
+    gap: 1rem;
+  }
+
+  .mobileVolumeSliderWrapper {
+    position: absolute;
+    bottom: 50px; /* Adjust as needed to position above the button */
+    right: 0;
+    width: 40px; /* Adjust width for vertical slider */
+    height: 150px; /* Adjust height for vertical slider */
+    background-color: var(--color-dark-800);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 0;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+    z-index: 10;
+  }
+
+  .verticalSlider {
+    width: 100px; /* This will be the height when rotated */
+    height: 4px; /* This will be the width when rotated */
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    outline: none;
+    transform: rotate(-90deg); /* Rotate to make it vertical */
+    transform-origin: 50% 50%;
+  }
+
+  .verticalSlider::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 8px;
+    background: linear-gradient(to right, var(--color-primary) var(--volume-value), var(--color-dark-500) var(--volume-value));
+    border-radius: 5px;
+  }
+
+  .verticalSlider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px; /* Size of the thumb */
+    height: 16px; /* Size of the thumb */
+    background: var(--color-primary);
+    border-radius: 50%;
+    cursor: pointer;
+    margin-top: -4px; /* Adjust to center the thumb on the track */
+  }
+
+  .verticalSlider::-moz-range-track {
+    width: 100%;
+    height: 8px;
+    background: linear-gradient(to right, var(--color-primary) var(--volume-value), var(--color-dark-500) var(--volume-value));
+    border-radius: 5px;
+  }
+
+  .verticalSlider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    background: var(--color-primary);
+    border-radius: 50%;
+    cursor: pointer;
+  }
+}
