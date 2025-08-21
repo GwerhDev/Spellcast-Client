@@ -1,11 +1,13 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { textToSpeechService } from '../../../services/tts';
 import { PrimaryButton } from '../Buttons/PrimaryButton';
 import s from './Start.module.css';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { setPlaylist, play } from '../../../store/audioPlayerSlice';
 import * as pdfjsLib from 'pdfjs-dist';
 import workerSrc from 'pdfjs-dist/build/pdf.worker?url';
+import { setPdfDocumentInfo, goToNextPage, goToPreviousPage, resetPdfState } from '../../../store/pdfReaderSlice';
+import { RootState } from '../../../store';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
@@ -14,9 +16,9 @@ const PdfReader = ({ file }: { file: File }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingAudio, setIsLoadingAudio] = useState(false);
   const [pdfDoc, setPdfDoc] = useState<any>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(0);
   const dispatch = useDispatch();
+
+  const { currentPage, totalPages, isLoaded } = useSelector((state: RootState) => state.pdfReader);
 
   const loadPage = async (pdf: any, pageNumber: number) => {
     setIsLoading(true);
@@ -41,9 +43,7 @@ const PdfReader = ({ file }: { file: File }) => {
           const typedArray = new Uint8Array(fileReader.result as ArrayBuffer);
           const pdf = await pdfjsLib.getDocument({ data: typedArray }).promise;
           setPdfDoc(pdf);
-          setTotalPages(pdf.numPages);
-          setCurrentPage(1);
-          await loadPage(pdf, 1);
+          dispatch(setPdfDocumentInfo({ totalPages: pdf.numPages }));
         } catch (error) {
           console.error('Error reading PDF:', error);
         } finally {
@@ -52,31 +52,26 @@ const PdfReader = ({ file }: { file: File }) => {
       };
       fileReader.readAsArrayBuffer(file);
     };
+
     loadPdfDocument();
-  }, [file]);
 
-  const goToPreviousPage = () => {
-    if (pdfDoc && currentPage > 1) {
-      const newPage = currentPage - 1;
-      setCurrentPage(newPage);
-      loadPage(pdfDoc, newPage);
-    }
-  };
+    return () => {
+      dispatch(resetPdfState());
+    };
+  }, [file, dispatch]);
 
-  const goToNextPage = () => {
-    if (pdfDoc && currentPage < totalPages) {
-      const newPage = currentPage + 1;
-      setCurrentPage(newPage);
-      loadPage(pdfDoc, newPage);
+  useEffect(() => {
+    if (pdfDoc) {
+      loadPage(pdfDoc, currentPage);
     }
-  };
+  }, [pdfDoc, currentPage]);
 
   const handleGenerateAudio = async () => {
     if (!text || isLoadingAudio) return;
     setIsLoadingAudio(true);
     try {
       const audioUrl = await textToSpeechService({ text });
-      dispatch(setPlaylist({ playlist: [audioUrl], startIndex: 0 }));
+      dispatch(setPlaylist({ playlist: [audioUrl], startIndex: 0, sourceType: 'pdfPage' }));
       dispatch(play());
     } catch (error) {
       console.error('Failed to generate audio for page', error);
@@ -97,17 +92,11 @@ const PdfReader = ({ file }: { file: File }) => {
           )}
         </div>
 
-        {pdfDoc && (
-          <div className={s.navigationContainer}>
-            <button onClick={goToPreviousPage} disabled={currentPage === 1 || isLoading || isLoadingAudio}>
-              ⬅ Previous Page
-            </button>
+        {isLoaded && (
+          <div className={s.pageInfoContainer}>
             <span style={{ margin: '0 1rem' }}>
               Page {currentPage} of {totalPages}
             </span>
-            <button onClick={goToNextPage} disabled={currentPage === totalPages || isLoading || isLoadingAudio}>
-              Next Page ➡
-            </button>
           </div>
         )}
 

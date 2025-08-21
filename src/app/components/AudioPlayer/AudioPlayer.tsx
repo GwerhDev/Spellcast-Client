@@ -6,9 +6,10 @@ import {
   setCurrentTime,
   setDuration,
   togglePlayPause,
-  playNext,
-  playPrevious,
+  playNext as playNextAudio,
+  playPrevious as playPreviousAudio,
 } from '../../../store/audioPlayerSlice';
+import { goToNextPage, goToPreviousPage } from '../../../store/pdfReaderSlice';
 import s from './AudioPlayer.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlay, faPause, faStepBackward, faStepForward, faVolumeUp, faVolumeMute } from '@fortawesome/free-solid-svg-icons';
@@ -19,10 +20,22 @@ export const AudioPlayer = (props: { userData: userData }) => {
   const { userData } = props || {};
   const audioRef = useRef<HTMLAudioElement>(null);
   const dispatch = useDispatch();
-  const { playlist, currentTrackIndex, isPlaying, volume, currentTime, duration } = useSelector(
-    (state: RootState) => state.audioPlayer
-  );
-  const [lastVolume, setLastVolume] = useState(volume); // State to store the last non-zero volume
+  const {
+    playlist,
+    currentTrackIndex,
+    isPlaying,
+    volume,
+    currentTime,
+    duration,
+    sourceType
+  } = useSelector((state: RootState) => state.audioPlayer);
+  const {
+    currentPage,
+    totalPages,
+    isLoaded: isPdfLoaded
+  } = useSelector((state: RootState) => state.pdfReader);
+
+  const [lastVolume, setLastVolume] = useState(volume);
   const currentTrackUrl = currentTrackIndex !== null ? playlist[currentTrackIndex] : null;
   const progressPercentage = duration > 0 ? (currentTime / duration) * 100 : 0;
   const volumePercentage = volume * 100;
@@ -31,15 +44,13 @@ export const AudioPlayer = (props: { userData: userData }) => {
     if (audioRef.current) {
       if (currentTrackUrl) {
         audioRef.current.src = currentTrackUrl;
-        audioRef.current.load(); // Load the new track
+        audioRef.current.load();
         if (isPlaying) {
           audioRef.current.play().catch(e => console.error("Error playing audio:", e));
-        } else {
-          audioRef.current.pause();
         }
       } else {
         audioRef.current.pause();
-        audioRef.current.src = ''; // Clear the source
+        audioRef.current.src = '';
       }
     }
   }, [currentTrackUrl]);
@@ -60,7 +71,6 @@ export const AudioPlayer = (props: { userData: userData }) => {
     }
   }, [volume]);
 
-  // Effect to handle stop functionality: reset current time when stopped
   useEffect(() => {
     if (audioRef.current && !isPlaying && currentTime === 0) {
       audioRef.current.currentTime = 0;
@@ -80,14 +90,35 @@ export const AudioPlayer = (props: { userData: userData }) => {
   };
 
   const handleEnded = () => {
-    dispatch(playNext());
+    if (sourceType === 'pdfPage') {
+      // Optional: auto-play next page?
+      // dispatch(goToNextPage());
+    } else {
+      dispatch(playNextAudio());
+    }
+  };
+
+  const handlePrevious = () => {
+    if (sourceType === 'pdfPage') {
+      dispatch(goToPreviousPage());
+    } else {
+      dispatch(playPreviousAudio());
+    }
+  };
+
+  const handleNext = () => {
+    if (sourceType === 'pdfPage') {
+      dispatch(goToNextPage());
+    } else {
+      dispatch(playNextAudio());
+    }
   };
 
   const handleVolumeToggle = () => {
     if (volume === 0) {
-      dispatch(setVolume(lastVolume === 0 ? 1 : lastVolume)); // If lastVolume was also 0, set to 1
+      dispatch(setVolume(lastVolume === 0 ? 1 : lastVolume));
     } else {
-      setLastVolume(volume); // Save current volume before muting
+      setLastVolume(volume);
       dispatch(setVolume(0));
     }
   };
@@ -97,6 +128,9 @@ export const AudioPlayer = (props: { userData: userData }) => {
     const seconds = Math.floor(time % 60);
     return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
   };
+
+  const isPrevDisabled = sourceType === 'pdfPage' ? !isPdfLoaded || currentPage === 1 : currentTrackIndex === 0;
+  const isNextDisabled = sourceType === 'pdfPage' ? !isPdfLoaded || currentPage === totalPages : currentTrackIndex === playlist.length - 1;
 
   return (
     <div className={s.audioPlayerContainer}>
@@ -111,21 +145,21 @@ export const AudioPlayer = (props: { userData: userData }) => {
       </section>
 
       <section>
-        <div className={s.progressBarContainer}> {/* New container for progress bar */}
+        <div className={s.progressBarContainer}>
           <input
             type="range"
             min="0"
-            max={duration} // Max should be duration for progress
+            max={duration}
             step="0.01"
-            value={currentTime} // Value should be currentTime
+            value={currentTime}
             onChange={(e) => {
               if (audioRef.current) {
                 audioRef.current.currentTime = parseFloat(e.target.value);
               }
               dispatch(setCurrentTime(parseFloat(e.target.value)));
             }}
-            className={s.progressBar} // Apply specific class for progress bar
-            style={{ '--progress-value': `${progressPercentage}%` } as React.CSSProperties} // Set CSS variable
+            className={s.progressBar}
+            style={{ '--progress-value': `${progressPercentage}%` } as React.CSSProperties}
           />
           <div className={s.timeDisplay}>
             <span>{formatTime(currentTime)}</span>
@@ -133,13 +167,13 @@ export const AudioPlayer = (props: { userData: userData }) => {
           </div>
         </div>
         <div className={s.controls}>
-          <button onClick={() => dispatch(playPrevious())} disabled={currentTrackIndex === 0} className={s.controlButton}>
+          <button onClick={handlePrevious} disabled={isPrevDisabled} className={s.controlButton}>
             <FontAwesomeIcon icon={faStepBackward} />
           </button>
           <button onClick={() => dispatch(togglePlayPause())} disabled={currentTrackIndex === null} className={s.playPauseButton} style={currentTrackIndex === null ? { opacity: '0.5', cursor: 'not-allowed' } : {}}>
             <FontAwesomeIcon icon={isPlaying ? faPause : faPlay} />
           </button>
-          <button onClick={() => dispatch(playNext())} disabled={currentTrackIndex === playlist.length - 1} className={s.controlButton}>
+          <button onClick={handleNext} disabled={isNextDisabled} className={s.controlButton}>
             <FontAwesomeIcon icon={faStepForward} />
           </button>
         </div>
@@ -150,7 +184,7 @@ export const AudioPlayer = (props: { userData: userData }) => {
           <button className={s.volumeIcon} onClick={handleVolumeToggle}>
             <FontAwesomeIcon icon={volume === 0 ? faVolumeMute : faVolumeUp} />
           </button>
-          <div className={s.volumeSliderWrapper} style={{ '--volume-value': `${volumePercentage}%` } as React.CSSProperties}> {/* Wrapper for the vertical slider */}
+          <div className={s.volumeSliderWrapper} style={{ '--volume-value': `${volumePercentage}%` } as React.CSSProperties}>
             <input
               type="range"
               min="0"
