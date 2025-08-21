@@ -1,8 +1,6 @@
 .audioPlayerContainer {
-  position: absolute;
   width: 100%;
-  bottom: 0;
-  padding: 15px 20px;
+  padding: .5rem;
   display: flex;
   align-items: center;
   border-top-left-radius: 8px;
@@ -169,4 +167,17 @@
 
 .volumeSliderWrapper input[type="range"]::-moz-range-thumb {
   cursor: pointer;
+}
+
+.user {
+  gap: .3rem;
+  padding: 0;
+  width: 100%;
+  min-height: 2.5rem;
+  border-radius: .2rem;
+  display: flex;
+  position: relative;
+  align-items: flex-start;
+  flex-direction: column;
+  justify-content: center;
 }

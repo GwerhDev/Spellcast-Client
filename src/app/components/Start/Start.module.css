@@ -7,13 +7,14 @@
 }
 
 .createContainer {
+  gap: 1rem;
   width: 100%;
   max-width: 600px;
+  padding-bottom: 1rem;
   display: flex;
-  flex-direction: column;
-  align-items: center;
   text-align: center;
-  gap: 1rem;
+  align-items: center;
+  flex-direction: column;
 }
 
 .createContainer h1 {

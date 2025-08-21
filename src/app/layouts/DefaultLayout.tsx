@@ -12,7 +12,7 @@ export default function DefaultLayout() {
   return (
     <main>
       <div className='dashboard-container'>
-        <LateralTab userData={userData} />
+        <LateralTab />
         <div className="app-viewer">
           <div className="header-app">
             <span className="title-container">
@@ -20,9 +20,9 @@ export default function DefaultLayout() {
             </span>
           </div>
           <Outlet />
-          <AudioPlayer />
         </div>
       </div>
+      <AudioPlayer userData={userData} />
       <LogoutModal />
     </main>
   );

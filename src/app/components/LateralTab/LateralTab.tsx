@@ -1,23 +1,16 @@
 import s from './LateralTab.module.css';
 import { useNavigate } from 'react-router-dom';
-import { faArchive, faBook, faCompass, faHome, faShop } from '@fortawesome/free-solid-svg-icons';
-import { Tab, userData } from '../../../interfaces';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faBook, faCompass, faHome, faShop } from '@fortawesome/free-solid-svg-icons';
+import { Tab } from '../../../interfaces';
 import { TabButton } from '../Buttons/TabButton';
-import { ProfileButton } from '../Buttons/ProfileButton';
 import spellcastIcon from '../../../assets/spellcast-logo.svg';
 
-export const LateralTab = (props: { userData: userData }) => {
-  const { userData } = props || {};
+export const LateralTab = () => {
 
   const navigate = useNavigate();
 
   const handleGoHome = () => {
     navigate("/");
-  };
-
-  const handleGoArchive = () => {
-    navigate("/user/archive");
   };
 
   const tabList: Tab[] = [
@@ -43,7 +36,7 @@ export const LateralTab = (props: { userData: userData }) => {
   return (
     <div className={s.container}>
       <span className={s.iconContainer}>
-        <img onClick={handleGoHome} src={spellcastIcon} alt="StreamBy Icon" height={25} />
+        <img onClick={handleGoHome} src={spellcastIcon} alt="Spellcast Icon" height={25} />
       </span>
       <ul className={s.tabs}>
         {
@@ -53,22 +46,6 @@ export const LateralTab = (props: { userData: userData }) => {
             </li>
           ))
         }
-      </ul>
-
-      <ul className={s.user}>
-        <li className={s.archive} onClick={handleGoArchive}>
-          <FontAwesomeIcon icon={faArchive} />
-        </li>
-
-        <li>
-          <ProfileButton userData={userData} />
-        </li>
-
-        <li>
-          <div className={s.versionContainer}>
-            <small className={s.version}>{"v" + __APP_VERSION__}</small>
-          </div>
-        </li>
       </ul>
     </div>
   );

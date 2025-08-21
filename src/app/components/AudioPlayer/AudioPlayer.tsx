@@ -12,21 +12,19 @@ import {
 import s from './AudioPlayer.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlay, faPause, faStepBackward, faStepForward, faVolumeUp, faVolumeMute } from '@fortawesome/free-solid-svg-icons';
+import { ProfileButton } from '../Buttons/ProfileButton';
+import { userData } from '../../../interfaces';
 
-export const AudioPlayer = () => {
+export const AudioPlayer = (props: { userData: userData }) => {
+  const { userData } = props || {};
   const audioRef = useRef<HTMLAudioElement>(null);
   const dispatch = useDispatch();
   const { playlist, currentTrackIndex, isPlaying, volume, currentTime, duration } = useSelector(
     (state: RootState) => state.audioPlayer
   );
-
   const [lastVolume, setLastVolume] = useState(volume); // State to store the last non-zero volume
-
   const currentTrackUrl = currentTrackIndex !== null ? playlist[currentTrackIndex] : null;
-
-  // Calculate progress percentage for CSS variable
   const progressPercentage = duration > 0 ? (currentTime / duration) * 100 : 0;
-  // Calculate volume percentage for CSS variable
   const volumePercentage = volume * 100;
 
   useEffect(() => {
@@ -108,7 +106,9 @@ export const AudioPlayer = () => {
         onLoadedMetadata={handleLoadedMetadata}
         onEnded={handleEnded}
       />
-      <section></section>
+      <section className={s.user}>
+        <ProfileButton userData={userData} />
+      </section>
 
       <section>
         <div className={s.progressBarContainer}> {/* New container for progress bar */}

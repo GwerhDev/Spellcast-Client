@@ -3,21 +3,19 @@
 }
 
 .canvas {
-  padding: 0;
   left: 0;
   bottom: 0;
-  border: solid .1rem var(--color-dark-400);
-  border-radius: .6rem;
+  padding: 0;
+  z-index: 9;
   padding: .3rem;
-  position: absolute;
+  border-radius: .6rem;
   background-color: var(--color-dark-400);
   transition-duration: .4s;
-  min-width: 100%;
   display: flex;
+  position: absolute;
   align-items: center;
   flex-direction: column;
   justify-content: center;
-  z-index: 9;
 }
 
 .canvas:hover {
@@ -59,14 +57,11 @@
 
 .profileButton img {
   display: flex;
-  width: 100%;
   max-width: 2.2rem;
   overflow: hidden;
   align-items: center;
   justify-content: center;
-  border-top: solid #c7c7c7 1px;
   border-radius: 100%;
-  background: var(--background-gradient-color);
   border: solid .15rem;
   border-color: var(--color-button-primary-hover);
   cursor: pointer;
@@ -75,13 +70,11 @@
 
 .profileButton span {
   display: flex;
-  width: 100%;
   max-width: 2.2rem;
   aspect-ratio: 1/1;
   overflow: hidden;
   align-items: center;
   justify-content: center;
-  border-top: solid #c7c7c7 1px;
   border-radius: 100%;
   background: var(--background-gradient-color);
   border: solid .15rem;
