@@ -1,7 +1,9 @@
+import s from './Start.module.css';
 import { useState, useCallback, useEffect } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faUpload } from '@fortawesome/free-solid-svg-icons';
 import { textToSpeechService } from '../../../services/tts';
 import { PrimaryButton } from '../Buttons/PrimaryButton';
-import s from './Start.module.css';
 import { useDispatch, useSelector } from 'react-redux';
 import { setPlaylist, play } from '../../../store/audioPlayerSlice';
 import * as pdfjsLib from 'pdfjs-dist';
@@ -216,6 +218,7 @@ export const Start = () => {
                 id="file-input"
               />
               <label htmlFor='file-input' className={s.fileInputLabel}>
+                <FontAwesomeIcon icon={faUpload} size="3x" />
                 {file ? file.name : 'Drag and drop a PDF file here, or click to select a file'}
               </label>
             </div>
