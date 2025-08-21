@@ -6,7 +6,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { setPlaylist, play } from '../../../store/audioPlayerSlice';
 import * as pdfjsLib from 'pdfjs-dist';
 import workerSrc from 'pdfjs-dist/build/pdf.worker?url';
-import { setPdfDocumentInfo, goToNextPage, goToPreviousPage, resetPdfState } from '../../../store/pdfReaderSlice';
+import { setPdfDocumentInfo, goToNextPage, resetPdfState } from '../../../store/pdfReaderSlice';
 import { RootState } from '../../../store';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
