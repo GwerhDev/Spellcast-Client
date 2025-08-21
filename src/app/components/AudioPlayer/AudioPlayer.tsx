@@ -91,8 +91,9 @@ export const AudioPlayer = (props: { userData: userData }) => {
 
   const handleEnded = () => {
     if (sourceType === 'pdfPage') {
-      // Optional: auto-play next page?
-      // dispatch(goToNextPage());
+      if (currentPage < totalPages) {
+        dispatch(goToNextPage());
+      }
     } else {
       dispatch(playNextAudio());
     }
