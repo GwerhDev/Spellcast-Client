@@ -20,15 +20,17 @@ const PdfReader = ({ file }: { file: File }) => {
 
   const { currentPage, totalPages, isLoaded } = useSelector((state: RootState) => state.pdfReader);
 
-  const loadPage = async (pdf: any, pageNumber: number) => {
+  const loadPage = async (pdf: any, pageNumber: number): Promise<string> => {
     setIsLoading(true);
     try {
       const page = await pdf.getPage(pageNumber);
       const content = await page.getTextContent();
       const extractedText = content.items.map((item: any) => item.str).join(' ');
       setText(extractedText);
+      return extractedText;
     } catch (error) {
       console.error('Error loading page:', error);
+      return '';
     } finally {
       setIsLoading(false);
     }
@@ -62,23 +64,24 @@ const PdfReader = ({ file }: { file: File }) => {
 
   useEffect(() => {
     if (pdfDoc) {
-      loadPage(pdfDoc, currentPage);
+      const fetchTextAndAudio = async () => {
+        setIsLoadingAudio(true);
+        try {
+          const newText = await loadPage(pdfDoc, currentPage);
+          if (newText) {
+            const audioUrl = await textToSpeechService({ text: newText });
+            dispatch(setPlaylist({ playlist: [audioUrl], startIndex: 0, sourceType: 'pdfPage' }));
+            dispatch(play());
+          }
+        } catch (error) {
+          console.error('Failed to generate audio for page', error);
+        } finally {
+          setIsLoadingAudio(false);
+        }
+      };
+      fetchTextAndAudio();
     }
   }, [pdfDoc, currentPage]);
-
-  const handleGenerateAudio = async () => {
-    if (!text || isLoadingAudio) return;
-    setIsLoadingAudio(true);
-    try {
-      const audioUrl = await textToSpeechService({ text });
-      dispatch(setPlaylist({ playlist: [audioUrl], startIndex: 0, sourceType: 'pdfPage' }));
-      dispatch(play());
-    } catch (error) {
-      console.error('Failed to generate audio for page', error);
-    } finally {
-      setIsLoadingAudio(false);
-    }
-  };
 
   return (
     <div className={s.pdfReaderContainer}>
@@ -97,14 +100,9 @@ const PdfReader = ({ file }: { file: File }) => {
             <span style={{ margin: '0 1rem' }}>
               Page {currentPage} of {totalPages}
             </span>
+            {isLoadingAudio && <span style={{ marginLeft: '1rem' }}>Generating audio...</span>}
           </div>
         )}
-
-        <div className={s.controlsContainer}>
-          <PrimaryButton onClick={handleGenerateAudio} disabled={!text || isLoading || isLoadingAudio}>
-            {isLoadingAudio ? 'Generating...' : 'Generate Audio for this Page'}
-          </PrimaryButton>
-        </div>
     </div>
   )
 }
