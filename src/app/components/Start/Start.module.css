@@ -59,10 +59,10 @@
 }
 
 .form {
+  gap: 1.5rem;
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
 }
 
 .textarea {
@@ -70,7 +70,6 @@
   min-height: 150px;
   padding: 1rem;
   border-radius: 8px;
-  border: 1px solid var(--color-dark-300);
   background-color: var(--color-dark-500);
   color: var(--color-light-100);
   resize: vertical;
@@ -91,11 +90,7 @@
 }
 
 .dropzone {
-  width: 100%;
-  padding: 2rem;
   border-radius: 8px;
-  border: 2px dashed var(--color-dark-300);
-  background-color: var(--color-dark-500);
   color: var(--color-light-300);
   cursor: pointer;
   transition: border-color 0.3s ease, background-color 0.3s ease;
@@ -105,12 +100,16 @@
 
 .dropzone.dragging {
   border-color: var(--color-primary);
-  background-color: var(--color-dark-400);
+  background-color: transparent;
 }
 
 .fileInputLabel {
-  cursor: pointer;
+  padding: 2rem;
   font-size: 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 2px dashed var(--color-dark-300);
+  background-color: var(--color-dark-500);
 }
 
 .pdfReaderContainer {
