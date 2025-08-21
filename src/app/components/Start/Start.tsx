@@ -218,7 +218,7 @@ export const Start = () => {
               />
               <label htmlFor='file-input' className={s.fileInputLabel}>
                 <FontAwesomeIcon icon={faUpload} size="3x" />
-                {file ? file.name : 'Drag and drop a PDF file here, or click to select a file'}
+                {'Drag and drop a PDF file here, or click to select a file'}
               </label>
             </div>
           )}
