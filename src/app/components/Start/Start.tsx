@@ -1,11 +1,11 @@
 import s from './Start.module.css';
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUpload } from '@fortawesome/free-solid-svg-icons';
 import { textToSpeechService } from '../../../services/tts';
 import { PrimaryButton } from '../Buttons/PrimaryButton';
 import { useDispatch, useSelector } from 'react-redux';
-import { setPlaylist, play } from '../../../store/audioPlayerSlice';
+import { setPlaylist, play, resetAudioPlayer } from '../../../store/audioPlayerSlice';
 import * as pdfjsLib from 'pdfjs-dist';
 import workerSrc from 'pdfjs-dist/build/pdf.worker?url';
 import { setPdfDocumentInfo, goToNextPage, resetPdfState } from '../../../store/pdfReaderSlice';
@@ -19,6 +19,8 @@ const PdfReader = ({ file }: { file: File }) => {
   const [isLoadingAudio, setIsLoadingAudio] = useState(false);
   const [pdfDoc, setPdfDoc] = useState<any>(null);
   const dispatch = useDispatch();
+
+  const pageProcessedRef = useRef(0);
 
   const { currentPage, totalPages, isLoaded } = useSelector((state: RootState) => state.pdfReader);
 
@@ -68,14 +70,16 @@ const PdfReader = ({ file }: { file: File }) => {
     if (pdfDoc) {
       const fetchTextAndAudio = async () => {
         setIsLoadingAudio(true);
+        dispatch(resetAudioPlayer());
         try {
           const newText = await loadPage(pdfDoc, currentPage);
 
           if (!newText || newText.trim() === '') {
-            if (currentPage < totalPages) {
+            // Only dispatch goToNextPage if it hasn't been dispatched for this page yet
+            if (pageProcessedRef.current !== currentPage && currentPage < totalPages) {
+              pageProcessedRef.current = currentPage; // Mark this page as processed
               dispatch(goToNextPage());
-            } else {
-              // If empty and it's the last page, stop loading audio
+            } else if (currentPage === totalPages) {
               setIsLoadingAudio(false);
             }
             return; // Skip audio generation for empty page
@@ -129,6 +133,7 @@ export const Start = () => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       setFile(e.target.files[0]);
+      dispatch(resetAudioPlayer());
     }
   };
 
