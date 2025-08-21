@@ -3,10 +3,9 @@
   padding: 0;
   height: 100%;
   padding-inline: .3rem;
-  flex-direction: column;
   display: flex;
   align-items: center;
-  padding-bottom: 1rem;
+  flex-direction: column;
 }
 
 .iconContainer {

@@ -181,3 +181,9 @@
   flex-direction: column;
   justify-content: center;
 }
+
+.pdfControls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}

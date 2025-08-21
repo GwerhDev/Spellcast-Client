@@ -1,15 +1,131 @@
-import { useState } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { textToSpeechService } from '../../../services/tts';
 import { PrimaryButton } from '../Buttons/PrimaryButton';
 import s from './Start.module.css';
 import { useDispatch } from 'react-redux';
 import { setPlaylist, play } from '../../../store/audioPlayerSlice';
+import * as pdfjsLib from 'pdfjs-dist';
+import workerSrc from 'pdfjs-dist/build/pdf.worker?url';
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
+
+const PdfReader = ({ file }: { file: File }) => {
+  const [text, setText] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingAudio, setIsLoadingAudio] = useState(false);
+  const [pdfDoc, setPdfDoc] = useState<any>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+  const dispatch = useDispatch();
+
+  const loadPage = async (pdf: any, pageNumber: number) => {
+    setIsLoading(true);
+    try {
+      const page = await pdf.getPage(pageNumber);
+      const content = await page.getTextContent();
+      const extractedText = content.items.map((item: any) => item.str).join(' ');
+      setText(extractedText);
+    } catch (error) {
+      console.error('Error loading page:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const loadPdfDocument = async () => {
+      setIsLoading(true);
+      const fileReader = new FileReader();
+      fileReader.onload = async () => {
+        try {
+          const typedArray = new Uint8Array(fileReader.result as ArrayBuffer);
+          const pdf = await pdfjsLib.getDocument({ data: typedArray }).promise;
+          setPdfDoc(pdf);
+          setTotalPages(pdf.numPages);
+          setCurrentPage(1);
+          await loadPage(pdf, 1);
+        } catch (error) {
+          console.error('Error reading PDF:', error);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      fileReader.readAsArrayBuffer(file);
+    };
+    loadPdfDocument();
+  }, [file]);
+
+  const goToPreviousPage = () => {
+    if (pdfDoc && currentPage > 1) {
+      const newPage = currentPage - 1;
+      setCurrentPage(newPage);
+      loadPage(pdfDoc, newPage);
+    }
+  };
+
+  const goToNextPage = () => {
+    if (pdfDoc && currentPage < totalPages) {
+      const newPage = currentPage + 1;
+      setCurrentPage(newPage);
+      loadPage(pdfDoc, newPage);
+    }
+  };
+
+  const handleGenerateAudio = async () => {
+    if (!text || isLoadingAudio) return;
+    setIsLoadingAudio(true);
+    try {
+      const audioUrl = await textToSpeechService({ text });
+      dispatch(setPlaylist({ playlist: [audioUrl], startIndex: 0 }));
+      dispatch(play());
+    } catch (error) {
+      console.error('Failed to generate audio for page', error);
+    } finally {
+      setIsLoadingAudio(false);
+    }
+  };
+
+  return (
+    <div className={s.pdfReaderContainer}>
+        <div className={s.textContainer}>
+          {isLoading ? (
+            <p>Loading page...</p>
+          ) : (
+            <div className={s.textContent}>
+              {text || 'Extracted text will appear here...'}
+            </div>
+          )}
+        </div>
+
+        {pdfDoc && (
+          <div className={s.navigationContainer}>
+            <button onClick={goToPreviousPage} disabled={currentPage === 1 || isLoading || isLoadingAudio}>
+              ⬅ Previous Page
+            </button>
+            <span style={{ margin: '0 1rem' }}>
+              Page {currentPage} of {totalPages}
+            </span>
+            <button onClick={goToNextPage} disabled={currentPage === totalPages || isLoading || isLoadingAudio}>
+              Next Page ➡
+            </button>
+          </div>
+        )}
+
+        <div className={s.controlsContainer}>
+          <PrimaryButton onClick={handleGenerateAudio} disabled={!text || isLoading || isLoadingAudio}>
+            {isLoadingAudio ? 'Generating...' : 'Generate Audio for this Page'}
+          </PrimaryButton>
+        </div>
+    </div>
+  )
+}
 
 export const Start = () => {
-  const [inputType, setInputType] = useState('text'); // 'text' or 'pdf'
+  const [inputType, setInputType] = useState('pdf'); // 'text' or 'pdf'
   const [text, setText] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const dispatch = useDispatch();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -17,6 +133,24 @@ export const Start = () => {
       setFile(e.target.files[0]);
     }
   };
+
+  const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      setFile(e.dataTransfer.files[0]);
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,16 +182,16 @@ export const Start = () => {
 
         <div className={s.tabs}>
           <button
-            className={`${s.tab} ${s.left} ${inputType === 'text' ? s.active : ''}`}
-            onClick={() => setInputType('text')}
-          >
-            Text
-          </button>
-          <button
-            className={`${s.tab} ${s.right} ${inputType === 'pdf' ? s.active : ''}`}
+            className={`${s.tab} ${s.left} ${inputType === 'pdf' ? s.active : ''}`}
             onClick={() => setInputType('pdf')}
           >
             PDF
+          </button>
+          <button
+            className={`${s.tab} ${s.right} ${inputType === 'text' ? s.active : ''}`}
+            onClick={() => setInputType('text')}
+          >
+            Text
           </button>
         </div>
 
@@ -71,19 +205,35 @@ export const Start = () => {
               disabled={isLoading}
             />
           ) : (
-            <input
-              type="file"
-              accept=".pdf"
-              onChange={handleFileChange}
-              disabled={isLoading}
-              className={s.fileInput}
-            />
+            <div
+              className={`${s.dropzone} ${isDragging ? s.dragging : ''}`}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+            >
+              <input
+                type="file"
+                accept=".pdf"
+                onChange={handleFileChange}
+                disabled={isLoading}
+                className={s.fileInput}
+                id="file-input"
+              />
+              <label htmlFor='file-input' className={s.fileInputLabel}>
+                {file ? file.name : 'Drag and drop a PDF file here, or click to select a file'}
+              </label>
+            </div>
           )}
-          <PrimaryButton type="submit" disabled={isLoading || (inputType === 'text' ? !text : !file)}>
-            {isLoading ? 'Generating Audio...' : 'Generate Audio'}
-          </PrimaryButton>
+          {file && inputType === 'pdf' && <PdfReader file={file} />}
+          {inputType === 'text' &&
+            <PrimaryButton type="submit" disabled={isLoading || (inputType === 'text' ? !text : !file)}>
+              {isLoading ? 'Generating Audio...' : 'Generate Audio'}
+            </PrimaryButton>
+          }
         </form>
       </div>
     </div>
   );
 };
+
+
