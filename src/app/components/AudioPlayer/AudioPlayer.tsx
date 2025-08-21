@@ -145,7 +145,7 @@ export const AudioPlayer = (props: { userData: userData }) => {
         <ProfileButton userData={userData} />
       </section>
 
-      <section>
+      <section className={s.controlsContainer}>
         <div className={s.progressBarContainer}>
           <input
             type="range"

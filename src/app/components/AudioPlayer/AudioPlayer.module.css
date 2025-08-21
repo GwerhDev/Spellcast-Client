@@ -70,6 +70,10 @@
   margin-top: 5px;
 }
 
+.controlsContainer {
+  min-width: 200px;
+}
+
 .controls {
   display: flex;
   gap: 15px;
