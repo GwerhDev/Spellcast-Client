@@ -38,6 +38,8 @@ export const AudioPlayer = (props: { userData: userData }) => {
   const [lastVolume, setLastVolume] = useState(volume);
   const [isMobile, setIsMobile] = useState(false);
   const [showMobileVolumeSlider, setShowMobileVolumeSlider] = useState(false);
+  const mobileVolumeSliderRef = useRef<HTMLDivElement>(null);
+  const mobileVolumeButtonRef = useRef<HTMLButtonElement>(null);
   const currentTrackUrl = currentTrackIndex !== null ? playlist[currentTrackIndex] : null;
   const progressPercentage = duration > 0 ? (currentTime / duration) * 100 : 0;
   const volumePercentage = volume * 100;
@@ -54,6 +56,26 @@ export const AudioPlayer = (props: { userData: userData }) => {
       window.removeEventListener('resize', checkIsMobile);
     };
   }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        showMobileVolumeSlider &&
+        mobileVolumeSliderRef.current &&
+        !mobileVolumeSliderRef.current.contains(event.target as Node) &&
+        mobileVolumeButtonRef.current &&
+        !mobileVolumeButtonRef.current.contains(event.target as Node)
+      ) {
+        setShowMobileVolumeSlider(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showMobileVolumeSlider]);
 
   useEffect(() => {
     if (audioRef.current) {
@@ -214,11 +236,11 @@ export const AudioPlayer = (props: { userData: userData }) => {
           </div>
         ) : (
           <div className={s.mobileVolumeControlContainer}>
-            <button className={s.volumeIcon} onClick={() => setShowMobileVolumeSlider(!showMobileVolumeSlider)}>
+            <button className={s.volumeIcon} onClick={() => setShowMobileVolumeSlider(!showMobileVolumeSlider)} ref={mobileVolumeButtonRef}>
               <FontAwesomeIcon icon={volume === 0 ? faVolumeMute : faVolumeUp} />
             </button>
             {showMobileVolumeSlider && (
-              <div className={s.mobileVolumeSliderWrapper} style={{ '--volume-value': `${volumePercentage}%` } as React.CSSProperties}>
+              <div className={s.mobileVolumeSliderWrapper} style={{ '--volume-value': `${volumePercentage}%` } as React.CSSProperties} ref={mobileVolumeSliderRef}>
                 <input
                   type="range"
                   min="0"
