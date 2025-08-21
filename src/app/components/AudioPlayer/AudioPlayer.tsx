@@ -99,7 +99,7 @@ export const AudioPlayer = (props: { userData: userData }) => {
   };
 
   const handlePrevious = () => {
-    if (sourceType === 'pdfPage') {
+    if (isPdfLoaded) {
       dispatch(goToPreviousPage());
     } else {
       dispatch(playPreviousAudio());
@@ -107,7 +107,7 @@ export const AudioPlayer = (props: { userData: userData }) => {
   };
 
   const handleNext = () => {
-    if (sourceType === 'pdfPage') {
+    if (isPdfLoaded) {
       dispatch(goToNextPage());
     } else {
       dispatch(playNextAudio());
@@ -129,8 +129,8 @@ export const AudioPlayer = (props: { userData: userData }) => {
     return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
   };
 
-  const isPrevDisabled = sourceType === 'pdfPage' ? !isPdfLoaded || currentPage === 1 : currentTrackIndex === 0;
-  const isNextDisabled = sourceType === 'pdfPage' ? !isPdfLoaded || currentPage === totalPages : currentTrackIndex === playlist.length - 1;
+  const isPrevDisabled = isPdfLoaded ? currentPage === 1 : currentTrackIndex === 0;
+  const isNextDisabled = isPdfLoaded ? currentPage === totalPages : currentTrackIndex === (playlist.length - 1);
 
   return (
     <div className={s.audioPlayerContainer}>
