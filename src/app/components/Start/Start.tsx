@@ -16,7 +16,6 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 const PdfReader = ({ file }: { file: File }) => {
   const [text, setText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isLoadingAudio, setIsLoadingAudio] = useState(false);
   const [pdfDoc, setPdfDoc] = useState<any>(null);
   const dispatch = useDispatch();
 
@@ -69,7 +68,6 @@ const PdfReader = ({ file }: { file: File }) => {
   useEffect(() => {
     if (pdfDoc) {
       const fetchTextAndAudio = async () => {
-        setIsLoadingAudio(true);
         dispatch(resetAudioPlayer());
         try {
           const newText = await loadPage(pdfDoc, currentPage);
@@ -79,8 +77,6 @@ const PdfReader = ({ file }: { file: File }) => {
             if (pageProcessedRef.current !== currentPage && currentPage < totalPages) {
               pageProcessedRef.current = currentPage; // Mark this page as processed
               dispatch(goToNextPage());
-            } else if (currentPage === totalPages) {
-              setIsLoadingAudio(false);
             }
             return; // Skip audio generation for empty page
           }
@@ -90,8 +86,6 @@ const PdfReader = ({ file }: { file: File }) => {
           dispatch(play());
         } catch (error) {
           console.error('Failed to generate audio for page', error);
-        } finally {
-          setIsLoadingAudio(false);
         }
       };
       fetchTextAndAudio();
@@ -100,24 +94,22 @@ const PdfReader = ({ file }: { file: File }) => {
 
   return (
     <div className={s.pdfReaderContainer}>
-        <div className={s.textContainer}>
-          {isLoading ? (
-            <p>Loading page...</p>
-          ) : (
-            <div className={s.textContent}>
-              {text || 'Extracted text will appear here...'}
-            </div>
-          )}
+      {isLoaded && (
+        <div className={s.pageInfoContainer}>
+          <span style={{ margin: '0 1rem' }}>
+            Page {currentPage} of {totalPages}
+          </span>
         </div>
-
-        {isLoaded && (
-          <div className={s.pageInfoContainer}>
-            <span style={{ margin: '0 1rem' }}>
-              Page {currentPage} of {totalPages}
-            </span>
-            {isLoadingAudio && <span style={{ marginLeft: '1rem' }}>Generating audio...</span>}
+      )}
+      <div className={s.textContainer}>
+        {isLoading ? (
+          <p>Loading page...</p>
+        ) : (
+          <div className={s.textContent}>
+            {text || 'Extracted text will appear here...'}
           </div>
         )}
+      </div>
     </div>
   )
 }
@@ -208,7 +200,9 @@ export const Start = () => {
               disabled={isLoading}
             />
           ) : (
-            <div
+
+            !file &&
+            < div
               className={`${s.dropzone} ${isDragging ? s.dragging : ''}`}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
@@ -235,8 +229,8 @@ export const Start = () => {
             </PrimaryButton>
           }
         </form>
-      </div>
-    </div>
+      </div >
+    </div >
   );
 };
 
