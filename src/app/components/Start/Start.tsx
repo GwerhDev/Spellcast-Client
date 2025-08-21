@@ -68,11 +68,20 @@ const PdfReader = ({ file }: { file: File }) => {
         setIsLoadingAudio(true);
         try {
           const newText = await loadPage(pdfDoc, currentPage);
-          if (newText) {
-            const audioUrl = await textToSpeechService({ text: newText });
-            dispatch(setPlaylist({ playlist: [audioUrl], startIndex: 0, sourceType: 'pdfPage' }));
-            dispatch(play());
+
+          if (!newText || newText.trim() === '') {
+            if (currentPage < totalPages) {
+              dispatch(goToNextPage());
+            } else {
+              // If empty and it's the last page, stop loading audio
+              setIsLoadingAudio(false);
+            }
+            return; // Skip audio generation for empty page
           }
+
+          const audioUrl = await textToSpeechService({ text: newText });
+          dispatch(setPlaylist({ playlist: [audioUrl], startIndex: 0, sourceType: 'pdfPage' }));
+          dispatch(play());
         } catch (error) {
           console.error('Failed to generate audio for page', error);
         } finally {
@@ -81,7 +90,7 @@ const PdfReader = ({ file }: { file: File }) => {
       };
       fetchTextAndAudio();
     }
-  }, [pdfDoc, currentPage]);
+  }, [pdfDoc, currentPage, totalPages, dispatch]);
 
   return (
     <div className={s.pdfReaderContainer}>
