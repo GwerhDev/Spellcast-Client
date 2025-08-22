@@ -3,6 +3,7 @@ import sessionReducer from './sessionSlice';
 import apiResponsesReducer from './apiResponsesSlice';
 import audioPlayerReducer from './audioPlayerSlice';
 import pdfReaderReducer from './pdfReaderSlice';
+import voiceReducer from './voiceSlice';
 
 export const store = configureStore({
   reducer: {
@@ -10,6 +11,7 @@ export const store = configureStore({
     apiResponses: apiResponsesReducer,
     audioPlayer: audioPlayerReducer,
     pdfReader: pdfReaderReducer,
+    voice: voiceReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

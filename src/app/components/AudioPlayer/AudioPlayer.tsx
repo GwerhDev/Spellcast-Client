@@ -12,14 +12,16 @@ import {
 import { goToNextPage, goToPreviousPage } from '../../../store/pdfReaderSlice';
 import s from './AudioPlayer.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlay, faPause, faStepBackward, faStepForward, faVolumeUp, faVolumeMute } from '@fortawesome/free-solid-svg-icons';
+import { faPlay, faPause, faStepBackward, faStepForward, faVolumeUp, faVolumeMute, faMicrophone } from '@fortawesome/free-solid-svg-icons';
 import { ProfileButton } from '../Buttons/ProfileButton';
 import { userData } from '../../../interfaces';
+import { setSelectedVoice } from '../../../store/voiceSlice';
 
 export const AudioPlayer = (props: { userData: userData }) => {
   const { userData } = props || {};
   const audioRef = useRef<HTMLAudioElement>(null);
   const dispatch = useDispatch();
+  const { selectedVoice, voices } = useSelector((state: RootState) => state.voice);
   const {
     playlist,
     currentTrackIndex,
@@ -38,8 +40,11 @@ export const AudioPlayer = (props: { userData: userData }) => {
   const [lastVolume, setLastVolume] = useState(volume);
   const [isMobile, setIsMobile] = useState(false);
   const [showMobileVolumeSlider, setShowMobileVolumeSlider] = useState(false);
+  const [showVoiceSelector, setShowVoiceSelector] = useState(false);
   const mobileVolumeSliderRef = useRef<HTMLDivElement>(null);
   const mobileVolumeButtonRef = useRef<HTMLButtonElement>(null);
+  const voiceSelectorRef = useRef<HTMLDivElement>(null);
+  const voiceButtonRef = useRef<HTMLButtonElement>(null);
   const currentTrackUrl = currentTrackIndex !== null ? playlist[currentTrackIndex] : null;
   const progressPercentage = duration > 0 ? (currentTime / duration) * 100 : 0;
   const volumePercentage = volume * 100;
@@ -76,6 +81,26 @@ export const AudioPlayer = (props: { userData: userData }) => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [showMobileVolumeSlider]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        showVoiceSelector &&
+        voiceSelectorRef.current &&
+        !voiceSelectorRef.current.contains(event.target as Node) &&
+        voiceButtonRef.current &&
+        !voiceButtonRef.current.contains(event.target as Node)
+      ) {
+        setShowVoiceSelector(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showVoiceSelector]);
 
   useEffect(() => {
     if (audioRef.current) {
@@ -220,6 +245,31 @@ export const AudioPlayer = (props: { userData: userData }) => {
       <section>
         {!isMobile ? (
           <div className={s.volumeControlContainer}>
+            <div className={s.voiceSelectorContainer}>
+              <button
+                className={s.voiceButton}
+                onClick={() => setShowVoiceSelector(!showVoiceSelector)}
+                ref={voiceButtonRef}
+              >
+                <FontAwesomeIcon icon={faMicrophone} />
+              </button>
+              {showVoiceSelector && (
+                <div className={s.voiceDropdown} ref={voiceSelectorRef}>
+                  {voices.map((voiceOption) => (
+                    <button
+                      key={voiceOption.value}
+                      className={`${s.voiceOption} ${selectedVoice === voiceOption.value ? s.activeVoice : ''}`}
+                      onClick={() => {
+                        dispatch(setSelectedVoice(voiceOption.value));
+                        setShowVoiceSelector(false);
+                      }}
+                    >
+                      {voiceOption.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             <button className={s.volumeIcon} onClick={handleVolumeToggle}>
               <FontAwesomeIcon icon={volume === 0 ? faVolumeMute : faVolumeUp} />
             </button>
@@ -236,6 +286,31 @@ export const AudioPlayer = (props: { userData: userData }) => {
           </div>
         ) : (
           <div className={s.mobileVolumeControlContainer}>
+            <div className={s.voiceSelectorContainer}>
+              <button
+                className={s.voiceButton}
+                onClick={() => setShowVoiceSelector(!showVoiceSelector)}
+                ref={voiceButtonRef}
+              >
+                <FontAwesomeIcon icon={faMicrophone} />
+              </button>
+              {showVoiceSelector && (
+                <div className={s.voiceDropdown} ref={voiceSelectorRef}>
+                  {voices.map((voiceOption) => (
+                    <button
+                      key={voiceOption.value}
+                      className={`${s.voiceOption} ${selectedVoice === voiceOption.value ? s.activeVoice : ''}`}
+                      onClick={() => {
+                        dispatch(setSelectedVoice(voiceOption.value));
+                        setShowVoiceSelector(false);
+                      }}
+                    >
+                      {voiceOption.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             <button className={s.volumeIcon} onClick={() => setShowMobileVolumeSlider(!showMobileVolumeSlider)} ref={mobileVolumeButtonRef}>
               <FontAwesomeIcon icon={volume === 0 ? faVolumeMute : faVolumeUp} />
             </button>

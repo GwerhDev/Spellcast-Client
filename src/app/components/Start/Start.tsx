@@ -115,18 +115,13 @@ const PdfReader = ({ file, selectedVoice }: { file: File, selectedVoice: string 
 }
 
 export const Start = () => {
-  const voices = [
-    { name: 'Lorenzo (Spanish Chile, Male)', value: 'es-CL-LorenzoNeural' },
-    { name: 'Catalina (Spanish Chile, Female)', value: 'es-CL-CatalinaNeural' },
-  ];
-
   const [inputType, setInputType] = useState('pdf'); // 'text' or 'pdf'
   const [text, setText] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedVoice, setSelectedVoice] = useState(voices[0].value);
   const [isDragging, setIsDragging] = useState(false);
   const dispatch = useDispatch();
+  const { selectedVoice } = useSelector((state: RootState) => state.voice);
 
   const generateAudio = useCallback(async (textToSpeak: string, voice: string) => {
     setIsLoading(true);
@@ -203,21 +198,7 @@ export const Start = () => {
           </button>
         </div>
 
-        <div className={s.voiceSelector}>
-          <label htmlFor="voice-select">Select Voice:</label>
-          <select
-            id="voice-select"
-            value={selectedVoice}
-            onChange={(e) => setSelectedVoice(e.target.value)}
-            disabled={isLoading}
-          >
-            {voices.map((voice) => (
-              <option key={voice.value} value={voice.value}>
-                {voice.name}
-              </option>
-            ))}
-          </select>
-        </div>
+        
 
         <form onSubmit={handleSubmit} className={s.form}>
           {inputType === 'text' ? (
