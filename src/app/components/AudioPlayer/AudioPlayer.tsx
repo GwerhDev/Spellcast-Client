@@ -11,9 +11,9 @@ import {
 } from '../../../store/audioPlayerSlice';
 import { goToNextPage, goToPreviousPage } from '../../../store/pdfReaderSlice';
 import s from './AudioPlayer.module.css';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlay, faPause, faStepBackward, faStepForward, faVolumeUp, faVolumeMute, faMicrophone } from '@fortawesome/free-solid-svg-icons';
 import { ProfileButton } from '../Buttons/ProfileButton';
+import { PlaybackControls } from './PlaybackControls/PlaybackControls';
+import { VolumeVoiceControls } from './VolumeVoiceControls/VolumeVoiceControls';
 import { userData } from '../../../interfaces';
 import { setSelectedVoice } from '../../../store/voiceSlice';
 
@@ -207,129 +207,40 @@ export const AudioPlayer = (props: { userData: userData }) => {
         <ProfileButton userData={userData} />
       </section>
 
-      <section className={s.controlsContainer}>
-        <div className={s.progressBarContainer}>
-          <input
-            type="range"
-            min="0"
-            max={duration}
-            step="0.01"
-            value={currentTime}
-            onChange={(e) => {
-              if (audioRef.current) {
-                audioRef.current.currentTime = parseFloat(e.target.value);
-              }
-              dispatch(setCurrentTime(parseFloat(e.target.value)));
-            }}
-            className={s.progressBar}
-            style={{ '--progress-value': `${progressPercentage}%` } as React.CSSProperties}
-          />
-          <div className={s.timeDisplay}>
-            <span>{formatTime(currentTime)}</span>
-            <span>{formatTime(duration)}</span>
-          </div>
-        </div>
-        <div className={s.controls}>
-          <button onClick={handlePrevious} disabled={isPrevDisabled} className={s.controlButton}>
-            <FontAwesomeIcon icon={faStepBackward} />
-          </button>
-          <button onClick={() => dispatch(togglePlayPause())} disabled={currentTrackIndex === null} className={s.playPauseButton} style={currentTrackIndex === null ? { opacity: '0.5', cursor: 'not-allowed' } : {}}>
-            <FontAwesomeIcon icon={isPlaying ? faPause : faPlay} />
-          </button>
-          <button onClick={handleNext} disabled={isNextDisabled} className={s.controlButton}>
-            <FontAwesomeIcon icon={faStepForward} />
-          </button>
-        </div>
-      </section>
+      <PlaybackControls
+        audioRef={audioRef}
+        currentTime={currentTime}
+        duration={duration}
+        progressPercentage={progressPercentage}
+        handlePrevious={handlePrevious}
+        handleNext={handleNext}
+        isPlaying={isPlaying}
+        isPrevDisabled={isPrevDisabled}
+        isNextDisabled={isNextDisabled}
+        currentTrackIndex={currentTrackIndex}
+        formatTime={formatTime}
+        togglePlayPause={() => dispatch(togglePlayPause())}
+        setCurrentTime={(time) => dispatch(setCurrentTime(time))}
+      />
 
-      <section>
-        {!isMobile ? (
-          <div className={s.volumeControlContainer}>
-            <div className={s.voiceSelectorContainer}>
-              <button
-                className={s.voiceButton}
-                onClick={() => setShowVoiceSelector(!showVoiceSelector)}
-                ref={voiceButtonRef}
-              >
-                <FontAwesomeIcon icon={faMicrophone} />
-              </button>
-              {showVoiceSelector && (
-                <div className={s.voiceDropdown} ref={voiceSelectorRef}>
-                  {voices.map((voiceOption) => (
-                    <button
-                      key={voiceOption.value}
-                      className={`${s.voiceOption} ${selectedVoice === voiceOption.value ? s.activeVoice : ''}`}
-                      onClick={() => {
-                        dispatch(setSelectedVoice(voiceOption.value));
-                        setShowVoiceSelector(false);
-                      }}
-                    >
-                      {voiceOption.name}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-            <button className={s.volumeIcon} onClick={handleVolumeToggle}>
-              <FontAwesomeIcon icon={volume === 0 ? faVolumeMute : faVolumeUp} />
-            </button>
-            <div className={s.volumeSliderWrapper} style={{ '--volume-value': `${volumePercentage}%` } as React.CSSProperties}>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.01"
-                value={volume}
-                onChange={(e) => dispatch(setVolume(parseFloat(e.target.value)))}>
-              </input>
-            </div>
-          </div>
-        ) : (
-          <div className={s.mobileVolumeControlContainer}>
-            <div className={s.voiceSelectorContainer}>
-              <button
-                className={s.voiceButton}
-                onClick={() => setShowVoiceSelector(!showVoiceSelector)}
-                ref={voiceButtonRef}
-              >
-                <FontAwesomeIcon icon={faMicrophone} />
-              </button>
-              {showVoiceSelector && (
-                <div className={s.voiceDropdown} ref={voiceSelectorRef}>
-                  {voices.map((voiceOption) => (
-                    <button
-                      key={voiceOption.value}
-                      className={`${s.voiceOption} ${selectedVoice === voiceOption.value ? s.activeVoice : ''}`}
-                      onClick={() => {
-                        dispatch(setSelectedVoice(voiceOption.value));
-                        setShowVoiceSelector(false);
-                      }}
-                    >
-                      {voiceOption.name}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-            <button className={s.volumeIcon} onClick={() => setShowMobileVolumeSlider(!showMobileVolumeSlider)} ref={mobileVolumeButtonRef}>
-              <FontAwesomeIcon icon={volume === 0 ? faVolumeMute : faVolumeUp} />
-            </button>
-            {showMobileVolumeSlider && (
-              <div className={s.mobileVolumeSliderWrapper} style={{ '--volume-value': `${volumePercentage}%` } as React.CSSProperties} ref={mobileVolumeSliderRef}>
-                <input
-                  type="range"
-                  min="0"
-                  max="1"
-                  step="0.01"
-                  value={volume}
-                  onChange={(e) => dispatch(setVolume(parseFloat(e.target.value)))}
-                  className={s.verticalSlider}>
-                </input>
-              </div>
-            )}
-          </div>
-        )}
-      </section>
+      <VolumeVoiceControls
+        volume={volume}
+        handleVolumeToggle={handleVolumeToggle}
+        volumePercentage={volumePercentage}
+        isMobile={isMobile}
+        showMobileVolumeSlider={showMobileVolumeSlider}
+        setShowMobileVolumeSlider={setShowMobileVolumeSlider}
+        mobileVolumeSliderRef={mobileVolumeSliderRef}
+        mobileVolumeButtonRef={mobileVolumeButtonRef}
+        showVoiceSelector={showVoiceSelector}
+        setShowVoiceSelector={setShowVoiceSelector}
+        voiceSelectorRef={voiceSelectorRef}
+        voiceButtonRef={voiceButtonRef}
+        selectedVoice={selectedVoice}
+        voices={voices}
+        setVolume={(vol) => dispatch(setVolume(vol))}
+        setSelectedVoice={(voice) => dispatch(setSelectedVoice(voice))}
+      />
     </div>
   );
 };

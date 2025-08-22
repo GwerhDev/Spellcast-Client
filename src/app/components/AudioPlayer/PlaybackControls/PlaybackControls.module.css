@@ -1,0 +1,105 @@
+.progressBarContainer {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.progressBar {
+  width: 100%;
+  height: 4px;
+  background: var(--color-dark-500);
+  outline: none;
+  border-radius: 5px;
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+}
+
+.progressBar::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 8px;
+  background: linear-gradient(to right, var(--color-primary) var(--progress-value), var(--color-dark-500) var(--progress-value));
+  border-radius: 5px;
+}
+
+.progressBar::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 0;
+  height: 0;
+  background: transparent;
+  border: none;
+}
+
+.progressBar::-moz-range-track {
+  width: 100%;
+  height: 8px;
+  background: linear-gradient(to right, var(--color-primary) var(--progress-value), var(--color-dark-500) var(--progress-value));
+  border-radius: 5px;
+}
+
+.progressBar::-moz-range-thumb {
+  width: 0;
+  height: 0;
+  background: transparent;
+  border: none;
+}
+
+.timeDisplay {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  margin-top: 5px;
+}
+
+.controlsContainer {
+  min-width: 200px;
+}
+
+.controls {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.controlButton {
+  background-color: transparent;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 18px;
+  transition: color 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.controlButton:hover {
+  color: var(--color-primary);
+  background-color: transparent;
+}
+
+.playPauseButton {
+  background-color: var(--color-primary);
+  color: var(--color-light-100);
+  border: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 18px;
+  transition: background-color 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.playPauseButton:hover {
+  background-color: var(--color-button-primary-hover);
+}

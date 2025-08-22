@@ -1,0 +1,180 @@
+.volumeControlContainer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 15px;
+}
+
+.volumeIcon {
+  padding: 10px;
+  font-size: 20px;
+  border: none;
+  cursor: pointer;
+  transition: color 0.3s ease;
+  background-color: transparent;
+}
+
+.volumeIcon:hover {
+  color: var(--color-primary);
+  background-color: transparent;
+}
+
+.volumeSliderWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100px;
+}
+
+.volumeSliderWrapper input[type="range"] {
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(to right, var(--color-primary) var(--volume-value), var(--color-dark-500) var(--volume-value));
+  outline: none;
+  border-radius: 5px;
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+}
+
+.volumeSliderWrapper input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 1px;
+  height: 1px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.volumeSliderWrapper input[type="range"]::-moz-range-thumb {
+  cursor: pointer;
+}
+
+.voiceSelectorContainer {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.voiceButton {
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 20px;
+  padding: 10px;
+  transition: color 0.3s ease;
+}
+
+.voiceButton:hover {
+  color: var(--color-primary);
+  background-color: transparent;
+}
+
+.voiceDropdown {
+  display: flex;
+  position: absolute;
+  flex-direction: column;
+  right: 0;
+  bottom: 100%;
+  z-index: 10;
+  padding: 10px;
+  min-width: 200px;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  background-color: var(--color-dark-900);
+}
+
+.voiceOption {
+  background-color: transparent;
+  border: none;
+  color: var(--color-light-100);
+  padding: 8px 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  border-radius: 4px;
+}
+
+.voiceOption:hover {
+  background-color: var(--color-dark-700);
+}
+
+.voiceOption.activeVoice {
+  background-color: var(--color-primary);
+  color: var(--color-light-100);
+}
+
+/* Mobile styles */
+@media (max-width: 768px) {
+  .volumeControlContainer {
+    display: none;
+  }
+
+  .mobileVolumeControlContainer {
+    display: flex;
+    position: relative;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 15px;
+  }
+
+  .mobileVolumeSliderWrapper {
+    position: absolute;
+    bottom: 50px;
+    right: 0;
+    width: 40px;
+    height: 150px;
+    background-color: var(--color-dark-800);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 0;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+    z-index: 10;
+  }
+
+  .verticalSlider {
+    width: 100px;
+    height: 4px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    outline: none;
+    transform: rotate(-90deg);
+    transform-origin: 50% 50%;
+  }
+
+  .verticalSlider::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 8px;
+    background: linear-gradient(to right, var(--color-primary) var(--volume-value), var(--color-dark-500) var(--volume-value));
+    border-radius: 5px;
+  }
+
+  .verticalSlider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: var(--color-primary);
+    border-radius: 50%;
+    cursor: pointer;
+    margin-top: -4px;
+  }
+
+  .verticalSlider::-moz-range-track {
+    width: 100%;
+    height: 8px;
+    background: linear-gradient(to right, var(--color-primary) var(--volume-value), var(--color-dark-500) var(--volume-value));
+    border-radius: 5px;
+  }
+
+  .verticalSlider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    background: var(--color-primary);
+    border-radius: 50%;
+    cursor: pointer;
+  }
+}
