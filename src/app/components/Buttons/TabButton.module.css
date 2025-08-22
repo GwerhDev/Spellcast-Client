@@ -24,7 +24,8 @@
   color: var(--color-primary);
 }
 
-.selected::before {
+.selected::before,
+.selected::after {
   content: "";
   position: absolute;
   top: calc(50% - 1px); /* half of height */
@@ -35,6 +36,10 @@
   border-radius: 2px;
   box-shadow: 0 0 5px var(--color-primary);
   animation: orbit 4s linear infinite;
+}
+
+.selected::after {
+  animation-delay: -2s; /* Starts the 2nd comet opposite the first */
 }
 
 @keyframes orbit {
