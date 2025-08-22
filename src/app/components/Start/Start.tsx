@@ -13,7 +13,7 @@ import { RootState } from '../../../store';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
-const PdfReader = ({ file }: { file: File }) => {
+const PdfReader = ({ file, selectedVoice }: { file: File, selectedVoice: string }) => {
   const [text, setText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [pdfDoc, setPdfDoc] = useState<any>(null);
@@ -81,7 +81,7 @@ const PdfReader = ({ file }: { file: File }) => {
             return; // Skip audio generation for empty page
           }
 
-          const audioUrl = await textToSpeechService({ text: newText });
+          const audioUrl = await textToSpeechService({ text: newText, voice: selectedVoice });
           dispatch(setPlaylist({ playlist: [audioUrl], startIndex: 0, sourceType: 'pdfPage' }));
           dispatch(play());
         } catch (error) {
@@ -90,7 +90,7 @@ const PdfReader = ({ file }: { file: File }) => {
       };
       fetchTextAndAudio();
     }
-  }, [pdfDoc, currentPage, totalPages, dispatch]);
+  }, [pdfDoc, currentPage, totalPages, dispatch, selectedVoice]);
 
   return (
     <div className={s.pdfReaderContainer}>
@@ -115,12 +115,31 @@ const PdfReader = ({ file }: { file: File }) => {
 }
 
 export const Start = () => {
+  const voices = [
+    { name: 'Lorenzo (Spanish Chile, Male)', value: 'es-CL-LorenzoNeural' },
+    { name: 'Catalina (Spanish Chile, Female)', value: 'es-CL-CatalinaNeural' },
+  ];
+
   const [inputType, setInputType] = useState('pdf'); // 'text' or 'pdf'
   const [text, setText] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedVoice, setSelectedVoice] = useState(voices[0].value);
   const [isDragging, setIsDragging] = useState(false);
   const dispatch = useDispatch();
+
+  const generateAudio = useCallback(async (textToSpeak: string, voice: string) => {
+    setIsLoading(true);
+    try {
+      const audioUrl = await textToSpeechService({ text: textToSpeak, voice });
+      dispatch(setPlaylist({ playlist: [audioUrl], startIndex: 0 }));
+      dispatch(play());
+    } catch (error) {
+      console.error('Failed to generate audio', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [dispatch]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -149,25 +168,19 @@ export const Start = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
 
-    let data = {};
     if (inputType === 'pdf' && file) {
-      data = { file: file.name };
-    } else {
-      data = { text };
-    }
-
-    try {
-      const audioUrl = await textToSpeechService(data);
-      dispatch(setPlaylist({ playlist: [audioUrl], startIndex: 0 }));
-      dispatch(play());
-    } catch (error) {
-      console.error('Failed to generate audio', error);
-    } finally {
-      setIsLoading(false);
+      // PDF handling is done by PdfReader component
+    } else if (inputType === 'text') {
+      await generateAudio(text, selectedVoice);
     }
   };
+
+  useEffect(() => {
+    if (inputType === 'text' && text.trim() !== '') {
+      generateAudio(text, selectedVoice);
+    }
+  }, [selectedVoice, inputType, text, generateAudio]);
 
   return (
     <div className={s.container}>
@@ -188,6 +201,22 @@ export const Start = () => {
           >
             Text
           </button>
+        </div>
+
+        <div className={s.voiceSelector}>
+          <label htmlFor="voice-select">Select Voice:</label>
+          <select
+            id="voice-select"
+            value={selectedVoice}
+            onChange={(e) => setSelectedVoice(e.target.value)}
+            disabled={isLoading}
+          >
+            {voices.map((voice) => (
+              <option key={voice.value} value={voice.value}>
+                {voice.name}
+              </option>
+            ))}
+          </select>
         </div>
 
         <form onSubmit={handleSubmit} className={s.form}>
@@ -222,7 +251,7 @@ export const Start = () => {
               </label>
             </div>
           )}
-          {file && inputType === 'pdf' && <PdfReader file={file} />}
+          {file && inputType === 'pdf' && <PdfReader file={file} selectedVoice={selectedVoice} />}
           {inputType === 'text' &&
             <PrimaryButton type="submit" disabled={isLoading || (inputType === 'text' ? !text : !file)}>
               {isLoading ? 'Generating Audio...' : 'Generate Audio'}
