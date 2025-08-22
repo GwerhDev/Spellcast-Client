@@ -1,0 +1,74 @@
+.pdfReaderContainer {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.textContainer {
+  width: 100%;
+  min-height: 120px;
+  max-height: 500px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  background-color: var(--color-dark-500);
+  border: 1px solid var(--color-dark-300);
+  border-radius: 8px;
+  padding: 1rem;
+  color: var(--color-light-100);
+}
+
+.textContent {
+  text-align: left;
+}
+
+.pageInfoContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.navigationContainer {
+  margin-top: 1rem;
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  align-items: center;
+}
+
+.navigationContainer button {
+  padding: 0.5rem 1rem;
+  border: none;
+  background-color: var(--color-primary);
+  color: var(--color-light-100);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.navigationContainer button:disabled {
+  background-color: var(--color-dark-300);
+  cursor: not-allowed;
+}
+
+.controlsContainer {
+  margin-top: 1rem;
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.controlsContainer button {
+  padding: 0.5rem 1rem;
+  border: none;
+  background-color: var(--color-primary);
+  color: var(--color-light-100);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.controlsContainer button:disabled {
+  background-color: var(--color-dark-300);
+  cursor: not-allowed;
+}
