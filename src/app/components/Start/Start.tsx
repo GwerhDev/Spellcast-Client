@@ -172,10 +172,9 @@ export const Start = () => {
   };
 
   useEffect(() => {
-    if (inputType === 'text' && text.trim() !== '') {
-      generateAudio(text, selectedVoice);
-    }
-  }, [selectedVoice, inputType, text, generateAudio]);
+    // This useEffect is no longer responsible for triggering audio generation on text change.
+    // Audio generation for text input is now solely triggered by the "Generate Audio" button click via handleSubmit.
+  }, [selectedVoice, inputType, generateAudio]);
 
   return (
     <div className={s.container}>
