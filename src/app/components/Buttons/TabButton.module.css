@@ -1,5 +1,4 @@
-.container,
-.containerSkeleton {
+.container {
   margin: 0;
   width: 50px;
   height: 50px;
@@ -15,66 +14,35 @@
   background-color: transparent;
 }
 
-.containerSkeleton {
-  cursor: default;
-  border-radius: 100%;
-  overflow: hidden;
-}
-
 .container:hover {
   background-color: transparent;
   color: var(--color-primary);
 }
 
-.container span {
-  height: 100%;
-  aspect-ratio: 1/1;
-  object-fit: cover;
-  border-radius: 100%;
-  display: flex;
-  overflow: hidden;
-  align-items: center;
-  justify-content: center;
-  padding: .5rem;
-}
-
 .selected {
-  border: solid .15rem;
-  border-color: var(--color-primary);
-}
-
-.image {
-  height: 100%;
-  aspect-ratio: 1/1;
-  object-fit: cover;
-  opacity: .7;
-}
-
-.defaultImage,
-.defaultImageSkeleton {
-  color: white;
-  opacity: .7;
-  font-weight: 900;
-  font-size: 1.4rem;
-  text-transform: uppercase;
-}
-
-.defaultImageSkeleton {
-  border-radius: 100%;
-  overflow: hidden;
-}
-
-.dbTypeIcon {
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  background-color: var(--color-dark-400);
-  border-radius: 50%;
-  padding: 0.2rem;
-  font-size: 0.8rem;
+  /* Set icon color to primary when active */
   color: var(--color-primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid var(--color-primary);
+}
+
+.selected::before {
+  content: "";
+  position: absolute;
+  top: calc(50% - 1px); /* half of height */
+  left: calc(50% - 7.5px); /* half of width */
+  width: 15px;
+  height: 2px;
+  background: linear-gradient(to left, transparent 0%, var(--color-primary) 100%);
+  border-radius: 2px;
+  box-shadow: 0 0 5px var(--color-primary);
+  animation: orbit 4s linear infinite;
+}
+
+@keyframes orbit {
+  from {
+    /* Changed to -90deg to make the tail point backwards */
+    transform: rotate(0deg) translateX(18px) rotate(-90deg);
+  }
+  to {
+    transform: rotate(360deg) translateX(18px) rotate(-90deg);
+  }
 }
