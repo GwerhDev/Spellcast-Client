@@ -7,7 +7,7 @@
   border-radius: 8px;
   color: var(--color-light-300);
   cursor: pointer;
-  transition: border-color 0.3s ease, background-color 0.3s ease;
+  transition: border-color 0.3s ease, var(--color-primary) 0.3s ease;
   text-align: center;
   box-sizing: border-box;
 }
@@ -24,9 +24,13 @@
   border-radius: 8px;
   cursor: pointer;
   border: 2px dashed var(--color-dark-300);
-  background-color: var(--color-dark-500);
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 2rem;
+}
+
+.fileInputLabel:hover {
+  transition-duration: .4s;
+  border-color: var(--color-primary);
 }

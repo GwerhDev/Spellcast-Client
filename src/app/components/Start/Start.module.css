@@ -17,13 +17,6 @@
   flex-direction: column;
 }
 
-.createContainer h1 {
-  color: var(--color-primary);
-  font-size: var(--size-12);
-}
-
-
-
 .form {
   gap: 1.5rem;
   width: 100%;
