@@ -20,8 +20,10 @@
 }
 
 .selected {
-  /* Set icon color to primary when active */
+  /* Set the icon color to primary */
   color: var(--color-primary);
+  /* Add a glow/aura effect with the secondary color */
+  filter: drop-shadow(0 0 3px var(--color-secondary));
 }
 
 .selected::before,

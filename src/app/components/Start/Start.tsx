@@ -80,8 +80,6 @@ export const Start = () => {
 
         <InputTypeSelector inputType={inputType} setInputType={setInputType} />
 
-        
-
         <form onSubmit={handleSubmit} className={s.form}>
           {inputType === 'text' ? (
             <TextInput text={text} setText={setText} isLoading={isLoading} />
