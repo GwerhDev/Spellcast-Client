@@ -16,13 +16,13 @@ export const InputTypeSelector: React.FC<InputTypeSelectorProps> = ({
         className={`${s.tab} ${s.left} ${inputType === 'pdf' ? s.active : ''}`}
         onClick={() => setInputType('pdf')}
       >
-        PDF
+        <span>PDF</span>
       </button>
       <button
         className={`${s.tab} ${s.right} ${inputType === 'text' ? s.active : ''}`}
         onClick={() => setInputType('text')}
       >
-        Text
+        <span>Text</span>
       </button>
     </div>
   );

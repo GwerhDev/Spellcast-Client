@@ -164,7 +164,7 @@ button {
 button:hover {
   cursor: pointer;
   color: var(--color-light-100);
-  background-color: var(--color-button-primary-hover);
+  background-color: transparent;
 }
 
 button:disabled {

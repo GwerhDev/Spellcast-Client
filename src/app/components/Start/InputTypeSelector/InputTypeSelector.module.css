@@ -29,7 +29,16 @@
 }
 
 .tab.active {
-  background-color: var(--color-primary);
-  color: var(--color-light-100);
+  /* Gradient on the background of the active tab */
+  background: linear-gradient(45deg, var(--color-primary), var(--color-secondary));
+  color: var(--color-light-100); /* Solid text color for active tab */
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Gradient text effect on hover for non-active tabs */
+.tab:not(.active):hover span {
+  background: linear-gradient(45deg, var(--color-primary), var(--color-secondary));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
