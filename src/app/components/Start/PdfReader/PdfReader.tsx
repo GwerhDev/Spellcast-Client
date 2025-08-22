@@ -1,12 +1,12 @@
-import { useState, useEffect, useRef } from 'react';
-import { textToSpeechService } from 'services/tts';
-import { useDispatch, useSelector } from 'react-redux';
-import { setPlaylist, play, resetAudioPlayer } from '../../../../store/audioPlayerSlice';
+import s from './PdfReader.module.css';
 import * as pdfjsLib from 'pdfjs-dist';
 import workerSrc from 'pdfjs-dist/build/pdf.worker?url';
-import { setPdfDocumentInfo, goToNextPage, resetPdfState } from 'store/pdfReaderSlice';
-import { RootState } from 'store';
-import s from './PdfReader.module.css';
+import { useState, useEffect, useRef } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState } from '../../../../store';
+import { textToSpeechService } from '../../../../services/tts';
+import { setPlaylist, play, resetAudioPlayer } from '../../../../store/audioPlayerSlice';
+import { setPdfDocumentInfo, goToNextPage, resetPdfState } from '../../../../store/pdfReaderSlice';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
@@ -75,12 +75,11 @@ export const PdfReader = ({ file, selectedVoice }: PdfReaderProps) => {
           const newText = await loadPage(pdfDoc, currentPage);
 
           if (!newText || newText.trim() === '') {
-            // Only dispatch goToNextPage if it hasn't been dispatched for this page yet
             if (pageProcessedRef.current !== currentPage && currentPage < totalPages) {
-              pageProcessedRef.current = currentPage; // Mark this page as processed
+              pageProcessedRef.current = currentPage;
               dispatch(goToNextPage());
             }
-            return; // Skip audio generation for empty page
+            return;
           }
 
           const audioUrl = await textToSpeechService({ text: newText, voice: selectedVoice });
