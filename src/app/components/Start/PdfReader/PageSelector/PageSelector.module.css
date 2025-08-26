@@ -1,0 +1,16 @@
+.pageSelectorContainer {
+  gap: 1rem;
+  display: flex;
+  align-items: center;
+}
+
+.pageSelect {
+  max-width: 100px;
+  text-align: center;
+}
+
+.totalPages {
+  width: 100%;
+  max-width: 100px;
+  text-align: start;
+}

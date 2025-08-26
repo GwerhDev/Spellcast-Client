@@ -2,7 +2,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import s from './ActionButton.module.css';
 
 export const ActionButton = (props: any) => {
-  const { text, onClick, icon, disabled, href } = props || {};
+  const { text, onClick, icon, disabled, href, children } = props || {};
 
   const handleOnClick = () => {
     return onClick && onClick();
@@ -19,7 +19,7 @@ export const ActionButton = (props: any) => {
           :
           <button disabled={disabled} className={s.container} onClick={handleOnClick}>
             {icon && <FontAwesomeIcon icon={icon} />}
-            {text}
+            {text || children}
           </button>
       }
     </>

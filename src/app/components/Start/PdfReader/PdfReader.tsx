@@ -7,6 +7,7 @@ import { RootState } from '../../../../store';
 import { textToSpeechService } from '../../../../services/tts';
 import { setPlaylist, play, resetAudioPlayer } from '../../../../store/audioPlayerSlice';
 import { setPdfDocumentInfo, goToNextPage, resetPdfState } from '../../../../store/pdfReaderSlice';
+import { PageSelector } from './PageSelector/PageSelector';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
@@ -97,9 +98,7 @@ export const PdfReader = ({ file, selectedVoice }: PdfReaderProps) => {
     <div className={s.pdfReaderContainer}>
       {isLoaded && (
         <div className={s.pageInfoContainer}>
-          <span style={{ margin: '0 1rem' }}>
-            Page {currentPage} of {totalPages}
-          </span>
+          <PageSelector />
         </div>
       )}
       <div className={s.textContainer}>

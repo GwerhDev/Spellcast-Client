@@ -31,6 +31,12 @@ const pdfReaderSlice = createSlice({
         state.currentPage -= 1;
       }
     },
+    goToPage: (state, action: PayloadAction<number>) => {
+      const page = action.payload;
+      if (page >= 1 && page <= state.totalPages) {
+        state.currentPage = page;
+      }
+    },
     resetPdfState: (state) => {
       state.currentPage = 1;
       state.totalPages = 0;
@@ -43,6 +49,7 @@ export const {
   setPdfDocumentInfo,
   goToNextPage,
   goToPreviousPage,
+  goToPage,
   resetPdfState,
 } = pdfReaderSlice.actions;
 

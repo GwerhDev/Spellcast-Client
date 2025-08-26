@@ -115,6 +115,7 @@ export const AudioPlayer = (props: { userData: userData }) => {
         audioRef.current.src = '';
       }
     }
+
   }, [currentTrackUrl]);
 
   useEffect(() => {
