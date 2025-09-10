@@ -16,6 +16,7 @@ import { Dashboard } from './app/pages/Dashboard';
 import { UserAccount } from './app/pages/UserAccount';
 import { UserArchive } from './app/pages/UserArchive';
 import { Unauthorized } from './app/pages/Unauthorized';
+import { UserConfiguration } from './app/pages/UserConfiguration';
 import { userData } from './interfaces';
 import DefaultLayout from './app/layouts/DefaultLayout';
 import LibraryLayout from './app/layouts/LibraryLayout';
@@ -38,6 +39,7 @@ function App() {
               <Route path="/" element={<Home />} />
               <Route path="/user" element={<UserAccount />} />
               <Route path="/user/archive" element={<UserArchive />} />
+              <Route path="/user/configuration" element={<UserConfiguration />} />
 
               <Route path="/library" element={<LibraryLayout />}>
                 <Route path="/library" element={<RootBackground />} />
