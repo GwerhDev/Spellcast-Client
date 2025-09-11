@@ -17,7 +17,7 @@ export const LabeledInput = (props: LabeledInputProps) => {
 
   return (
     <span className={s.container}>
-      <label htmlFor={htmlFor}>{label}</label>
+      <label className={`${disabled && s.disabled}`} htmlFor={htmlFor}>{label}</label>
       <input readOnly={readOnly} type={type} name={name} placeholder={placeholder} id={id} onChange={onChange} value={value} disabled={disabled} />
     </span>
   )

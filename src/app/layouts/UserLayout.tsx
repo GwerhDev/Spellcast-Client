@@ -4,11 +4,11 @@ import { LateralMenu } from '../components/LateralMenu/LateralMenu';
 import { useEffect, useState } from 'react';
 import { Browser } from '../components/Browser/Browser';
 
-export default function LibraryLayout() {
+export default function UserLayout() {
   const location = useLocation();
   const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth < 1024);
-  const shouldHideMenu = isSmallScreen && location.pathname !== `/library`;
-  const shouldHideBrowser = !isSmallScreen || location.pathname !== `/library`;
+  const shouldHideMenu = isSmallScreen && location.pathname !== `/user`;
+  const shouldHideBrowser = !isSmallScreen || location.pathname !== `/user`;
 
   useEffect(() => {
     const handleResize = () => {

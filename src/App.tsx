@@ -1,14 +1,16 @@
 import { Routes, Route } from 'react-router-dom';
 import { RootState } from './store';
 import { useSelector } from 'react-redux';
+import { userData } from './interfaces';
 import { useInitSession } from './hooks/useInitSession';
 import { Loader } from './app/components/Loader';
 import { Toast } from './app/components/Toast/Toast';
 import { RootBackground } from './app/components/Backgrounds/RootBackground';
 import { Home } from './app/pages/Home';
 import { Audios } from './app/pages/Audios';
-import { Storage } from './app/pages/Storage';
 import { Groups } from './app/pages/Groups';
+import { Library } from './app/pages/Library';
+import { Storage } from './app/pages/Storage';
 import { Overview } from './app/pages/Overview';
 import { NotFound } from './app/pages/NotFound';
 import { Settings } from './app/pages/Settings';
@@ -17,9 +19,8 @@ import { UserAccount } from './app/pages/UserAccount';
 import { UserArchive } from './app/pages/UserArchive';
 import { Unauthorized } from './app/pages/Unauthorized';
 import { UserCredentials } from './app/pages/UserCredentials';
-import { userData } from './interfaces';
+import UserLayout from './app/layouts/UserLayout';
 import DefaultLayout from './app/layouts/DefaultLayout';
-import LibraryLayout from './app/layouts/LibraryLayout';
 
 function App() {
   const userData: userData = useSelector((state: RootState) => state.session.userData);
@@ -38,29 +39,29 @@ function App() {
             <Route element={<DefaultLayout />}>
               <Route path="/" element={<Home />} />
               <Route path="/user" element={<UserAccount />} />
-              <Route path="/user/archive" element={<UserArchive />} />
-              <Route path="/user/credentials" element={<UserCredentials />} />
+              <Route path="/user" element={<UserLayout />}>
+                <Route path="/user/archive" element={<UserArchive />} />
 
-              <Route path="/library" element={<LibraryLayout />}>
-                <Route path="/library" element={<RootBackground />} />
-                <Route path="/library/dashboard" element={<Dashboard />} />
-                <Route path="/library/dashboard/overview" element={<Overview />} />
-                <Route path="/library/dashboard/groups" element={<Groups />} />
+                <Route path="/user" element={<RootBackground />}></Route>
+                <Route path="/user/dashboard" element={<Dashboard />} />
+                <Route path="/user/dashboard/overview" element={<Overview />} />
+                <Route path="/user/dashboard/groups" element={<Groups />} />
 
-                <Route path="/library/storage" element={<Storage />} />
-                <Route path="/library/storage/audios" element={<Audios />} />
+                <Route path="/user/storage" element={<Storage />} />
+                <Route path="/user/storage/library" element={<Library />} />
+                <Route path="/user/storage/audios" element={<Audios />} />
 
-                <Route path="/library/settings" element={<Settings />} />
-                <Route path="/library/not-found" element={<NotFound />} />
-                <Route path="/library/*" element={<NotFound />} />
-
+                <Route path="/user/settings" element={<Settings />} />
+                <Route path="/user/settings/credentials" element={<UserCredentials />} />
+                <Route path="/user/not-found" element={<NotFound />} />
+                <Route path="/user/*" element={<NotFound />} />
               </Route>
               <Route path="/explore/*" element={<NotFound />} />
               <Route path="/store/*" element={<NotFound />} />
-              <Route path="/library/not-found" element={<NotFound />} />
-              <Route path="/library/*" element={<NotFound />} />
-              <Route path="/library/not-found" element={<NotFound />} />
-              <Route path="/library/*" element={<NotFound />} />
+              <Route path="/user/not-found" element={<NotFound />} />
+              <Route path="/user/*" element={<NotFound />} />
+              <Route path="/user/not-found" element={<NotFound />} />
+              <Route path="/user/*" element={<NotFound />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

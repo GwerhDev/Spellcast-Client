@@ -5,11 +5,11 @@ export const UserStats = () => {
   const navigate = useNavigate();
 
   const handleMembersClick = () => {
-    navigate(`/library/dashboard/groups`);
+    navigate(`/user/dashboard/groups`);
   };
 
   const handleExportsClick = () => {
-    navigate(`/library/dashboard/shared`);
+    navigate(`/user/dashboard/shared`);
   };
 
   return (
