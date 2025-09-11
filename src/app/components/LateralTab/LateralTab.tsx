@@ -1,6 +1,6 @@
 import s from './LateralTab.module.css';
 import { useNavigate } from 'react-router-dom';
-import { faBook, faCompass, faHome, faShop, faUser, faGear } from '@fortawesome/free-solid-svg-icons';
+import { faBook, faCompass, faHome, faShop, faGear } from '@fortawesome/free-solid-svg-icons';
 import { Tab } from '../../../interfaces';
 import { TabButton } from '../Buttons/TabButton';
 import spellcastIcon from '../../../assets/spellcast-logo.svg';
