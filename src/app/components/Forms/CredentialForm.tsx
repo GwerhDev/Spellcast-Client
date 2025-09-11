@@ -8,7 +8,7 @@ import { faCancel, faSave } from "@fortawesome/free-solid-svg-icons";
 interface CredentialFormProps {
     credential: TTS_Credential | null;
     onClose: () => void;
-}
+};
 
 export const CredentialForm = ({ credential, onClose }: CredentialFormProps) => {
   const [azureKey, setAzureKey] = useState("");

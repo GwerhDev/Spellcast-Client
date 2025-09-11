@@ -5,6 +5,7 @@ import { CredentialForm } from "../Forms/CredentialForm";
 import { TTS_Credential } from "src/interfaces";
 import { IconButton } from "../Buttons/IconButton";
 import { faEdit, faPlus, faTrash } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 export const Credentials = () => {
   const [credentials, setCredentials] = useState<TTS_Credential[]>([]);
@@ -42,28 +43,44 @@ export const Credentials = () => {
 
   return (
     <div className={s.container}>
-      <div className={s.header}>
-        <h2>Credentials</h2>
-        <IconButton icon={faPlus} text="Add Credential" onClick={handleAdd} />
-      </div>
+      {
+        !credentials.length &&
+        <div className={s.header}>
+          <h1>Credentials</h1>
+          <IconButton icon={faPlus} text="Add Credential" onClick={handleAdd} />
+        </div>
+      }
+
       {showForm && (
         <CredentialForm
           credential={selectedCredential}
           onClose={handleFormClose}
         />
       )}
-      <ul className={s.list}>
-        {credentials.map((credential: TTS_Credential) => (
-          <li key={credential.id} className={s.listItem}>
-            <span>{credential.azure_key}</span>
-            <span>{credential.region}</span>
-            <div className={s.actions}>
-              <IconButton variant="transparent" icon={faEdit} onClick={() => handleEdit(credential)} />
-              <IconButton variant="transparent" icon={faTrash} onClick={() => handleDelete(credential.id)} />
-            </div>
-          </li>
-        ))}
-      </ul>
+      {
+        credentials.length > 0 &&
+        <>
+          <div className={s.header}>
+            <h1>Credentials</h1>
+          </div>
+          <ul className={s.list}>
+            {credentials.map((credential: TTS_Credential) => (
+              <li key={credential.id} className={s.listItem}>
+                <span>{credential.azure_key}</span>
+                <span>{credential.region}</span>
+                <div className={s.actions}>
+                  <IconButton variant="transparent" icon={faEdit} onClick={() => handleEdit(credential)} />
+                  <IconButton variant="transparent" icon={faTrash} onClick={() => handleDelete(credential.id)} />
+                </div>
+              </li>
+            ))}
+            <li className={s.emptyItem} onClick={handleAdd}>
+              <FontAwesomeIcon icon={faPlus} />
+              Create new credential
+            </li>
+          </ul>
+        </>
+      }
     </div>
   );
 };
