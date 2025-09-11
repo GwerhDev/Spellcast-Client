@@ -20,6 +20,14 @@ export type Session = {
   userData: userData
 };
 
+export interface TTS_Credential {
+  id?: string;
+  region: string;
+  aws_key?: string | null | undefined;
+  gcp_key?: string | null | undefined;
+  azure_key?: string | null | undefined;
+}
+
 export interface Member {
   role: string;
   id: string;
