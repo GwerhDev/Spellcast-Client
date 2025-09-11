@@ -1,20 +1,24 @@
-.inputContainer {
+.container {
   gap: 0;
   width: 100%;
   display: flex;
   flex-direction: column;
-  height: 3.9rem;
 }
 
-.inputContainer label {
+.container label {
   width: 100%;
   display: flex;
 }
 
-.inputContainer input {
+.container input {
   width: 100%;
 }
 
-.disabled {
+.container input:disabled {
   opacity: 0.5;
+  border: none;
+}
+
+.container input:disabled:hover {
+  background-color: transparent;
 }

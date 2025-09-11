@@ -26,6 +26,7 @@ export interface TTS_Credential {
   aws_key?: string | null | undefined;
   gcp_key?: string | null | undefined;
   azure_key?: string | null | undefined;
+  isNew?: boolean;
 }
 
 export interface Member {
@@ -49,18 +50,6 @@ export interface LabeledSelectProps {
   id: string;
   htmlFor: string;
   onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
-}
-
-export interface LabeledInputProps {
-  label: string;
-  name: string;
-  value: string;
-  type: string;
-  placeholder: string;
-  id: string;
-  htmlFor: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  disabled?: boolean;
 }
 
 export interface FieldDefinition {
