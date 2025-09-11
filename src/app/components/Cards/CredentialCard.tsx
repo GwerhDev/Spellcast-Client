@@ -19,9 +19,6 @@ export const CredentialCard = (props: CredentialCardProps) => {
   const [key, setKey] = useState(credential.azure_key || "");
   const [region, setRegion] = useState(credential.region || "");
 
-  console.log("CredentialCard - credential:", credential);
-  console.log("CredentialCard - editionActive:", editionActive);
-
   useEffect(() => {
     setKey(credential.azure_key || "");
     setRegion(credential.region || "");
