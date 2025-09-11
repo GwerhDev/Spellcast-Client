@@ -63,10 +63,10 @@ export const Credentials = () => {
             </>
           )
         }
+        {
+          loader && !credentials.length && !isAddingNewCredential && <Spinner isLoading={loader} />
+        }
       </ul>
-      {
-        loader && !credentials.length && !isAddingNewCredential && <Spinner isLoading={loader} />
-      }
     </div>
   );
 };
