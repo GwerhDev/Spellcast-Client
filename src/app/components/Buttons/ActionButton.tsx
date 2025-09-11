@@ -1,8 +1,20 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import s from './ActionButton.module.css';
+import { IconProp } from '@fortawesome/fontawesome-svg-core';
+import { ReactNode } from 'react';
 
-export const ActionButton = (props: any) => {
-  const { text, onClick, icon, disabled, href, children } = props || {};
+interface ActionButtonProps {
+    text?: string;
+    onClick?: () => void;
+    icon?: IconProp;
+    disabled?: boolean;
+    href?: string;
+    children?: ReactNode;
+    type?: "button" | "submit" | "reset";
+}
+
+export const ActionButton = (props: ActionButtonProps) => {
+  const { text, onClick, icon, disabled, href, children, type } = props;
 
   const handleOnClick = () => {
     return onClick && onClick();
@@ -17,7 +29,7 @@ export const ActionButton = (props: any) => {
             {text}
           </a>
           :
-          <button disabled={disabled} className={s.container} onClick={handleOnClick}>
+          <button disabled={disabled} className={s.container} onClick={handleOnClick} type={type}>
             {icon && <FontAwesomeIcon icon={icon} />}
             {text || children}
           </button>

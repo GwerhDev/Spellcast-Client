@@ -1,14 +1,15 @@
+import s from "./Credentials.module.css";
 import { useEffect, useState } from "react";
 import { deleteCredential, getCredentials } from "../../../services/credentials";
 import { CredentialForm } from "./CredentialForm";
-import s from "./Credentials.module.css";
-
-import { ActionButton } from "../Buttons/ActionButton";
+import { TTS_Credential } from "src/interfaces";
+import { IconButton } from "../Buttons/IconButton";
+import { faEdit, faPlus, faTrash } from "@fortawesome/free-solid-svg-icons";
 
 export const Credentials = () => {
-  const [credentials, setCredentials] = useState([]);
+  const [credentials, setCredentials] = useState<TTS_Credential[]>([]);
   const [showForm, setShowForm] = useState(false);
-  const [selectedCredential, setSelectedCredential] = useState(null);
+  const [selectedCredential, setSelectedCredential] = useState<TTS_Credential | null>(null);
 
   const fetchCredentials = async () => {
     const data = await getCredentials();
@@ -24,12 +25,12 @@ export const Credentials = () => {
     setShowForm(true);
   };
 
-  const handleEdit = (credential: any) => {
+  const handleEdit = (credential: TTS_Credential) => {
     setSelectedCredential(credential);
     setShowForm(true);
   };
 
-  const handleDelete = async (credentialId: string) => {
+  const handleDelete = async (credentialId: string | undefined) => {
     await deleteCredential(credentialId);
     fetchCredentials();
   };
@@ -41,8 +42,10 @@ export const Credentials = () => {
 
   return (
     <div className={s.container}>
-      <h2>Credentials</h2>
-      <ActionButton text="Add Credential" onClick={handleAdd} />
+      <div className={s.header}>
+        <h2>Credentials</h2>
+        <IconButton icon={faPlus} text="Add Credential" onClick={handleAdd} />
+      </div>
       {showForm && (
         <CredentialForm
           credential={selectedCredential}
@@ -50,13 +53,13 @@ export const Credentials = () => {
         />
       )}
       <ul className={s.list}>
-        {credentials.map((credential: any) => (
+        {credentials.map((credential: TTS_Credential) => (
           <li key={credential.id} className={s.listItem}>
             <span>{credential.azure_key}</span>
             <span>{credential.region}</span>
             <div className={s.actions}>
-              <ActionButton text="Edit" onClick={() => handleEdit(credential)} />
-              <ActionButton text="Delete" onClick={() => handleDelete(credential.id)} />
+              <IconButton variant="transparent" icon={faEdit} onClick={() => handleEdit(credential)} />
+              <IconButton variant="transparent" icon={faTrash} onClick={() => handleDelete(credential.id)} />
             </div>
           </li>
         ))}

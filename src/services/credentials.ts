@@ -1,4 +1,5 @@
 import { API_BASE } from '../config/api';
+import { TTS_Credential } from '../interfaces';
 
 export async function createCredential(data: { azure_key: string; region: string }) {
   try {
@@ -21,7 +22,7 @@ export async function createCredential(data: { azure_key: string; region: string
   }
 }
 
-export async function getCredentials() {
+export async function getCredentials(): Promise<TTS_Credential[]> {
   try {
     const res = await fetch(`${API_BASE}/user/credentials`, {
       credentials: 'include',
@@ -68,7 +69,7 @@ export async function updateCredential(credentialId: string, data: { azure_key: 
   }
 }
 
-export async function deleteCredential(credentialId: string) {
+export async function deleteCredential(credentialId: string | undefined) {
   try {
     const res = await fetch(`${API_BASE}/user/credentials/${credentialId}`, {
       method: 'DELETE',
