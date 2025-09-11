@@ -10,7 +10,7 @@ export const Browser = (props: PropsWithChildren) => {
   const navigate = useNavigate();
 
   const path = decodeURIComponent(location.pathname);
-  const basePath = `/library`;
+  const basePath = `/user`;
   const relativePath = path.replace(basePath, '');
 
   const segments = relativePath.split('/').filter(Boolean);

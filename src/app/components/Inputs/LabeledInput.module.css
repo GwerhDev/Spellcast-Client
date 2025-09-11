@@ -14,9 +14,10 @@
   width: 100%;
 }
 
-.container input:disabled {
+.container input:disabled, .disabled {
   opacity: 0.5;
   border: none;
+  background-color: transparent;
 }
 
 .container input:disabled:hover {

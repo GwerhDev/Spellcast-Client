@@ -1,6 +1,6 @@
 import s from './LateralTab.module.css';
 import { useNavigate } from 'react-router-dom';
-import { faBook, faCompass, faHome, faShop, faIdBadge } from '@fortawesome/free-solid-svg-icons';
+import { faCompass, faHome, faShop, faUser } from '@fortawesome/free-solid-svg-icons';
 import { Tab } from '../../../interfaces';
 import { TabButton } from '../Buttons/TabButton';
 import spellcastIcon from '../../../assets/spellcast-logo.svg';
@@ -19,13 +19,9 @@ export const LateralTab = () => {
       route: '/',
       icon: faHome,
     }, {
-      title: 'Credentials',
-      route: '/user/credentials',
-      icon: faIdBadge,
-    }, {
-      title: 'Library',
-      route: '/library',
-      icon: faBook,
+      title: 'User',
+      route: '/user',
+      icon: faUser,
     }, {
       title: 'Store',
       route: '/store',
