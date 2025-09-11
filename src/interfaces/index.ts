@@ -51,18 +51,6 @@ export interface LabeledSelectProps {
   onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
 }
 
-export interface LabeledInputProps {
-  label: string;
-  name: string;
-  value: string;
-  type: string;
-  placeholder: string;
-  id: string;
-  htmlFor: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  disabled?: boolean;
-}
-
 export interface FieldDefinition {
   name: string;
   type: string;

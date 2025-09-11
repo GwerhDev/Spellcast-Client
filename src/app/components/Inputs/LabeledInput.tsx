@@ -1,13 +1,24 @@
 import s from "./LabeledInput.module.css";
-import { LabeledInputProps } from '../../../interfaces';
 
+export interface LabeledInputProps {
+  label: string;
+  name: string;
+  value: string;
+  type: string;
+  placeholder: string;
+  id: string;
+  htmlFor: string;
+  disabled?: boolean;
+  readOnly?: boolean;
+  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+}
 export const LabeledInput = (props: LabeledInputProps) => {
-  const { label, name, value, type, placeholder, id, htmlFor, onChange, disabled } = props;
+  const { label, name, value, type, placeholder, id, htmlFor, onChange, disabled, readOnly } = props;
 
   return (
-    <span className={`${s.inputContainer} ${disabled ? s.disabled : ''}`}>
+    <span className={s.container}>
       <label htmlFor={htmlFor}>{label}</label>
-      <input type={type} name={name} placeholder={placeholder} id={id} onChange={onChange} value={value} disabled={disabled} />
+      <input readOnly={readOnly} type={type} name={name} placeholder={placeholder} id={id} onChange={onChange} value={value} disabled={disabled} />
     </span>
   )
 }
