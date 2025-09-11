@@ -1,6 +1,6 @@
 import { Credentials } from "../components/Credentials/Credentials";
 
-export const UserConfiguration = () => {
+export const UserCredentials = () => {
   return (
     <div className="dashboard-sections">
       <Credentials />

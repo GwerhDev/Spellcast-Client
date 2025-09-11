@@ -17,7 +17,7 @@ export const IconButton = (props: IconButtonProps) => {
 
   const variantClass = {
     primary: s.primary,
-    transparent: "",
+    transparent: s.transparent,
   }[variant];
 
   const buttonClassName = [s.base, variantClass, className]

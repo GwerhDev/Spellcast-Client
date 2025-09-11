@@ -19,8 +19,8 @@ export const LateralTab = () => {
       route: '/',
       icon: faHome,
     }, {
-      title: 'Configuration',
-      route: '/user/configuration',
+      title: 'Credentials',
+      route: '/user/credentials',
       icon: faGear,
     }, {
       title: 'Library',

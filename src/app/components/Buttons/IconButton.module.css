@@ -23,3 +23,8 @@
 .primary:hover {
   background: var(--color-button-primary-hover);
 }
+
+.transparent {
+  padding: 0;
+  background-color: transparent;
+}

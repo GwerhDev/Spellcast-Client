@@ -1,7 +1,7 @@
 import styles from "./Spinner.module.css";
 
 interface SpinnerProps {
-  bg: boolean;
+  bg?: boolean;
   isLoading: boolean;
 }
 
