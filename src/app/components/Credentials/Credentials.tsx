@@ -1,7 +1,7 @@
 import s from "./Credentials.module.css";
 import { useEffect, useState } from "react";
 import { deleteCredential, getCredentials } from "../../../services/credentials";
-import { CredentialForm } from "./CredentialForm";
+import { CredentialForm } from "../Forms/CredentialForm";
 import { TTS_Credential } from "src/interfaces";
 import { IconButton } from "../Buttons/IconButton";
 import { faEdit, faPlus, faTrash } from "@fortawesome/free-solid-svg-icons";

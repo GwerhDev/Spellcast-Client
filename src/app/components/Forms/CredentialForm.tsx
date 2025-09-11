@@ -1,8 +1,9 @@
-import s from "./Credentials.module.css";
+import s from "./CredentialForm.module.css";
 import { useState, useEffect } from "react";
 import { createCredential, updateCredential } from "../../../services/credentials";
 import { ActionButton } from "../Buttons/ActionButton";
 import { TTS_Credential } from "src/interfaces";
+import { faCancel, faSave } from "@fortawesome/free-solid-svg-icons";
 
 interface CredentialFormProps {
     credential: TTS_Credential | null;
@@ -35,7 +36,7 @@ export const CredentialForm = ({ credential, onClose }: CredentialFormProps) => 
   };
 
   return (
-    <div className={s.formContainer}>
+    <div className={s.container}>
       <form onSubmit={handleSubmit} className={s.form}>
         <label>
           Azure Key:
@@ -46,8 +47,8 @@ export const CredentialForm = ({ credential, onClose }: CredentialFormProps) => 
           <input type="text" value={region} onChange={(e) => setRegion(e.target.value)} />
         </label>
         <div className={s.formActions}>
-          <ActionButton text={credential ? "Update" : "Create"} type="submit" />
-          <ActionButton text="Cancel" onClick={onClose} type="button" />
+          <ActionButton icon={faSave} text={credential ? "Update" : "Create"} type="submit" />
+          <ActionButton icon={faCancel} text="Cancel" onClick={onClose} type="button" />
         </div>
       </form>
     </div>
