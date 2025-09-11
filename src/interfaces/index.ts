@@ -26,6 +26,7 @@ export interface TTS_Credential {
   aws_key?: string | null | undefined;
   gcp_key?: string | null | undefined;
   azure_key?: string | null | undefined;
+  isNew?: boolean;
 }
 
 export interface Member {
