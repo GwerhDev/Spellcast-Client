@@ -1,6 +1,6 @@
 import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faVolumeUp, faVolumeMute, faMicrophone } from '@fortawesome/free-solid-svg-icons';
+import { faVolumeUp, faVolumeMute, faMicrophone, faCommentDots } from '@fortawesome/free-solid-svg-icons';
 import s from './VolumeVoiceControls.module.css';
 
 interface VoiceOption {
@@ -55,7 +55,7 @@ export const VolumeVoiceControls: React.FC<VolumeVoiceControlsProps> = ({
               onClick={() => setShowVoiceSelector(!showVoiceSelector)}
               ref={voiceButtonRef}
             >
-              <FontAwesomeIcon icon={faMicrophone} />
+              <FontAwesomeIcon icon={faCommentDots} />
             </button>
             {showVoiceSelector && (
               <div className={s.voiceDropdown} ref={voiceSelectorRef}>

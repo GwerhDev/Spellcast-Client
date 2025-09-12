@@ -9,6 +9,7 @@
 .createContainer {
   gap: 1rem;
   width: 100%;
+  height: 100%;
   max-width: 600px;
   padding-bottom: 1rem;
   display: flex;
@@ -20,55 +21,8 @@
 .form {
   gap: 1.5rem;
   width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
-}
-
-.voiceSelector {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  width: 100%;
-  margin-bottom: 1.5rem;
-  text-align: left;
-}
-
-.voiceSelector label {
-  color: var(--color-light-300);
-  font-size: 0.9rem;
-  font-weight: bold;
-}
-
-.voiceSelector select {
-  width: 100%;
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
-  border-top-left-radius: 0;
-  border-top-right-radius: 0;
-  background-color: var(--color-dark-500);
-  color: var(--color-light-100);
-  border: 1px solid var(--color-dark-300);
-  font-size: 1rem;
-  cursor: pointer;
-  appearance: none;
-  /* Remove default select arrow */
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20256%20256%22%3E%3Cpath%20fill%3D%22%23a0aec0%22%20d%3D%22M208.5%2096.5L128%20177l-80.5-80.5a12%2012%200%200%200-17%2017l88%2088a12%2012%200%200%200%2017%200l88-88a12%2012%200%200%200-17-17z%22%2F%3E%3C%2Fsvg%3E');
-  /* Custom arrow */
-  background-repeat: no-repeat;
-  background-position: right 1rem center;
-  background-size: 1em;
-}
-
-.voiceSelector select:focus {
-  outline: none;
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px #d7ab6d3f;
-}
-
-.voiceSelector select:disabled {
-  background-color: var(--color-dark-600);
-  cursor: not-allowed;
-  opacity: 0.7;
+  justify-content: flex-start;
 }
