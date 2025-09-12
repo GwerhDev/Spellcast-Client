@@ -1,9 +1,9 @@
 import s from './UserPresentation.module.css';
 import skeleton from '../Loader/Skeleton.module.css';
+import { useSelector } from 'react-redux';
 import { UserStats } from '../UserStats/UserStats';
 import { LibraryCharts } from '../LibraryCharts/LibraryCharts';
 import { userData } from '../../../interfaces';
-import { useSelector } from 'react-redux';
 import { RootState } from '../../../store';
 
 export const UserPresentation = () => {
@@ -20,7 +20,7 @@ export const UserPresentation = () => {
                 !loader && (
                   profilePic
                     ? <img src={profilePic} alt="User image" className={s.image} />
-                    : <span>{username ? username[0] : ''}</span>
+                    : <span>{username?.[0]}</span>
                 )
               }
             </span>

@@ -1,5 +1,4 @@
 import React from 'react';
-import s from './TextInput.module.css';
 
 interface TextInputProps {
   text: string;
@@ -14,7 +13,6 @@ export const TextInput: React.FC<TextInputProps> = ({
 }) => {
   return (
     <textarea
-      className={s.textarea}
       placeholder="Enter text to convert to speech..."
       value={text}
       onChange={(e) => setText(e.target.value)}

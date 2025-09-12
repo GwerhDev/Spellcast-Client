@@ -1,7 +1,7 @@
 import s from "./Account.module.css";
-import { ACCOUNT_BASE } from "../../../config/api";
-import { ActionButton } from "../Buttons/ActionButton";
 import { useSelector } from "react-redux";
+import { ActionButton } from "../Buttons/ActionButton";
+import { ACCOUNT_BASE } from "../../../config/api";
 import { RootState } from "../../../store";
 import { userData } from "../../../interfaces";
 

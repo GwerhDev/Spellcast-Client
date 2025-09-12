@@ -8,6 +8,8 @@ import { textToSpeechService } from '../../../../services/tts';
 import { setPlaylist, play, resetAudioPlayer } from '../../../../store/audioPlayerSlice';
 import { setPdfDocumentInfo, goToNextPage, resetPdfState } from '../../../../store/pdfReaderSlice';
 import { PageSelector } from './PageSelector/PageSelector';
+import { IconButton } from '../../Buttons/IconButton';
+import { faEdit, faSave, faXmark } from '@fortawesome/free-solid-svg-icons';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
@@ -18,6 +20,8 @@ interface PdfReaderProps {
 
 export const PdfReader = ({ file, selectedVoice }: PdfReaderProps) => {
   const [text, setText] = useState('');
+  const [editedText, setEditedText] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [pdfDoc, setPdfDoc] = useState<any>(null);
   const dispatch = useDispatch();
@@ -33,12 +37,23 @@ export const PdfReader = ({ file, selectedVoice }: PdfReaderProps) => {
       const content = await page.getTextContent();
       const extractedText = content.items.map((item: any) => item.str).join(' ');
       setText(extractedText);
+      setEditedText(extractedText);
       return extractedText;
     } catch (error) {
       console.error('Error loading page:', error);
       return '';
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleGenerateAudio = async (textToGenerate: string) => {
+    try {
+      const audioUrl = await textToSpeechService({ text: textToGenerate, voice: selectedVoice });
+      dispatch(setPlaylist({ playlist: [audioUrl], startIndex: 0, sourceType: 'pdfPage' }));
+      dispatch(play());
+    } catch (error) {
+      console.error('Failed to generate audio for page', error);
     }
   };
 
@@ -82,32 +97,61 @@ export const PdfReader = ({ file, selectedVoice }: PdfReaderProps) => {
             }
             return;
           }
-
-          const audioUrl = await textToSpeechService({ text: newText, voice: selectedVoice });
-          dispatch(setPlaylist({ playlist: [audioUrl], startIndex: 0, sourceType: 'pdfPage' }));
-          dispatch(play());
+          handleGenerateAudio(newText);
         } catch (error) {
           console.error('Failed to generate audio for page', error);
         }
       };
       fetchTextAndAudio();
     }
+    //eslint-disable-next-line
   }, [pdfDoc, currentPage, totalPages, dispatch, selectedVoice]);
+
+  const handleEdit = () => {
+    setIsEditing(true);
+  };
+
+  const handleSave = () => {
+    setText(editedText);
+    setIsEditing(false);
+    handleGenerateAudio(editedText);
+  };
+
+  const handleCancel = () => {
+    setEditedText(text);
+    setIsEditing(false);
+  };
+
+  const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setEditedText(e.target.value);
+  };
 
   return (
     <div className={s.pdfReaderContainer}>
       {isLoaded && (
         <div className={s.pageInfoContainer}>
           <PageSelector />
+          <div className={s.controlsContainer}>
+            {isEditing ? (
+              <>
+                <IconButton icon={faSave} variant='transparent' onClick={handleSave} className={s.controlButton} />
+                <IconButton icon={faXmark} variant='transparent' onClick={handleCancel} className={s.controlButton} />
+              </>
+            ) : (
+              <IconButton icon={faEdit} variant='transparent' onClick={handleEdit} className={s.controlButton} />
+            )}
+          </div>
         </div>
       )}
       <div className={s.textContainer}>
         {isLoading ? (
           <p>Loading page...</p>
         ) : (
-          <div className={s.textContent}>
-            {text || 'Extracted text will appear here...'}
-          </div>
+          <textarea
+            value={isEditing ? editedText : text || 'Extracted text will appear here...'}
+            onChange={handleTextChange}
+            readOnly={!isEditing}
+          />
         )}
       </div>
     </div>

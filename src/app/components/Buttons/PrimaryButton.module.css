@@ -2,17 +2,20 @@
   gap: .5rem;
   width: 100%;
   max-width: 500px;
+  font-weight: 600;
   display: flex;
   color: black;
   text-wrap: nowrap;
   align-items: center;
   justify-content: center;
+  transition-duration: .4s;
   border-radius: var(--size-4);
   background-color: var(--color-light-300);
 }
 
 .container:hover {
   color: white;
+  background-color: var(--color-primary);
 }
 
 .container:disabled:hover {

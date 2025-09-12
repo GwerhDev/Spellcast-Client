@@ -178,6 +178,30 @@ button:hover:disabled {
   cursor: not-allowed;
 }
 
+textarea {
+  width: 100%;
+  height: 100%;
+  min-height: 300px;
+  padding: 1rem;
+  font-size: 1rem;
+  border-radius: 1rem;
+  color: var(--color-light-100);
+  background-color: var(--color-dark-500);
+  border: 1px solid var(--color-dark-300);
+  resize: vertical;
+  box-sizing: border-box;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+
+textarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+textarea:read-only {
+  border: 1px solid transparent;
+}
+
 main {
   margin: 0;
   padding: 0;
