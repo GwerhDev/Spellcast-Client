@@ -7,7 +7,6 @@
 .container {
   width: 100%;
   gap: 1rem;
-  background-color: var(--color-dark-900);
   overflow: hidden;
 }
 

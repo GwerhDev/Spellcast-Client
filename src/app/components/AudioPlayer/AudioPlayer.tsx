@@ -1,3 +1,4 @@
+import s from './AudioPlayer.module.css';
 import { useRef, useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../../store';
@@ -9,31 +10,27 @@ import {
   playNext as playNextAudio,
   playPrevious as playPreviousAudio,
 } from '../../../store/audioPlayerSlice';
+import { setSelectedVoice } from '../../../store/voiceSlice';
 import { goToNextPage, goToPreviousPage } from '../../../store/pdfReaderSlice';
-import s from './AudioPlayer.module.css';
-import { ProfileButton } from '../Buttons/ProfileButton';
 import { PlaybackControls } from './PlaybackControls/PlaybackControls';
 import { VolumeVoiceControls } from './VolumeVoiceControls/VolumeVoiceControls';
-import { userData } from '../../../interfaces';
-import { setSelectedVoice } from '../../../store/voiceSlice';
 
-export const AudioPlayer = (props: { userData: userData }) => {
-  const { userData } = props || {};
+export const AudioPlayer = () => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const dispatch = useDispatch();
   const { selectedVoice, voices } = useSelector((state: RootState) => state.voice);
   const {
-    playlist,
-    currentTrackIndex,
-    isPlaying,
     volume,
-    currentTime,
+    playlist,
     duration,
-    sourceType
+    isPlaying,
+    sourceType,
+    currentTime,
+    currentTrackIndex,
   } = useSelector((state: RootState) => state.audioPlayer);
   const {
-    currentPage,
     totalPages,
+    currentPage,
     isLoaded: isPdfLoaded
   } = useSelector((state: RootState) => state.pdfReader);
 
@@ -115,7 +112,7 @@ export const AudioPlayer = (props: { userData: userData }) => {
         audioRef.current.src = '';
       }
     }
-
+    //eslint-disable-next-line
   }, [currentTrackUrl]);
 
   useEffect(() => {
@@ -204,8 +201,7 @@ export const AudioPlayer = (props: { userData: userData }) => {
         onLoadedMetadata={handleLoadedMetadata}
         onEnded={handleEnded}
       />
-      <section className={s.user}>
-        <ProfileButton userData={userData} />
+      <section className={s.bookInfo}>
       </section>
 
       <PlaybackControls
