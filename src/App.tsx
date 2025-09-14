@@ -15,7 +15,6 @@ import { Overview } from './app/pages/Overview';
 import { NotFound } from './app/pages/NotFound';
 import { Settings } from './app/pages/Settings';
 import { Dashboard } from './app/pages/Dashboard';
-import { UserAccount } from './app/pages/UserAccount';
 import { UserArchive } from './app/pages/UserArchive';
 import { Unauthorized } from './app/pages/Unauthorized';
 import { UserCredentials } from './app/pages/UserCredentials';
@@ -38,7 +37,6 @@ function App() {
             <Route path="/unauthorized" element={<Unauthorized />} />
             <Route element={<DefaultLayout />}>
               <Route path="/" element={<Home />} />
-              <Route path="/user" element={<UserAccount />} />
               <Route path="/user" element={<UserLayout />}>
                 <Route path="/user/archive" element={<UserArchive />} />
 
