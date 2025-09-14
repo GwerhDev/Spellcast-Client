@@ -4,10 +4,12 @@ import apiResponsesReducer from './apiResponsesSlice';
 import audioPlayerReducer from './audioPlayerSlice';
 import pdfReaderReducer from './pdfReaderSlice';
 import voiceReducer from './voiceSlice';
+import credentialsReducer from './credentialsSlice';
 
 export const store = configureStore({
   reducer: {
     session: sessionReducer,
+    credentials: credentialsReducer,
     apiResponses: apiResponsesReducer,
     audioPlayer: audioPlayerReducer,
     pdfReader: pdfReaderReducer,

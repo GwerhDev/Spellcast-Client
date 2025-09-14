@@ -1,23 +1,18 @@
 import s from "./Credentials.module.css";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { faPlus } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { TTS_Credential } from "../../../interfaces";
-import { getCredentials } from "../../../services/credentials";
 import { CredentialCard } from "../Cards/CredentialCard";
 import { Spinner } from "../Spinner";
+import { useSelector, useDispatch } from "react-redux";
+import { RootState, AppDispatch } from "store";
+import { getCredentials } from "store/credentialsSlice";
 
 export const Credentials = () => {
-  const [loader, setLoader] = useState(true);
-  const [credentials, setCredentials] = useState<TTS_Credential[]>([]);
+  const dispatch: AppDispatch = useDispatch();
+  const { credentials, loading } = useSelector((state: RootState) => state.credentials);
   const [isAddingNewCredential, setIsAddingNewCredential] = useState(false);
-
-  const fetchCredentials = async () => {
-    setLoader(true);
-    const data = await getCredentials();
-    setCredentials(data);
-    setLoader(false);
-  };
 
   const handleAdd = () => {
     setIsAddingNewCredential(true);
@@ -25,36 +20,32 @@ export const Credentials = () => {
 
   const handleSaveNewCredential = () => {
     setIsAddingNewCredential(false);
-    fetchCredentials(); // Re-fetch to show the newly saved credential
+    dispatch(getCredentials());
   };
 
   const handleCancelNewCredential = () => {
     setIsAddingNewCredential(false);
   };
 
-  useEffect(() => {
-    fetchCredentials();
-  }, []);
-
   return (
     <div className={s.container}>
       <h1>Credentials</h1>
       <ul className={s.list}>
         {credentials.map((credential: TTS_Credential) => (
-          <CredentialCard fetchCredentials={fetchCredentials} credential={credential} key={credential.id || `existing-${credential.region}-${credential.azure_key}`} />
+          <CredentialCard fetchCredentials={() => dispatch(getCredentials())} credential={credential} key={credential.id || `existing-${credential.region}-${credential.azure_key}`} />
         ))}
         {
           isAddingNewCredential ? (
             <CredentialCard
               credential={{ region: "", azure_key: "", isNew: true }}
-              fetchCredentials={fetchCredentials}
+              fetchCredentials={() => dispatch(getCredentials())}
               onSaveNew={handleSaveNewCredential}
               onCancelNew={handleCancelNewCredential}
             />
           ) : (
             <>
               {
-                !loader &&
+                !loading &&
                 <li className={s.emptyItem} onClick={handleAdd}>
                   <FontAwesomeIcon icon={faPlus} />
                   Create new credential
@@ -64,7 +55,7 @@ export const Credentials = () => {
           )
         }
         {
-          loader && !credentials.length && !isAddingNewCredential && <Spinner isLoading={loader} />
+          loading && !credentials.length && !isAddingNewCredential && <Spinner isLoading={loading} />
         }
       </ul>
     </div>

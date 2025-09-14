@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { fetchAuth } from '../services/auth';
 import { addApiResponse } from '../store/apiResponsesSlice';
 import { setLoader, setSession } from '../store/sessionSlice';
+import { getCredentials } from 'store/credentialsSlice';
 
 export function useInitSession() {
   const dispatch = useDispatch();
@@ -18,6 +19,7 @@ export function useInitSession() {
         navigate('/unauthorized');
       } else {
         dispatch(addApiResponse({ message: 'Authentication successful.', type: 'success' }));
+        dispatch(getCredentials());
       }
       dispatch(setSession(session));
       dispatch(setLoader(false));
