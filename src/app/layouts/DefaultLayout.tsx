@@ -1,13 +1,9 @@
 import { Outlet } from 'react-router-dom';
-import { RootState } from '../../store';
-import { useSelector } from 'react-redux';
 import { LateralTab } from '../components/LateralTab/LateralTab';
 import { LogoutModal } from '../components/Modals/LogoutModal';
 import { AudioPlayer } from '../components/AudioPlayer/AudioPlayer';
-import { userData } from '../../interfaces';
 
 export default function DefaultLayout() {
-  const userData: userData = useSelector((state: RootState) => state.session.userData);
 
   return (
     <main>
@@ -22,7 +18,7 @@ export default function DefaultLayout() {
           <Outlet />
         </div>
       </div>
-      <AudioPlayer userData={userData} />
+      <AudioPlayer />
       <LogoutModal />
     </main>
   );

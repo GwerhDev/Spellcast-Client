@@ -1,17 +1,17 @@
 import { useEffect } from 'react';
-import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { fetchAuth } from '../services/auth';
 import { addApiResponse } from '../store/apiResponsesSlice';
+import { getCredentials } from '../store/credentialsSlice';
+import { useAppDispatch } from '../store/hooks';
 import { setLoader, setSession } from '../store/sessionSlice';
-import { getCredentials } from 'store/credentialsSlice';
 
 export function useInitSession() {
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
   useEffect(() => {
-    dispatch(setLoader(true)); 
+    dispatch(setLoader(true));
     (async () => {
       const session = await fetchAuth();
       if (!session.logged) {
@@ -24,5 +24,6 @@ export function useInitSession() {
       dispatch(setSession(session));
       dispatch(setLoader(false));
     })();
+    //eslint-disable-next-line
   }, [dispatch]);
 }
