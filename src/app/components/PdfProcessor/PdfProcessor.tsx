@@ -14,11 +14,9 @@ export const PdfProcessor = () => {
   const dispatch = useDispatch();
   const { fileContent, currentPage, totalPages } = useSelector((state: RootState) => state.pdfReader);
   const { selectedVoice } = useSelector((state: RootState) => state.voice);
-  const { sourceType, pdfPageNumber, isPlaying } = useSelector((state: RootState) => ({
-    sourceType: state.audioPlayer.sourceType,
-    pdfPageNumber: state.audioPlayer.pdfPageNumber,
-    isPlaying: state.audioPlayer.isPlaying,
-  }));
+  const sourceType = useSelector((state: RootState) => state.audioPlayer.sourceType);
+  const pdfPageNumber = useSelector((state: RootState) => state.audioPlayer.pdfPageNumber);
+  const isPlaying = useSelector((state: RootState) => state.audioPlayer.isPlaying);
   const [pdfDoc, setPdfDoc] = useState<any>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
