@@ -1,6 +1,6 @@
 @media screen and (min-width: 1024px) {
   .container {
-    max-width: 300px;
+    width: 100%;
   }
 }
 
@@ -8,8 +8,8 @@
   gap: 1rem;
   width: 100%;
   min-width: 250px;
-  overflow: hidden;
   border-radius: 10px;
+  overflow: hidden;
   background-color: var(--color-dark-800);
 }
 
