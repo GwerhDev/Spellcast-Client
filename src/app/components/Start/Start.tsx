@@ -5,11 +5,13 @@ import { Link, useNavigate } from 'react-router-dom';
 import { textToSpeechService } from '../../../services/tts';
 import { RootState } from '../../../store';
 import { setPlaylist, play, resetAudioPlayer } from '../../../store/audioPlayerSlice';
-import { setPdfFile } from '../../../store/pdfReaderSlice'; // Import the action
+import { setPdfFile, resetPdfState } from '../../../store/pdfReaderSlice';
 import { PrimaryButton } from '../Buttons/PrimaryButton';
 import { PdfInput } from './PdfInput/PdfInput';
 import { TextInput } from './TextInput/TextInput';
 import { InputTypeSelector } from './InputTypeSelector/InputTypeSelector';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faFileCircleCheck } from '@fortawesome/free-solid-svg-icons';
 
 export const Start = () => {
   const [inputType, setInputType] = useState('pdf'); // 'text' or 'pdf'
@@ -97,20 +99,17 @@ export const Start = () => {
             <TextInput text={text} setText={setText} isLoading={isLoading} />
           ) : (
             fileContent ? (
-              <div>
-                <p>
-                  A PDF is already loaded. <Link to="/new">Continue reading</Link>
+              <div className={s.form}>
+                <Link to="/new" className={s.pdfLink}>
+                  <div className={s.pdfInput}>
+                    <FontAwesomeIcon size="10x" icon={faFileCircleCheck} />
+                    <p>A PDF is already loaded</p>
+                    <p>Continue reading</p>
+                  </div>
+                </Link>
+                <p onClick={() => dispatch(resetPdfState())} className={s.resetPdf}>
+                  Or upload a new one
                 </p>
-                <p>Or upload a new one:</p>
-                <PdfInput
-                  isLoading={isLoading}
-                  isDragging={isDragging}
-                  setIsDragging={setIsDragging}
-                  handleFileChange={handleFileChange}
-                  handleDragOver={handleDragOver}
-                  handleDragLeave={handleDragLeave}
-                  handleDrop={handleDrop}
-                />
               </div>
             ) : (
               <PdfInput
