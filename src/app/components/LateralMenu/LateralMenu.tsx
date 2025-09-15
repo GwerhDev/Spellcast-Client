@@ -1,32 +1,12 @@
 import s from './LateralMenu.module.css';
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBox, faChevronDown, faGear, faTableColumns } from '@fortawesome/free-solid-svg-icons';
+import { faBox, faGear, faTableColumns } from '@fortawesome/free-solid-svg-icons';
 import { dashboardDirectoryList, settingsDirectoryList, storageDirectoryList } from '../../../config/consts';
-import { CustomCanvas } from '../Canvas/CustomCanvas';
 
 export const LateralMenu = () => {
-  const [showCanvas, setShowCanvas] = useState(false);
-
   return (
     <div className={s.container}>
-      <div className={s.titleButton}>
-        <span className={s.title} onClick={() => setShowCanvas(true)}>
-          <h4>
-            Library
-          </h4>
-          <FontAwesomeIcon icon={faChevronDown} />
-        </span>
-        <CustomCanvas showCanvas={showCanvas} setShowCanvas={setShowCanvas}>
-          <ul className={s.projectActionsContainer}>
-            <li className={s.listButton}>
-              <FontAwesomeIcon icon={faGear} />
-              Library Settings
-            </li>
-          </ul>
-        </CustomCanvas>
-      </div>
       <div className={s.outterMenuContainer}>
         <div className={s.menuContainer}>
           <div className={s.mainMenu}>

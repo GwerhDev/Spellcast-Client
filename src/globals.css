@@ -284,10 +284,13 @@ a:hover {
 }
 
 .dashboard-container {
+  gap: .5rem;
   width: 100vw;
   height: 100vh;
   display: flex;
   overflow-y: auto;
+  padding-bottom: .5rem;
+  padding-inline: .5rem;
 }
 
 .flex-dir-col {
@@ -318,17 +321,29 @@ a:hover {
 .dashboard-sections {
   width: 100%;
   height: 100%;
-  border-top-left-radius: 10px;
+  border-radius: 10px;
   display: flex;
   overflow: auto;
   border: solid .5px var(--color-dark-300);
-  border-right: none;
-  border-bottom: none;
 }
 
-.side-tab {
-  padding: 1.5rem;
-  padding-inline: .5rem;
+.aside-container {
+  gap: .5rem;
+  padding: .5rem;
+  margin-top: 1.5rem;
+  border-radius: 10px;
+  display: flex;
+  border: solid .5px var(--color-dark-300);
+}
+
+.audioplayer-container {
+  gap: .5rem;
+  padding: .5rem;
+  border-radius: 10px;
+  display: flex;
+  border: solid .5px var(--color-dark-300);
+  margin-inline: .5rem;
+  margin-bottom: .5rem;
 }
 
 .logo {

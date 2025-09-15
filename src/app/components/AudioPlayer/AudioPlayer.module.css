@@ -3,10 +3,8 @@
   padding: .5rem;
   display: flex;
   align-items: center;
-  border-top-left-radius: 8px;
-  border-top-right-radius: 8px;
+  border-radius: 10px;
   justify-content: space-between;
-  background-color: var(--color-dark-900);
 }
 
 .audioPlayerContainer section {

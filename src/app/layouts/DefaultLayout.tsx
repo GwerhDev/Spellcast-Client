@@ -2,15 +2,18 @@ import { Outlet } from 'react-router-dom';
 import { LateralTab } from '../components/LateralTab/LateralTab';
 import { LogoutModal } from '../components/Modals/LogoutModal';
 import { AudioPlayer } from '../components/AudioPlayer/AudioPlayer';
+import { LateralMenu } from '../components/LateralMenu/LateralMenu';
 
 export default function DefaultLayout() {
+  const shouldHideMenu = !location.pathname.startsWith(`/user`);
 
   return (
     <main>
       <div className='dashboard-container'>
-        <div className="side-tab">
+        <aside className="aside-container">
           <LateralTab />
-        </div>
+          {!shouldHideMenu && <LateralMenu />}
+        </aside>
         <div className="app-viewer">
           <div className="header-app">
             <span className="title-container">
@@ -20,7 +23,9 @@ export default function DefaultLayout() {
           <Outlet />
         </div>
       </div>
-      <AudioPlayer />
+      <div className="audioplayer-container">
+        <AudioPlayer />
+      </div>
       <LogoutModal />
     </main>
   );

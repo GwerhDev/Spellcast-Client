@@ -55,7 +55,6 @@ function App() {
                 <Route path="/user/*" element={<NotFound />} />
               </Route>
               <Route path="/explore/*" element={<NotFound />} />
-              <Route path="/store/*" element={<NotFound />} />
               <Route path="/user/not-found" element={<NotFound />} />
               <Route path="/user/*" element={<NotFound />} />
               <Route path="/user/not-found" element={<NotFound />} />
