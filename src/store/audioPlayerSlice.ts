@@ -8,6 +8,7 @@ interface AudioPlayerState {
   currentTime: number;
   duration: number;
   sourceType: 'playlist' | 'pdfPage';
+  pdfPageNumber: number | null;
 }
 
 const initialState: AudioPlayerState = {
@@ -18,19 +19,21 @@ const initialState: AudioPlayerState = {
   currentTime: 0,
   duration: 0,
   sourceType: 'playlist',
+  pdfPageNumber: null,
 };
 
 const audioPlayerSlice = createSlice({
   name: 'audioPlayer',
   initialState,
   reducers: {
-    setPlaylist: (state, action: PayloadAction<{ playlist: string[], startIndex?: number, sourceType?: 'playlist' | 'pdfPage' }>) => {
+    setPlaylist: (state, action: PayloadAction<{ playlist: string[], startIndex?: number, sourceType?: 'playlist' | 'pdfPage', pdfPageNumber?: number }>) => {
       state.playlist = action.payload.playlist;
       state.currentTrackIndex = action.payload.startIndex !== undefined ? action.payload.startIndex : (action.payload.playlist.length > 0 ? 0 : null);
       state.isPlaying = false;
       state.currentTime = 0;
       state.duration = 0;
       state.sourceType = action.payload.sourceType || 'playlist';
+      state.pdfPageNumber = action.payload.pdfPageNumber || null;
     },
     play: (state) => {
       state.isPlaying = true;
@@ -93,6 +96,7 @@ const audioPlayerSlice = createSlice({
       state.volume = 1;
       state.currentTime = 0;
       state.duration = 0;
+      state.pdfPageNumber = null;
     },
   },
 });

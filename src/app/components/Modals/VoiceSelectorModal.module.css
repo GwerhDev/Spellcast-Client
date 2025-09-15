@@ -35,7 +35,7 @@
     max-width: 450px;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
     outline: solid .5px var(--color-dark-300);
-    outline-offset: 10px;
+    outline-offset: .5rem;
     position: relative;
 }
 

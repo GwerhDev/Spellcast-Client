@@ -4,7 +4,6 @@ import { faUpload } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 interface PdfInputProps {
-  file: File | null;
   isLoading: boolean;
   isDragging: boolean;
   setIsDragging: (isDragging: boolean) => void;
@@ -15,7 +14,6 @@ interface PdfInputProps {
 }
 
 export const PdfInput: React.FC<PdfInputProps> = ({
-  file,
   isLoading,
   isDragging,
   handleFileChange,
@@ -24,8 +22,7 @@ export const PdfInput: React.FC<PdfInputProps> = ({
   handleDrop,
 }) => {
   return (
-    !file &&
-    < div
+    <div
       className={`${s.dropzone} ${isDragging ? s.dragging : ''}`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}

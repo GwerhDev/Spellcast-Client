@@ -1,29 +1,34 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 interface PdfReaderState {
-  file: File | null;
+  fileContent: string | null;
   totalPages: number;
   currentPage: number;
   isLoaded: boolean;
+  currentPageText: string | null;
 }
 
 const initialState: PdfReaderState = {
-  file: null,
+  fileContent: null,
   totalPages: 0,
   currentPage: 1,
   isLoaded: false,
+  currentPageText: null,
 };
 
 const pdfReaderSlice = createSlice({
   name: 'pdfReader',
   initialState,
   reducers: {
-    setPdfFile(state, action: PayloadAction<File | null>) {
-      state.file = action.payload;
+    setPdfFile(state, action: PayloadAction<string | null>) {
+      state.fileContent = action.payload;
+      state.totalPages = 0;
+      state.currentPage = 1;
+      state.isLoaded = false;
+      state.currentPageText = null;
     },
     setPdfDocumentInfo(state, action: PayloadAction<{ totalPages: number }>) {
       state.totalPages = action.payload.totalPages;
-      state.currentPage = 1;
       state.isLoaded = true;
     },
     goToNextPage(state) {
@@ -42,10 +47,14 @@ const pdfReaderSlice = createSlice({
       }
     },
     resetPdfState(state) {
-      state.file = null;
+      state.fileContent = null;
       state.totalPages = 0;
       state.currentPage = 1;
       state.isLoaded = false;
+      state.currentPageText = null;
+    },
+  setCurrentPageText(state, action: PayloadAction<string | null>) {
+      state.currentPageText = action.payload;
     },
   },
 });
@@ -57,6 +66,7 @@ export const {
   goToPreviousPage,
   goToPage,
   resetPdfState,
+  setCurrentPageText,
 } = pdfReaderSlice.actions;
 
 export default pdfReaderSlice.reducer;
