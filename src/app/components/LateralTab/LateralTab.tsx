@@ -1,5 +1,4 @@
 import s from './LateralTab.module.css';
-import { useNavigate } from 'react-router-dom';
 import { faCompass, faHome, faUser } from '@fortawesome/free-solid-svg-icons';
 import { Tab } from '../../../interfaces';
 import { TabButton } from '../Buttons/TabButton';
@@ -7,15 +6,10 @@ import spellcastIcon from '../../../assets/spellcast-logo.svg';
 
 interface LateralTabProps {
   setShowMenu: (e: boolean) => void;
-}
+};
 
 export const LateralTab = (props: LateralTabProps) => {
   const { setShowMenu } = props;
-  const navigate = useNavigate();
-
-  const handleGoHome = () => {
-    navigate("/");
-  };
 
   const tabList: Tab[] = [
     {
@@ -39,7 +33,7 @@ export const LateralTab = (props: LateralTabProps) => {
   return (
     <div className={s.container}>
       <span className={s.iconContainer}>
-        <img onClick={handleGoHome} src={spellcastIcon} alt="Spellcast Icon" height={25} />
+        <img src={spellcastIcon} alt="Spellcast Icon" height={25} />
       </span>
       <ul className={s.tabs}>
         {
