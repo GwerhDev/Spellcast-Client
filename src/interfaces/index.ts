@@ -18,8 +18,15 @@ export interface userData {
 
 export type Session = {
   logged: boolean;
-  userData: userData
+  userData: userData;
 };
+
+export interface Group {
+  id: string;
+  name: string;
+  member?: Member[]
+  isNew?: boolean;
+}
 
 export interface TTS_Credential {
   id?: string;

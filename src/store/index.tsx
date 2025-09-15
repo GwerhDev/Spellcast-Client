@@ -5,15 +5,17 @@ import audioPlayerReducer from './audioPlayerSlice';
 import pdfReaderReducer from './pdfReaderSlice';
 import voiceReducer from './voiceSlice';
 import credentialsReducer from './credentialsSlice';
+import groupsReducer from './groupsSlice';
 
 export const store = configureStore({
   reducer: {
-    session: sessionReducer,
-    credentials: credentialsReducer,
-    apiResponses: apiResponsesReducer,
-    audioPlayer: audioPlayerReducer,
-    pdfReader: pdfReaderReducer,
     voice: voiceReducer,
+    groups: groupsReducer,
+    session: sessionReducer,
+    pdfReader: pdfReaderReducer,
+    credentials: credentialsReducer,
+    audioPlayer: audioPlayerReducer,
+    apiResponses: apiResponsesReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
