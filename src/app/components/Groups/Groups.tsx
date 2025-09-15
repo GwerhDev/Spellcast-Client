@@ -48,7 +48,7 @@ export const Groups = () => {
                 !loading &&
                 <li className={s.emptyItem} onClick={handleAdd}>
                   <FontAwesomeIcon icon={faPlus} />
-                  Create new credential
+                  Create new group
                 </li>
               }
             </>
