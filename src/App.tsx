@@ -19,6 +19,7 @@ import { UserArchive } from './app/pages/UserArchive';
 import { Unauthorized } from './app/pages/Unauthorized';
 import { UserCredentials } from './app/pages/UserCredentials';
 import DefaultLayout from './app/layouts/DefaultLayout';
+import { New } from './app/pages/New';
 
 function App() {
   const userData: userData = useSelector((state: RootState) => state.session.userData);
@@ -36,6 +37,7 @@ function App() {
             <Route path="/unauthorized" element={<Unauthorized />} />
             <Route element={<DefaultLayout />}>
               <Route path="/" element={<Home />} />
+              <Route path="/new" element={<New />} />
               <Route path="/user/archive" element={<UserArchive />} />
 
               <Route path="/user" element={<RootBackground />}></Route>

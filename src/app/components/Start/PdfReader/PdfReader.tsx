@@ -9,22 +9,20 @@ import { setPlaylist, play, resetAudioPlayer } from '../../../../store/audioPlay
 import { setPdfDocumentInfo, goToNextPage, resetPdfState } from '../../../../store/pdfReaderSlice';
 import { PageSelector } from './PageSelector/PageSelector';
 import { IconButton } from '../../Buttons/IconButton';
-import { faEdit, faSave, faXmark } from '@fortawesome/free-solid-svg-icons';
+import { faArrowLeft, faEdit, faSave, faXmark } from '@fortawesome/free-solid-svg-icons';
+import { Link } from 'react-router-dom';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
-interface PdfReaderProps {
-  file: File;
-  selectedVoice: string;
-}
-
-export const PdfReader = ({ file, selectedVoice }: PdfReaderProps) => {
+export const PdfReader = () => {
   const [text, setText] = useState('');
   const [editedText, setEditedText] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [pdfDoc, setPdfDoc] = useState<any>(null);
   const dispatch = useDispatch();
+  const file = useSelector((state: RootState) => state.pdfReader.file);
+  const selectedVoice = useSelector((state: RootState) => state.voice.selectedVoice);
 
   const pageProcessedRef = useRef(0);
 
@@ -59,6 +57,7 @@ export const PdfReader = ({ file, selectedVoice }: PdfReaderProps) => {
 
   useEffect(() => {
     const loadPdfDocument = async () => {
+      if (!file) return;
       setIsLoading(true);
       const fileReader = new FileReader();
       fileReader.onload = async () => {
@@ -128,21 +127,24 @@ export const PdfReader = ({ file, selectedVoice }: PdfReaderProps) => {
 
   return (
     <div className={s.pdfReaderContainer}>
-      {isLoaded && (
-        <div className={s.pageInfoContainer}>
-          <PageSelector />
-          <div className={s.controlsContainer}>
-            {isEditing ? (
-              <>
-                <IconButton icon={faSave} variant='transparent' onClick={handleSave} className={s.controlButton} />
-                <IconButton icon={faXmark} variant='transparent' onClick={handleCancel} className={s.controlButton} />
-              </>
-            ) : (
-              <IconButton icon={faEdit} variant='transparent' onClick={handleEdit} className={s.controlButton} />
-            )}
-          </div>
+      <div className={s.pageInfoContainer}>
+        <span className={s.headerControls}>
+          <Link to={'/'}>
+            <IconButton variant='transparent' icon={faArrowLeft} />
+          </Link>
+          {isLoaded && <PageSelector />}
+        </span>
+        <div className={s.controlsContainer}>
+          {isLoaded && isEditing ? (
+            <>
+              <IconButton icon={faSave} variant='transparent' onClick={handleSave} />
+              <IconButton icon={faXmark} variant='transparent' onClick={handleCancel} />
+            </>
+          ) : (
+            <IconButton icon={faEdit} variant='transparent' onClick={handleEdit} />
+          )}
         </div>
-      )}
+      </div>
       <div className={s.textContainer}>
         {isLoading ? (
           <p>Loading page...</p>

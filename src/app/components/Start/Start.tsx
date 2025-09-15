@@ -1,23 +1,25 @@
 import s from './Start.module.css';
 import { useDispatch, useSelector } from 'react-redux';
 import { useState, useCallback, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { textToSpeechService } from '../../../services/tts';
 import { RootState } from '../../../store';
 import { setPlaylist, play, resetAudioPlayer } from '../../../store/audioPlayerSlice';
+import { setPdfFile } from '../../../store/pdfReaderSlice'; // Import the action
 import { PrimaryButton } from '../Buttons/PrimaryButton';
 import { PdfInput } from './PdfInput/PdfInput';
-import { PdfReader } from './PdfReader/PdfReader';
 import { TextInput } from './TextInput/TextInput';
 import { InputTypeSelector } from './InputTypeSelector/InputTypeSelector';
 
 export const Start = () => {
   const [inputType, setInputType] = useState('pdf'); // 'text' or 'pdf'
   const [text, setText] = useState('');
-  const [file, setFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { selectedVoice } = useSelector((state: RootState) => state.voice);
+  const file = useSelector((state: RootState) => state.pdfReader.file);
 
   const generateAudio = useCallback(async (textToSpeak: string, voice: string) => {
     setIsLoading(true);
@@ -34,8 +36,9 @@ export const Start = () => {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      setFile(e.target.files[0]);
+      dispatch(setPdfFile(e.target.files[0]));
       dispatch(resetAudioPlayer());
+      navigate('/new');
     }
   };
 
@@ -53,9 +56,10 @@ export const Start = () => {
     e.preventDefault();
     setIsDragging(false);
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      setFile(e.dataTransfer.files[0]);
+      dispatch(setPdfFile(e.dataTransfer.files[0]));
+      navigate('/new');
     }
-  }, []);
+  }, [dispatch, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,10 +98,8 @@ export const Start = () => {
               handleDragOver={handleDragOver}
               handleDragLeave={handleDragLeave}
               handleDrop={handleDrop}
-              setFile={setFile}
             />
           )}
-          {file && inputType === 'pdf' && <PdfReader file={file} selectedVoice={selectedVoice} />}
           {inputType === 'text' &&
             <PrimaryButton type="submit" disabled={isLoading || (inputType === 'text' ? !text : !file)}>
               {isLoading ? 'Generating Audio...' : 'Generate Audio'}

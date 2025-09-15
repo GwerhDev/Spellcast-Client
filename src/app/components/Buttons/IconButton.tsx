@@ -8,7 +8,7 @@ interface IconButtonProps {
   text?: string;
   children?: ReactNode;
   className?: string;
-  onClick: () => void;
+  onClick?: () => void;
   variant?: "primary" | "transparent";
 }
 

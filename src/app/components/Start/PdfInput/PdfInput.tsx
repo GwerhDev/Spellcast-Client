@@ -5,7 +5,6 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 interface PdfInputProps {
   file: File | null;
-  setFile: (file: File | null) => void;
   isLoading: boolean;
   isDragging: boolean;
   setIsDragging: (isDragging: boolean) => void;

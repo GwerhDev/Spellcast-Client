@@ -83,7 +83,7 @@ h5 {
 form {
   width: 100%;
   gap: var(--size-3);
-  border-radius: var(--size-1);
+  border-radius: 10px;
   display: flex;
   align-items: center;
   flex-direction: column;
@@ -183,7 +183,7 @@ textarea {
   height: 100%;
   padding: 1rem;
   font-size: 1rem;
-  border-radius: 1rem;
+  border-radius: 10px;
   color: var(--color-light-100);
   background-color: var(--color-dark-500);
   border: 1px solid var(--color-dark-300);

@@ -1,7 +1,7 @@
+import s from './PageSelector.module.css';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../../../../store';
 import { goToPage } from '../../../../../store/pdfReaderSlice';
-import s from './PageSelector.module.css';
 
 export const PageSelector = () => {
   const dispatch = useDispatch();
@@ -13,6 +13,7 @@ export const PageSelector = () => {
       dispatch(goToPage(page));
     }
   };
+
 
   return (
     <div className={s.pageSelectorContainer}>
