@@ -18,7 +18,6 @@ import { Dashboard } from './app/pages/Dashboard';
 import { UserArchive } from './app/pages/UserArchive';
 import { Unauthorized } from './app/pages/Unauthorized';
 import { UserCredentials } from './app/pages/UserCredentials';
-import UserLayout from './app/layouts/UserLayout';
 import DefaultLayout from './app/layouts/DefaultLayout';
 
 function App() {
@@ -37,29 +36,27 @@ function App() {
             <Route path="/unauthorized" element={<Unauthorized />} />
             <Route element={<DefaultLayout />}>
               <Route path="/" element={<Home />} />
-              <Route path="/user" element={<UserLayout />}>
-                <Route path="/user/archive" element={<UserArchive />} />
+              <Route path="/user/archive" element={<UserArchive />} />
 
-                <Route path="/user" element={<RootBackground />}></Route>
-                <Route path="/user/dashboard" element={<Dashboard />} />
-                <Route path="/user/dashboard/overview" element={<Overview />} />
-                <Route path="/user/dashboard/groups" element={<Groups />} />
+              <Route path="/user" element={<RootBackground />}></Route>
+              <Route path="/user/dashboard" element={<Dashboard />} />
+              <Route path="/user/dashboard/overview" element={<Overview />} />
+              <Route path="/user/dashboard/groups" element={<Groups />} />
 
-                <Route path="/user/storage" element={<Storage />} />
-                <Route path="/user/storage/library" element={<Library />} />
-                <Route path="/user/storage/audios" element={<Audios />} />
+              <Route path="/user/storage" element={<Storage />} />
+              <Route path="/user/storage/library" element={<Library />} />
+              <Route path="/user/storage/audios" element={<Audios />} />
 
-                <Route path="/user/settings" element={<Settings />} />
-                <Route path="/user/settings/credentials" element={<UserCredentials />} />
-                <Route path="/user/not-found" element={<NotFound />} />
-                <Route path="/user/*" element={<NotFound />} />
-              </Route>
+              <Route path="/user/settings" element={<Settings />} />
+              <Route path="/user/settings/credentials" element={<UserCredentials />} />
+              <Route path="/user/not-found" element={<NotFound />} />
+              <Route path="/user/*" element={<NotFound />} />
               <Route path="/explore/*" element={<NotFound />} />
-              <Route path="/user/not-found" element={<NotFound />} />
-              <Route path="/user/*" element={<NotFound />} />
-              <Route path="/user/not-found" element={<NotFound />} />
-              <Route path="/user/*" element={<NotFound />} />
             </Route>
+            <Route path="/user/not-found" element={<NotFound />} />
+            <Route path="/user/*" element={<NotFound />} />
+            <Route path="/user/not-found" element={<NotFound />} />
+            <Route path="/user/*" element={<NotFound />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
       }

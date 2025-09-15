@@ -2,6 +2,8 @@ import { DirectoryList } from "../components/Dashboard/DirectoryList"
 
 export const Settings = () => {
   return (
-    <DirectoryList />
+    <div className="dashboard-sections">
+      <DirectoryList />
+    </div>
   )
 }

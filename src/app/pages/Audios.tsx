@@ -1,5 +1,7 @@
 export const Audios = () => {
   return (
-    <div>Audios</div>
+    <div className="dashboard-sections">
+      Audios
+    </div>
   )
 }

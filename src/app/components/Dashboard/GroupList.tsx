@@ -1,7 +1,6 @@
 import s from './GroupList.module.css';
 
 export function GroupList() {
-
   return (
     <div className={s.container}>
       <div className={s.header}>

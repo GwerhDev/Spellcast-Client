@@ -3,6 +3,8 @@ import { UserPresentation } from "../components/UserPresentation/UserPresentatio
 export const Overview = () => {
 
   return (
-    <UserPresentation />
+    <div className="dashboard-sections">
+      <UserPresentation />
+    </div>
   )
 }

@@ -1,5 +1,7 @@
 export const Library = () => {
   return (
-    <div>Library</div>
+    <div className="dashboard-sections">
+      <div>Library</div>
+    </div>
   )
 }

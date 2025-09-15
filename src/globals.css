@@ -324,7 +324,7 @@ a:hover {
   border-radius: 10px;
   display: flex;
   overflow: auto;
-  border: solid .5px var(--color-dark-300);
+  justify-content: center;
 }
 
 .aside-container {
