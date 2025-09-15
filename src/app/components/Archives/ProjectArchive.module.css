@@ -32,7 +32,7 @@
   gap: 1rem;
   padding: 1rem;
   padding-inline: 2rem;
-  border-radius: 1rem;
+  border-radius: 10px;
   background-color: var(--color-dark-300);
   cursor: pointer;
   display: flex;

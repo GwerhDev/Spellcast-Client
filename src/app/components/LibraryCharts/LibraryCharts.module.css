@@ -8,7 +8,7 @@
 .chartCard {
   width: 100%;
   padding: 1rem;
-  border-radius: 1rem;
+  border-radius: 10px;
   text-align: center;
   background-color: var(--color-dark-300);
 }
@@ -26,5 +26,5 @@
 
 .chartPlaceholder {
   width: 100%;
-  border-radius: 1rem;
+  border-radius: 10px;
 }
