@@ -234,6 +234,7 @@ main {
   justify-content: center;
   color: var(--color-light-200);
   font-weight: bold;
+  padding: .2rem;
 }
 
 .title-container img {
@@ -293,6 +294,12 @@ a:hover {
   padding-inline: .5rem;
 }
 
+@media (max-width: 768px) {
+  .dashboard-container {
+    flex-direction: column;
+  }
+}
+
 .flex-dir-col {
   flex-direction: column;
 }
@@ -330,10 +337,15 @@ a:hover {
 .aside-container {
   gap: .5rem;
   padding: .5rem;
-  margin-top: 1.5rem;
   border-radius: 10px;
   display: flex;
   border: solid .5px var(--color-dark-300);
+}
+
+@media (max-width: 768px) {
+  .aside-container {
+    flex-direction: column;
+  }
 }
 
 .audioplayer-container {

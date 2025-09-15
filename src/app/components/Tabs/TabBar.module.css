@@ -3,13 +3,21 @@
   padding: 0;
   height: 100%;
   border-radius: 10px;
-  padding-inline: .3rem;
   display: flex;
   align-items: center;
   flex-direction: column;
-  background-color: var(--color-dark-800);
   padding-top: 1rem;
   padding-bottom: 1rem;
+  background-color: var(--color-dark-500);
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 0;
+    height: auto;
+    flex-direction: row;
+    justify-content: flex-start;
+  }
 }
 
 .iconContainer {
@@ -25,8 +33,21 @@
 .tabs {
   height: 100%;
   padding: 0;
-  padding-top: .5rem;
   overflow-y: auto;
   align-items: center;
   flex-direction: column;
+}
+
+@media (max-width: 768px) {
+  .iconContainer {
+    width: auto;
+  }
+
+  .tabs {
+    width: 100%;
+    padding: 0;
+    height: auto;
+    flex-direction: row;
+    justify-content: space-around;
+  }
 }

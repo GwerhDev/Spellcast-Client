@@ -10,7 +10,7 @@
   min-width: 250px;
   border-radius: 10px;
   overflow: hidden;
-  background-color: var(--color-dark-800);
+  background-color: var(--color-dark-500);
 }
 
 .projectActionsContainer {

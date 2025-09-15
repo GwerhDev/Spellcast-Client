@@ -1,14 +1,13 @@
-import s from './LateralTab.module.css';
+import s from './TabBar.module.css';
 import { faCompass, faHome, faUser } from '@fortawesome/free-solid-svg-icons';
 import { Tab } from '../../../interfaces';
 import { TabButton } from '../Buttons/TabButton';
-import spellcastIcon from '../../../assets/spellcast-logo.svg';
 
-interface LateralTabProps {
+interface TabBarProps {
   setShowMenu: (e: boolean) => void;
 };
 
-export const LateralTab = (props: LateralTabProps) => {
+export const TabBar = (props: TabBarProps) => {
   const { setShowMenu } = props;
 
   const tabList: Tab[] = [
@@ -32,9 +31,6 @@ export const LateralTab = (props: LateralTabProps) => {
 
   return (
     <div className={s.container}>
-      <span className={s.iconContainer}>
-        <img src={spellcastIcon} alt="Spellcast Icon" height={25} />
-      </span>
       <ul className={s.tabs}>
         {
           tabList?.map((tab: Tab, index: number) => (
