@@ -8,7 +8,9 @@ export default function DefaultLayout() {
   return (
     <main>
       <div className='dashboard-container'>
-        <LateralTab />
+        <div className="side-tab">
+          <LateralTab />
+        </div>
         <div className="app-viewer">
           <div className="header-app">
             <span className="title-container">

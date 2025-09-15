@@ -2,10 +2,14 @@
   gap: .5rem;
   padding: 0;
   height: 100%;
+  border-radius: 10px;
   padding-inline: .3rem;
   display: flex;
   align-items: center;
   flex-direction: column;
+  background-color: var(--color-dark-800);
+  padding-top: 1rem;
+  padding-bottom: 1rem;
 }
 
 .iconContainer {

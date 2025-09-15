@@ -326,6 +326,11 @@ a:hover {
   border-bottom: none;
 }
 
+.side-tab {
+  padding: 1.5rem;
+  padding-inline: .5rem;
+}
+
 .logo {
   animation: fadeInOut 3s ease-in-out infinite;
 }
