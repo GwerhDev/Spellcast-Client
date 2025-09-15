@@ -3,12 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Tab } from '../../../interfaces';
 
-export const TabButton = (props: { tab: Tab, loading: boolean }) => {
-  const { tab } = props || {};
-  const { title, icon, route } = tab || {};
+export const TabButton = (props: { tab: Tab, loading: boolean, setShowMenu: (e: boolean) => void; }) => {
+  const { tab, setShowMenu } = props || {};
+  const { title, icon, route, showMenu } = tab || {};
   const navigate = useNavigate();
 
   const handleOnClick = () => {
+    setShowMenu(showMenu);
     navigate(route);
   };
 

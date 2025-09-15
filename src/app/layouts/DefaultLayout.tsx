@@ -3,16 +3,18 @@ import { LateralTab } from '../components/LateralTab/LateralTab';
 import { LogoutModal } from '../components/Modals/LogoutModal';
 import { AudioPlayer } from '../components/AudioPlayer/AudioPlayer';
 import { LateralMenu } from '../components/LateralMenu/LateralMenu';
+import { useState } from 'react';
 
 export default function DefaultLayout() {
-  const shouldHideMenu = !location.pathname.startsWith(`/user`);
+  const shouldHideMenu = location.pathname.startsWith(`/user`);
+  const [showMenu, setShowMenu] = useState(shouldHideMenu);
 
   return (
     <main>
       <div className='dashboard-container'>
         <aside className="aside-container">
-          <LateralTab />
-          {!shouldHideMenu && <LateralMenu />}
+          <LateralTab setShowMenu={setShowMenu} />
+          {showMenu && <LateralMenu />}
         </aside>
         <div className="app-viewer">
           <div className="header-app">

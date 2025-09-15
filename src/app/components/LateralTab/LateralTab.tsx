@@ -5,8 +5,12 @@ import { Tab } from '../../../interfaces';
 import { TabButton } from '../Buttons/TabButton';
 import spellcastIcon from '../../../assets/spellcast-logo.svg';
 
-export const LateralTab = () => {
+interface LateralTabProps {
+  setShowMenu: (e: boolean) => void;
+}
 
+export const LateralTab = (props: LateralTabProps) => {
+  const { setShowMenu } = props;
   const navigate = useNavigate();
 
   const handleGoHome = () => {
@@ -18,14 +22,17 @@ export const LateralTab = () => {
       title: 'Home',
       route: '/',
       icon: faHome,
+      showMenu: false,
     }, {
       title: 'User',
       route: '/user',
       icon: faUser,
+      showMenu: true,
     }, {
       title: 'Explore',
       route: '/explore',
-      icon: faCompass
+      icon: faCompass,
+      showMenu: false,
     }
   ];
 
@@ -38,7 +45,7 @@ export const LateralTab = () => {
         {
           tabList?.map((tab: Tab, index: number) => (
             <li key={index}>
-              <TabButton tab={tab} loading={false} />
+              <TabButton setShowMenu={setShowMenu} tab={tab} loading={false} />
             </li>
           ))
         }

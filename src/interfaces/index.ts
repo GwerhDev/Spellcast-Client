@@ -4,6 +4,7 @@ export interface Tab {
   title: string;
   icon?: IconProp;
   route: string;
+  showMenu: boolean;
 }
 
 export interface userData {
