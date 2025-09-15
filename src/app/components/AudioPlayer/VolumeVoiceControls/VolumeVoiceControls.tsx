@@ -1,7 +1,7 @@
 import s from './VolumeVoiceControls.module.css';
 import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faVolumeUp, faVolumeMute, faMicrophone, faCommentDots } from '@fortawesome/free-solid-svg-icons';
+import { faVolumeUp, faVolumeMute, faCommentDots } from '@fortawesome/free-solid-svg-icons';
 import { VoiceSelectorModal } from '../../Modals/VoiceSelectorModal';
 
 interface VoiceOption {
@@ -74,7 +74,7 @@ export const VolumeVoiceControls: React.FC<VolumeVoiceControlsProps> = ({
                 className={s.voiceButton}
                 onClick={() => setIsVoiceModalOpen(true)}
               >
-                <FontAwesomeIcon icon={faMicrophone} />
+                <FontAwesomeIcon icon={faCommentDots} />
               </button>
             </div>
             <button className={s.volumeIcon} onClick={() => setShowMobileVolumeSlider(!showMobileVolumeSlider)} ref={mobileVolumeButtonRef}>
