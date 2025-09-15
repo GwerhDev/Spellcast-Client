@@ -37,11 +37,8 @@ export const AudioPlayer = () => {
   const [lastVolume, setLastVolume] = useState(volume);
   const [isMobile, setIsMobile] = useState(false);
   const [showMobileVolumeSlider, setShowMobileVolumeSlider] = useState(false);
-  const [showVoiceSelector, setShowVoiceSelector] = useState(false);
   const mobileVolumeSliderRef = useRef<HTMLDivElement>(null);
   const mobileVolumeButtonRef = useRef<HTMLButtonElement>(null);
-  const voiceSelectorRef = useRef<HTMLDivElement>(null);
-  const voiceButtonRef = useRef<HTMLButtonElement>(null);
   const currentTrackUrl = currentTrackIndex !== null ? playlist[currentTrackIndex] : null;
   const progressPercentage = duration > 0 ? (currentTime / duration) * 100 : 0;
   const volumePercentage = volume * 100;
@@ -79,25 +76,7 @@ export const AudioPlayer = () => {
     };
   }, [showMobileVolumeSlider]);
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        showVoiceSelector &&
-        voiceSelectorRef.current &&
-        !voiceSelectorRef.current.contains(event.target as Node) &&
-        voiceButtonRef.current &&
-        !voiceButtonRef.current.contains(event.target as Node)
-      ) {
-        setShowVoiceSelector(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showVoiceSelector]);
+  
 
   useEffect(() => {
     if (audioRef.current) {
@@ -229,10 +208,6 @@ export const AudioPlayer = () => {
         setShowMobileVolumeSlider={setShowMobileVolumeSlider}
         mobileVolumeSliderRef={mobileVolumeSliderRef}
         mobileVolumeButtonRef={mobileVolumeButtonRef}
-        showVoiceSelector={showVoiceSelector}
-        setShowVoiceSelector={setShowVoiceSelector}
-        voiceSelectorRef={voiceSelectorRef}
-        voiceButtonRef={voiceButtonRef}
         selectedVoice={selectedVoice}
         voices={voices}
         setVolume={(vol) => dispatch(setVolume(vol))}
