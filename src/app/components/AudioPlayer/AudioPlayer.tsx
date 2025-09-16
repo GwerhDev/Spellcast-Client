@@ -13,7 +13,9 @@ import {
 import { setSelectedVoice } from '../../../store/voiceSlice';
 import { goToNextPage, goToPreviousPage } from '../../../store/pdfReaderSlice';
 import { PlaybackControls } from './PlaybackControls/PlaybackControls';
-import { VolumeVoiceControls } from './VolumeVoiceControls/VolumeVoiceControls';
+import { VolumeControls } from './VolumeControls/VolumeControls';
+import { VoiceSelectorButton } from './VoiceSelectorButton/VoiceSelectorButton';
+import { VoiceSelectorModal } from '../Modals/VoiceSelectorModal';
 
 export const AudioPlayer = () => {
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -37,6 +39,7 @@ export const AudioPlayer = () => {
   const [lastVolume, setLastVolume] = useState(volume);
   const [isMobile, setIsMobile] = useState(false);
   const [showMobileVolumeSlider, setShowMobileVolumeSlider] = useState(false);
+  const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
   const mobileVolumeSliderRef = useRef<HTMLDivElement>(null);
   const mobileVolumeButtonRef = useRef<HTMLButtonElement>(null);
   const currentTrackUrl = currentTrackIndex !== null ? playlist[currentTrackIndex] : null;
@@ -76,7 +79,7 @@ export const AudioPlayer = () => {
     };
   }, [showMobileVolumeSlider]);
 
-  
+
 
   useEffect(() => {
     if (audioRef.current) {
@@ -173,46 +176,54 @@ export const AudioPlayer = () => {
   const isNextDisabled = isPdfLoaded ? currentPage === totalPages : currentTrackIndex === (playlist.length - 1);
 
   return (
-    <div className={s.audioPlayerContainer}>
-      <audio
-        ref={audioRef}
-        onTimeUpdate={handleTimeUpdate}
-        onLoadedMetadata={handleLoadedMetadata}
-        onEnded={handleEnded}
-      />
-      <section className={s.bookInfo}>
-      </section>
+    <>
+      <div className={s.audioPlayerContainer}>
+        <audio
+          ref={audioRef}
+          onTimeUpdate={handleTimeUpdate}
+          onLoadedMetadata={handleLoadedMetadata}
+          onEnded={handleEnded}
+        />
+        <section className={s.leftSection}>
+          <VoiceSelectorButton onClick={() => setIsVoiceModalOpen(true)} />
+        </section>
 
-      <PlaybackControls
-        audioRef={audioRef}
-        currentTime={currentTime}
-        duration={duration}
-        progressPercentage={progressPercentage}
-        handlePrevious={handlePrevious}
-        handleNext={handleNext}
-        isPlaying={isPlaying}
-        isPrevDisabled={isPrevDisabled}
-        isNextDisabled={isNextDisabled}
-        currentTrackIndex={currentTrackIndex}
-        formatTime={formatTime}
-        togglePlayPause={() => dispatch(togglePlayPause())}
-        setCurrentTime={(time) => dispatch(setCurrentTime(time))}
-      />
 
-      <VolumeVoiceControls
-        volume={volume}
-        handleVolumeToggle={handleVolumeToggle}
-        volumePercentage={volumePercentage}
-        isMobile={isMobile}
-        showMobileVolumeSlider={showMobileVolumeSlider}
-        setShowMobileVolumeSlider={setShowMobileVolumeSlider}
-        mobileVolumeSliderRef={mobileVolumeSliderRef}
-        mobileVolumeButtonRef={mobileVolumeButtonRef}
-        selectedVoice={selectedVoice}
+        <PlaybackControls
+          audioRef={audioRef}
+          currentTime={currentTime}
+          duration={duration}
+          progressPercentage={progressPercentage}
+          handlePrevious={handlePrevious}
+          handleNext={handleNext}
+          isPlaying={isPlaying}
+          isPrevDisabled={isPrevDisabled}
+          isNextDisabled={isNextDisabled}
+          currentTrackIndex={currentTrackIndex}
+          formatTime={formatTime}
+          togglePlayPause={() => dispatch(togglePlayPause())}
+          setCurrentTime={(time) => dispatch(setCurrentTime(time))}
+        />
+
+        <VolumeControls
+          volume={volume}
+          handleVolumeToggle={handleVolumeToggle}
+          volumePercentage={volumePercentage}
+          isMobile={isMobile}
+          showMobileVolumeSlider={showMobileVolumeSlider}
+          setShowMobileVolumeSlider={setShowMobileVolumeSlider}
+          mobileVolumeSliderRef={mobileVolumeSliderRef}
+          mobileVolumeButtonRef={mobileVolumeButtonRef}
+          setVolume={(vol) => dispatch(setVolume(vol))}
+        />
+      </div>
+      <VoiceSelectorModal
+        show={isVoiceModalOpen}
+        onClose={() => setIsVoiceModalOpen(false)}
         voices={voices}
-        setVolume={(vol) => dispatch(setVolume(vol))}
+        selectedVoice={selectedVoice}
         setSelectedVoice={(voice) => dispatch(setSelectedVoice(voice))}
       />
-    </div>
+    </>
   );
 };

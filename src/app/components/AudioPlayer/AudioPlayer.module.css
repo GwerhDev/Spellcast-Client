@@ -7,11 +7,13 @@
   justify-content: space-between;
 }
 
+
+
 .audioPlayerContainer section {
   width: 100%;
 }
 
-.bookInfo {
+.leftSection {
   gap: .3rem;
   padding: 0;
   width: 100%;

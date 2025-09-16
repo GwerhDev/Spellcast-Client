@@ -1,0 +1,19 @@
+.voiceSelectorContainer {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.voiceButton {
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 20px;
+  padding: 10px;
+  transition: color 0.3s ease;
+}
+
+.voiceButton:hover {
+  color: var(--color-primary);
+  background-color: transparent;
+}
