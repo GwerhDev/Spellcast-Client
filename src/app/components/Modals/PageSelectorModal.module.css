@@ -1,0 +1,81 @@
+
+.container {
+    z-index: 1050;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(82, 82, 82, 0.014);
+    display: flex;
+    position: fixed;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(10px);
+}
+
+.closeButton {
+    top: 0;
+    right: 0;
+    width: 30px;
+    height: 30px;
+    padding: .5rem;
+    margin: .5rem;
+    border-radius: 50%;
+    background-color: var(--color-dark-200);
+    position: absolute;
+}
+
+.modalContent {
+    gap: 1.5rem;
+    width: 90%;
+    padding: 1rem;
+    background-color: var(--color-dark-500);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    max-width: 450px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    outline: solid .5px var(--color-dark-300);
+    outline-offset: .5rem;
+    position: relative;
+}
+
+.modalContent h2 {
+    color: var(--text-color);
+    text-align: center;
+}
+
+.pageList {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+    gap: 0.75rem;
+    max-height: 50vh;
+    overflow-y: auto;
+}
+
+.pageOption {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: var(--color-dark-400);
+    color: var(--text-color);
+    border: 1px solid transparent;
+    padding: 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s ease-in-out;
+}
+
+.pageOption:hover {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: white;
+}
+
+.activePage {
+    background: var(--color-primary);
+    color: white;
+    font-weight: bold;
+    border-color: var(--color-primary);
+}

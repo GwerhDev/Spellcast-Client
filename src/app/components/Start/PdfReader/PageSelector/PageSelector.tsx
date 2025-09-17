@@ -1,35 +1,20 @@
 import s from './PageSelector.module.css';
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 import { RootState } from '../../../../../store';
-import { goToPage } from '../../../../../store/pdfReaderSlice';
+import { PrimaryButton } from '../../../Buttons/PrimaryButton';
 
-export const PageSelector = () => {
-  const dispatch = useDispatch();
+interface PageSelectorProps {
+  onClick: () => void;
+}
+
+export const PageSelector: React.FC<PageSelectorProps> = ({ onClick }) => {
   const { currentPage, totalPages } = useSelector((state: RootState) => state.pdfReader);
-
-  const handlePageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const page = Number(e.target.value);
-    if (!isNaN(page)) {
-      dispatch(goToPage(page));
-    }
-  };
-
 
   return (
     <div className={s.pageSelectorContainer}>
-      <span>Page</span>
-      <select
-        value={currentPage}
-        onChange={handlePageChange}
-        className={s.pageSelect}
-      >
-        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-          <option key={page} value={page}>
-            {page}
-          </option>
-        ))}
-      </select>
-      <span className={s.totalPages}>of {totalPages}</span>
+      <PrimaryButton variant='transparent' onClick={onClick}>
+        {`Page ${currentPage} of ${totalPages}`}
+      </PrimaryButton>
     </div>
   );
 };

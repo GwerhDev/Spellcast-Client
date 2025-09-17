@@ -8,6 +8,7 @@ import { PageSelector } from './PageSelector/PageSelector';
 import { IconButton } from '../../Buttons/IconButton';
 import { faArrowLeft, faEdit, faSave, faXmark } from '@fortawesome/free-solid-svg-icons';
 import { Link } from 'react-router-dom';
+import { PageSelectorModal } from '../../Modals/PageSelectorModal';
 
 export const PdfReader = () => {
   const dispatch = useDispatch();
@@ -16,6 +17,7 @@ export const PdfReader = () => {
 
   const [editedText, setEditedText] = useState(currentPageText || '');
   const [isEditing, setIsEditing] = useState(false);
+  const [isPageSelectorModalOpen, setIsPageSelectorModalOpen] = useState(false);
 
   useEffect(() => {
     if (currentPageText) {
@@ -38,10 +40,6 @@ export const PdfReader = () => {
   };
 
   const handleSave = () => {
-    // Here, we are only generating a new audio for the edited text.
-    // We are not saving the edited text to the store, as that would require more state management.
-    // The PdfProcessor will overwrite it on next page load.
-    // This is acceptable for now as it's an edge case.
     setIsEditing(false);
     handleGenerateAudio(editedText, currentPage);
   };
@@ -57,12 +55,16 @@ export const PdfReader = () => {
 
   return (
     <div className={s.pdfReaderContainer}>
+        <PageSelectorModal 
+            show={isPageSelectorModalOpen}
+            onClose={() => setIsPageSelectorModalOpen(false)}
+        />
       <div className={s.pageInfoContainer}>
         <span className={s.headerControls}>
           <Link to={'/'}>
             <IconButton variant='transparent' icon={faArrowLeft} />
           </Link>
-          {isLoaded && <PageSelector />}
+          {isLoaded && <PageSelector onClick={() => setIsPageSelectorModalOpen(true)} />}
         </span>
         <div className={s.controlsContainer}>
           {isLoaded && isEditing ? (
