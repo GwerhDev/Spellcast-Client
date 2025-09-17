@@ -45,6 +45,15 @@
     text-align: center;
 }
 
+.searchInput {
+    width: 100%;
+    padding: 0.5rem;
+    border-radius: 8px;
+    border: 1px solid var(--color-dark-300);
+    background-color: var(--color-dark-400);
+    color: var(--text-color);
+}
+
 .pageList {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));

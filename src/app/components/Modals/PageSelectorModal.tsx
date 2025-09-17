@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import s from './PageSelectorModal.module.css';
 import { IconButton } from '../Buttons/IconButton';
 import { faXmark } from '@fortawesome/free-solid-svg-icons';
@@ -17,6 +17,7 @@ export const PageSelectorModal: React.FC<PageSelectorModalProps> = ({
 }) => {
   const dispatch = useDispatch();
   const { currentPage, totalPages } = useSelector((state: RootState) => state.pdfReader);
+  const [searchTerm, setSearchTerm] = useState('');
 
   if (!show) {
     return null;
@@ -27,14 +28,26 @@ export const PageSelectorModal: React.FC<PageSelectorModalProps> = ({
     onClose();
   };
 
+  const allPages = Array.from({ length: totalPages }, (_, i) => i + 1);
+  const filteredPages = searchTerm
+    ? allPages.filter(page => page.toString().includes(searchTerm))
+    : allPages;
+
   return (
     <div className={s.container} onClick={onClose}>
       <div className={s.modalContent} onClick={(e) => e.stopPropagation()}>
         <IconButton className={s.closeButton} icon={faXmark} onClick={onClose} />
 
         <h3>Select a Page</h3>
+        <input
+          type="text"
+          placeholder="Search for a page..."
+          className={s.searchInput}
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
         <ul className={s.pageList}>
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+          {filteredPages.map((page) => (
             <li
               key={page}
               className={`${s.pageOption} ${currentPage === page ? s.activePage : ''}`}
