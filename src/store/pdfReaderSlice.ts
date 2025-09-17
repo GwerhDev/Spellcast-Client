@@ -5,7 +5,7 @@ interface PdfReaderState {
   totalPages: number;
   currentPage: number;
   isLoaded: boolean;
-  currentPageText: string | null;
+  pages: { [pageNumber: number]: string };
 }
 
 const initialState: PdfReaderState = {
@@ -13,7 +13,7 @@ const initialState: PdfReaderState = {
   totalPages: 0,
   currentPage: 1,
   isLoaded: false,
-  currentPageText: null,
+  pages: {},
 };
 
 const pdfReaderSlice = createSlice({
@@ -25,7 +25,7 @@ const pdfReaderSlice = createSlice({
       state.totalPages = 0;
       state.currentPage = 1;
       state.isLoaded = false;
-      state.currentPageText = null;
+      state.pages = {};
     },
     setPdfDocumentInfo(state, action: PayloadAction<{ totalPages: number }>) {
       state.totalPages = action.payload.totalPages;
@@ -51,10 +51,12 @@ const pdfReaderSlice = createSlice({
       state.totalPages = 0;
       state.currentPage = 1;
       state.isLoaded = false;
-      state.currentPageText = null;
+      state.pages = {};
     },
-  setCurrentPageText(state, action: PayloadAction<string | null>) {
-      state.currentPageText = action.payload;
+    setPageText(state, action: PayloadAction<{ pageNumber: number; text: string | null }>) {
+        if (action.payload.text) {
+            state.pages[action.payload.pageNumber] = action.payload.text;
+        }
     },
   },
 });
@@ -66,7 +68,7 @@ export const {
   goToPreviousPage,
   goToPage,
   resetPdfState,
-  setCurrentPageText,
+  setPageText,
 } = pdfReaderSlice.actions;
 
 export default pdfReaderSlice.reducer;

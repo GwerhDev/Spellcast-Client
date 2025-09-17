@@ -9,11 +9,14 @@ import { IconButton } from '../../Buttons/IconButton';
 import { faArrowLeft, faEdit, faSave, faXmark } from '@fortawesome/free-solid-svg-icons';
 import { Link } from 'react-router-dom';
 import { PageSelectorModal } from '../../Modals/PageSelectorModal';
+import { setPageText } from '../../../../store/pdfReaderSlice';
 
 export const PdfReader = () => {
   const dispatch = useDispatch();
-  const { currentPage, isLoaded, currentPageText } = useSelector((state: RootState) => state.pdfReader);
+  const { currentPage, isLoaded, pages } = useSelector((state: RootState) => state.pdfReader);
   const { selectedVoice } = useSelector((state: RootState) => state.voice);
+
+  const currentPageText = pages[currentPage] || '';
 
   const [editedText, setEditedText] = useState(currentPageText || '');
   const [isEditing, setIsEditing] = useState(false);
@@ -29,9 +32,7 @@ export const PdfReader = () => {
   }, [currentPage, isLoaded, dispatch]);
 
   useEffect(() => {
-    if (currentPageText) {
-      setEditedText(currentPageText);
-    }
+    setEditedText(currentPageText);
   }, [currentPageText]);
 
   const handleGenerateAudio = async (textToGenerate: string, pageNumber: number) => {
@@ -49,6 +50,8 @@ export const PdfReader = () => {
   };
 
   const handleSave = () => {
+    dispatch(resetAudioPlayer());
+    dispatch(setPageText({ pageNumber: currentPage, text: editedText }));
     setIsEditing(false);
     handleGenerateAudio(editedText, currentPage);
   };

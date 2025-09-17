@@ -4,7 +4,7 @@ import * as pdfjsLib from 'pdfjs-dist';
 import { RootState } from '../../../store';
 import { textToSpeechService } from '../../../services/tts';
 import { setPlaylist, play } from '../../../store/audioPlayerSlice';
-import { setPdfDocumentInfo, setCurrentPageText, goToNextPage } from '../../../store/pdfReaderSlice';
+import { setPdfDocumentInfo, setPageText, goToNextPage } from '../../../store/pdfReaderSlice';
 
 // Set workerSrc for pdfjsLib
 import workerSrc from 'pdfjs-dist/build/pdf.worker?url';
@@ -12,7 +12,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
 export const PdfProcessor = () => {
   const dispatch = useDispatch();
-  const { fileContent, currentPage, totalPages } = useSelector((state: RootState) => state.pdfReader);
+  const { fileContent, currentPage, totalPages, pages } = useSelector((state: RootState) => state.pdfReader);
   const { selectedVoice } = useSelector((state: RootState) => state.voice);
   const sourceType = useSelector((state: RootState) => state.audioPlayer.sourceType);
   const pdfPageNumber = useSelector((state: RootState) => state.audioPlayer.pdfPageNumber);
@@ -46,11 +46,14 @@ export const PdfProcessor = () => {
       const processPage = async () => {
         setIsProcessing(true);
         try {
-          const page = await pdfDoc.getPage(currentPage);
-          const content = await page.getTextContent();
-          const text = content.items.map((item: any) => item.str).join(' ');
-          
-          dispatch(setCurrentPageText(text));
+            let text = pages[currentPage];
+
+            if (!text) {
+                const page = await pdfDoc.getPage(currentPage);
+                const content = await page.getTextContent();
+                text = content.items.map((item: any) => item.str).join(' ');
+                dispatch(setPageText({ pageNumber: currentPage, text }));
+            }
 
           if (text && text.trim() !== '') {
             // Only generate audio if it's not already for the current page
@@ -73,7 +76,7 @@ export const PdfProcessor = () => {
       };
       processPage();
     }
-  }, [pdfDoc, currentPage, dispatch, selectedVoice, sourceType, pdfPageNumber, isPlaying, isProcessing, totalPages]);
+  }, [pdfDoc, currentPage, dispatch, selectedVoice, sourceType, pdfPageNumber, isPlaying, isProcessing, totalPages, pages]);
 
   return null; // Headless component
 };
