@@ -12,7 +12,7 @@ export const PageSelector: React.FC<PageSelectorProps> = ({ onClick }) => {
 
   return (
     <div className={s.pageSelectorContainer}>
-      <PrimaryButton variant='transparent' onClick={onClick}>
+      <PrimaryButton onClick={onClick}>
         {`Page ${currentPage} of ${totalPages}`}
       </PrimaryButton>
     </div>
