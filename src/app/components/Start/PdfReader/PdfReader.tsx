@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../../../store';
 import { textToSpeechService } from '../../../../services/tts';
-import { setPlaylist, play } from '../../../../store/audioPlayerSlice';
+import { setPlaylist, play, resetAudioPlayer } from '../../../../store/audioPlayerSlice';
 import { PageSelector } from './PageSelector/PageSelector';
 import { IconButton } from '../../Buttons/IconButton';
 import { faArrowLeft, faEdit, faSave, faXmark } from '@fortawesome/free-solid-svg-icons';
@@ -24,6 +24,10 @@ export const PdfReader = () => {
       setEditedText(currentPageText);
     }
   }, [currentPageText]);
+
+  useEffect(() => {
+    dispatch(resetAudioPlayer());
+  }, [currentPage, dispatch]);
 
   const handleGenerateAudio = async (textToGenerate: string, pageNumber: number) => {
     try {
