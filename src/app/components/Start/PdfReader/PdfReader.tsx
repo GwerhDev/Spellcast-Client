@@ -1,5 +1,5 @@
 import s from './PdfReader.module.css';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../../../store';
 import { textToSpeechService } from '../../../../services/tts';
@@ -19,15 +19,20 @@ export const PdfReader = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isPageSelectorModalOpen, setIsPageSelectorModalOpen] = useState(false);
 
+  const prevCurrentPageRef = useRef(currentPage);
+
+  useEffect(() => {
+    if (prevCurrentPageRef.current !== currentPage && isLoaded) {
+      dispatch(resetAudioPlayer());
+    }
+    prevCurrentPageRef.current = currentPage;
+  }, [currentPage, isLoaded, dispatch]);
+
   useEffect(() => {
     if (currentPageText) {
       setEditedText(currentPageText);
     }
   }, [currentPageText]);
-
-  useEffect(() => {
-    dispatch(resetAudioPlayer());
-  }, [currentPage, dispatch]);
 
   const handleGenerateAudio = async (textToGenerate: string, pageNumber: number) => {
     try {
@@ -59,7 +64,7 @@ export const PdfReader = () => {
 
   return (
     <div className={s.pdfReaderContainer}>
-        <PageSelectorModal 
+        <PageSelectorModal
             show={isPageSelectorModalOpen}
             onClose={() => setIsPageSelectorModalOpen(false)}
         />

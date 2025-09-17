@@ -79,8 +79,6 @@ export const AudioPlayer = () => {
     };
   }, [showMobileVolumeSlider]);
 
-
-
   useEffect(() => {
     if (audioRef.current) {
       if (currentTrackUrl) {
