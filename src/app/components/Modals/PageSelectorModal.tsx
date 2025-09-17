@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import s from './PageSelectorModal.module.css';
 import { IconButton } from '../Buttons/IconButton';
-import { faXmark } from '@fortawesome/free-solid-svg-icons';
+import { faNewspaper, faXmark } from '@fortawesome/free-solid-svg-icons';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../../store';
 import { goToPage } from '../../../store/pdfReaderSlice';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 interface PageSelectorModalProps {
   onClose: () => void;
@@ -53,6 +54,7 @@ export const PageSelectorModal: React.FC<PageSelectorModalProps> = ({
               className={`${s.pageOption} ${currentPage === page ? s.activePage : ''}`}
               onClick={() => handlePageSelection(page)}
             >
+              <FontAwesomeIcon icon={faNewspaper} />
               {page}
             </li>
           ))}
