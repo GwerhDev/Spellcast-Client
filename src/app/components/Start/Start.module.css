@@ -34,20 +34,23 @@
 
 .pdfInput {
   cursor: pointer;
-  padding: 4rem 2rem;
+  padding: 1rem;
   border-radius: 1rem;
-  border: 2px dashed var(--color-dark-300);
+  border: .5px solid var(--color-primary);
   display: flex;
-  flex-direction: column;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
-  text-align: center;
   gap: 0.5rem;
   transition: all 0.3s ease;
 }
 
 .pdfInput:hover {
-  border-color: var(--color-primary);
+  box-shadow: 0 0 20px var(--color-primary);
+}
+
+.continueLeftSection {
+  gap: 1rem;
+  display: flex;
 }
 
 .resetPdf {

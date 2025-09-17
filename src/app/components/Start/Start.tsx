@@ -11,7 +11,7 @@ import { PdfInput } from './PdfInput/PdfInput';
 import { TextInput } from './TextInput/TextInput';
 import { InputTypeSelector } from './InputTypeSelector/InputTypeSelector';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faFileCircleCheck } from '@fortawesome/free-solid-svg-icons';
+import { faArrowAltCircleRight, faFileCircleCheck } from '@fortawesome/free-solid-svg-icons';
 
 export const Start = () => {
   const [inputType, setInputType] = useState('pdf'); // 'text' or 'pdf'
@@ -102,9 +102,14 @@ export const Start = () => {
               <div className={s.form}>
                 <Link to="/new" className={s.pdfLink}>
                   <div className={s.pdfInput}>
-                    <FontAwesomeIcon size="10x" icon={faFileCircleCheck} />
-                    <p>A PDF is already loaded</p>
-                    <p>Continue reading</p>
+                    <FontAwesomeIcon size="2x" icon={faFileCircleCheck} />
+                    <span>
+                      <p>A PDF is already loaded</p>
+                      <p>Continue reading</p>
+                    </span>
+                    <span>
+                      <FontAwesomeIcon size="2x" icon={faArrowAltCircleRight} />
+                    </span>
                   </div>
                 </Link>
                 <p onClick={() => dispatch(resetPdfState())} className={s.resetPdf}>
