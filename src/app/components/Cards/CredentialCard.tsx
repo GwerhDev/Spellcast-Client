@@ -112,6 +112,7 @@ export const CredentialCard = (props: CredentialCardProps) => {
         }
       </div>
       <VoiceCheckboxModal
+        credentialId={credential.id}
         show={isVoiceModalOpen}
         onClose={() => setVoiceModalOpen(false)}
         voices={availableVoices}
