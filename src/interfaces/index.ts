@@ -35,6 +35,14 @@ export interface TTS_Credential {
   gcp_key?: string | null | undefined;
   azure_key?: string | null | undefined;
   isNew?: boolean;
+  shared?: boolean;
+  voices?: Voice[] | null | undefined;
+}
+
+export interface Voice {
+  value: string;
+  name: string;
+  isSelected?: boolean;
 }
 
 export interface Member {

@@ -6,6 +6,8 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 interface IconButtonProps {
   icon: IconProp;
   text?: string;
+  disabled?: boolean;
+  readonly?: boolean;
   children?: ReactNode;
   className?: string;
   onClick?: () => void;
@@ -13,7 +15,7 @@ interface IconButtonProps {
 }
 
 export const IconButton = (props: IconButtonProps) => {
-  const { icon, text, children, className, onClick, variant = "primary" } = props;
+  const { icon, text, children, className, disabled, onClick, variant = "primary" } = props;
 
   const variantClass = {
     primary: s.primary,
@@ -25,7 +27,7 @@ export const IconButton = (props: IconButtonProps) => {
     .join(" ");
 
   return (
-    <button className={buttonClassName} onClick={onClick}>
+    <button disabled={disabled} className={buttonClassName} onClick={onClick}>
       <FontAwesomeIcon icon={icon} />
       {text || children}
     </button>

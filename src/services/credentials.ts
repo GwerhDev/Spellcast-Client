@@ -48,7 +48,7 @@ export async function getCredential(credentialId: string) {
   }
 }
 
-export async function updateCredential(credentialId: string, data: { azure_key: string; region: string }) {
+export async function updateCredential(credentialId: string, data: { azure_key: string; region: string; voices?: string[] }) {
   try {
     const res = await fetch(`${API_BASE}/user/credentials/${credentialId}`, {
       method: 'PATCH',
