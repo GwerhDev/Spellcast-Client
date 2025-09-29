@@ -62,11 +62,11 @@ export const VoiceCheckboxModal: React.FC<VoiceCheckboxModalProps> = ({
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      await updateCredential(credentialId, { voices: selectedVoices });
+      const fullVoices = voices.filter(voice => selectedVoices.includes(voice.value));
+      await updateCredential(credentialId, { voices: fullVoices  });
       onClose();
     } catch (error) {
       console.error('Failed to save voices:', error);
-      // Optionally: show a toast notification to the user
     } finally {
       setIsSaving(false);
     }
