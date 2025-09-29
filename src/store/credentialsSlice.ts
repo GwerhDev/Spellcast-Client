@@ -1,4 +1,4 @@
-import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { getCredentials as getCredentialsService } from "../services/credentials";
 import { TTS_Credential } from "../interfaces";
 

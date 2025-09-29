@@ -8,6 +8,7 @@ import { updateSingleCredential } from "store/credentialsSlice";
 import { getVoicesByCredential } from "services/tts";
 import { useState, useEffect } from "react";
 import { VoiceCheckboxModal } from "../Modals/VoiceCheckboxModal";
+import { useDispatch } from "react-redux";
 
 interface CredentialCardProps {
   credential: TTS_Credential;
@@ -17,14 +18,15 @@ interface CredentialCardProps {
 }
 
 export const CredentialCard = (props: CredentialCardProps) => {
+  const dispatch = useDispatch();
   const { credential, fetchCredentials, onSaveNew, onCancelNew } = props;
-  const [editionActive, setEditionActive] = useState(credential.isNew ? true : false);
   const [key, setKey] = useState(credential.azure_key || "");
   const [region, setRegion] = useState(credential.region || "");
-  const [availableVoices, setAvailableVoices] = useState<Voice[]>([]);
+  const [editionActive, setEditionActive] = useState(credential.isNew ? true : false);
   const [selectedVoices, setSelectedVoices] = useState<Voice[]>(credential.voices || []);
   const [isVoiceModalOpen, setVoiceModalOpen] = useState(false);
   const [isLoadingVoices, setIsLoadingVoices] = useState(false);
+  const [availableVoices, setAvailableVoices] = useState<Voice[]>([]);
 
   useEffect(() => {
     setKey(credential.azure_key || "");
