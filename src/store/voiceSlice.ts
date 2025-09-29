@@ -1,17 +1,18 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { Voice } from 'src/interfaces';
 
 interface VoiceState {
   selectedVoice: string;
-  voices: { name: string; value: string }[];
+  voices: Voice[];
 }
 
 const initialState: VoiceState = {
   selectedVoice: 'es-CL-LorenzoNeural', // Default voice
   voices: [
-    { name: 'Lorenzo (Spanish Chile, Male)', value: 'es-CL-LorenzoNeural' },
-    { name: 'Catalina (Spanish Chile, Female)', value: 'es-CL-CatalinaNeural' },
-    { name: 'Aria (English US, Female)', value: 'en-US-AriaNeural' },
-    { name: 'Guy (English US, Male)', value: 'en-US-GuyNeural' },
+    { label: 'Lorenzo (Spanish Chile, Male)', value: 'es-CL-LorenzoNeural', gender: 'Male' },
+    { label: 'Catalina (Spanish Chile, Female)', value: 'es-CL-CatalinaNeural', gender: 'Female' },
+    { label: 'Aria (English US, Female)', value: 'en-US-AriaNeural', gender: 'Female' },
+    { label: 'Guy (English US, Male)', value: 'en-US-GuyNeural', gender: 'Male' },
   ],
 };
 

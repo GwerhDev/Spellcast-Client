@@ -43,7 +43,7 @@ export const VoiceSelectorModal: React.FC<VoiceSelectorModalProps> = ({
               onClick={() => handleVoiceSelection(voiceOption.value)}
             >
               <FontAwesomeIcon icon={selectedVoice === voiceOption.value ? faCircle : faRegCircle} />
-              {voiceOption.value}
+              {voiceOption.label}
             </li>
           ))}
         </ul>
