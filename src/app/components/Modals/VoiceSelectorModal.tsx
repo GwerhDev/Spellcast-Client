@@ -4,14 +4,10 @@ import { IconButton } from '../Buttons/IconButton';
 import { faCircle, faXmark } from '@fortawesome/free-solid-svg-icons';
 import { faCircle as faRegCircle } from '@fortawesome/free-regular-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-
-interface VoiceOption {
-  value: string;
-  name: string;
-}
+import { Voice } from 'src/interfaces';
 
 interface VoiceSelectorModalProps {
-  voices: VoiceOption[];
+  voices: Voice[];
   selectedVoice: string;
   setSelectedVoice: (voice: string) => void;
   onClose: () => void;
@@ -47,7 +43,7 @@ export const VoiceSelectorModal: React.FC<VoiceSelectorModalProps> = ({
               onClick={() => handleVoiceSelection(voiceOption.value)}
             >
               <FontAwesomeIcon icon={selectedVoice === voiceOption.value ? faCircle : faRegCircle} />
-              {voiceOption.name}
+              {voiceOption.value}
             </li>
           ))}
         </ul>

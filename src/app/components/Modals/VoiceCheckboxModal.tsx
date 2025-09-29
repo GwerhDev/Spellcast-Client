@@ -25,18 +25,16 @@ export const VoiceCheckboxModal: React.FC<VoiceCheckboxModalProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
-  const filteredVoices = useMemo(
-    () =>
-      voices.filter((voice) =>
-        voice.label.toLowerCase().includes(searchTerm.toLowerCase())
-      ),
+  const filteredVoices = useMemo(() =>
+    (voices || []).filter((voice) =>
+      voice.label.toLowerCase().includes(searchTerm.toLowerCase())
+    ),
     [voices, searchTerm]
   );
 
-  const allFilteredSelected = useMemo(
-    () =>
-      filteredVoices.length > 0 &&
-      filteredVoices.every((v) => selectedVoices.includes(v.value)),
+  const allFilteredSelected = useMemo(() =>
+    filteredVoices.length > 0 &&
+    filteredVoices.every((v) => selectedVoices.includes(v.value)),
     [filteredVoices, selectedVoices]
   );
 
@@ -90,7 +88,7 @@ export const VoiceCheckboxModal: React.FC<VoiceCheckboxModalProps> = ({
           onChange={(e) => setSearchTerm(e.target.value)}
         />
 
-        <li className={s.voiceOption} onClick={handleSelectAllChange}>
+        <span className={s.voiceOption} onClick={handleSelectAllChange}>
           <input
             type="checkbox"
             id="select-all"
@@ -100,7 +98,7 @@ export const VoiceCheckboxModal: React.FC<VoiceCheckboxModalProps> = ({
             }}
           />
           <p>Select/Deselect All</p>
-        </li>
+        </span>
 
         <ul className={s.voiceList}>
           {filteredVoices.map((voice) => (
