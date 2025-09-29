@@ -19,7 +19,7 @@ export async function getVoicesByCredential(credentialId: string): Promise<Voice
 
 export async function textToSpeechService(data: { text: string; voice: string }): Promise<string> {
   try {
-    const res = await fetch(`${API_BASE}/tts/generate`, {
+    const response = await fetch(`${API_BASE}/tts`, {
       method: 'POST',
       credentials: 'include',
       headers: {
@@ -27,12 +27,12 @@ export async function textToSpeechService(data: { text: string; voice: string })
       },
       body: JSON.stringify(data),
     });
-    if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.message || `HTTP error! status: ${res.status}`);
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
     }
-    const result = await res.json();
-    return result.audioUrl; // Assuming the API returns an object with an audioUrl field
+    const audioBlob = await response.blob();
+    return URL.createObjectURL(audioBlob);
   } catch (error) {
     console.error(error);
     throw error;
