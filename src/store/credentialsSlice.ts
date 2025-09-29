@@ -25,7 +25,15 @@ export const getCredentials = createAsyncThunk(
 const credentialsSlice = createSlice({
   name: "credentials",
   initialState,
-  reducers: {},
+  reducers: {
+    updateSingleCredential: (state, action: PayloadAction<TTS_Credential>) => {
+      const updatedCredential = action.payload;
+      const index = state.credentials.findIndex(cred => cred.id === updatedCredential.id);
+      if (index !== -1) {
+        state.credentials[index] = updatedCredential;
+      }
+    },
+  },
   extraReducers: (builder) => {
     builder
       .addCase(getCredentials.pending, (state) => {
@@ -43,4 +51,5 @@ const credentialsSlice = createSlice({
   },
 });
 
+export const { updateSingleCredential } = credentialsSlice.actions;
 export default credentialsSlice.reducer;

@@ -1,5 +1,5 @@
 import { API_BASE } from '../config/api';
-import { TTS_Credential } from '../interfaces';
+import { TTS_Credential, Voice } from '../interfaces';
 
 export async function createCredential(data: { azure_key: string; region: string }) {
   try {

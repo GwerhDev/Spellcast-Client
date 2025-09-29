@@ -4,6 +4,7 @@ import { IconButton } from "../Buttons/IconButton";
 import { TTS_Credential, Voice } from "src/interfaces";
 import { LabeledInput } from "../Inputs/LabeledInput";
 import { deleteCredential, createCredential, updateCredential } from "services/credentials";
+import { updateSingleCredential } from "store/credentialsSlice";
 import { getVoicesByCredential } from "services/tts";
 import { useState, useEffect } from "react";
 import { VoiceCheckboxModal } from "../Modals/VoiceCheckboxModal";
@@ -21,7 +22,7 @@ export const CredentialCard = (props: CredentialCardProps) => {
   const [key, setKey] = useState(credential.azure_key || "");
   const [region, setRegion] = useState(credential.region || "");
   const [availableVoices, setAvailableVoices] = useState<Voice[]>([]);
-  const [selectedVoices, setSelectedVoices] = useState<string[]>([]);
+  const [selectedVoices, setSelectedVoices] = useState<Voice[]>(credential.voices || []);
   const [isVoiceModalOpen, setVoiceModalOpen] = useState(false);
   const [isLoadingVoices, setIsLoadingVoices] = useState(false);
 
@@ -29,16 +30,17 @@ export const CredentialCard = (props: CredentialCardProps) => {
     setKey(credential.azure_key || "");
     setRegion(credential.region || "");
     setEditionActive(credential.isNew ? true : false);
-    if (credential.voices) {
-      setSelectedVoices(credential.voices.map(voice => voice.value));
-    }
+    setSelectedVoices(credential.voices || []);
   }, [credential]);
 
   const handleVoiceChange = (voiceId: string) => {
+    const voiceToAdd = availableVoices.find(voice => voice.value === voiceId);
+    if (!voiceToAdd) return;
+
     setSelectedVoices(prevSelectedVoices =>
-      prevSelectedVoices.includes(voiceId)
-        ? prevSelectedVoices.filter(id => id !== voiceId)
-        : [...prevSelectedVoices, voiceId]
+      prevSelectedVoices.some(voice => voice.value === voiceId)
+        ? prevSelectedVoices.filter(voice => voice.value !== voiceId)
+        : [...prevSelectedVoices, voiceToAdd]
     );
   };
 
@@ -47,8 +49,8 @@ export const CredentialCard = (props: CredentialCardProps) => {
       await createCredential({ azure_key: key, region: region });
       if (onSaveNew) onSaveNew();
     } else {
-      await updateCredential(credential.id!, { azure_key: key, region: region, voices: selectedVoices });
-      fetchCredentials();
+      const updatedCred = await updateCredential(credential.id!, { azure_key: key, region: region, voices: selectedVoices });
+      dispatch(updateSingleCredential(updatedCred));
     }
     setEditionActive(false);
   };
@@ -62,7 +64,7 @@ export const CredentialCard = (props: CredentialCardProps) => {
       setRegion(credential.region || "");
       setEditionActive(false);
       if (credential.voices) {
-        setSelectedVoices(credential.voices.map(voice => voice.value));
+        setSelectedVoices(credential.voices);
       } else {
         setSelectedVoices([]);
       }
@@ -85,16 +87,14 @@ export const CredentialCard = (props: CredentialCardProps) => {
   const handleOpenVoiceSelector = async () => {
     if (credential.id) {
       setVoiceModalOpen(true);
-      if (availableVoices.length === 0) {
-        setIsLoadingVoices(true);
-        try {
-          const voices = await getVoicesByCredential(credential.id);
-          setAvailableVoices(voices);
-        } catch (error) {
-          console.error("Failed to fetch voices", error);
-        } finally {
-          setIsLoadingVoices(false);
-        }
+      setIsLoadingVoices(true);
+      try {
+        const voices = await getVoicesByCredential(credential.id);
+        setAvailableVoices(voices);
+      } catch (error) {
+        console.error("Failed to fetch voices", error);
+      } finally {
+        setIsLoadingVoices(false);
       }
     }
   };
@@ -130,7 +130,7 @@ export const CredentialCard = (props: CredentialCardProps) => {
         show={isVoiceModalOpen}
         onClose={handleCloseVoiceSelector}
         voices={availableVoices}
-        selectedVoices={selectedVoices}
+        selectedVoices={selectedVoices.map(voice => voice.value)}
         onVoiceChange={handleVoiceChange}
         isLoading={isLoadingVoices}
       />
