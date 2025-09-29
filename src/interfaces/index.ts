@@ -41,7 +41,8 @@ export interface TTS_Credential {
 
 export interface Voice {
   value: string;
-  name: string;
+  label: string;
+  gender: string;
   isSelected?: boolean;
 }
 

@@ -7,15 +7,7 @@ export async function getVoicesByCredential(credentialId: string): Promise<Voice
       credentials: 'include',
     });
     if (!res.ok) return [];
-    const rawVoices: string = await res.json();
-    const parsableVoices = rawVoices.replace(/'/g, '"');
-
-    const response = JSON.parse(parsableVoices).map((rawVoice: { ShortName: string, LocaleName: string, DisplayName: string, Gender: string }) => ({
-      value: `{ value: ${rawVoice.ShortName}, gender: '${rawVoice.Gender}', locale: '${rawVoice.LocaleName}', displayName: '${rawVoice.DisplayName}' }`,
-      name: `${rawVoice.DisplayName} - ${rawVoice.LocaleName}, ${rawVoice.Gender}`,
-    }));
-
-    console.log(response)
+    const response: Voice[] = await res.json();
 
     return response;
 

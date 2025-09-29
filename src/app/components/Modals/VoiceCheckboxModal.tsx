@@ -28,7 +28,7 @@ export const VoiceCheckboxModal: React.FC<VoiceCheckboxModalProps> = ({
   const filteredVoices = useMemo(
     () =>
       voices.filter((voice) =>
-        voice.name.toLowerCase().includes(searchTerm.toLowerCase())
+        voice.label.toLowerCase().includes(searchTerm.toLowerCase())
       ),
     [voices, searchTerm]
   );
@@ -117,7 +117,7 @@ export const VoiceCheckboxModal: React.FC<VoiceCheckboxModalProps> = ({
                   /* Handled by onClick on li */
                 }}
               />
-              <p>{voice.name}</p>
+              <p>{voice.label}</p>
             </li>
           ))}
         </ul>
