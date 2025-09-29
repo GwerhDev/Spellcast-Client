@@ -44,6 +44,11 @@
   text-align: center;
 }
 
+.modalContent ul {
+  min-height: 100px;
+  position: relative;
+}
+
 .voiceList {
   display: flex;
   flex-direction: column;

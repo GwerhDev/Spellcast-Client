@@ -3,16 +3,18 @@ import { Voice } from '../interfaces';
 
 export async function getVoicesByCredential(credentialId: string): Promise<Voice[]> {
   try {
-    const res = await fetch(`${API_BASE}/user/voices/${credentialId}`, {
+    const response = await fetch(`${API_BASE}/user/voices/${credentialId}`, {
       credentials: 'include',
     });
-    if (!res.ok) return [];
-    const response: Voice[] = await res.json();
-
-    return response;
+    if (!response.ok) {
+      console.error(`Failed to fetch voices for credential ${credentialId}. Status: ${response.status}`);
+      return [];
+    }
+    const responseData = await response.json();
+    return responseData;
 
   } catch (error) {
-    console.error(error);
+    console.error('Error fetching or parsing voices:', error);
     return [];
   }
 }

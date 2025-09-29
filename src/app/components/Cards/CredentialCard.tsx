@@ -23,6 +23,7 @@ export const CredentialCard = (props: CredentialCardProps) => {
   const [availableVoices, setAvailableVoices] = useState<Voice[]>([]);
   const [selectedVoices, setSelectedVoices] = useState<string[]>([]);
   const [isVoiceModalOpen, setVoiceModalOpen] = useState(false);
+  const [isLoadingVoices, setIsLoadingVoices] = useState(false);
 
   useEffect(() => {
     setKey(credential.azure_key || "");
@@ -83,10 +84,23 @@ export const CredentialCard = (props: CredentialCardProps) => {
 
   const handleOpenVoiceSelector = async () => {
     if (credential.id) {
-      const voices = await getVoicesByCredential(credential.id);
-      setAvailableVoices(voices);
       setVoiceModalOpen(true);
+      if (availableVoices.length === 0) {
+        setIsLoadingVoices(true);
+        try {
+          const voices = await getVoicesByCredential(credential.id);
+          setAvailableVoices(voices);
+        } catch (error) {
+          console.error("Failed to fetch voices", error);
+        } finally {
+          setIsLoadingVoices(false);
+        }
+      }
     }
+  };
+
+  const handleCloseVoiceSelector = () => {
+    setVoiceModalOpen(false);
   };
 
   return (
@@ -114,10 +128,11 @@ export const CredentialCard = (props: CredentialCardProps) => {
       <VoiceCheckboxModal
         credentialId={credential.id}
         show={isVoiceModalOpen}
-        onClose={() => setVoiceModalOpen(false)}
+        onClose={handleCloseVoiceSelector}
         voices={availableVoices}
         selectedVoices={selectedVoices}
         onVoiceChange={handleVoiceChange}
+        isLoading={isLoadingVoices}
       />
     </li>
   )
