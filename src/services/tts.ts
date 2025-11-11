@@ -21,7 +21,7 @@ export async function getVoicesByCredential(credentialId: string): Promise<Voice
 
 export async function textToSpeechService(data: { text: string; voice: string }): Promise<string> {
   try {
-    const response = await fetch(`${API_BASE}/tts`, {
+    const response = await fetch(`${API_BASE}/tts/`, {
       method: 'POST',
       credentials: 'include',
       headers: {
