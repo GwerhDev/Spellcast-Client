@@ -7,7 +7,7 @@
 
 .statCard {
   width: 100%;
-  background-color: var(--color-dark-300);
+  background: var(--component-background);
   padding: 1.5rem;
   border-radius: 10px;
   text-align: center;
