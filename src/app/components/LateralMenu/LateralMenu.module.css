@@ -10,7 +10,7 @@
   min-width: 250px;
   border-radius: 10px;
   overflow: hidden;
-  background-color: var(--color-dark-500);
+  background: var(--component-background);
 }
 
 .projectActionsContainer {
@@ -25,7 +25,6 @@
   font-weight: 400;
   border-radius: 5px;
   padding-inline: 1rem;
-  color: rgb(199, 199, 199);
   display: flex;
   cursor: pointer;
   align-items: center;
@@ -80,9 +79,9 @@
   font-weight: 400;
   border-radius: 5px;
   padding-inline: 1rem;
-  color: rgb(199, 199, 199);
   display: flex;
   align-items: center;
+  color: var(--text-color);
 }
 
 .section {
@@ -90,7 +89,6 @@
   width: 100%;
   align-items: center;
   justify-content: space-between;
-  color: var(--color-light-300);
 }
 
 .menuList li:hover {
@@ -107,7 +105,6 @@
   align-items: center;
   justify-content: center;
   transition-duration: .4s;
-  color: var(--color-dark-800);
 }
 
 .deleteButton:hover {

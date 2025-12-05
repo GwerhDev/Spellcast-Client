@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import * as pdfjsLib from 'pdfjs-dist';
+import type { PDFDocumentProxy, TextItem, TextMarkedContent } from 'pdfjs-dist/types/src/display/api';
 import { RootState } from '../../../store';
 import { textToSpeechService } from '../../../services/tts';
 import { setPlaylist, play } from '../../../store/audioPlayerSlice';
@@ -17,7 +18,7 @@ export const PdfProcessor = () => {
   const sourceType = useSelector((state: RootState) => state.audioPlayer.sourceType);
   const pdfPageNumber = useSelector((state: RootState) => state.audioPlayer.pdfPageNumber);
   const isPlaying = useSelector((state: RootState) => state.audioPlayer.isPlaying);
-  const [pdfDoc, setPdfDoc] = useState<any>(null);
+  const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
   // Effect to create pdfDoc from fileContent
@@ -51,7 +52,7 @@ export const PdfProcessor = () => {
             if (!text) {
                 const page = await pdfDoc.getPage(currentPage);
                 const content = await page.getTextContent();
-                text = content.items.map((item: any) => item.str).join(' ');
+                text = content.items.map((item: TextItem | TextMarkedContent) => ('str' in item ? item.str : '')).join(' ');
                 dispatch(setPageText({ pageNumber: currentPage, text }));
             }
 

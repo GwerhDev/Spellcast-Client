@@ -5,9 +5,8 @@
   align-items: center;
   border-radius: 10px;
   justify-content: space-between;
+  background: var(--component-background);
 }
-
-
 
 .audioPlayerContainer section {
   width: 100%;

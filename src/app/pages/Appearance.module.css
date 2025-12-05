@@ -1,0 +1,46 @@
+.title {
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: var(--color-light-100);
+    margin-bottom: var(--size-1);
+}
+
+.subtitle {
+    font-size: 1rem;
+    color: var(--color-light-300);
+    margin-bottom: var(--size-6);
+}
+
+.themeGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: var(--size-5);
+}
+
+.themeBox {
+    border: 2px solid var(--color-dark-400);
+    border-radius: var(--size-3);
+    padding: var(--size-3);
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    text-align: center;
+}
+
+.themeBox:hover {
+    border-color: var(--color-primary);
+}
+
+.themeBox.active {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 15px rgba(215, 171, 109, 0.3);
+}
+
+.themeBox svg {
+    border-radius: var(--size-2);
+    margin-bottom: var(--size-3);
+}
+
+.themeName {
+    font-weight: 500;
+    color: var(--color-light-100);
+}

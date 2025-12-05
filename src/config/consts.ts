@@ -1,4 +1,4 @@
-import { faDiagramProject, faHeadphones, faUsers, faFingerprint, faShield, faShare, faBuildingColumns } from "@fortawesome/free-solid-svg-icons";
+import { faDiagramProject, faHeadphones, faUsers, faFingerprint, faShield, faShare, faBuildingColumns, faPalette } from "@fortawesome/free-solid-svg-icons";
 
 export const dashboardDirectoryList = [
   { name: "Overview", icon: faDiagramProject, path: "dashboard/overview" },
@@ -14,4 +14,5 @@ export const storageDirectoryList = [
 export const settingsDirectoryList = [
   { name: "Credentials", icon: faFingerprint, path: "settings/credentials" },
   { name: "Permissions", icon: faShield, path: "settings/permissions" },
+  { name: "Appearance", icon: faPalette, path: "settings/appearance" },
 ];

@@ -12,8 +12,12 @@ export const LogoutModal = () => {
     try {
       await fetchLogout();
       dispatch(addApiResponse({ message: 'Logged out successfully.', type: 'success' }));
-    } catch (error: any) {
-      dispatch(addApiResponse({ message: error.message || 'Failed to log out.', type: 'error' }));
+    } catch (error: unknown) {
+      let message = 'Failed to log out.';
+      if (error instanceof Error) {
+        message = error.message;
+      }
+      dispatch(addApiResponse({ message, type: 'error' }));
     } finally {
       const logoutModal = document.getElementById('logout-modal') as HTMLDivElement | null;
       if (logoutModal) logoutModal.style.display = 'none';

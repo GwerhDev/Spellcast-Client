@@ -19,7 +19,9 @@ import { UserGroups } from './app/pages/UserGroups';
 import { UserArchive } from './app/pages/UserArchive';
 import { Unauthorized } from './app/pages/Unauthorized';
 import { UserCredentials } from './app/pages/UserCredentials';
+import { Appearance } from './app/pages/Appearance';
 import DefaultLayout from './app/layouts/DefaultLayout';
+import { ThemeProvider } from './context/ThemeContext';
 
 function App() {
   const userData: userData = useSelector((state: RootState) => state.session.userData);
@@ -27,7 +29,7 @@ function App() {
   useInitSession();
 
   return (
-    <>
+    <ThemeProvider>
       {
         loader
           ?
@@ -51,6 +53,7 @@ function App() {
 
               <Route path="/user/settings" element={<Settings />} />
               <Route path="/user/settings/credentials" element={<UserCredentials />} />
+              <Route path="/user/settings/appearance" element={<Appearance />} />
               <Route path="/user/not-found" element={<NotFound />} />
               <Route path="/user/*" element={<NotFound />} />
               <Route path="/explore/*" element={<NotFound />} />
@@ -63,8 +66,9 @@ function App() {
           </Routes>
       }
       <Toast />
-    </>
+    </ThemeProvider>
   );
 }
 
 export default App;
+

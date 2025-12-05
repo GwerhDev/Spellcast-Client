@@ -4,7 +4,16 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useDispatch } from 'react-redux';
 import { setPlaylist, play } from '../../../store/audioPlayerSlice';
 
-export const AudioBookCard = (props: any) => {
+interface AudioBook {
+  image?: string;
+  name: string;
+}
+
+interface AudioBookCardProps {
+  audioBook: AudioBook;
+}
+
+export const AudioBookCard = (props: AudioBookCardProps) => {
   const { audioBook } = props || {};
   const dispatch = useDispatch();
 
