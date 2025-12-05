@@ -4,7 +4,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: var(--component-background);
+    background-color: rgba(82, 82, 82, 0.014);
     display: flex;
     position: fixed;
     align-items: center;

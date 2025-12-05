@@ -20,7 +20,7 @@
   padding: .5rem;
   margin: .5rem;
   border-radius: 50%;
-  background-color: var(--color-dark-200);
+  background: var(--component-background);
   position: absolute;
 }
 
@@ -28,7 +28,7 @@
   gap: 1.5rem;
   width: 90%;
   padding: 1rem;
-  background-color: var(--color-dark-500);
+  background: var(--component-background);
   border-radius: 12px;
   display: flex;
   flex-direction: column;

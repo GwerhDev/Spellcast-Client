@@ -20,9 +20,7 @@ import { VoiceSelectorModal } from '../Modals/VoiceSelectorModal';
 export const AudioPlayer = () => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const dispatch = useDispatch();
-  const { selectedVoice } = useSelector((state: RootState) => state.voice);
-  const { credentials } = useSelector((state: RootState) => state.credentials);
-  const credentialVoices = credentials.length > 0 && credentials[0].voices ? credentials[0].voices : [];
+  const { selectedVoice, voices } = useSelector((state: RootState) => state.voice);
   const {
     volume,
     playlist,
@@ -220,7 +218,7 @@ export const AudioPlayer = () => {
       <VoiceSelectorModal
         show={isVoiceModalOpen}
         onClose={() => setIsVoiceModalOpen(false)}
-        voices={credentialVoices}
+        voices={voices}
         selectedVoice={selectedVoice}
         setSelectedVoice={(voice) => dispatch(setSelectedVoice(voice))}
       />

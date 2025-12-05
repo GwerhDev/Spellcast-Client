@@ -9,10 +9,7 @@ interface VoiceState {
 const initialState: VoiceState = {
   selectedVoice: 'es-CL-LorenzoNeural', // Default voice
   voices: [
-    { label: 'Lorenzo (Spanish Chile, Male)', value: 'es-CL-LorenzoNeural', gender: 'Male' },
-    { label: 'Catalina (Spanish Chile, Female)', value: 'es-CL-CatalinaNeural', gender: 'Female' },
-    { label: 'Aria (English US, Female)', value: 'en-US-AriaNeural', gender: 'Female' },
-    { label: 'Guy (English US, Male)', value: 'en-US-GuyNeural', gender: 'Male' },
+    { label: 'Browser', value: 'browser', gender: 'Male' },
   ],
 };
 
