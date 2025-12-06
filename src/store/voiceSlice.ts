@@ -7,7 +7,7 @@ interface VoiceState {
 }
 
 const initialState: VoiceState = {
-  selectedVoice: 'es-CL-LorenzoNeural', // Default voice
+  selectedVoice: 'browser', // Default voice
   voices: [
     { label: 'Browser', value: 'browser', gender: 'Male' },
   ],
