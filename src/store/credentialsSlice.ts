@@ -1,6 +1,6 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { getCredentials as getCredentialsService } from "../services/credentials";
-import { TTS_Credential } from "../interfaces";
+import { getCredentials as getCredentialsService, updateCredential as updateCredentialService } from "../services/credentials";
+import { TTS_Credential, Voice } from "../interfaces";
 
 interface CredentialsState {
   credentials: TTS_Credential[];
@@ -18,6 +18,14 @@ export const getCredentials = createAsyncThunk(
   "credentials/getCredentials",
   async () => {
     const response = await getCredentialsService();
+    return response;
+  }
+);
+
+export const updateCredential = createAsyncThunk(
+  "credentials/updateCredential",
+  async ({ credentialId, data }: { credentialId: string | undefined, data: { azure_key?: string; region?: string; voices?: Voice[] } }) => {
+    const response = await updateCredentialService(credentialId, data);
     return response;
   }
 );
@@ -47,6 +55,18 @@ const credentialsSlice = createSlice({
       .addCase(getCredentials.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || "Failed to fetch credentials";
+      })
+      .addCase(updateCredential.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updateCredential.fulfilled, (state, action) => {
+        state.loading = false;
+        state.credentials = action.payload.credentials;
+      })
+      .addCase(updateCredential.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || "Failed to update credential";
       });
   },
 });

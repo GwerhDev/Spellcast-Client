@@ -29,6 +29,8 @@ export const VoiceSelectorModal: React.FC<VoiceSelectorModalProps> = ({
     setSelectedVoice(voice);
   };
 
+  const defaultVoice: Voice = { label: 'Browser', value: 'browser', gender: 'Male' };
+
   return (
     <div className={s.container} onClick={onClose}>
       <div className={s.modalContent} onClick={(e) => e.stopPropagation()}>
@@ -36,6 +38,16 @@ export const VoiceSelectorModal: React.FC<VoiceSelectorModalProps> = ({
 
         <h3>Select a Voice</h3>
         <ul className={s.voiceList}>
+          <li
+            className={`${s.voiceOption} ${selectedVoice === defaultVoice.value ? s.activeVoice : ''}`}
+            onClick={() => handleVoiceSelection(defaultVoice.value)}
+          >
+            <FontAwesomeIcon icon={selectedVoice === defaultVoice.value ? faCircle : faRegCircle} />
+            <span>
+              {defaultVoice.label}
+            </span>
+            <FontAwesomeIcon icon={faDesktop} className={s.genderIcon} />
+          </li>
           {voices.map((voiceOption, index) => (
             <li
               key={index}
@@ -46,7 +58,7 @@ export const VoiceSelectorModal: React.FC<VoiceSelectorModalProps> = ({
               <span>
                 {voiceOption.label}
               </span>
-              <FontAwesomeIcon icon={voiceOption.value === 'browser' ? faDesktop : faBrain} className={s.genderIcon} />
+              <FontAwesomeIcon icon={faBrain} className={s.genderIcon} />
             </li>
           ))}
         </ul>
