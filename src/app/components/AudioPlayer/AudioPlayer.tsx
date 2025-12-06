@@ -186,8 +186,8 @@ export const AudioPlayer = () => {
           <VoiceSelectorButton onClick={() => setIsVoiceModalOpen(true)} />
         </section>
 
-
         <PlaybackControls
+          selectedVoice={selectedVoice}
           audioRef={audioRef}
           currentTime={currentTime}
           duration={duration}

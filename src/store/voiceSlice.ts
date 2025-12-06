@@ -20,6 +20,9 @@ const voiceSlice = createSlice({
     setSelectedVoice: (state, action: PayloadAction<string>) => {
       state.selectedVoice = action.payload;
     },
+    setVoices: (state, action: PayloadAction<Voice[]>) => {
+      state.voices = action.payload;
+    },
   },
 });
 
