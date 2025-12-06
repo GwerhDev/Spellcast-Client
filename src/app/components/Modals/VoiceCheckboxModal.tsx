@@ -3,8 +3,9 @@ import s from './VoiceCheckboxModal.module.css';
 import { IconButton } from '../Buttons/IconButton';
 import { faSave, faXmark } from '@fortawesome/free-solid-svg-icons';
 import { Voice } from 'src/interfaces';
-import { updateCredential } from 'services/credentials';
 import { Spinner } from '../Spinner';
+import { useAppDispatch } from 'store/hooks';
+import { updateCredential } from 'store/credentialsSlice';
 
 interface VoiceCheckboxModalProps {
   voices: Voice[];
@@ -27,6 +28,7 @@ export const VoiceCheckboxModal: React.FC<VoiceCheckboxModalProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const dispatch = useAppDispatch();
 
   const filteredVoices = (voices || []).filter(
     (voice: Voice) =>
@@ -63,7 +65,7 @@ export const VoiceCheckboxModal: React.FC<VoiceCheckboxModalProps> = ({
     setIsSaving(true);
     try {
       const fullVoices = voices.filter(voice => selectedVoices.includes(voice.value));
-      await updateCredential(credentialId, { voices: fullVoices  });
+      await dispatch(updateCredential({ credentialId, data: { voices: fullVoices } }));
       onClose();
     } catch (error) {
       console.error('Failed to save voices:', error);
