@@ -96,7 +96,12 @@ export const Start = () => {
 
         <form onSubmit={handleSubmit} className={s.form}>
           {inputType === 'text' ? (
-            <TextInput text={text} setText={setText} isLoading={isLoading} />
+            <>
+              <TextInput text={text} setText={setText} isLoading={isLoading} />
+              <PrimaryButton type="submit" disabled={isLoading || !text}>
+                {isLoading ? 'Generating Audio...' : 'Generate Audio'}
+              </PrimaryButton>
+            </>
           ) : (
             fileContent ? (
               <div className={s.form}>
@@ -128,11 +133,7 @@ export const Start = () => {
               />
             )
           )}
-          {inputType === 'text' &&
-            <PrimaryButton type="submit" disabled={isLoading || (inputType === 'text' ? !text : !fileContent)}>
-              {isLoading ? 'Generating Audio...' : 'Generate Audio'}
-            </PrimaryButton>
-          }
+
         </form>
       </div >
     </div >
