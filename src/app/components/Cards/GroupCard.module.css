@@ -1,6 +1,7 @@
 .container {
   width: 100%;
   padding: 1rem;
+  max-width: 800px;
   border-radius: 1rem;
   border: .5px solid var(--color-primary);
   display: flex;
