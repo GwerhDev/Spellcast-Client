@@ -88,18 +88,17 @@
 }
 
 .playPauseButton {
-  background-color: var(--color-primary);
-  color: var(--color-light-100);
-  border: none;
   width: 40px;
   height: 40px;
-  border-radius: 50%;
-  cursor: pointer;
   font-size: 18px;
-  transition: background-color 0.3s ease;
+  border-radius: 50%;
+  border: none;
   display: flex;
+  cursor: pointer;
   align-items: center;
   justify-content: center;
+  color: var(--color-light-100);
+  background: var(--color-button-primary);
 }
 
 .playPauseButton:hover {

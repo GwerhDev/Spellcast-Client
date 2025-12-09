@@ -11,8 +11,12 @@
   --color-secondary-darker: #2b2a2e;
 
   --text-color: #e0e0e0;
+  --text-color-accent: rgb(238, 238, 238);
   --color-options-background: #3a3d48;
   --component-background: linear-gradient(to right top, var(--color-primary-darker), var(--color-secondary-darker));
+
+  --color-primary-accent: #73a5cc;
+  --color-secondary-accent: #8469bb;
 
   --color-dark-100: #515151;
   --color-dark-200: #464646;

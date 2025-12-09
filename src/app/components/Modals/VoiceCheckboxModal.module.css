@@ -20,8 +20,9 @@
   padding: .5rem;
   margin: .5rem;
   border-radius: 50%;
-  background: var(--component-background);
   position: absolute;
+  background: var(--component-background);
+  color: var(--text-color);
 }
 
 .modalContent {
