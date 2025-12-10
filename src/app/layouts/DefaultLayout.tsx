@@ -34,9 +34,7 @@ export default function DefaultLayout() {
         </div>
       </div>
       <div className="audioplayer-container">
-        {
-          selectedVoice === 'browser' ? <BrowserPlayer /> : <AudioPlayer />
-        }
+        {selectedVoice === 'browser' ? <BrowserPlayer /> : <AudioPlayer />}
       </div>
       <LogoutModal />
     </main>
