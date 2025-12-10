@@ -101,7 +101,6 @@ li {
 label {
   color: var(--text-color);
   font-size: small;
-  background-color: var(--color-dark-400);
   border-top-left-radius: 5px;
   border-top-right-radius: 5px;
   padding-top: .1rem;

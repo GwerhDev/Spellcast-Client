@@ -10,11 +10,13 @@
   transition: border-color 0.3s ease, var(--color-primary) 0.3s ease;
   text-align: center;
   box-sizing: border-box;
+  background: var(--component-background);
 }
 
 .dropzone.dragging {
   border-color: var(--color-primary);
-  background-color: transparent;
+  background: var(--component-background);
+  box-shadow: 0 0 20px var(--color-primary);
 }
 
 .fileInputLabel {
