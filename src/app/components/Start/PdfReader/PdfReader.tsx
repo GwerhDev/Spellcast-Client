@@ -67,10 +67,10 @@ export const PdfReader = () => {
 
   return (
     <div className={s.pdfReaderContainer}>
-        <PageSelectorModal
-            show={isPageSelectorModalOpen}
-            onClose={() => setIsPageSelectorModalOpen(false)}
-        />
+      <PageSelectorModal
+        show={isPageSelectorModalOpen}
+        onClose={() => setIsPageSelectorModalOpen(false)}
+      />
       <div className={s.pageInfoContainer}>
         <span className={s.headerControls}>
           <Link to={'/'}>

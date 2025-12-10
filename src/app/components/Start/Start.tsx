@@ -1,6 +1,6 @@
 import s from './Start.module.css';
 import { useDispatch, useSelector } from 'react-redux';
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { textToSpeechService } from '../../../services/tts';
 import { RootState } from '../../../store';
@@ -14,7 +14,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowAltCircleRight, faFileCircleCheck } from '@fortawesome/free-solid-svg-icons';
 
 export const Start = () => {
-  const [inputType, setInputType] = useState('pdf'); // 'text' or 'pdf'
+  const [inputType, setInputType] = useState('pdf');
   const [text, setText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -74,17 +74,12 @@ export const Start = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (inputType === 'pdf' && fileContent) {
-      // PDF handling is done by PdfReader component
-    } else if (inputType === 'text') {
+    if (selectedVoice !== 'browser') {
       await generateAudio(text, selectedVoice);
+    } else {
+      console.log('Browser voice selected, audio generation skipped.');
     }
   };
-
-  useEffect(() => {
-    // This useEffect is no longer responsible for triggering audio generation on text change.
-    // Audio generation for text input is now solely triggered by the "Generate Audio" button click via handleSubmit.
-  }, [selectedVoice, inputType, generateAudio]);
 
   return (
     <div className={s.container}>
