@@ -1,7 +1,7 @@
 import s from './AudioPlayer.module.css';
 import { useRef, useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { RootState } from '../../../store';
+import { RootState } from '../../../../store';
 import {
   setVolume,
   setCurrentTime,
@@ -9,13 +9,13 @@ import {
   togglePlayPause,
   playNext as playNextAudio,
   playPrevious as playPreviousAudio,
-} from '../../../store/audioPlayerSlice';
-import { setSelectedVoice } from '../../../store/voiceSlice';
-import { goToNextPage, goToPreviousPage } from '../../../store/pdfReaderSlice';
+} from '../../../../store/audioPlayerSlice';
+import { setSelectedVoice } from '../../../../store/voiceSlice';
+import { goToNextPage, goToPreviousPage } from '../../../../store/pdfReaderSlice';
 import { PlaybackControls } from './PlaybackControls/PlaybackControls';
 import { VolumeControls } from './VolumeControls/VolumeControls';
 import { VoiceSelectorButton } from './VoiceSelectorButton/VoiceSelectorButton';
-import { VoiceSelectorModal } from '../Modals/VoiceSelectorModal';
+import { VoiceSelectorModal } from '../../Modals/VoiceSelectorModal';
 
 export const AudioPlayer = () => {
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -188,7 +188,6 @@ export const AudioPlayer = () => {
         </section>
 
         <PlaybackControls
-          selectedVoice={selectedVoice}
           audioRef={audioRef}
           currentTime={currentTime}
           duration={duration}

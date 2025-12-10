@@ -1,0 +1,32 @@
+.audioPlayerContainer {
+  width: 100%;
+  padding: .5rem;
+  display: flex;
+  align-items: center;
+  border-radius: 10px;
+  justify-content: space-between;
+  background: var(--component-background);
+}
+
+.audioPlayerContainer section {
+  width: 100%;
+}
+
+.leftSection {
+  gap: .3rem;
+  padding: 0;
+  width: 100%;
+  min-height: 2.5rem;
+  border-radius: .2rem;
+  display: flex;
+  position: relative;
+  align-items: flex-start;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.pdfControls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}

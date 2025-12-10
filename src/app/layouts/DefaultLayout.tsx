@@ -2,14 +2,18 @@ import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { TabBar } from '../components/Tabs/TabBar';
 import { LogoutModal } from '../components/Modals/LogoutModal';
-import { AudioPlayer } from '../components/AudioPlayer/AudioPlayer';
+import { AudioPlayer } from '../components/Players/AudioPlayer/AudioPlayer';
 import { LateralMenu } from '../components/LateralMenu/LateralMenu';
 import { PdfProcessor } from '../components/PdfProcessor/PdfProcessor';
+import { BrowserPlayer } from '../components/Players/BrowserPlayer/BrowserPlayer';
+import { RootState } from 'store/index';
+import { useSelector } from 'react-redux';
 import spellcastIcon from '../../assets/spellcast-logo.svg';
 
 export default function DefaultLayout() {
   const shouldHideMenu = location.pathname.startsWith(`/user`);
   const [showMenu, setShowMenu] = useState(shouldHideMenu);
+  const { selectedVoice } = useSelector((state: RootState) => state.voice);
 
   return (
     <main>
@@ -30,7 +34,9 @@ export default function DefaultLayout() {
         </div>
       </div>
       <div className="audioplayer-container">
-        <AudioPlayer />
+        {
+          selectedVoice === 'browser' ? <BrowserPlayer /> : <AudioPlayer />
+        }
       </div>
       <LogoutModal />
     </main>

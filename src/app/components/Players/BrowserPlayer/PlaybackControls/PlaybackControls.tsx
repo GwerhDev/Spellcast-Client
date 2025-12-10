@@ -21,47 +21,16 @@ interface PlaybackControlsProps {
 }
 
 export const PlaybackControls: React.FC<PlaybackControlsProps> = ({
-  audioRef,
-  currentTime,
-  duration,
-  progressPercentage,
   handlePrevious,
   handleNext,
   isPlaying,
   isPrevDisabled,
   isNextDisabled,
   currentTrackIndex,
-  formatTime,
   togglePlayPause,
-  setCurrentTime,
-  selectedVoice,
 }) => {
   return (
     <section className={s.controlsContainer}>
-      {
-        selectedVoice !== "browser" &&
-        <div className={s.progressBarContainer}>
-          <input
-            type="range"
-            min="0"
-            max={duration}
-            step="0.01"
-            value={currentTime}
-            onChange={(e) => {
-              if (audioRef.current) {
-                audioRef.current.currentTime = parseFloat(e.target.value);
-              }
-              setCurrentTime(parseFloat(e.target.value));
-            }}
-            className={s.progressBar}
-            style={{ '--progress-value': `${progressPercentage}%` } as React.CSSProperties}
-          />
-          <div className={s.timeDisplay}>
-            <span>{formatTime(currentTime)}</span>
-            <span>{formatTime(duration)}</span>
-          </div>
-        </div>
-      }
       <div className={s.controls}>
         <button onClick={handlePrevious} disabled={isPrevDisabled} className={s.controlButton}>
           <FontAwesomeIcon icon={faStepBackward} />
