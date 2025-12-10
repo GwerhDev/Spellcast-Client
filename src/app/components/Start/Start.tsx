@@ -77,7 +77,8 @@ export const Start = () => {
     if (selectedVoice !== 'browser') {
       await generateAudio(text, selectedVoice);
     } else {
-      console.log('Browser voice selected, audio generation skipped.');
+      const utterance = new SpeechSynthesisUtterance(text);
+      speechSynthesis.speak(utterance);
     }
   };
 
