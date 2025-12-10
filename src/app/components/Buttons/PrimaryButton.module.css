@@ -9,12 +9,13 @@
   justify-content: center;
   transition-duration: .4s;
   border-radius: var(--size-4);
-  color: var(--color-light-100);
+  color: var(--text-color-accent);
   background: linear-gradient(45deg, var(--color-primary), var(--color-secondary));
 }
 
 .container:hover {
   color: var(--text-color-accent);
+  background: linear-gradient(45deg, var(--color-primary-accent), var(--color-secondary-accent));
 }
 
 .container:disabled:hover {
