@@ -4,7 +4,8 @@ import * as pdfjsLib from 'pdfjs-dist';
 import type { PDFDocumentProxy, TextItem, TextMarkedContent } from 'pdfjs-dist/types/src/display/api';
 import { RootState } from '../../../store';
 import { textToSpeechService } from '../../../services/tts';
-import { setPlaylist, play } from '../../../store/audioPlayerSlice';
+import { setPlaylist, play as playAiAudio } from '../../../store/audioPlayerSlice';
+import { setText as setBrowserText, play as playBrowserAudio } from '../../../store/browserPlayerSlice';
 import { setPdfDocumentInfo, setPageText, goToNextPage } from '../../../store/pdfReaderSlice';
 
 // Set workerSrc for pdfjsLib
@@ -59,9 +60,14 @@ export const PdfProcessor = () => {
           if (text && text.trim() !== '') {
             // Only generate audio if it's not already for the current page
             if (sourceType !== 'pdfPage' || pdfPageNumber !== currentPage) {
-              const audioUrl = await textToSpeechService({ text, voice: selectedVoice });
-              dispatch(setPlaylist({ playlist: [audioUrl], startIndex: 0, sourceType: 'pdfPage', pdfPageNumber: currentPage }));
-              dispatch(play());
+              if (selectedVoice === 'browser') {
+                dispatch(setBrowserText(text));
+                dispatch(playBrowserAudio());
+              } else {
+                const audioUrl = await textToSpeechService({ text, voice: selectedVoice });
+                dispatch(setPlaylist({ playlist: [audioUrl], startIndex: 0, sourceType: 'pdfPage', pdfPageNumber: currentPage }));
+                dispatch(playAiAudio());
+              }
             }
           } else {
             // If page is empty, go to next

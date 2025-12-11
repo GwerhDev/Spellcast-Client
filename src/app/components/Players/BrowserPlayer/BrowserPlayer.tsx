@@ -1,14 +1,18 @@
 import s from './BrowserPlayer.module.css';
-import { useRef, useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../../../store';
 import {
+  play,
+  pause,
+  resume,
+  stop,
+  setVoice as setBrowserVoice,
+} from '../../../../store/browserPlayerSlice';
+import {
   setVolume,
-  setCurrentTime,
-  setDuration,
-  togglePlayPause,
-  playNext as playNextAudio,
-  playPrevious as playPreviousAudio,
+  setPlaylist,
+  play as playAiAudio,
 } from '../../../../store/audioPlayerSlice';
 import { setSelectedVoice } from '../../../../store/voiceSlice';
 import { goToNextPage, goToPreviousPage } from '../../../../store/pdfReaderSlice';
@@ -16,35 +20,26 @@ import { PlaybackControls } from './PlaybackControls/PlaybackControls';
 import { VolumeControls } from './VolumeControls/VolumeControls';
 import { VoiceSelectorButton } from './VoiceSelectorButton/VoiceSelectorButton';
 import { VoiceSelectorModal } from '../../Modals/VoiceSelectorModal';
+import { textToSpeechService } from 'services/tts';
 
 export const BrowserPlayer = () => {
-  const audioRef = useRef<HTMLAudioElement>(null);
   const dispatch = useDispatch();
-  const { selectedVoice } = useSelector((state: RootState) => state.voice);
-  const { credentials } = useSelector((state: RootState) => state.credentials);
-  const {
-    volume,
-    playlist,
-    duration,
-    isPlaying,
-    sourceType,
-    currentTime,
-    currentTrackIndex,
-  } = useSelector((state: RootState) => state.audioPlayer);
+  const { text, isPlaying, isPaused, voice } = useSelector((state: RootState) => state.browserPlayer);
+  const { volume } = useSelector((state: RootState) => state.audioPlayer);
+  const credentials = useSelector((state: RootState) => state.credentials.credentials);
   const {
     totalPages,
     currentPage,
     isLoaded: isPdfLoaded
   } = useSelector((state: RootState) => state.pdfReader);
 
+  const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [lastVolume, setLastVolume] = useState(volume);
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState<boolean>(false);
   const [showMobileVolumeSlider, setShowMobileVolumeSlider] = useState(false);
   const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
   const mobileVolumeSliderRef = useRef<HTMLDivElement>(null);
   const mobileVolumeButtonRef = useRef<HTMLButtonElement>(null);
-  const currentTrackUrl = currentTrackIndex !== null ? playlist[currentTrackIndex] : null;
-  const progressPercentage = duration > 0 ? (currentTime / duration) * 100 : 0;
   const volumePercentage = volume * 100;
 
   useEffect(() => {
@@ -59,6 +54,7 @@ export const BrowserPlayer = () => {
       window.removeEventListener('resize', checkIsMobile);
     };
   }, []);
+
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -81,78 +77,67 @@ export const BrowserPlayer = () => {
   }, [showMobileVolumeSlider]);
 
   useEffect(() => {
-    if (audioRef.current) {
-      if (currentTrackUrl) {
-        audioRef.current.src = currentTrackUrl;
-        audioRef.current.load();
-        if (isPlaying) {
-          audioRef.current.play().catch(e => console.error("Error playing audio:", e));
+    const handleVoicesChanged = () => {
+      const voices = window.speechSynthesis.getVoices();
+      setAvailableVoices(voices);
+      if (!voice && voices.length > 0) {
+        const defaultVoice = voices.find(v => v.default);
+        dispatch(setBrowserVoice(defaultVoice || voices[0]));
+      }
+    };
+
+    window.speechSynthesis.addEventListener('voiceschanged', handleVoicesChanged);
+    handleVoicesChanged();
+
+    return () => {
+      window.speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
+    };
+  }, [dispatch, voice]);
+
+  const handlePlay = useCallback(() => {
+    if (text) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      if (voice) {
+        utterance.voice = voice;
+      }
+      utterance.volume = volume;
+      utterance.onend = () => {
+        dispatch(stop());
+        if (currentPage < totalPages) {
+          dispatch(goToNextPage());
         }
-      } else {
-        audioRef.current.pause();
-        audioRef.current.src = '';
-      }
+      };
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(utterance);
+      dispatch(play());
     }
-    //eslint-disable-next-line
-  }, [currentTrackUrl]);
+  }, [text, voice, volume, dispatch, currentPage, totalPages]);
 
-  useEffect(() => {
-    if (audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.play().catch(e => console.error("Error playing audio:", e));
-      } else {
-        audioRef.current.pause();
-      }
-    }
-  }, [isPlaying]);
-
-  useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.volume = volume;
-    }
-  }, [volume]);
-
-  useEffect(() => {
-    if (audioRef.current && !isPlaying && currentTime === 0) {
-      audioRef.current.currentTime = 0;
-    }
-  }, [isPlaying, currentTime]);
-
-  const handleTimeUpdate = () => {
-    if (audioRef.current) {
-      dispatch(setCurrentTime(audioRef.current.currentTime));
-    }
+  const handlePause = () => {
+    window.speechSynthesis.pause();
+    dispatch(pause());
   };
 
-  const handleLoadedMetadata = () => {
-    if (audioRef.current) {
-      dispatch(setDuration(audioRef.current.duration));
-    }
+  const handleResume = () => {
+    window.speechSynthesis.resume();
+    dispatch(resume());
   };
 
-  const handleEnded = () => {
-    if (sourceType === 'pdfPage') {
-      if (currentPage < totalPages) {
-        dispatch(goToNextPage());
-      }
-    } else {
-      dispatch(playNextAudio());
+  useEffect(() => {
+    if (isPlaying && !isPaused) {
+      handlePlay();
     }
-  };
+  }, [isPlaying, isPaused, handlePlay]);
 
   const handlePrevious = () => {
     if (isPdfLoaded) {
       dispatch(goToPreviousPage());
-    } else {
-      dispatch(playPreviousAudio());
     }
   };
 
   const handleNext = () => {
     if (isPdfLoaded) {
       dispatch(goToNextPage());
-    } else {
-      dispatch(playNextAudio());
     }
   };
 
@@ -165,43 +150,65 @@ export const BrowserPlayer = () => {
     }
   };
 
-  const formatTime = (time: number) => {
-    const minutes = Math.floor(time / 60);
-    const seconds = Math.floor(time % 60);
-    return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+  const togglePlayPause = () => {
+    if (isPlaying) {
+      if (isPaused) {
+        handleResume();
+      } else {
+        handlePause();
+      }
+    } else {
+      handlePlay();
+    }
   };
 
-  const isPrevDisabled = isPdfLoaded ? currentPage === 1 : currentTrackIndex === 0;
-  const isNextDisabled = isPdfLoaded ? currentPage === totalPages : currentTrackIndex === (playlist.length - 1);
+  const isPrevDisabled = isPdfLoaded ? currentPage === 1 : true;
+  const isNextDisabled = isPdfLoaded ? currentPage === totalPages : true;
+
+  const aiVoices = credentials?.[0]?.voices?.map(v => ({ voice_id: v.value, name: v.label })) || [];
+  const mappedBrowserVoices = availableVoices.map(v => ({ voice_id: v.name, name: v.name, isBrowser: true }));
+
+  const handleVoiceSelection = async (selected: { voice_id: string, name: string, isBrowser?: boolean }) => {
+    setIsVoiceModalOpen(false);
+    if (selected.isBrowser) {
+      const newVoice = availableVoices.find(v => v.name === selected.voice_id);
+      if (newVoice) {
+        dispatch(setBrowserVoice(newVoice));
+        // If we were playing something, replay it with the new voice
+        if (isPlaying) {
+          handlePlay();
+        }
+      }
+    } else {
+      // Switch to AI voice
+      dispatch(setSelectedVoice(selected.voice_id));
+      // If we were playing something with browser, we need to stop it and start with AI
+      if (text) {
+        window.speechSynthesis.cancel();
+        dispatch(stop());
+        const audioUrl = await textToSpeechService({ text, voice: selected.voice_id });
+        dispatch(setPlaylist({ playlist: [audioUrl], startIndex: 0 }));
+        dispatch(playAiAudio());
+      }
+    }
+  };
+
+  const currentSelectedVoice = voice ? { voice_id: voice.name, name: voice.name, isBrowser: true } : null;
 
   return (
     <>
       <div className={s.audioPlayerContainer}>
-        <audio
-          ref={audioRef}
-          onTimeUpdate={handleTimeUpdate}
-          onLoadedMetadata={handleLoadedMetadata}
-          onEnded={handleEnded}
-        />
         <section className={s.leftSection}>
           <VoiceSelectorButton onClick={() => setIsVoiceModalOpen(true)} />
         </section>
 
         <PlaybackControls
-          selectedVoice={selectedVoice}
-          audioRef={audioRef}
-          currentTime={currentTime}
-          duration={duration}
-          progressPercentage={progressPercentage}
           handlePrevious={handlePrevious}
           handleNext={handleNext}
-          isPlaying={isPlaying}
+          isPlaying={isPlaying && !isPaused}
           isPrevDisabled={isPrevDisabled}
           isNextDisabled={isNextDisabled}
-          currentTrackIndex={currentTrackIndex}
-          formatTime={formatTime}
-          togglePlayPause={() => dispatch(togglePlayPause())}
-          setCurrentTime={(time) => dispatch(setCurrentTime(time))}
+          togglePlayPause={togglePlayPause}
         />
 
         <VolumeControls
@@ -219,9 +226,10 @@ export const BrowserPlayer = () => {
       <VoiceSelectorModal
         show={isVoiceModalOpen}
         onClose={() => setIsVoiceModalOpen(false)}
-        voices={credentials?.[0]?.voices || []}
-        selectedVoice={selectedVoice}
-        setSelectedVoice={(voice) => dispatch(setSelectedVoice(voice))}
+        aiVoices={aiVoices}
+        browserVoices={mappedBrowserVoices}
+        selectedVoice={currentSelectedVoice}
+        setSelectedVoice={handleVoiceSelection}
       />
     </>
   );

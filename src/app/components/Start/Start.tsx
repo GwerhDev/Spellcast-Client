@@ -4,7 +4,8 @@ import { useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { textToSpeechService } from '../../../services/tts';
 import { RootState } from '../../../store';
-import { setPlaylist, play, resetAudioPlayer } from '../../../store/audioPlayerSlice';
+import { setPlaylist, play as playAiAudio, resetAudioPlayer } from '../../../store/audioPlayerSlice';
+import { setText as setBrowserText, play as playBrowserAudio } from '../../../store/browserPlayerSlice';
 import { setPdfFile, resetPdfState } from '../../../store/pdfReaderSlice';
 import { PrimaryButton } from '../Buttons/PrimaryButton';
 import { PdfInput } from './PdfInput/PdfInput';
@@ -23,12 +24,12 @@ export const Start = () => {
   const { selectedVoice } = useSelector((state: RootState) => state.voice);
   const fileContent = useSelector((state: RootState) => state.pdfReader.fileContent);
 
-  const generateAudio = useCallback(async (textToSpeak: string, voice: string) => {
+  const generateAiAudio = useCallback(async (textToSpeak: string, voice: string) => {
     setIsLoading(true);
     try {
       const audioUrl = await textToSpeechService({ text: textToSpeak, voice });
       dispatch(setPlaylist({ playlist: [audioUrl], startIndex: 0 }));
-      dispatch(play());
+      dispatch(playAiAudio());
     } catch (error) {
       console.error('Failed to generate audio', error);
     } finally {
@@ -75,10 +76,10 @@ export const Start = () => {
     e.preventDefault();
 
     if (selectedVoice !== 'browser') {
-      await generateAudio(text, selectedVoice);
+      await generateAiAudio(text, selectedVoice);
     } else {
-      const utterance = new SpeechSynthesisUtterance(text);
-      speechSynthesis.speak(utterance);
+      dispatch(setBrowserText(text));
+      dispatch(playBrowserAudio());
     }
   };
 

@@ -4,20 +4,12 @@ import { faPlay, faPause, faStepBackward, faStepForward } from '@fortawesome/fre
 import s from './PlaybackControls.module.css';
 
 interface PlaybackControlsProps {
-  audioRef: React.RefObject<HTMLAudioElement | null>;
-  selectedVoice: string;
-  currentTime: number;
-  duration: number;
-  progressPercentage: number;
   handlePrevious: () => void;
   handleNext: () => void;
   isPlaying: boolean;
   isPrevDisabled: boolean;
   isNextDisabled: boolean;
-  currentTrackIndex: number | null;
-  formatTime: (time: number) => string;
   togglePlayPause: () => void;
-  setCurrentTime: (time: number) => void;
 }
 
 export const PlaybackControls: React.FC<PlaybackControlsProps> = ({
@@ -26,7 +18,6 @@ export const PlaybackControls: React.FC<PlaybackControlsProps> = ({
   isPlaying,
   isPrevDisabled,
   isNextDisabled,
-  currentTrackIndex,
   togglePlayPause,
 }) => {
   return (
@@ -35,7 +26,7 @@ export const PlaybackControls: React.FC<PlaybackControlsProps> = ({
         <button onClick={handlePrevious} disabled={isPrevDisabled} className={s.controlButton}>
           <FontAwesomeIcon icon={faStepBackward} />
         </button>
-        <button onClick={togglePlayPause} disabled={currentTrackIndex === null} className={s.playPauseButton} style={currentTrackIndex === null ? { opacity: '0.5', cursor: 'not-allowed' } : {}}>
+        <button onClick={togglePlayPause} className={s.playPauseButton}>
           <FontAwesomeIcon icon={isPlaying ? faPause : faPlay} />
         </button>
         <button onClick={handleNext} disabled={isNextDisabled} className={s.controlButton}>

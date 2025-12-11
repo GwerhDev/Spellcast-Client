@@ -16,12 +16,14 @@ import { PlaybackControls } from './PlaybackControls/PlaybackControls';
 import { VolumeControls } from './VolumeControls/VolumeControls';
 import { VoiceSelectorButton } from './VoiceSelectorButton/VoiceSelectorButton';
 import { VoiceSelectorModal } from '../../Modals/VoiceSelectorModal';
+import { setText as setBrowserText, play as playBrowserAudio, stop as stopBrowserAudio } from 'store/browserPlayerSlice';
+import { textToSpeechService } from 'services/tts';
 
 export const AudioPlayer = () => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const dispatch = useDispatch();
   const { selectedVoice } = useSelector((state: RootState) => state.voice);
-  const { credentials } = useSelector((state: RootState) => state.credentials);
+  const credentials = useSelector((state: RootState) => state.credentials.credentials);
   const {
     volume,
     playlist,
@@ -34,18 +36,31 @@ export const AudioPlayer = () => {
   const {
     totalPages,
     currentPage,
-    isLoaded: isPdfLoaded
+    isLoaded: isPdfLoaded,
+    pages,
   } = useSelector((state: RootState) => state.pdfReader);
 
   const [lastVolume, setLastVolume] = useState(volume);
   const [isMobile, setIsMobile] = useState(false);
   const [showMobileVolumeSlider, setShowMobileVolumeSlider] = useState(false);
   const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
+  const [browserVoices, setBrowserVoices] = useState<SpeechSynthesisVoice[]>([]);
   const mobileVolumeSliderRef = useRef<HTMLDivElement>(null);
   const mobileVolumeButtonRef = useRef<HTMLButtonElement>(null);
   const currentTrackUrl = currentTrackIndex !== null ? playlist[currentTrackIndex] : null;
   const progressPercentage = duration > 0 ? (currentTime / duration) * 100 : 0;
   const volumePercentage = volume * 100;
+
+  useEffect(() => {
+    const handleVoicesChanged = () => {
+      setBrowserVoices(window.speechSynthesis.getVoices());
+    };
+    window.speechSynthesis.addEventListener('voiceschanged', handleVoicesChanged);
+    handleVoicesChanged();
+    return () => {
+      window.speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
+    };
+  }, []);
 
   useEffect(() => {
     const checkIsMobile = () => {
@@ -174,6 +189,39 @@ export const AudioPlayer = () => {
   const isPrevDisabled = isPdfLoaded ? currentPage === 1 : currentTrackIndex === 0;
   const isNextDisabled = isPdfLoaded ? currentPage === totalPages : currentTrackIndex === (playlist.length - 1);
 
+  const aiVoices = credentials?.[0]?.voices?.map(v => ({ voice_id: v.value, name: v.label })) || [];
+  const mappedBrowserVoices = browserVoices.map(v => ({ voice_id: v.name, name: v.name, isBrowser: true }));
+
+  const allVoices = [...aiVoices, ...mappedBrowserVoices];
+  const currentSelectedVoice = allVoices.find(v => v.voice_id === selectedVoice) || null;
+
+  const handleVoiceSelection = async (selected: { voice_id: string, name: string, isBrowser?: boolean }) => {
+    setIsVoiceModalOpen(false);
+    if (selected.isBrowser) {
+      dispatch(setSelectedVoice('browser'));
+      if (isPlaying) {
+        const text = pages[currentPage];
+        if (text) {
+          dispatch(stopBrowserAudio());
+          dispatch(setBrowserText(text));
+          dispatch(playBrowserAudio());
+        }
+      }
+    } else {
+      dispatch(setSelectedVoice(selected.voice_id));
+      if (isPlaying) {
+        const text = pages[currentPage];
+        if (text) {
+          const audioUrl = await textToSpeechService({ text, voice: selected.voice_id });
+          dispatch(setCurrentTime(0));
+          dispatch(setDuration(0));
+          audioRef.current!.src = audioUrl;
+          audioRef.current!.play();
+        }
+      }
+    }
+  };
+
   return (
     <>
       <div className={s.audioPlayerContainer}>
@@ -218,9 +266,10 @@ export const AudioPlayer = () => {
       <VoiceSelectorModal
         show={isVoiceModalOpen}
         onClose={() => setIsVoiceModalOpen(false)}
-        voices={credentials?.[0]?.voices || []}
-        selectedVoice={selectedVoice}
-        setSelectedVoice={(voice) => dispatch(setSelectedVoice(voice))}
+        aiVoices={aiVoices}
+        browserVoices={mappedBrowserVoices}
+        selectedVoice={currentSelectedVoice}
+        setSelectedVoice={handleVoiceSelection}
       />
     </>
   );

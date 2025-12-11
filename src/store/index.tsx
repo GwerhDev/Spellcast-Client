@@ -2,6 +2,7 @@ import { configureStore } from '@reduxjs/toolkit';
 import sessionReducer from './sessionSlice';
 import apiResponsesReducer from './apiResponsesSlice';
 import audioPlayerReducer from './audioPlayerSlice';
+import browserPlayerReducer from './browserPlayerSlice';
 import pdfReaderReducer from './pdfReaderSlice';
 import voiceReducer from './voiceSlice';
 import credentialsReducer from './credentialsSlice';
@@ -15,13 +16,14 @@ export const store = configureStore({
     pdfReader: pdfReaderReducer,
     credentials: credentialsReducer,
     audioPlayer: audioPlayerReducer,
+    browserPlayer: browserPlayerReducer,
     apiResponses: apiResponsesReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
-        ignoredActions: ['pdfReader/loadPdf/fulfilled'],
-        ignoredPaths: ['pdfReader.pdfDoc'],
+        ignoredActions: ['pdfReader/loadPdf/fulfilled', 'browserPlayer/setVoice'],
+        ignoredPaths: ['pdfReader.pdfDoc', 'browserPlayer.voice'],
       },
     }),
 });
