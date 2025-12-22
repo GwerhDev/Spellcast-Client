@@ -96,7 +96,7 @@ export const PdfReader = () => {
         return sentencesToRender.map((sentence, index) => (
             <span 
               key={index} 
-              className={`${s.sentence} ${isBrowserPlaying && index === currentSentenceIndex ? s.highlight : ''}`}
+              className={isBrowserPlaying && index === currentSentenceIndex ? s.highlight : s.sentence}
               onClick={() => handleSentenceClick(index)}
             >
               {sentence}
