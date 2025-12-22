@@ -3,11 +3,12 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../../../store';
 import {
-  play,
   pause,
   resume,
   stop,
   setVoice as setBrowserVoice,
+  setSentencesAndPlay,
+  setCurrentSentenceIndex,
 } from '../../../../store/browserPlayerSlice';
 import {
   setVolume,
@@ -24,7 +25,14 @@ import { textToSpeechService } from 'services/tts';
 
 export const BrowserPlayer = () => {
   const dispatch = useDispatch();
-  const { text, isPlaying, isPaused, voice } = useSelector((state: RootState) => state.browserPlayer);
+  const {
+    text,
+    isPlaying,
+    isPaused,
+    voice,
+    sentences,
+    currentSentenceIndex,
+  } = useSelector((state: RootState) => state.browserPlayer);
   const { volume } = useSelector((state: RootState) => state.audioPlayer);
   const credentials = useSelector((state: RootState) => state.credentials.credentials);
   const {
@@ -46,15 +54,10 @@ export const BrowserPlayer = () => {
     const checkIsMobile = () => {
       setIsMobile(window.matchMedia('(max-width: 768px)').matches);
     };
-
     checkIsMobile();
     window.addEventListener('resize', checkIsMobile);
-
-    return () => {
-      window.removeEventListener('resize', checkIsMobile);
-    };
+    return () => window.removeEventListener('resize', checkIsMobile);
   }, []);
-
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -68,12 +71,8 @@ export const BrowserPlayer = () => {
         setShowMobileVolumeSlider(false);
       }
     };
-
     document.addEventListener('mousedown', handleClickOutside);
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showMobileVolumeSlider]);
 
   useEffect(() => {
@@ -85,58 +84,86 @@ export const BrowserPlayer = () => {
         dispatch(setBrowserVoice(defaultVoice || voices[0]));
       }
     };
-
     window.speechSynthesis.addEventListener('voiceschanged', handleVoicesChanged);
     handleVoicesChanged();
-
     return () => {
       window.speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
+      window.speechSynthesis.cancel();
     };
   }, [dispatch, voice]);
 
-  const handlePlay = useCallback(() => {
-    if (text) {
-      const utterance = new SpeechSynthesisUtterance(text);
-      if (voice) {
-        utterance.voice = voice;
+  const speak = useCallback((sentenceIndex: number) => {
+    if (sentenceIndex >= sentences.length) {
+      dispatch(stop());
+      if (currentPage < totalPages) {
+        dispatch(goToNextPage());
       }
-      utterance.volume = volume;
-      utterance.onend = () => {
-        dispatch(stop());
-        if (currentPage < totalPages) {
-          dispatch(goToNextPage());
-        }
-      };
-      window.speechSynthesis.cancel();
-      window.speechSynthesis.speak(utterance);
-      dispatch(play());
+      return;
     }
-  }, [text, voice, volume, dispatch, currentPage, totalPages]);
+
+    dispatch(setCurrentSentenceIndex(sentenceIndex));
+    const utterance = new SpeechSynthesisUtterance(sentences[sentenceIndex]);
+    if (voice) utterance.voice = voice;
+    utterance.volume = volume;
+    utterance.onend = () => {
+      // Check if it was cancelled before proceeding
+      if (window.speechSynthesis.speaking || !isPaused) {
+        speak(sentenceIndex + 1);
+      }
+    };
+    window.speechSynthesis.speak(utterance);
+  }, [sentences, voice, volume, dispatch, currentPage, totalPages, isPaused]);
+
+  const startPlayback = useCallback(() => {
+    if (!text) return;
+    window.speechSynthesis.cancel();
+    const sentenceRegex = /[^.!?]+[.!?]+(\s|$)/g;
+    const textSentences = text.match(sentenceRegex) || [text];
+    dispatch(setSentencesAndPlay({sentences: textSentences, text: text}));
+  }, [text, dispatch]);
 
   const handlePause = () => {
-    window.speechSynthesis.pause();
     dispatch(pause());
+    window.speechSynthesis.pause();
   };
 
   const handleResume = () => {
-    window.speechSynthesis.resume();
     dispatch(resume());
+    window.speechSynthesis.resume();
+  };
+
+  const handleStop = () => {
+    dispatch(stop());
+    window.speechSynthesis.cancel();
   };
 
   useEffect(() => {
-    if (isPlaying && !isPaused) {
-      handlePlay();
+    // Effect to automatically start playback when play is dispatched from another component
+    if (isPlaying && !isPaused && text && sentences.length === 0) {
+      startPlayback();
     }
-  }, [isPlaying, isPaused, handlePlay]);
+  }, [isPlaying, isPaused, text, sentences, startPlayback]);
+
+  useEffect(() => {
+    // This effect triggers the start of sentence-based playback once sentences are set
+    if (isPlaying && !isPaused && sentences.length > 0 && currentSentenceIndex >= 0) {
+        if (!window.speechSynthesis.speaking) {
+            speak(currentSentenceIndex);
+        }
+    }
+  }, [isPlaying, isPaused, sentences, currentSentenceIndex, speak]);
+
 
   const handlePrevious = () => {
     if (isPdfLoaded) {
+      handleStop();
       dispatch(goToPreviousPage());
     }
   };
 
   const handleNext = () => {
     if (isPdfLoaded) {
+      handleStop();
       dispatch(goToNextPage());
     }
   };
@@ -152,13 +179,14 @@ export const BrowserPlayer = () => {
 
   const togglePlayPause = () => {
     if (isPlaying) {
-      if (isPaused) {
-        handleResume();
-      } else {
-        handlePause();
-      }
+        if (isPaused) {
+            handleResume();
+        } else {
+            handlePause();
+        }
     } else {
-      handlePlay();
+        // This case happens if we press play after stopping
+        startPlayback();
     }
   };
 
@@ -174,18 +202,14 @@ export const BrowserPlayer = () => {
       const newVoice = availableVoices.find(v => v.name === selected.voice_id);
       if (newVoice) {
         dispatch(setBrowserVoice(newVoice));
-        // If we were playing something, replay it with the new voice
         if (isPlaying) {
-          handlePlay();
+          startPlayback();
         }
       }
     } else {
-      // Switch to AI voice
       dispatch(setSelectedVoice(selected.voice_id));
-      // If we were playing something with browser, we need to stop it and start with AI
       if (text) {
-        window.speechSynthesis.cancel();
-        dispatch(stop());
+        handleStop();
         const audioUrl = await textToSpeechService({ text, voice: selected.voice_id });
         dispatch(setPlaylist({ playlist: [audioUrl], startIndex: 0 }));
         dispatch(playAiAudio());
@@ -234,3 +258,4 @@ export const BrowserPlayer = () => {
     </>
   );
 };
+
