@@ -86,7 +86,7 @@
 }
 
 .sentence:hover {
-  background-color: var(--color-light-300);
+  background-color: var(--color-sentence-hover);
   color: var(--color-dark-900);
 }
 
