@@ -80,6 +80,16 @@
   justify-content: center;
 }
 
+.sentence {
+  cursor: pointer;
+  transition: .1s;
+}
+
+.sentence:hover {
+  background-color: var(--color-light-300);
+  color: var(--color-dark-900);
+}
+
 .highlight {
   background-color: var(--color-primary);
   color: var(--color-dark-900);

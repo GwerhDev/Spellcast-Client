@@ -10,15 +10,17 @@ import { faArrowLeft, faEdit, faSave, faXmark } from '@fortawesome/free-solid-sv
 import { Link } from 'react-router-dom';
 import { PageSelectorModal } from '../../Modals/PageSelectorModal';
 import { setPageText } from '../../../../store/pdfReaderSlice';
-import { setText as setBrowserText, play as playBrowserAudio } from '../../../../store/browserPlayerSlice';
+import { setSentencesAndPlay, stop } from '../../../../store/browserPlayerSlice';
 
 export const PdfReader = () => {
   const dispatch = useDispatch();
   const { currentPage, isLoaded, pages } = useSelector((state: RootState) => state.pdfReader);
   const { selectedVoice } = useSelector((state: RootState) => state.voice);
-  const { sentences, currentSentenceIndex, isPlaying: isBrowserPlaying } = useSelector((state: RootState) => state.browserPlayer);
+  const { sentences: browserSentences, currentSentenceIndex, isPlaying: isBrowserPlaying } = useSelector((state: RootState) => state.browserPlayer);
 
   const currentPageText = pages[currentPage] || '';
+  const sentenceRegex = /[^.!?]+[.!?]+(\s|$)/g;
+  const localSentences = currentPageText.match(sentenceRegex) || (currentPageText ? [currentPageText] : []);
 
   const [editedText, setEditedText] = useState(currentPageText || '');
   const [isEditing, setIsEditing] = useState(false);
@@ -30,6 +32,7 @@ export const PdfReader = () => {
   useEffect(() => {
     if (prevCurrentPageRef.current !== currentPage && isLoaded) {
       dispatch(resetAudioPlayer());
+      dispatch(stop());
     }
     prevCurrentPageRef.current = currentPage;
   }, [currentPage, isLoaded, dispatch]);
@@ -40,16 +43,16 @@ export const PdfReader = () => {
 
   const handleGenerateAudio = async (textToGenerate: string, pageNumber: number) => {
     if (selectedVoice === 'browser') {
-        dispatch(setBrowserText(textToGenerate));
-        dispatch(playBrowserAudio());
+      const sentences = textToGenerate.match(sentenceRegex) || [textToGenerate];
+      dispatch(setSentencesAndPlay({ sentences, text: textToGenerate }));
     } else {
-        try {
-            const audioUrl = await textToSpeechService({ text: textToGenerate, voice: selectedVoice });
-            dispatch(setPlaylist({ playlist: [audioUrl], startIndex: 0, sourceType: 'pdfPage', pdfPageNumber: pageNumber }));
-            dispatch(play());
-        } catch (error) {
-            console.error('Failed to generate audio for page', error);
-        }
+      try {
+        const audioUrl = await textToSpeechService({ text: textToGenerate, voice: selectedVoice });
+        dispatch(setPlaylist({ playlist: [audioUrl], startIndex: 0, sourceType: 'pdfPage', pdfPageNumber: pageNumber }));
+        dispatch(play());
+      } catch (error) {
+        console.error('Failed to generate audio for page', error);
+      }
     }
   };
 
@@ -75,15 +78,33 @@ export const PdfReader = () => {
     setEditedText(e.currentTarget.innerText);
   };
 
+  const handleSentenceClick = (clickedIndex: number) => {
+    if (selectedVoice !== 'browser' || isEditing) return;
+    
+    window.speechSynthesis.cancel();
+
+    dispatch(setSentencesAndPlay({ sentences: localSentences, text: currentPageText, startIndex: clickedIndex }));
+  };
+
   const renderContent = () => {
-    if (isBrowserPlaying && sentences.length > 0) {
-      return sentences.map((sentence, index) => (
-        <span key={index} className={index === currentSentenceIndex ? s.highlight : ''}>
-          {sentence}
-        </span>
-      ));
+    if (isEditing) {
+      return editedText;
     }
-    return isEditing ? editedText : currentPageText || 'Extracted text will appear here...';
+
+    if (selectedVoice === 'browser') {
+        const sentencesToRender = isBrowserPlaying ? browserSentences : localSentences;
+        return sentencesToRender.map((sentence, index) => (
+            <span 
+              key={index} 
+              className={`${s.sentence} ${isBrowserPlaying && index === currentSentenceIndex ? s.highlight : ''}`}
+              onClick={() => handleSentenceClick(index)}
+            >
+              {sentence}
+            </span>
+        ));
+    }
+
+    return currentPageText || 'Extracted text will appear here...';
   };
 
   return (
@@ -118,7 +139,7 @@ export const PdfReader = () => {
         suppressContentEditableWarning={true}
       >
         {isLoaded ? (
-            renderContent()
+          renderContent()
         ) : (
           <p>Loading page...</p>
         )}
