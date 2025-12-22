@@ -112,7 +112,7 @@ export const PdfReader = () => {
       </div>
       <div
         ref={textContainerRef}
-        className={s.textContainer}
+        className={`${s.textContainer} ${isEditing ? s.editing : ''}`}
         contentEditable={isEditing}
         onInput={handleTextChange}
         suppressContentEditableWarning={true}

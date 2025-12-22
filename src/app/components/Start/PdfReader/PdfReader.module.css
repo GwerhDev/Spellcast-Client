@@ -18,12 +18,16 @@
   border-radius: 10px;
   padding: 1rem;
   overflow-y: auto;
+  border: 1px solid transparent;
+}
+
+.editing {
   border: 1px solid var(--color-dark-300);
 }
 
 .textContainer:focus {
-    outline: none;
-    border-color: var(--color-primary);
+  outline: none;
+  border-color: var(--color-primary);
 }
 
 .textContent {
