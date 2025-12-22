@@ -91,6 +91,8 @@
 }
 
 .highlight {
+  cursor: pointer;
+  transition: .1s;
   background-color: var(--color-primary);
   color: var(--color-dark-900);
   border-radius: 3px;
