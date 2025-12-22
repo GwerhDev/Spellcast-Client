@@ -74,9 +74,9 @@ html.light {
   --color-button-primary-hover: #9b85c8;
   --color-primary-lighter: #dde8f2;
   --color-secondary-lighter: #ddd6e8;
-  --color-sentence-hover: #e0e0e0;
-
+  
   --text-color: #616161;
+  --color-sentence-hover: #cacaca;
   --color-options-background: #ddd6e8;
   --component-background: linear-gradient(to right top, var(--color-primary-lighter), var(--color-secondary-lighter));
 
