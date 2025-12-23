@@ -22,7 +22,6 @@ import { textToSpeechService } from 'services/tts';
 export const AudioPlayer = () => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const dispatch = useDispatch();
-  const { selectedVoice } = useSelector((state: RootState) => state.voice);
   const credentials = useSelector((state: RootState) => state.credentials.credentials);
   const {
     volume,
@@ -189,16 +188,16 @@ export const AudioPlayer = () => {
   const isPrevDisabled = isPdfLoaded ? currentPage === 1 : currentTrackIndex === 0;
   const isNextDisabled = isPdfLoaded ? currentPage === totalPages : currentTrackIndex === (playlist.length - 1);
 
-  const aiVoices = credentials?.[0]?.voices?.map(v => ({ voice_id: v.value, name: v.label })) || [];
-  const mappedBrowserVoices = browserVoices.map(v => ({ voice_id: v.name, name: v.name, isBrowser: true }));
+  const aiVoices = credentials?.[0]?.voices?.map(v => ({ value: v.value, label: v.label, gender: v.gender })) || [];
+  const mappedBrowserVoices = browserVoices.map(v => ({ value: v.name, label: v.name, gender: 'Unknown', isBrowser: true }));
 
-  const allVoices = [...aiVoices, ...mappedBrowserVoices];
-  const currentSelectedVoice = allVoices.find(v => v.voice_id === selectedVoice) || null;
+  const reduxSelectedVoice = useSelector((state: RootState) => state.voice.selectedVoice);
 
-  const handleVoiceSelection = async (selected: { voice_id: string, name: string, isBrowser?: boolean }) => {
+  const handleVoiceSelection = async (selected: { value: string, label: string, gender: string, isBrowser?: boolean }) => {
     setIsVoiceModalOpen(false);
     if (selected.isBrowser) {
-      dispatch(setSelectedVoice('browser'));
+      dispatch(setSelectedVoice({ value: selected.value, type: 'browser' }));
+      localStorage.setItem('default_browser_voice', JSON.stringify({ value: selected.value, type: 'browser' }));
       if (isPlaying) {
         const text = pages[currentPage];
         if (text) {
@@ -208,11 +207,11 @@ export const AudioPlayer = () => {
         }
       }
     } else {
-      dispatch(setSelectedVoice(selected.voice_id));
+      dispatch(setSelectedVoice({ value: selected.value, type: 'ia' }));
       if (isPlaying) {
         const text = pages[currentPage];
         if (text) {
-          const audioUrl = await textToSpeechService({ text, voice: selected.voice_id });
+          const audioUrl = await textToSpeechService({ text, voice: selected.value });
           dispatch(setCurrentTime(0));
           dispatch(setDuration(0));
           audioRef.current!.src = audioUrl;
@@ -268,8 +267,8 @@ export const AudioPlayer = () => {
         onClose={() => setIsVoiceModalOpen(false)}
         aiVoices={aiVoices}
         browserVoices={mappedBrowserVoices}
-        selectedVoice={currentSelectedVoice}
         setSelectedVoice={handleVoiceSelection}
+        reduxSelectedVoice={reduxSelectedVoice}
       />
     </>
   );

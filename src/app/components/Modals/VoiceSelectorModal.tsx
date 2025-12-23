@@ -1,33 +1,33 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import s from './VoiceSelectorModal.module.css';
 import { IconButton } from '../Buttons/IconButton';
 import { faBrain, faCircle, faDesktop, faXmark } from '@fortawesome/free-solid-svg-icons';
 import { faCircle as faRegCircle } from '@fortawesome/free-regular-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-
-interface Voice {
-  voice_id: string;
-  name: string;
-}
+import { Voice, SelectedVoice } from 'src/interfaces';
 
 interface VoiceSelectorModalProps {
   browserVoices: Voice[];
   aiVoices: Voice[];
-  selectedVoice: Voice | null;
   setSelectedVoice: (voice: Voice) => void;
   onClose: () => void;
   show: boolean;
+  reduxSelectedVoice: SelectedVoice; // The actual selected voice from Redux store
 }
 
 export const VoiceSelectorModal: React.FC<VoiceSelectorModalProps> = ({
   browserVoices,
   aiVoices,
-  selectedVoice,
   setSelectedVoice,
   onClose,
   show,
+  reduxSelectedVoice,
 }) => {
-  const [activeTab, setActiveTab] = useState<'browser' | 'ai'>('browser');
+  const [activeTab, setActiveTab] = useState<'browser' | 'ai'>(reduxSelectedVoice.type === 'ia' ? 'ai' : reduxSelectedVoice.type);
+
+  useEffect(() => {
+    setActiveTab(reduxSelectedVoice.type === 'ia' ? 'ai' : reduxSelectedVoice.type);
+  }, [reduxSelectedVoice.type]);
 
   if (!show) {
     return null;
@@ -65,12 +65,12 @@ export const VoiceSelectorModal: React.FC<VoiceSelectorModalProps> = ({
           {voicesToShow.map((voiceOption, index) => (
             <li
               key={index}
-              className={`${s.voiceOption} ${selectedVoice?.voice_id === voiceOption.voice_id ? s.activeVoice : ''}`}
+              className={`${s.voiceOption} ${reduxSelectedVoice.value === voiceOption.value && (reduxSelectedVoice.type === 'ia' ? 'ai' : reduxSelectedVoice.type) === activeTab ? s.activeVoice : ''}`}
               onClick={() => handleVoiceSelection(voiceOption)}
             >
-              <FontAwesomeIcon icon={selectedVoice?.voice_id === voiceOption.voice_id ? faCircle : faRegCircle} />
+              <FontAwesomeIcon icon={reduxSelectedVoice.value === voiceOption.value && (reduxSelectedVoice.type === 'ia' ? 'ai' : reduxSelectedVoice.type) === activeTab ? faCircle : faRegCircle} />
               <span>
-                {voiceOption.name}
+                {voiceOption.label}
               </span>
               <FontAwesomeIcon icon={icon} className={s.genderIcon} />
             </li>

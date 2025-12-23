@@ -53,12 +53,12 @@ export const PdfReader = () => {
   }, [currentPageText]);
 
   const handleGenerateAudio = async (textToGenerate: string, pageNumber: number) => {
-    if (selectedVoice === 'browser') {
+    if (selectedVoice.type === 'browser') {
       const sentences = getSentences(textToGenerate);
       dispatch(setSentencesAndPlay({ sentences, text: textToGenerate }));
     } else {
       try {
-        const audioUrl = await textToSpeechService({ text: textToGenerate, voice: selectedVoice });
+        const audioUrl = await textToSpeechService({ text: textToGenerate, voice: selectedVoice.value });
         dispatch(setPlaylist({ playlist: [audioUrl], startIndex: 0, sourceType: 'pdfPage', pdfPageNumber: pageNumber }));
         dispatch(play());
       } catch (error) {
@@ -90,7 +90,7 @@ export const PdfReader = () => {
   };
 
   const handleSentenceClick = (clickedIndex: number) => {
-    if (selectedVoice !== 'browser' || isEditing) return;
+    if (selectedVoice.type !== 'browser' || isEditing) return;
     
     window.speechSynthesis.cancel();
 
@@ -102,7 +102,7 @@ export const PdfReader = () => {
       return editedText;
     }
 
-    if (selectedVoice === 'browser') {
+    if (selectedVoice.type === 'browser') {
         const sentencesToRender = isBrowserPlaying ? browserSentences : localSentences;
         return sentencesToRender.map((sentence, index) => (
             <span 

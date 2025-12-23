@@ -75,8 +75,8 @@ export const Start = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (selectedVoice !== 'browser') {
-      await generateAiAudio(text, selectedVoice);
+    if (selectedVoice.type !== 'browser') {
+      await generateAiAudio(text, selectedVoice.value);
     } else {
       dispatch(setBrowserText(text));
       dispatch(playBrowserAudio());

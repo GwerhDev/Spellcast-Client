@@ -75,11 +75,27 @@ export const BrowserPlayer = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showMobileVolumeSlider]);
 
+  const reduxSelectedVoice = useSelector((state: RootState) => state.voice.selectedVoice);
+
   useEffect(() => {
     const handleVoicesChanged = () => {
       const voices = window.speechSynthesis.getVoices();
       setAvailableVoices(voices);
-      if (!voice && voices.length > 0) {
+
+      if (reduxSelectedVoice.type === 'browser') {
+        const storedBrowserVoice = voices.find(v => v.name === reduxSelectedVoice.value);
+        if (storedBrowserVoice) {
+          dispatch(setBrowserVoice(storedBrowserVoice));
+        } else if (voices.length > 0) {
+          // Fallback to default browser voice if stored one is not found
+          const defaultVoice = voices.find(v => v.default);
+          dispatch(setBrowserVoice(defaultVoice || voices[0]));
+          // Also update Redux state to reflect the actual voice being used
+          dispatch(setSelectedVoice({ value: (defaultVoice || voices[0]).name, type: 'browser' }));
+        }
+      } else if (!voice && voices.length > 0) {
+        // If an AI voice is selected in Redux, but no browser voice is set yet (e.g., initial load)
+        // Set a default browser voice for potential fallback or switching
         const defaultVoice = voices.find(v => v.default);
         dispatch(setBrowserVoice(defaultVoice || voices[0]));
       }
@@ -90,7 +106,7 @@ export const BrowserPlayer = () => {
       window.speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
       window.speechSynthesis.cancel();
     };
-  }, [dispatch, voice]);
+  }, [dispatch, voice, reduxSelectedVoice]);
 
   const speak = useCallback((sentenceIndex: number) => {
     if (sentenceIndex >= sentences.length) {
@@ -193,31 +209,31 @@ export const BrowserPlayer = () => {
   const isPrevDisabled = isPdfLoaded ? currentPage === 1 : true;
   const isNextDisabled = isPdfLoaded ? currentPage === totalPages : true;
 
-  const aiVoices = credentials?.[0]?.voices?.map(v => ({ voice_id: v.value, name: v.label })) || [];
-  const mappedBrowserVoices = availableVoices.map(v => ({ voice_id: v.name, name: v.name, isBrowser: true }));
+  const aiVoices = credentials?.[0]?.voices?.map(v => ({ value: v.value, label: v.label, gender: v.gender })) || [];
+  const mappedBrowserVoices = availableVoices.map(v => ({ value: v.name, label: v.name, gender: 'Unknown', isBrowser: true }));
 
-  const handleVoiceSelection = async (selected: { voice_id: string, name: string, isBrowser?: boolean }) => {
+  const handleVoiceSelection = async (selected: { value: string, label: string, gender: string, isBrowser?: boolean }) => {
     setIsVoiceModalOpen(false);
     if (selected.isBrowser) {
-      const newVoice = availableVoices.find(v => v.name === selected.voice_id);
+      const newVoice = availableVoices.find(v => v.name === selected.value);
       if (newVoice) {
         dispatch(setBrowserVoice(newVoice));
+        dispatch(setSelectedVoice({ value: selected.value, type: 'browser' }));
+        localStorage.setItem('default_browser_voice', JSON.stringify({ value: selected.value, type: 'browser' }));
         if (isPlaying) {
           startPlayback();
         }
       }
     } else {
-      dispatch(setSelectedVoice(selected.voice_id));
+      dispatch(setSelectedVoice({ value: selected.value, type: 'ia' }));
       if (text) {
         handleStop();
-        const audioUrl = await textToSpeechService({ text, voice: selected.voice_id });
+        const audioUrl = await textToSpeechService({ text, voice: selected.value });
         dispatch(setPlaylist({ playlist: [audioUrl], startIndex: 0 }));
         dispatch(playAiAudio());
       }
     }
   };
-
-  const currentSelectedVoice = voice ? { voice_id: voice.name, name: voice.name, isBrowser: true } : null;
 
   return (
     <>
@@ -252,8 +268,8 @@ export const BrowserPlayer = () => {
         onClose={() => setIsVoiceModalOpen(false)}
         aiVoices={aiVoices}
         browserVoices={mappedBrowserVoices}
-        selectedVoice={currentSelectedVoice}
         setSelectedVoice={handleVoiceSelection}
+        reduxSelectedVoice={reduxSelectedVoice}
       />
     </>
   );

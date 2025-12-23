@@ -61,11 +61,11 @@ export const PdfProcessor = () => {
           if (text && text.trim() !== '') {
             // Only generate audio if it's not already for the current page
             if (sourceType !== 'pdfPage' || pdfPageNumber !== currentPage) {
-              if (selectedVoice === 'browser') {
+              if (selectedVoice.type === 'browser') {
                 dispatch(setBrowserText(text));
                 dispatch(playBrowserAudio());
               } else {
-                const audioUrl = await textToSpeechService({ text, voice: selectedVoice });
+                const audioUrl = await textToSpeechService({ text, voice: selectedVoice.value });
                 dispatch(setPlaylist({ playlist: [audioUrl], startIndex: 0, sourceType: 'pdfPage', pdfPageNumber: currentPage }));
                 dispatch(playAiAudio());
               }
@@ -84,7 +84,7 @@ export const PdfProcessor = () => {
       };
       processPage();
     }
-  }, [pdfDoc, currentPage, dispatch, selectedVoice, sourceType, pdfPageNumber, isPlaying, isProcessing, totalPages, pages]);
+  }, [pdfDoc, currentPage, dispatch, selectedVoice.type, selectedVoice.value, sourceType, pdfPageNumber, isPlaying, isProcessing, totalPages, pages]);
 
   return null; // Headless component
 };
