@@ -1,9 +1,9 @@
-import { PdfReader } from '../components/Start/PdfReader/PdfReader';
+import { DocumentReader } from '../components/DocumentReader';
 
 export function New() {
   return (
     <div className="dashboard-sections">
-      <PdfReader />
+      <DocumentReader />
     </div>
   );
 }

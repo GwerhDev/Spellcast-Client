@@ -1,16 +1,16 @@
-import s from './PdfReader.module.css';
+import s from './index.module.css';
 import { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { RootState } from '../../../../store';
-import { textToSpeechService } from '../../../../services/tts';
-import { setPlaylist, play, resetAudioPlayer } from '../../../../store/audioPlayerSlice';
+import { RootState } from '../../../store';
+import { textToSpeechService } from '../../../services/tts';
+import { setPlaylist, play, resetAudioPlayer } from '../../../store/audioPlayerSlice';
 import { PageSelector } from './PageSelector/PageSelector';
-import { IconButton } from '../../Buttons/IconButton';
+import { IconButton } from '../Buttons/IconButton';
 import { faArrowLeft, faEdit, faSave, faXmark } from '@fortawesome/free-solid-svg-icons';
 import { Link } from 'react-router-dom';
-import { PageSelectorModal } from '../../Modals/PageSelectorModal';
-import { setPageText } from '../../../../store/pdfReaderSlice';
-import { setSentencesAndPlay, stop } from '../../../../store/browserPlayerSlice';
+import { PageSelectorModal } from '../Modals/PageSelectorModal';
+import { setPageText } from '../../../store/pdfReaderSlice';
+import { setSentencesAndPlay, stop } from '../../../store/browserPlayerSlice';
 
 const getSentences = (text: string): string[] => {
   if (!text) {
@@ -24,7 +24,7 @@ const getSentences = (text: string): string[] => {
   return sentences.filter(s => s.trim().length > 0);
 };
 
-export const PdfReader = () => {
+export const DocumentReader = () => {
   const dispatch = useDispatch();
   const { currentPage, isLoaded, pages } = useSelector((state: RootState) => state.pdfReader);
   const { selectedVoice } = useSelector((state: RootState) => state.voice);
