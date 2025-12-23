@@ -51,46 +51,45 @@ export const UploadOption: React.FC<UploadOptionProps> = () => {
     }
   }, [handleFile]);
   return (
-    (
-      fileContent ? (
-        <>
-          <Link to="/document/create" className={s.pdfLink}>
-            <div className={s.pdfInput}>
-              <FontAwesomeIcon size="2x" icon={faFileCircleCheck} />
-              <span>
-                <p>A PDF is already loaded</p>
-                <small>Continue creating</small>
-                <p></p>
-              </span>
-              <span>
-                <FontAwesomeIcon size="2x" icon={faArrowAltCircleRight} />
-              </span>
-            </div>
-          </Link>
-          <p onClick={() => dispatch(resetPdfState())} className={s.resetPdf}>
-            Or upload a new one
-          </p>
-        </>
-      ) : (
-        <div
-          className={`${s.dropzone} ${isDragging ? s.dragging : ''}`}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-        >
-          <input
-            type="file"
-            accept=".pdf"
-            onChange={handleFileChange}
-            className={s.fileInput}
-            id="file-input"
-          />
-          <label htmlFor='file-input' className={s.fileInputLabel}>
-            <FontAwesomeIcon icon={faUpload} size="3x" />
-            {'Drag and drop a PDF file here, or click to select a file'}
-          </label>
-        </div>
-      )
+
+    fileContent ? (
+      <>
+        <Link to="/document/create" className={s.pdfLink}>
+          <div className={s.pdfInput}>
+            <FontAwesomeIcon size="2x" icon={faFileCircleCheck} />
+            <span>
+              <p>A PDF is already loaded</p>
+              <small>Continue creating</small>
+              <p></p>
+            </span>
+            <span>
+              <FontAwesomeIcon size="2x" icon={faArrowAltCircleRight} />
+            </span>
+          </div>
+        </Link>
+        <p onClick={() => dispatch(resetPdfState())} className={s.resetPdf}>
+          Or upload a new one
+        </p>
+      </>
+    ) : (
+      <div
+        className={`${s.dropzone} ${isDragging ? s.dragging : ''}`}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
+        <input
+          type="file"
+          accept=".pdf"
+          onChange={handleFileChange}
+          className={s.fileInput}
+          id="file-input"
+        />
+        <label htmlFor='file-input' className={s.fileInputLabel}>
+          <FontAwesomeIcon icon={faUpload} size="3x" />
+          {'Drag and drop a PDF file here, or click to select a file'}
+        </label>
+      </div>
     )
-  );
+  )
 };
