@@ -48,13 +48,13 @@ export const VoiceSelectorModal: React.FC<VoiceSelectorModalProps> = ({
 
         <div className={s.tabContainer}>
           <button
-            className={`${s.tabButton} ${activeTab === 'browser' ? s.activeTab : ''}`}
+            className={`${s.tabButton} ${s.left} ${activeTab === 'browser' ? s.activeTab : ''}`}
             onClick={() => setActiveTab('browser')}
           >
             <FontAwesomeIcon icon={faDesktop} /> Browser Voices
           </button>
           <button
-            className={`${s.tabButton} ${activeTab === 'ai' ? s.activeTab : ''}`}
+            className={`${s.tabButton}  ${s.right} ${activeTab === 'ai' ? s.activeTab : ''}`}
             onClick={() => setActiveTab('ai')}
           >
             <FontAwesomeIcon icon={faBrain} /> AI Voices
