@@ -4,18 +4,19 @@ import { useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { textToSpeechService } from '../../../services/tts';
 import { RootState } from '../../../store';
-import { setPlaylist, play as playAiAudio, resetAudioPlayer } from '../../../store/audioPlayerSlice';
+import { setPlaylist, play as playAiAudio } from '../../../store/audioPlayerSlice';
 import { setText as setBrowserText, play as playBrowserAudio } from '../../../store/browserPlayerSlice';
 import { setPdfFile, resetPdfState } from '../../../store/pdfReaderSlice';
 import { PrimaryButton } from '../Buttons/PrimaryButton';
 import { PdfInput } from './PdfInput/PdfInput';
 import { TextInput } from './TextInput/TextInput';
-import { InputTypeSelector } from './InputTypeSelector/InputTypeSelector';
+import { InputTypeSelector } from '../Selectors/InputTypeSelector';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowAltCircleRight, faFileCircleCheck } from '@fortawesome/free-solid-svg-icons';
+import { LabeledInput } from '../Inputs/LabeledInput';
 
 export const Start = () => {
-  const [inputType, setInputType] = useState('pdf');
+  const [inputType, setInputType] = useState('upload');
   const [text, setText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -23,6 +24,10 @@ export const Start = () => {
   const navigate = useNavigate();
   const { selectedVoice } = useSelector((state: RootState) => state.voice);
   const fileContent = useSelector((state: RootState) => state.pdfReader.fileContent);
+
+  const handleNavigate = () => {
+    navigate("/document/create")
+  };
 
   const generateAiAudio = useCallback(async (textToSpeak: string, voice: string) => {
     setIsLoading(true);
@@ -39,14 +44,13 @@ export const Start = () => {
 
   const handleFile = useCallback((file: File) => {
     const reader = new FileReader();
+    console.log(reader)
     reader.onload = (event) => {
       const base64 = event.target?.result as string;
       dispatch(setPdfFile(base64));
-      dispatch(resetAudioPlayer());
-      navigate('/new');
     };
     reader.readAsDataURL(file);
-  }, [dispatch, navigate]);
+  }, [dispatch]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -92,22 +96,32 @@ export const Start = () => {
         <InputTypeSelector inputType={inputType} setInputType={setInputType} />
 
         <form onSubmit={handleSubmit} className={s.form}>
-          {inputType === 'text' ? (
+          {inputType === 'create' && (
+            <div className={s.form}>
+              <LabeledInput label="Document title" value={""} name="" />
+              <PrimaryButton type="submit" onClick={handleNavigate}>
+                Create new document
+              </PrimaryButton>
+            </div>
+          )}
+          {inputType === 'text' && (
             <>
               <TextInput text={text} setText={setText} isLoading={isLoading} />
               <PrimaryButton type="submit" disabled={isLoading || !text}>
                 {isLoading ? 'Generating Audio...' : 'Generate Audio'}
               </PrimaryButton>
             </>
-          ) : (
+          )}
+          {inputType === 'upload' && (
             fileContent ? (
               <div className={s.form}>
-                <Link to="/new" className={s.pdfLink}>
+                <Link to="/document/create" className={s.pdfLink}>
                   <div className={s.pdfInput}>
                     <FontAwesomeIcon size="2x" icon={faFileCircleCheck} />
                     <span>
                       <p>A PDF is already loaded</p>
-                      <small>Continue reading</small>
+                      <small>Continue creating</small>
+                      <p></p>
                     </span>
                     <span>
                       <FontAwesomeIcon size="2x" icon={faArrowAltCircleRight} />
