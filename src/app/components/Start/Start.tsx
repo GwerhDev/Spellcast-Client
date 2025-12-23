@@ -107,7 +107,7 @@ export const Start = () => {
                     <FontAwesomeIcon size="2x" icon={faFileCircleCheck} />
                     <span>
                       <p>A PDF is already loaded</p>
-                      <p>Continue reading</p>
+                      <small>Continue reading</small>
                     </span>
                     <span>
                       <FontAwesomeIcon size="2x" icon={faArrowAltCircleRight} />
