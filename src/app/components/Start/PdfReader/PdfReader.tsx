@@ -12,6 +12,25 @@ import { PageSelectorModal } from '../../Modals/PageSelectorModal';
 import { setPageText } from '../../../../store/pdfReaderSlice';
 import { setSentencesAndPlay, stop } from '../../../../store/browserPlayerSlice';
 
+const getSentences = (text: string): string[] => {
+  if (!text) {
+    return [];
+  }
+  const sentenceRegex = /[^.!?]+[.!?]+(\s|$)/g;
+  const matches = text.match(sentenceRegex);
+
+  if (!matches) {
+    return [text];
+  }
+
+  const joinedMatches = matches.join('');
+  if (joinedMatches.length < text.length) {
+    matches.push(text.substring(joinedMatches.length));
+  }
+
+  return matches;
+};
+
 export const PdfReader = () => {
   const dispatch = useDispatch();
   const { currentPage, isLoaded, pages } = useSelector((state: RootState) => state.pdfReader);
@@ -19,8 +38,7 @@ export const PdfReader = () => {
   const { sentences: browserSentences, currentSentenceIndex, isPlaying: isBrowserPlaying } = useSelector((state: RootState) => state.browserPlayer);
 
   const currentPageText = pages[currentPage] || '';
-  const sentenceRegex = /[^.!?]+[.!?]+(\s|$)/g;
-  const localSentences = currentPageText.match(sentenceRegex) || (currentPageText ? [currentPageText] : []);
+  const localSentences = getSentences(currentPageText);
 
   const [editedText, setEditedText] = useState(currentPageText || '');
   const [isEditing, setIsEditing] = useState(false);
@@ -43,7 +61,7 @@ export const PdfReader = () => {
 
   const handleGenerateAudio = async (textToGenerate: string, pageNumber: number) => {
     if (selectedVoice === 'browser') {
-      const sentences = textToGenerate.match(sentenceRegex) || [textToGenerate];
+      const sentences = getSentences(textToGenerate);
       dispatch(setSentencesAndPlay({ sentences, text: textToGenerate }));
     } else {
       try {
