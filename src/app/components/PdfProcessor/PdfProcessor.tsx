@@ -54,6 +54,7 @@ export const PdfProcessor = () => {
                 const page = await pdfDoc.getPage(currentPage);
                 const content = await page.getTextContent();
                 text = content.items.map((item: TextItem | TextMarkedContent) => ('str' in item ? item.str : '')).join(' ');
+                text = text.replace(/\s+/g, ' ').trim();
                 dispatch(setPageText({ pageNumber: currentPage, text }));
             }
 

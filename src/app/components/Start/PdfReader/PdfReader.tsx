@@ -16,19 +16,12 @@ const getSentences = (text: string): string[] => {
   if (!text) {
     return [];
   }
-  const sentenceRegex = /[^.!?]+[.!?]+(\s|$)/g;
-  const matches = text.match(sentenceRegex);
-
-  if (!matches) {
-    return [text];
-  }
-
-  const joinedMatches = matches.join('');
-  if (joinedMatches.length < text.length) {
-    matches.push(text.substring(joinedMatches.length));
-  }
-
-  return matches;
+  // Split the text after any period, exclamation mark, or question mark.
+  const sentences = text.split(/(?<=[.!?])/);
+  
+  // The split might leave empty strings or strings with only whitespace in the array,
+  // so we filter those out and trim the results.
+  return sentences.filter(s => s.trim().length > 0);
 };
 
 export const PdfReader = () => {
