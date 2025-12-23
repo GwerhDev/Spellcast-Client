@@ -55,15 +55,19 @@
 
 .tabButton {
     width: 100%;
+    gap: .5rem;
     padding: 10px 20px;
-    border: none;
-    background: var(--component-background);
-    cursor: pointer;
     font-size: 1rem;
-    color: var(--color-light-300);
-    transition: all 0.3s ease;
-    border-radius: 6px;
     font-weight: 900;
+    border-radius: 6px;
+    border: none;
+    display: flex;
+    cursor: pointer;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.3s ease;
+    color: var(--color-light-300);
+    background: var(--component-background);
 }
 
 .tabButton:hover {
