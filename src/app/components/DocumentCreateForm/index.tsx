@@ -7,6 +7,8 @@ import type { TextItem, TextMarkedContent } from 'pdfjs-dist/types/src/display/a
 import { Spinner } from '../Spinner';
 import { PageList } from './PageList';
 import { EditPageModal } from '../Modals/EditPageModal';
+import jsPDF from 'jspdf';
+import { saveDocumentToDB } from '../../../db';
 
 // The workerSrc import is important for pdfjs-dist to work
 import workerSrc from 'pdfjs-dist/build/pdf.worker?url';
@@ -20,6 +22,7 @@ export const DocumentCreateForm: React.FC = () => {
   const [documentTitle, setDocumentTitle] = useState(title || '');
   const [pagesText, setPagesText] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPageIndex, setEditingPageIndex] = useState<number | null>(null);
@@ -77,6 +80,42 @@ export const DocumentCreateForm: React.FC = () => {
     setPagesText(updatedPagesText);
   };
 
+  const handleSaveLocal = async () => {
+    if (!documentTitle || pagesText.length === 0) {
+      alert('Please provide a title and have at least one page of content.');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const pdf = new jsPDF();
+      pdf.text(documentTitle, 10, 10);
+
+      pagesText.forEach((pageText, index) => {
+        if (index > 0) {
+          pdf.addPage();
+        }
+        // Split text into lines that fit the page width.
+        const lines = pdf.splitTextToSize(pageText, 180);
+        pdf.text(lines, 10, 20);
+      });
+
+      const pdfBlob = pdf.output('blob');
+
+      await saveDocumentToDB({
+        title: documentTitle,
+        pdf: pdfBlob,
+      });
+
+      alert('Document saved successfully locally!');
+    } catch (error) {
+      console.error('Failed to save document locally:', error);
+      alert('Failed to save document. Check the console for details.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   if (isLoading) {
     return <Spinner isLoading />;
   }
@@ -107,8 +146,8 @@ export const DocumentCreateForm: React.FC = () => {
         <PageList pages={pagesText} onPageClick={handlePageClick} />
       </div>
       <div className={s.actions}>
-        <PrimaryButton type="button" icon={faSave} className={s.saveButtonCloud}>
-          Save Local
+        <PrimaryButton type="button" icon={faSave} className={s.saveButtonCloud} onClick={handleSaveLocal} disabled={isSaving}>
+          {isSaving ? 'Saving...' : 'Save Local'}
         </PrimaryButton>
         <PrimaryButton type="button" icon={faCloud} className={s.saveButtonCloud} disabled>
           Save Cloud
