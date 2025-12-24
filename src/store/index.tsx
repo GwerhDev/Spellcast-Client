@@ -4,6 +4,7 @@ import apiResponsesReducer from './apiResponsesSlice';
 import audioPlayerReducer from './audioPlayerSlice';
 import browserPlayerReducer from './browserPlayerSlice';
 import pdfReaderReducer from './pdfReaderSlice';
+import documentReducer from './documentSlice';
 import voiceReducer from './voiceSlice';
 import credentialsReducer from './credentialsSlice';
 import groupsReducer from './groupsSlice';
@@ -13,6 +14,7 @@ export const store = configureStore({
     voice: voiceReducer,
     groups: groupsReducer,
     session: sessionReducer,
+    document: documentReducer,
     pdfReader: pdfReaderReducer,
     credentials: credentialsReducer,
     audioPlayer: audioPlayerReducer,

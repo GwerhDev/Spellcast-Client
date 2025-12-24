@@ -7,20 +7,29 @@
 }
 
 .tab {
+  gap: .5rem;
+  width: 150px;
   padding: 10px 20px;
-  border: none;
-  background: var(--component-background);
-  cursor: pointer;
   font-size: 1rem;
-  color: var(--color-light-300);
-  transition: all 0.3s ease;
-  border-radius: 6px;
   font-weight: 900;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  color: var(--color-light-300);
+  background: var(--component-background);
 }
 
 .tab.left {
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
+}
+
+.tab.middle {
+  border-radius: 0;
 }
 
 .tab.right {
@@ -31,7 +40,8 @@
 .tab.active {
   /* Gradient on the background of the active tab */
   background: linear-gradient(45deg, var(--color-primary), var(--color-secondary));
-  color: var(--color-light-100); /* Solid text color for active tab */
+  color: var(--color-light-100);
+  /* Solid text color for active tab */
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
@@ -41,4 +51,17 @@
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+}
+
+@media (max-width: 768px) {
+  .tab {
+    width: 100%;
+    min-width: 90px;
+    align-items: center;
+    flex-direction: column;
+  }
+
+  .title {
+    font-size: 9px;
+  }
 }

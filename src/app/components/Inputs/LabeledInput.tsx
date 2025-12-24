@@ -4,10 +4,10 @@ export interface LabeledInputProps {
   label: string;
   name: string;
   value: string;
-  type: string;
-  placeholder: string;
-  id: string;
-  htmlFor: string;
+  type?: string;
+  placeholder?: string;
+  id?: string;
+  htmlFor?: string;
   disabled?: boolean;
   readOnly?: boolean;
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;

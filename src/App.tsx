@@ -22,6 +22,8 @@ import { UserCredentials } from './app/pages/UserCredentials';
 import { Appearance } from './app/pages/Appearance';
 import DefaultLayout from './app/layouts/DefaultLayout';
 import { ThemeProvider } from './context/ThemeContext';
+import { DocumentCreate } from './app/pages/DocumentCreate';
+import { LocalDocumentReader } from './app/pages/LocalDocumentReader';
 
 function App() {
   const userData: userData = useSelector((state: RootState) => state.session.userData);
@@ -40,10 +42,12 @@ function App() {
             <Route element={<DefaultLayout />}>
               <Route path="/" element={<Home />} />
               <Route path="/new" element={<New />} />
+              <Route path="/document/create" element={<DocumentCreate />} />
+              <Route path="/document/local/:id" element={<LocalDocumentReader />} />
               <Route path="/user/archive" element={<UserArchive />} />
 
-              <Route path="/user" element={<RootBackground />}></Route>
               <Route path="/user/dashboard" element={<Dashboard />} />
+              <Route path="/user" element={<RootBackground />} />
               <Route path="/user/dashboard/overview" element={<Overview />} />
               <Route path="/user/dashboard/groups" element={<UserGroups />} />
 

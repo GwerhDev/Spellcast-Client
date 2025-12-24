@@ -1,35 +1,42 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 interface PdfReaderState {
+  documentId: string | null;
   fileContent: string | null;
   totalPages: number;
   currentPage: number;
   isLoaded: boolean;
   pages: { [pageNumber: number]: string };
+  hasInitialPageSet: boolean; // New flag
+  isContinuousPlayActive: boolean;
+  playbackTrigger: number;
 }
 
 const initialState: PdfReaderState = {
+  documentId: null,
   fileContent: null,
   totalPages: 0,
   currentPage: 1,
   isLoaded: false,
   pages: {},
+  hasInitialPageSet: false, // Initialize new flag
+  isContinuousPlayActive: false,
+  playbackTrigger: 0,
 };
 
 const pdfReaderSlice = createSlice({
   name: 'pdfReader',
   initialState,
   reducers: {
-    setPdfFile(state, action: PayloadAction<string | null>) {
-      state.fileContent = action.payload;
-      state.totalPages = 0;
-      state.currentPage = 1;
-      state.isLoaded = false;
-      state.pages = {};
+    setPdfFile(state, action: PayloadAction<{ id: string, content: string | null }>) {
+      state.documentId = action.payload.id;
+      state.fileContent = action.payload.content;
+    },
+    setPdfLoaded(state, action: PayloadAction<boolean>) {
+      state.isLoaded = action.payload;
     },
     setPdfDocumentInfo(state, action: PayloadAction<{ totalPages: number }>) {
       state.totalPages = action.payload.totalPages;
-      state.isLoaded = true;
     },
     goToNextPage(state) {
       if (state.currentPage < state.totalPages) {
@@ -46,18 +53,23 @@ const pdfReaderSlice = createSlice({
         state.currentPage = action.payload;
       }
     },
-    resetPdfState(state) {
-      state.fileContent = null;
-      state.totalPages = 0;
-      state.currentPage = 1;
-      state.isLoaded = false;
-      state.pages = {};
+    resetPdfReader() {
+      return initialState;
     },
     setPageText(state, action: PayloadAction<{ pageNumber: number; text: string | null }>) {
         if (action.payload.text) {
             state.pages[action.payload.pageNumber] = action.payload.text;
         }
     },
+    setHasInitialPageSet(state, action: PayloadAction<boolean>) { // New action
+      state.hasInitialPageSet = action.payload;
+    },
+    setContinuousPlay(state, action: PayloadAction<boolean>) {
+      state.isContinuousPlayActive = action.payload;
+    },
+    startPlayback(state) {
+      state.playbackTrigger += 1;
+    }
   },
 });
 
@@ -67,8 +79,12 @@ export const {
   goToNextPage,
   goToPreviousPage,
   goToPage,
-  resetPdfState,
+  resetPdfReader,
   setPageText,
+  setPdfLoaded,
+  setHasInitialPageSet,
+  setContinuousPlay,
+  startPlayback,
 } = pdfReaderSlice.actions;
 
 export default pdfReaderSlice.reducer;

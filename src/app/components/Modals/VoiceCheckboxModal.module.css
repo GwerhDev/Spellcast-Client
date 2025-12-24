@@ -33,7 +33,7 @@
   border-radius: 12px;
   display: flex;
   flex-direction: column;
-  max-width: 450px;
+  max-width: 800px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
   outline: solid .5px var(--color-dark-300);
   outline-offset: .5rem;

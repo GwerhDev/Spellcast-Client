@@ -1,7 +1,7 @@
 import s from './PageSelector.module.css';
 import { useSelector } from 'react-redux';
-import { RootState } from '../../../../../store';
-import { PrimaryButton } from '../../../Buttons/PrimaryButton';
+import { RootState } from '../../../../store';
+import { PrimaryButton } from '../../Buttons/PrimaryButton';
 
 interface PageSelectorProps {
   onClick: () => void;

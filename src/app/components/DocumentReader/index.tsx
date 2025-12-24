@@ -1,16 +1,16 @@
-import s from './PdfReader.module.css';
+import s from './index.module.css';
+import { Link } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { RootState } from '../../../../store';
-import { textToSpeechService } from '../../../../services/tts';
-import { setPlaylist, play, resetAudioPlayer } from '../../../../store/audioPlayerSlice';
-import { PageSelector } from './PageSelector/PageSelector';
-import { IconButton } from '../../Buttons/IconButton';
 import { faArrowLeft, faEdit, faSave, faXmark } from '@fortawesome/free-solid-svg-icons';
-import { Link } from 'react-router-dom';
-import { PageSelectorModal } from '../../Modals/PageSelectorModal';
-import { setPageText } from '../../../../store/pdfReaderSlice';
-import { setSentencesAndPlay, stop } from '../../../../store/browserPlayerSlice';
+import { RootState } from '../../../store';
+import { resetAudioPlayer } from '../../../store/audioPlayerSlice';
+import { setSentencesAndPlay } from '../../../store/browserPlayerSlice';
+import { setPageText, setContinuousPlay } from '../../../store/pdfReaderSlice';
+import { IconButton } from '../Buttons/IconButton';
+import { PageSelector } from './PageSelector/PageSelector';
+import { PageSelectorModal } from '../Modals/PageSelectorModal';
+
 
 const getSentences = (text: string): string[] => {
   if (!text) {
@@ -18,15 +18,21 @@ const getSentences = (text: string): string[] => {
   }
   // Split the text after any period, exclamation mark, or question mark.
   const sentences = text.split(/(?<=[.!?])/);
-  
+
   // The split might leave empty strings or strings with only whitespace in the array,
   // so we filter those out and trim the results.
   return sentences.filter(s => s.trim().length > 0);
 };
 
-export const PdfReader = () => {
+export const DocumentReader = () => {
   const dispatch = useDispatch();
-  const { currentPage, isLoaded, pages } = useSelector((state: RootState) => state.pdfReader);
+  const {
+    currentPage,
+    isLoaded,
+    pages,
+    playbackTrigger,
+    isContinuousPlayActive,
+  } = useSelector((state: RootState) => state.pdfReader);
   const { selectedVoice } = useSelector((state: RootState) => state.voice);
   const { sentences: browserSentences, currentSentenceIndex, isPlaying: isBrowserPlaying } = useSelector((state: RootState) => state.browserPlayer);
 
@@ -37,35 +43,22 @@ export const PdfReader = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isPageSelectorModalOpen, setIsPageSelectorModalOpen] = useState(false);
 
-  const prevCurrentPageRef = useRef(currentPage);
   const textContainerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (prevCurrentPageRef.current !== currentPage && isLoaded) {
-      dispatch(resetAudioPlayer());
-      dispatch(stop());
-    }
-    prevCurrentPageRef.current = currentPage;
-  }, [currentPage, isLoaded, dispatch]);
+  const playbackTriggerRef = useRef(playbackTrigger);
 
   useEffect(() => {
     setEditedText(currentPageText);
   }, [currentPageText]);
 
-  const handleGenerateAudio = async (textToGenerate: string, pageNumber: number) => {
-    if (selectedVoice.type === 'browser') {
-      const sentences = getSentences(textToGenerate);
-      dispatch(setSentencesAndPlay({ sentences, text: textToGenerate }));
-    } else {
-      try {
-        const audioUrl = await textToSpeechService({ text: textToGenerate, voice: selectedVoice.value });
-        dispatch(setPlaylist({ playlist: [audioUrl], startIndex: 0, sourceType: 'pdfPage', pdfPageNumber: pageNumber }));
-        dispatch(play());
-      } catch (error) {
-        console.error('Failed to generate audio for page', error);
+  // Effect to handle the first play request from the global player
+  useEffect(() => {
+    if (playbackTrigger > playbackTriggerRef.current) {
+      playbackTriggerRef.current = playbackTrigger;
+      if (!isContinuousPlayActive) {
+        dispatch(setContinuousPlay(true));
       }
     }
-  };
+  }, [playbackTrigger, isContinuousPlayActive, currentPageText, currentPage, dispatch]);
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -77,7 +70,6 @@ export const PdfReader = () => {
     dispatch(setPageText({ pageNumber: currentPage, text: newText }));
     setEditedText(newText);
     setIsEditing(false);
-    handleGenerateAudio(newText, currentPage);
   };
 
   const handleCancel = () => {
@@ -91,7 +83,7 @@ export const PdfReader = () => {
 
   const handleSentenceClick = (clickedIndex: number) => {
     if (selectedVoice.type !== 'browser' || isEditing) return;
-    
+
     window.speechSynthesis.cancel();
 
     dispatch(setSentencesAndPlay({ sentences: localSentences, text: currentPageText, startIndex: clickedIndex }));
@@ -103,16 +95,16 @@ export const PdfReader = () => {
     }
 
     if (selectedVoice.type === 'browser') {
-        const sentencesToRender = isBrowserPlaying ? browserSentences : localSentences;
-        return sentencesToRender.map((sentence, index) => (
-            <span 
-              key={index} 
-              className={isBrowserPlaying && index === currentSentenceIndex ? s.highlight : s.sentence}
-              onClick={() => handleSentenceClick(index)}
-            >
-              {sentence}
-            </span>
-        ));
+      const sentencesToRender = isBrowserPlaying ? browserSentences : localSentences;
+      return sentencesToRender.map((sentence, index) => (
+        <span
+          key={index}
+          className={isBrowserPlaying && index === currentSentenceIndex ? s.highlight : s.sentence}
+          onClick={() => handleSentenceClick(index)}
+        >
+          {sentence}
+        </span>
+      ));
     }
 
     return currentPageText || 'Extracted text will appear here...';

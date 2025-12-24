@@ -16,7 +16,11 @@ import {
   play as playAiAudio,
 } from '../../../../store/audioPlayerSlice';
 import { setSelectedVoice } from '../../../../store/voiceSlice';
-import { goToNextPage, goToPreviousPage } from '../../../../store/pdfReaderSlice';
+import {
+  goToNextPage,
+  goToPreviousPage,
+  startPlayback as requestPagePlayback,
+} from '../../../../store/pdfReaderSlice';
 import { PlaybackControls } from './PlaybackControls/PlaybackControls';
 import { VolumeControls } from './VolumeControls/VolumeControls';
 import { VoiceSelectorButton } from './VoiceSelectorButton/VoiceSelectorButton';
@@ -38,7 +42,8 @@ export const BrowserPlayer = () => {
   const {
     totalPages,
     currentPage,
-    isLoaded: isPdfLoaded
+    isLoaded: isPdfLoaded,
+    documentId,
   } = useSelector((state: RootState) => state.pdfReader);
 
   const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
@@ -130,7 +135,7 @@ export const BrowserPlayer = () => {
     window.speechSynthesis.speak(utterance);
   }, [sentences, voice, volume, dispatch, currentPage, totalPages, isPaused]);
 
-  const startPlayback = useCallback(() => {
+  const startPlaybackLocal = useCallback(() => {
     if (!text) return;
     window.speechSynthesis.cancel();
     const sentenceRegex = /[^.!?]+[.!?]+(\s|$)/g;
@@ -156,9 +161,9 @@ export const BrowserPlayer = () => {
   useEffect(() => {
     // Effect to automatically start playback when play is dispatched from another component
     if (isPlaying && !isPaused && text && sentences.length === 0) {
-      startPlayback();
+      startPlaybackLocal();
     }
-  }, [isPlaying, isPaused, text, sentences, startPlayback]);
+  }, [isPlaying, isPaused, text, sentences, startPlaybackLocal]);
 
   useEffect(() => {
     // This effect triggers the start of sentence-based playback once sentences are set
@@ -195,14 +200,19 @@ export const BrowserPlayer = () => {
 
   const togglePlayPause = () => {
     if (isPlaying) {
-        if (isPaused) {
-            handleResume();
-        } else {
-            handlePause();
-        }
+      if (isPaused) {
+        handleResume();
+      } else {
+        handlePause();
+      }
     } else {
+      if (text) {
         // This case happens if we press play after stopping
-        startPlayback();
+        startPlaybackLocal();
+      } else if (documentId) {
+        // No text loaded, but we are in the document reader. Request text.
+        dispatch(requestPagePlayback());
+      }
     }
   };
 
@@ -220,9 +230,6 @@ export const BrowserPlayer = () => {
         dispatch(setBrowserVoice(newVoice));
         dispatch(setSelectedVoice({ value: selected.value, type: 'browser' }));
         localStorage.setItem('default_browser_voice', JSON.stringify({ value: selected.value, type: 'browser' }));
-        if (isPlaying) {
-          startPlayback();
-        }
       }
     } else {
       dispatch(setSelectedVoice({ value: selected.value, type: 'ia' }));

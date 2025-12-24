@@ -1,10 +1,13 @@
-import { Start } from "../components/Start/Start"
+import { RecentLocalDocument } from '../components/RecentLocalDocument';
+import { Start } from '../components/Start';
 
 export const Home = () => {
-
   return (
     <div className="dashboard-sections">
-      <Start />
+      <ul>
+        <li><Start /></li>
+        <li><RecentLocalDocument /></li>
+      </ul>
     </div>
-  )
-}
+  );
+};
