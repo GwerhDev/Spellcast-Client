@@ -8,19 +8,32 @@ import { UploadOption } from './UploadOption';
 export const Start = () => {
   const [inputType, setInputType] = useState('upload');
 
+  const getSubtitle = () => {
+    switch (inputType) {
+      case 'create':
+        return "Get started by creating a new Document";
+      case 'upload':
+        return "Get started by uploading a new Document";
+      case 'text':
+        return "Write some magic words";
+
+      default: return;
+    }
+  };
+
   return (
     <div className={s.container}>
       <div className={s.createContainer}>
         <h1>Cast a spell</h1>
-        <p>Get started by creating a new Audio Book</p>
+        <p>{getSubtitle()}</p>
 
         <InputTypeSelector inputType={inputType} setInputType={setInputType} />
 
-          {inputType === 'create' && <CreateOption />}
+        {inputType === 'create' && <CreateOption />}
 
-          {inputType === 'text' && <TextOption />}
+        {inputType === 'text' && <TextOption />}
 
-          {inputType === 'upload' && <UploadOption />}
+        {inputType === 'upload' && <UploadOption />}
 
       </div >
     </div >
