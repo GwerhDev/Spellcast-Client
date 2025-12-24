@@ -1,5 +1,5 @@
 import s from './index.module.css';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../../store';
 import { textToSpeechService } from '../../../services/tts';
@@ -26,7 +26,7 @@ const getSentences = (text: string): string[] => {
 
 export const DocumentReader = () => {
   const dispatch = useDispatch();
-  const { currentPage, isLoaded, pages } = useSelector((state: RootState) => state.pdfReader);
+  const { currentPage, isLoaded, pages, documentId, hasInitialPageSet } = useSelector((state: RootState) => state.pdfReader);
   const { selectedVoice } = useSelector((state: RootState) => state.voice);
   const { sentences: browserSentences, currentSentenceIndex, isPlaying: isBrowserPlaying } = useSelector((state: RootState) => state.browserPlayer);
 
@@ -52,7 +52,7 @@ export const DocumentReader = () => {
     setEditedText(currentPageText);
   }, [currentPageText]);
 
-  const handleGenerateAudio = async (textToGenerate: string, pageNumber: number) => {
+  const handleGenerateAudio = useCallback(async (textToGenerate: string, pageNumber: number) => {
     if (selectedVoice.type === 'browser') {
       const sentences = getSentences(textToGenerate);
       dispatch(setSentencesAndPlay({ sentences, text: textToGenerate }));
@@ -65,7 +65,42 @@ export const DocumentReader = () => {
         console.error('Failed to generate audio for page', error);
       }
     }
-  };
+  }, [dispatch, selectedVoice]);
+
+  const hasInitiatedReadForPage = useRef<string | null>(null); // Tracks the pageKey for which read was initiated
+
+  useEffect(() => {
+    // Reset the initiated read status when currentPage or documentId changes
+    hasInitiatedReadForPage.current = null;
+  }, [currentPage, documentId]);
+
+  useEffect(() => {
+    const pageKey = `${currentPage}-${documentId}`;
+
+    // Conditions for initiating read:
+    // 1. Document is loaded
+    // 2. Initial page has been set (either default 1 or saved page)
+    // 3. Not in editing mode
+    // 4. Document ID is valid
+    // 5. Current page text is available
+    // 6. Audio has not yet been initiated for this specific pageKey
+    if (isLoaded && hasInitialPageSet && !isEditing && documentId && currentPageText && hasInitiatedReadForPage.current !== pageKey) {
+      hasInitiatedReadForPage.current = pageKey; // Mark that we are initiating read for this page
+
+      const timeoutId = setTimeout(() => {
+        handleGenerateAudio(currentPageText, currentPage);
+      }, 100); // Small delay to allow DOM to render
+
+      return () => {
+        clearTimeout(timeoutId);
+        // If the component unmounts or dependencies change before timeout,
+        // we might want to reset hasInitiatedReadForPage.current if it matches pageKey
+        if (hasInitiatedReadForPage.current === pageKey) {
+            hasInitiatedReadForPage.current = null;
+        }
+      };
+    }
+  }, [isLoaded, hasInitialPageSet, currentPage, documentId, currentPageText, isEditing, handleGenerateAudio]);
 
   const handleEdit = () => {
     setIsEditing(true);

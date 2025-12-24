@@ -17,7 +17,7 @@ import { LabeledInput } from '../Inputs/LabeledInput';
 import { faCloud, faSave } from '@fortawesome/free-solid-svg-icons';
 import { PrimaryButton } from '../Buttons/PrimaryButton';
 import { resetDocumentState } from 'store/documentSlice';
-import { resetPdfState } from 'store/pdfReaderSlice';
+import { resetPdfReader } from 'store/pdfReaderSlice';
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
 export const DocumentCreateForm: React.FC = () => {
@@ -111,7 +111,7 @@ export const DocumentCreateForm: React.FC = () => {
         pdf: pdfBlob,
       });
 
-      dispatch(resetPdfState());
+      dispatch(resetPdfReader());
       dispatch(resetDocumentState());
       navigate(`/document/local/${newId}`);
 
