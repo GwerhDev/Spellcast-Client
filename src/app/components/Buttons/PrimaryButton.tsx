@@ -9,17 +9,18 @@ interface PrimaryButtonProps {
   type?: "button" | "submit" | "reset";
   disabled?: boolean;
   children?: React.ReactNode;
+  className?: string;
 };
 
 export const PrimaryButton = (props: PrimaryButtonProps) => {
-  const { text, icon, onClick, type, disabled, children } = props || {};
+  const { text, icon, onClick, type, disabled, children, className } = props || {};
 
   const handleOnClick = () => {
     return onClick && onClick();
   };
 
   return (
-    <button disabled={disabled} className={s.container} onClick={handleOnClick} type={type || "button"} >
+    <button disabled={disabled} className={`${s.container} ${className}`} onClick={handleOnClick} type={type || "button"} >
       {icon && <FontAwesomeIcon icon={icon} />}
       <span>
         {text || children}

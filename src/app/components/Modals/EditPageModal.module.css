@@ -1,0 +1,27 @@
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+.textArea {
+  width: 100%;
+  min-height: 400px;
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--color-dark-300);
+  background-color: var(--background-secondary);
+  color: var(--text-primary);
+  font-size: 1rem;
+  resize: none;
+}
+
+.textArea:focus {
+  border: 1px solid var(--color-primary);
+}
+
+.actions {
+  display: flex;
+  justify-content: center;
+}
