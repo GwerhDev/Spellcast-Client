@@ -4,8 +4,8 @@ import { faArrowAltCircleRight, faFileCircleCheck, faUpload } from '@fortawesome
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { setPdfFile, resetPdfState } from '../../../../store/pdfReaderSlice';
 import { RootState } from 'store/index';
+import { resetDocumentState, setDocumentFile } from 'store/documentSlice';
 
 
 interface UploadOptionProps {
@@ -15,14 +15,13 @@ interface UploadOptionProps {
 export const UploadOption: React.FC<UploadOptionProps> = () => {
   const dispatch = useDispatch();
   const [isDragging, setIsDragging] = useState(false);
-  const fileContent = useSelector((state: RootState) => state.pdfReader.fileContent);
+  const fileContent = useSelector((state: RootState) => state.document.fileContent);
 
   const handleFile = useCallback((file: File) => {
     const reader = new FileReader();
-    console.log(reader)
     reader.onload = (event) => {
       const base64 = event.target?.result as string;
-      dispatch(setPdfFile(base64));
+      dispatch(setDocumentFile(base64));
     };
     reader.readAsDataURL(file);
   }, [dispatch]);
@@ -67,7 +66,7 @@ export const UploadOption: React.FC<UploadOptionProps> = () => {
             </span>
           </div>
         </Link>
-        <p onClick={() => dispatch(resetPdfState())} className={s.resetPdf}>
+        <p onClick={() => dispatch(resetDocumentState())} className={s.resetPdf}>
           Or upload a new one
         </p>
       </>

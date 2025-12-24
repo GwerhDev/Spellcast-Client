@@ -1,4 +1,4 @@
-import s from './Start.module.css';
+import s from './index.module.css';
 import { useState } from 'react';
 import { TextOption } from './TextOption';
 import { InputTypeSelector } from '../Selectors/InputTypeSelector';
@@ -28,12 +28,10 @@ export const Start = () => {
         <p>{getSubtitle()}</p>
 
         <InputTypeSelector inputType={inputType} setInputType={setInputType} />
-
-        {inputType === 'create' && <CreateOption />}
-
-        {inputType === 'text' && <TextOption />}
-
+        
         {inputType === 'upload' && <UploadOption />}
+        {inputType === 'create' && <CreateOption />}
+        {inputType === 'text' && <TextOption />}
 
       </div >
     </div >
