@@ -81,3 +81,19 @@ export const getDocumentById = async (id: string): Promise<Document | undefined>
     };
   });
 };
+
+export const deleteDocumentFromDB = async (id: string): Promise<void> => {
+  const db = await openDB();
+  const transaction = db.transaction(STORE_NAME, 'readwrite');
+  const store = transaction.objectStore(STORE_NAME);
+
+  return new Promise((resolve, reject) => {
+    const request = store.delete(id);
+    request.onsuccess = () => {
+      resolve();
+    };
+    request.onerror = (event) => {
+      reject((event.target as IDBRequest).error);
+    };
+  });
+};

@@ -60,3 +60,18 @@
   font-size: 0.8rem;
   color: var(--text-color-secondary);
 }
+
+.deleteButton {
+  background: none;
+  border: none;
+  color: var(--text-color-secondary);
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0.5rem;
+  border-radius: 50%;
+  transition: all 0.2s ease-in-out;
+}
+
+.deleteButton:hover {
+  color: var(--color-danger-100);
+}

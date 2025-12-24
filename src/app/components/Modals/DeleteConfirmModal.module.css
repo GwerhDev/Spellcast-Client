@@ -1,0 +1,20 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+}
+
+.deleteButton {
+  background-color: var(--color-danger);
+  color: white;
+}
+
+.deleteButton:hover {
+  background-color: var(--color-danger-dark);
+}
