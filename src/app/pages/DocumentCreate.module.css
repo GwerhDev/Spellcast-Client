@@ -1,0 +1,111 @@
+.container {
+  padding: 2rem;
+  max-width: 900px;
+  margin: 0 auto;
+  color: var(--text-primary);
+}
+
+.mainTitle {
+  font-size: 2rem;
+  font-weight: bold;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.titleGroup {
+  display: flex;
+  flex-direction: column;
+}
+
+.titleLabel {
+  font-size: 1.2rem;
+  margin-bottom: 0.5rem;
+}
+
+.titleInput {
+  padding: 0.8rem;
+  font-size: 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background-color: var(--background-secondary);
+  color: var(--text-primary);
+}
+
+.pagesContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.pagesTitle {
+  font-size: 1.5rem;
+  font-weight: bold;
+  border-bottom: 2px solid var(--border-color);
+  padding-bottom: 0.5rem;
+}
+
+.pageEditor {
+  display: flex;
+  flex-direction: column;
+}
+
+.pageLabel {
+  font-size: 1rem;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+.pageTextarea {
+  padding: 0.8rem;
+  font-size: 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background-color: var(--background-secondary);
+  color: var(--text-primary);
+  min-height: 200px;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.saveButton,
+.saveButtonCloud {
+  padding: 0.8rem 1.5rem;
+  font-size: 1rem;
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.saveButton {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.saveButton:hover {
+  background-color: var(--primary-color-dark);
+}
+
+.saveButtonCloud {
+  background-color: var(--background-tertiary);
+  color: var(--text-secondary);
+}
+
+.saveButtonCloud:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}

@@ -5,8 +5,11 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from 'store/index';
-import { resetDocumentState, setDocumentFile } from 'store/documentSlice';
+import { resetDocumentState, setDocumentDetails } from 'store/documentSlice';
+import * as pdfjsLib from 'pdfjs-dist';
+import workerSrc from 'pdfjs-dist/build/pdf.worker?url';
 
+pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
 interface UploadOptionProps {
   isLoading?: boolean;
@@ -15,14 +18,26 @@ interface UploadOptionProps {
 export const UploadOption: React.FC<UploadOptionProps> = () => {
   const dispatch = useDispatch();
   const [isDragging, setIsDragging] = useState(false);
-  const fileContent = useSelector((state: RootState) => state.document.fileContent);
+  const { fileContent, title, size, totalPages } = useSelector((state: RootState) => state.document);
 
   const handleFile = useCallback((file: File) => {
     const reader = new FileReader();
-    reader.onload = (event) => {
-      const base64 = event.target?.result as string;
-      dispatch(setDocumentFile(base64));
+
+    reader.onload = function (event) {
+      const fileContent = event.target?.result as string;
+
+      const pdfData = atob(fileContent.substring(fileContent.indexOf(',') + 1));
+
+      pdfjsLib.getDocument({ data: pdfData }).promise.then(doc => {
+        dispatch(setDocumentDetails({
+          fileContent,
+          title: file.name,
+          size: file.size,
+          totalPages: doc.numPages
+        }));
+      });
     };
+
     reader.readAsDataURL(file);
   }, [dispatch]);
 
@@ -49,17 +64,25 @@ export const UploadOption: React.FC<UploadOptionProps> = () => {
       handleFile(e.dataTransfer.files[0]);
     }
   }, [handleFile]);
-  return (
 
+  const formatBytes = (bytes: number, decimals = 2) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const dm = decimals < 0 ? 0 : decimals;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+  }
+
+  return (
     fileContent ? (
       <>
         <Link to="/document/create" className={s.pdfLink}>
           <div className={s.pdfInput}>
             <FontAwesomeIcon size="2x" icon={faFileCircleCheck} />
             <span>
-              <p>A PDF is already loaded</p>
-              <small>Continue creating</small>
-              <p></p>
+              <p>{title}</p>
+              <small>{formatBytes(size || 0)} - {totalPages} pages</small>
             </span>
             <span>
               <FontAwesomeIcon size="2x" icon={faArrowAltCircleRight} />
