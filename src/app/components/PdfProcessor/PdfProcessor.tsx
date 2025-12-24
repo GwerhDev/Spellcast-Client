@@ -25,11 +25,12 @@ export const PdfProcessor = () => {
   // Effect to create pdfDoc from fileContent
   useEffect(() => {
     if (fileContent) {
+      setPdfDoc(null);
       const pdfData = atob(fileContent.substring(fileContent.indexOf(',') + 1));
       pdfjsLib.getDocument({ data: pdfData }).promise.then(doc => {
         setPdfDoc(doc);
         if (totalPages === 0) {
-            dispatch(setPdfDocumentInfo({ totalPages: doc.numPages }));
+          dispatch(setPdfDocumentInfo({ totalPages: doc.numPages }));
         }
       });
     } else {
@@ -48,15 +49,15 @@ export const PdfProcessor = () => {
       const processPage = async () => {
         setIsProcessing(true);
         try {
-            let text = pages[currentPage];
+          let text = pages[currentPage];
 
-            if (!text) {
-                const page = await pdfDoc.getPage(currentPage);
-                const content = await page.getTextContent();
-                text = content.items.map((item: TextItem | TextMarkedContent) => ('str' in item ? item.str : '')).join(' ');
-                text = text.replace(/\s+/g, ' ').trim();
-                dispatch(setPageText({ pageNumber: currentPage, text }));
-            }
+          if (!text) {
+            const page = await pdfDoc.getPage(currentPage);
+            const content = await page.getTextContent();
+            text = content.items.map((item: TextItem | TextMarkedContent) => ('str' in item ? item.str : '')).join(' ');
+            text = text.replace(/\s+/g, ' ').trim();
+            dispatch(setPageText({ pageNumber: currentPage, text }));
+          }
 
           if (text && text.trim() !== '') {
             // Only generate audio if it's not already for the current page
