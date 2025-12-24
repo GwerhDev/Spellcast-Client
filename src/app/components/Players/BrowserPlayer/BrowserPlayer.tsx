@@ -230,9 +230,6 @@ export const BrowserPlayer = () => {
         dispatch(setBrowserVoice(newVoice));
         dispatch(setSelectedVoice({ value: selected.value, type: 'browser' }));
         localStorage.setItem('default_browser_voice', JSON.stringify({ value: selected.value, type: 'browser' }));
-        if (isPlaying) {
-          startPlayback();
-        }
       }
     } else {
       dispatch(setSelectedVoice({ value: selected.value, type: 'ia' }));
