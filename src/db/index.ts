@@ -32,7 +32,7 @@ const openDB = (): Promise<IDBDatabase> => {
   });
 };
 
-export const saveDocumentToDB = async (document: Omit<Document, 'id' | 'createdAt'>): Promise<void> => {
+export const saveDocumentToDB = async (document: Omit<Document, 'id' | 'createdAt'>): Promise<string> => {
   const db = await openDB();
   const transaction = db.transaction(STORE_NAME, 'readwrite');
   const store = transaction.objectStore(STORE_NAME);
@@ -45,7 +45,7 @@ export const saveDocumentToDB = async (document: Omit<Document, 'id' | 'createdA
 
   return new Promise((resolve, reject) => {
     const request = store.add(newDocument);
-    request.onsuccess = () => resolve();
+    request.onsuccess = () => resolve(newDocument.id);
     request.onerror = (event) => reject((event.target as IDBRequest).error);
   });
 };
@@ -59,6 +59,22 @@ export const getDocumentsFromDB = async (): Promise<Document[]> => {
     const request = store.getAll();
     request.onsuccess = (event) => {
       resolve((event.target as IDBRequest).result as Document[]);
+    };
+    request.onerror = (event) => {
+      reject((event.target as IDBRequest).error);
+    };
+  });
+};
+
+export const getDocumentById = async (id: string): Promise<Document | undefined> => {
+  const db = await openDB();
+  const transaction = db.transaction(STORE_NAME, 'readonly');
+  const store = transaction.objectStore(STORE_NAME);
+
+  return new Promise((resolve, reject) => {
+    const request = store.get(id);
+    request.onsuccess = (event) => {
+      resolve((event.target as IDBRequest).result as Document | undefined);
     };
     request.onerror = (event) => {
       reject((event.target as IDBRequest).error);

@@ -9,6 +9,7 @@ import { PageList } from './PageList';
 import { EditPageModal } from '../Modals/EditPageModal';
 import jsPDF from 'jspdf';
 import { saveDocumentToDB } from '../../../db';
+import { useNavigate } from 'react-router-dom';
 
 // The workerSrc import is important for pdfjs-dist to work
 import workerSrc from 'pdfjs-dist/build/pdf.worker?url';
@@ -23,6 +24,7 @@ export const DocumentCreateForm: React.FC = () => {
   const [pagesText, setPagesText] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const navigate = useNavigate();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPageIndex, setEditingPageIndex] = useState<number | null>(null);
@@ -102,12 +104,12 @@ export const DocumentCreateForm: React.FC = () => {
 
       const pdfBlob = pdf.output('blob');
 
-      await saveDocumentToDB({
+      const newId = await saveDocumentToDB({
         title: documentTitle,
         pdf: pdfBlob,
       });
 
-      alert('Document saved successfully locally!');
+      navigate(`/document/local/${newId}`);
     } catch (error) {
       console.error('Failed to save document locally:', error);
       alert('Failed to save document. Check the console for details.');
