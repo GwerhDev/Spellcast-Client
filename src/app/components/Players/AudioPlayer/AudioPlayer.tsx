@@ -11,7 +11,7 @@ import {
   playPrevious as playPreviousAudio,
 } from '../../../../store/audioPlayerSlice';
 import { setSelectedVoice } from '../../../../store/voiceSlice';
-import { goToNextPage, goToPreviousPage } from '../../../../store/pdfReaderSlice';
+import { goToNextPage, goToPreviousPage, startPlayback } from '../../../../store/pdfReaderSlice';
 import { PlaybackControls } from './PlaybackControls/PlaybackControls';
 import { VolumeControls } from './VolumeControls/VolumeControls';
 import { VoiceSelectorButton } from './VoiceSelectorButton/VoiceSelectorButton';
@@ -37,6 +37,7 @@ export const AudioPlayer = () => {
     currentPage,
     isLoaded: isPdfLoaded,
     pages,
+    documentId,
   } = useSelector((state: RootState) => state.pdfReader);
 
   const [lastVolume, setLastVolume] = useState(volume);
@@ -179,6 +180,14 @@ export const AudioPlayer = () => {
     }
   };
 
+  const handleTogglePlayPause = () => {
+    if (playlist.length > 0) {
+      dispatch(togglePlayPause());
+    } else if (documentId) {
+      dispatch(startPlayback());
+    }
+  };
+
   const formatTime = (time: number) => {
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
@@ -246,7 +255,7 @@ export const AudioPlayer = () => {
           isNextDisabled={isNextDisabled}
           currentTrackIndex={currentTrackIndex}
           formatTime={formatTime}
-          togglePlayPause={() => dispatch(togglePlayPause())}
+          togglePlayPause={handleTogglePlayPause}
           setCurrentTime={(time) => dispatch(setCurrentTime(time))}
         />
 

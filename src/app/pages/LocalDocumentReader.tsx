@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { getDocumentById, getDocumentProgress, saveDocumentProgress } from '../../db';
 import { setPdfFile, setPdfDocumentInfo, setPageText, resetPdfReader, goToPage, setPdfLoaded, setHasInitialPageSet } from '../../store/pdfReaderSlice';
+import { resetDocumentState, setDocumentTitle } from '../../store/documentSlice';
 import { resetAudioPlayer } from '../../store/audioPlayerSlice';
 import { stop } from '../../store/browserPlayerSlice';
 import { Spinner } from '../components/Spinner';
@@ -44,6 +45,7 @@ export const LocalDocumentReader: React.FC = () => {
         dispatch(resetAudioPlayer()); // Stop audio playback
         dispatch(stop()); // Stop browser TTS playback
         dispatch(resetPdfReader());
+        dispatch(resetDocumentState());
         dispatch(setPdfLoaded(false)); // Set isLoaded to false at the start of loading
         const doc = await getDocumentById(id);
         if (!doc) {
@@ -52,6 +54,7 @@ export const LocalDocumentReader: React.FC = () => {
           return;
         }
 
+        dispatch(setDocumentTitle(doc.title));
         const progress = await getDocumentProgress(id);
 
         const pdfAsBase64 = await blobToBase64(doc.pdf);

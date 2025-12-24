@@ -9,7 +9,7 @@ import { IconButton } from '../Buttons/IconButton';
 import { faArrowLeft, faEdit, faSave, faXmark } from '@fortawesome/free-solid-svg-icons';
 import { Link } from 'react-router-dom';
 import { PageSelectorModal } from '../Modals/PageSelectorModal';
-import { setPageText } from '../../../store/pdfReaderSlice';
+import { setPageText, setContinuousPlay } from '../../../store/pdfReaderSlice';
 import { setSentencesAndPlay, stop } from '../../../store/browserPlayerSlice';
 
 const getSentences = (text: string): string[] => {
@@ -26,7 +26,16 @@ const getSentences = (text: string): string[] => {
 
 export const DocumentReader = () => {
   const dispatch = useDispatch();
-  const { currentPage, isLoaded, pages, documentId, hasInitialPageSet } = useSelector((state: RootState) => state.pdfReader);
+  const {
+    currentPage,
+    isLoaded,
+    pages,
+    documentId,
+    hasInitialPageSet,
+    playbackTrigger,
+    isContinuousPlayActive,
+  } = useSelector((state: RootState) => state.pdfReader);
+  const { title: documentTitle } = useSelector((state: RootState) => state.document);
   const { selectedVoice } = useSelector((state: RootState) => state.voice);
   const { sentences: browserSentences, currentSentenceIndex, isPlaying: isBrowserPlaying } = useSelector((state: RootState) => state.browserPlayer);
 
@@ -39,6 +48,8 @@ export const DocumentReader = () => {
 
   const prevCurrentPageRef = useRef(currentPage);
   const textContainerRef = useRef<HTMLDivElement>(null);
+  const titleAudioRef = useRef<HTMLAudioElement | null>(null); // For AI voice title playback
+  const playbackTriggerRef = useRef(playbackTrigger);
 
   useEffect(() => {
     if (prevCurrentPageRef.current !== currentPage && isLoaded) {
@@ -53,6 +64,12 @@ export const DocumentReader = () => {
   }, [currentPageText]);
 
   const handleGenerateAudio = useCallback(async (textToGenerate: string, pageNumber: number) => {
+    // Stop any title playback before starting page playback
+    window.speechSynthesis.cancel();
+    if (titleAudioRef.current) {
+        titleAudioRef.current.pause();
+    }
+
     if (selectedVoice.type === 'browser') {
       const sentences = getSentences(textToGenerate);
       dispatch(setSentencesAndPlay({ sentences, text: textToGenerate }));
@@ -67,40 +84,76 @@ export const DocumentReader = () => {
     }
   }, [dispatch, selectedVoice]);
 
-  const hasInitiatedReadForPage = useRef<string | null>(null); // Tracks the pageKey for which read was initiated
+  const hasReadTitle = useRef(false);
 
+  // Cleanup effect for title audio
   useEffect(() => {
-    // Reset the initiated read status when currentPage or documentId changes
-    hasInitiatedReadForPage.current = null;
-  }, [currentPage, documentId]);
-
-  useEffect(() => {
-    const pageKey = `${currentPage}-${documentId}`;
-
-    // Conditions for initiating read:
-    // 1. Document is loaded
-    // 2. Initial page has been set (either default 1 or saved page)
-    // 3. Not in editing mode
-    // 4. Document ID is valid
-    // 5. Current page text is available
-    // 6. Audio has not yet been initiated for this specific pageKey
-    if (isLoaded && hasInitialPageSet && !isEditing && documentId && currentPageText && hasInitiatedReadForPage.current !== pageKey) {
-      hasInitiatedReadForPage.current = pageKey; // Mark that we are initiating read for this page
-
-      const timeoutId = setTimeout(() => {
-        handleGenerateAudio(currentPageText, currentPage);
-      }, 100); // Small delay to allow DOM to render
-
       return () => {
-        clearTimeout(timeoutId);
-        // If the component unmounts or dependencies change before timeout,
-        // we might want to reset hasInitiatedReadForPage.current if it matches pageKey
-        if (hasInitiatedReadForPage.current === pageKey) {
-            hasInitiatedReadForPage.current = null;
-        }
+          window.speechSynthesis.cancel();
+          if (titleAudioRef.current) {
+              titleAudioRef.current.pause();
+              titleAudioRef.current = null;
+          }
       };
+  }, []);
+
+
+  useEffect(() => {
+      if (isLoaded && hasInitialPageSet && documentTitle && !hasReadTitle.current) {
+          hasReadTitle.current = true;
+
+          // Stop any currently playing audio from the main player
+          dispatch(stop());
+          dispatch(resetAudioPlayer());
+
+          const titleText = `${documentTitle}`;
+
+          if (selectedVoice.type === 'browser') {
+              const utterance = new SpeechSynthesisUtterance(titleText);
+              const voices = window.speechSynthesis.getVoices();
+              const voice = voices.find(v => v.voiceURI === selectedVoice.value);
+              if (voice) {
+                  utterance.voice = voice;
+              }
+              window.speechSynthesis.speak(utterance);
+          } else {
+              const playAITitle = async () => {
+                  try {
+                      const audioUrl = await textToSpeechService({ text: titleText, voice: selectedVoice.value });
+                      const audio = new Audio(audioUrl);
+                      titleAudioRef.current = audio;
+                      audio.play().catch(e => console.error("Title audio play failed", e));
+                  } catch (error) {
+                      console.error('Failed to generate title audio', error);
+                  }
+              };
+              playAITitle();
+          }
+      }
+  }, [isLoaded, hasInitialPageSet, documentTitle, selectedVoice, dispatch]);
+
+  useEffect(() => {
+      hasReadTitle.current = false;
+      dispatch(setContinuousPlay(false));
+  }, [documentId, dispatch]);
+
+  // Effect to handle the first play request from the global player
+  useEffect(() => {
+    if (playbackTrigger > playbackTriggerRef.current) {
+      playbackTriggerRef.current = playbackTrigger;
+      if (!isContinuousPlayActive) {
+        dispatch(setContinuousPlay(true));
+      }
+      handleGenerateAudio(currentPageText, currentPage);
     }
-  }, [isLoaded, hasInitialPageSet, currentPage, documentId, currentPageText, isEditing, handleGenerateAudio]);
+  }, [playbackTrigger, isContinuousPlayActive, currentPageText, currentPage, dispatch, handleGenerateAudio]);
+
+  // Effect for continuous playback on page change
+  useEffect(() => {
+    if (isContinuousPlayActive && isLoaded && currentPage !== prevCurrentPageRef.current) {
+      handleGenerateAudio(currentPageText, currentPage);
+    }
+  }, [currentPage, isContinuousPlayActive, isLoaded, currentPageText, handleGenerateAudio]);
 
   const handleEdit = () => {
     setIsEditing(true);

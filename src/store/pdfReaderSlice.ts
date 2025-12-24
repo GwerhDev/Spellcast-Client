@@ -8,6 +8,8 @@ interface PdfReaderState {
   isLoaded: boolean;
   pages: { [pageNumber: number]: string };
   hasInitialPageSet: boolean; // New flag
+  isContinuousPlayActive: boolean;
+  playbackTrigger: number;
 }
 
 const initialState: PdfReaderState = {
@@ -18,6 +20,8 @@ const initialState: PdfReaderState = {
   isLoaded: false,
   pages: {},
   hasInitialPageSet: false, // Initialize new flag
+  isContinuousPlayActive: false,
+  playbackTrigger: 0,
 };
 
 const pdfReaderSlice = createSlice({
@@ -60,6 +64,12 @@ const pdfReaderSlice = createSlice({
     setHasInitialPageSet(state, action: PayloadAction<boolean>) { // New action
       state.hasInitialPageSet = action.payload;
     },
+    setContinuousPlay(state, action: PayloadAction<boolean>) {
+      state.isContinuousPlayActive = action.payload;
+    },
+    startPlayback(state) {
+      state.playbackTrigger += 1;
+    }
   },
 });
 
@@ -73,6 +83,8 @@ export const {
   setPageText,
   setPdfLoaded,
   setHasInitialPageSet,
+  setContinuousPlay,
+  startPlayback,
 } = pdfReaderSlice.actions;
 
 export default pdfReaderSlice.reducer;

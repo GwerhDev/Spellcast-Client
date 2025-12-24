@@ -45,6 +45,9 @@ const documentSlice = createSlice({
         state.pages[action.payload.pageNumber] = action.payload.text;
       }
     },
+    setDocumentTitle(state, action: PayloadAction<string>) {
+      state.title = action.payload;
+    }
   },
 });
 
@@ -52,6 +55,7 @@ export const {
   setPageText,
   setDocumentDetails,
   resetDocumentState,
+  setDocumentTitle,
 } = documentSlice.actions;
 
 export default documentSlice.reducer;
