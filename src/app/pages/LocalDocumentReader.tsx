@@ -58,7 +58,7 @@ export const LocalDocumentReader: React.FC = () => {
         const progress = await getDocumentProgress(id);
 
         const pdfAsBase64 = await blobToBase64(doc.pdf);
-        dispatch(setPdfFile({ id, content: pdfAsBase64 }));
+        dispatch(setPdfFile({ id, content: pdfAsBase64, title: doc.title }));
 
         const pdfData = await doc.pdf.arrayBuffer();
         const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;

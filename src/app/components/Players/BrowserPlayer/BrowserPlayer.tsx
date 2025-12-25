@@ -136,12 +136,14 @@ export const BrowserPlayer = () => {
   }, [sentences, voice, volume, dispatch, currentPage, totalPages, isPaused]);
 
   const startPlaybackLocal = useCallback(() => {
-    if (!text) return;
+    if (!text && !isPdfLoaded) return;
     window.speechSynthesis.cancel();
-    const sentenceRegex = /[^.!?]+[.!?]+(\s|$)/g;
-    const textSentences = text.match(sentenceRegex) || [text];
-    dispatch(setSentencesAndPlay({sentences: textSentences, text: text}));
-  }, [text, dispatch]);
+    const sentences = text.split(/(?<=[.!?])/);
+
+    const sentenceRegex = sentences.filter(s => s.trim().length > 0);
+    const textSentences = sentenceRegex || [text];
+    dispatch(setSentencesAndPlay({ sentences: textSentences, text: text }));
+  }, [text, dispatch, isPdfLoaded]);
 
   const handlePause = () => {
     dispatch(pause());
@@ -160,20 +162,19 @@ export const BrowserPlayer = () => {
 
   useEffect(() => {
     // Effect to automatically start playback when play is dispatched from another component
-    if (isPlaying && !isPaused && text && sentences.length === 0) {
+    if (isPdfLoaded && isPlaying && !isPaused && text && sentences.length === 0) {
       startPlaybackLocal();
     }
-  }, [isPlaying, isPaused, text, sentences, startPlaybackLocal]);
+  }, [isPdfLoaded, isPlaying, isPaused, text, sentences, startPlaybackLocal]);
 
   useEffect(() => {
     // This effect triggers the start of sentence-based playback once sentences are set
-    if (isPlaying && !isPaused && sentences.length > 0 && currentSentenceIndex >= 0) {
-        if (!window.speechSynthesis.speaking) {
-            speak(currentSentenceIndex);
-        }
+    if (isPdfLoaded && isPlaying && !isPaused && sentences.length > 0 && currentSentenceIndex >= 0) {
+      if (!window.speechSynthesis.speaking) {
+        speak(currentSentenceIndex);
+      }
     }
-  }, [isPlaying, isPaused, sentences, currentSentenceIndex, speak]);
-
+  }, [isPdfLoaded, isPlaying, isPaused, sentences, currentSentenceIndex, speak]);
 
   const handlePrevious = () => {
     if (isPdfLoaded) {
@@ -250,6 +251,7 @@ export const BrowserPlayer = () => {
         </section>
 
         <PlaybackControls
+          disabled={!isPdfLoaded}
           handlePrevious={handlePrevious}
           handleNext={handleNext}
           isPlaying={isPlaying && !isPaused}

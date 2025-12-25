@@ -29,6 +29,7 @@ export const UploadOption: React.FC<UploadOptionProps> = () => {
       const pdfData = atob(fileContent.substring(fileContent.indexOf(',') + 1));
 
       pdfjsLib.getDocument({ data: pdfData }).promise.then(doc => {
+        console.log(file)
         dispatch(setDocumentDetails({
           fileContent,
           title: file.name,

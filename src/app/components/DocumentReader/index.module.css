@@ -68,8 +68,15 @@
 }
 
 .headerControls {
-  display: flex;
   gap: 1rem;
+  display: flex;
+  align-items: center;
+}
+
+.titleContainer {
+  gap: .5rem;
+  width: 100%;
+  display: flex;
   align-items: center;
 }
 
@@ -77,7 +84,7 @@
   gap: 1rem;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-end;
 }
 
 .sentence {

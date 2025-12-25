@@ -14,7 +14,7 @@ const initialState: DocumentState = {
   fileContent: null,
   title: null,
   size: null,
-  totalPages: 0,
+  totalPages: 1,
   currentPage: 1,
   isLoaded: false,
   pages: {},
@@ -40,11 +40,6 @@ const documentSlice = createSlice({
       state.isLoaded = false;
       state.pages = {};
     },
-    setPageText(state, action: PayloadAction<{ pageNumber: number; text: string | null }>) {
-      if (action.payload.text) {
-        state.pages[action.payload.pageNumber] = action.payload.text;
-      }
-    },
     setDocumentTitle(state, action: PayloadAction<string>) {
       state.title = action.payload;
     }
@@ -52,7 +47,6 @@ const documentSlice = createSlice({
 });
 
 export const {
-  setPageText,
   setDocumentDetails,
   resetDocumentState,
   setDocumentTitle,
