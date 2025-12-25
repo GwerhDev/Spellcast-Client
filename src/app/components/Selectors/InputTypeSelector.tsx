@@ -1,7 +1,7 @@
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import s from './InputTypeSelector.module.css';
 import React from 'react';
-import { faFileCirclePlus, faUpload } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faFileCirclePlus, faPen, faUpload } from '@fortawesome/free-solid-svg-icons';
 
 interface InputTypeSelectorProps {
   inputType: string;
@@ -30,7 +30,7 @@ export const InputTypeSelector: React.FC<InputTypeSelectorProps> = ({ inputType,
           className={`${s.tabButton} ${s.right} ${inputType === 'text' ? s.active : ''}`}
           onClick={() => setInputType('text')}
         >
-          <FontAwesomeIcon icon={faUpload} />
+          <FontAwesomeIcon icon={faPen} />
           <span className={s.title}>Text</span>
         </button>
       </span>
