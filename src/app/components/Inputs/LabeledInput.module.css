@@ -3,6 +3,8 @@
   width: 100%;
   display: flex;
   flex-direction: column;
+  background: var(--component-background);
+  border-radius: 4px;
 }
 
 .container label {
@@ -12,6 +14,7 @@
 
 .container input {
   width: 100%;
+  background: transparent;
 }
 
 .container input:disabled, .disabled {
