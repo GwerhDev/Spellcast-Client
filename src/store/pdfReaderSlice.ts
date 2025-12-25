@@ -2,6 +2,7 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 interface PdfReaderState {
   documentId: string | null;
+  documentTitle: string | null;
   fileContent: string | null;
   totalPages: number;
   currentPage: number;
@@ -14,6 +15,7 @@ interface PdfReaderState {
 
 const initialState: PdfReaderState = {
   documentId: null,
+  documentTitle: null,
   fileContent: null,
   totalPages: 0,
   currentPage: 1,
@@ -28,9 +30,10 @@ const pdfReaderSlice = createSlice({
   name: 'pdfReader',
   initialState,
   reducers: {
-    setPdfFile(state, action: PayloadAction<{ id: string, content: string | null }>) {
+    setPdfFile(state, action: PayloadAction<{ id: string, content: string | null, title: string }>) {
       state.documentId = action.payload.id;
       state.fileContent = action.payload.content;
+      state.documentTitle = action.payload.title;
     },
     setPdfLoaded(state, action: PayloadAction<boolean>) {
       state.isLoaded = action.payload;

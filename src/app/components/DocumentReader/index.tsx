@@ -2,7 +2,7 @@ import s from './index.module.css';
 import { Link } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { faArrowLeft, faEdit, faSave, faXmark } from '@fortawesome/free-solid-svg-icons';
+import { faArrowLeft, faEdit, faFilePdf, faSave, faXmark } from '@fortawesome/free-solid-svg-icons';
 import { RootState } from '../../../store';
 import { resetAudioPlayer } from '../../../store/audioPlayerSlice';
 import { setSentencesAndPlay } from '../../../store/browserPlayerSlice';
@@ -10,7 +10,7 @@ import { setPageText, setContinuousPlay } from '../../../store/pdfReaderSlice';
 import { IconButton } from '../Buttons/IconButton';
 import { PageSelector } from './PageSelector/PageSelector';
 import { PageSelectorModal } from '../Modals/PageSelectorModal';
-
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 const getSentences = (text: string): string[] => {
   if (!text) {
@@ -27,6 +27,7 @@ const getSentences = (text: string): string[] => {
 export const DocumentReader = () => {
   const dispatch = useDispatch();
   const {
+    documentTitle,
     currentPage,
     isLoaded,
     pages,
@@ -95,7 +96,7 @@ export const DocumentReader = () => {
     }
 
     if (selectedVoice.type === 'browser') {
-      const sentencesToRender = isBrowserPlaying ? browserSentences : localSentences;
+      const sentencesToRender = browserSentences;
       return sentencesToRender.map((sentence, index) => (
         <span
           key={index}
@@ -123,6 +124,10 @@ export const DocumentReader = () => {
           </Link>
           {isLoaded && <PageSelector onClick={() => setIsPageSelectorModalOpen(true)} />}
         </span>
+        <div className={s.titleContainer}>
+          <FontAwesomeIcon icon={faFilePdf} />
+          {documentTitle} {isEditing && "(editing)"} 
+        </div>
         <div className={s.controlsContainer}>
           {isLoaded && isEditing ? (
             <>

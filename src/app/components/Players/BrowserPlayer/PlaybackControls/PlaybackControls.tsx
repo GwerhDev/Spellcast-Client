@@ -7,6 +7,7 @@ interface PlaybackControlsProps {
   handlePrevious: () => void;
   handleNext: () => void;
   isPlaying: boolean;
+  disabled: boolean;
   isPrevDisabled: boolean;
   isNextDisabled: boolean;
   togglePlayPause: () => void;
@@ -15,6 +16,7 @@ interface PlaybackControlsProps {
 export const PlaybackControls: React.FC<PlaybackControlsProps> = ({
   handlePrevious,
   handleNext,
+  disabled,
   isPlaying,
   isPrevDisabled,
   isNextDisabled,
@@ -23,13 +25,13 @@ export const PlaybackControls: React.FC<PlaybackControlsProps> = ({
   return (
     <section className={s.controlsContainer}>
       <div className={s.controls}>
-        <button onClick={handlePrevious} disabled={isPrevDisabled} className={s.controlButton}>
+        <button onClick={handlePrevious} disabled={disabled || isPrevDisabled} className={s.controlButton}>
           <FontAwesomeIcon icon={faStepBackward} />
         </button>
-        <button onClick={togglePlayPause} className={s.playPauseButton}>
+        <button disabled={disabled} onClick={togglePlayPause} className={s.playPauseButton}>
           <FontAwesomeIcon icon={isPlaying ? faPause : faPlay} />
         </button>
-        <button onClick={handleNext} disabled={isNextDisabled} className={s.controlButton}>
+        <button onClick={handleNext} disabled={disabled || isNextDisabled} className={s.controlButton}>
           <FontAwesomeIcon icon={faStepForward} />
         </button>
       </div>

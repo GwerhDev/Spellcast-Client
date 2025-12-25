@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import s from './PageSelectorModal.module.css';
-import { IconButton } from '../Buttons/IconButton';
-import { faNewspaper, faXmark } from '@fortawesome/free-solid-svg-icons';
+import { faNewspaper } from '@fortawesome/free-solid-svg-icons';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../../store';
 import { goToPage } from '../../../store/pdfReaderSlice';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { CustomModal } from './CustomModal';
 
 interface PageSelectorModalProps {
   onClose: () => void;
@@ -35,31 +35,26 @@ export const PageSelectorModal: React.FC<PageSelectorModalProps> = ({
     : allPages;
 
   return (
-    <div className={s.container} onClick={onClose}>
-      <div className={s.modalContent} onClick={(e) => e.stopPropagation()}>
-        <IconButton className={s.closeButton} icon={faXmark} onClick={onClose} />
-
-        <h3>Select a Page</h3>
-        <input
-          type="text"
-          placeholder="Search for a page..."
-          className={s.searchInput}
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-        <ul className={s.pageList}>
-          {filteredPages.map((page) => (
-            <li
-              key={page}
-              className={`${s.pageOption} ${currentPage === page ? s.activePage : ''}`}
-              onClick={() => handlePageSelection(page)}
-            >
-              <FontAwesomeIcon icon={faNewspaper} />
-              {page}
-            </li>
-          ))}
-        </ul>
-      </div>
-    </div>
+    <CustomModal title="Select a Page" show={show} onClose={onClose}>
+      <input
+        type="text"
+        placeholder="Search for a page..."
+        className={s.searchInput}
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+      />
+      <ul className={s.pageList}>
+        {filteredPages.map((page) => (
+          <li
+            key={page}
+            className={`${s.pageOption} ${currentPage === page ? s.activePage : ''}`}
+            onClick={() => handlePageSelection(page)}
+          >
+            <FontAwesomeIcon icon={faNewspaper} />
+            {page}
+          </li>
+        ))}
+      </ul>
+    </CustomModal>
   );
 };

@@ -1,4 +1,4 @@
-.tabs {
+.container {
   display: flex;
   margin-bottom: 1.5rem;
   border-radius: 8px;
@@ -6,38 +6,48 @@
   padding: .5rem;
 }
 
-.tab {
+.buttonsContainer {
+  display: flex;
+  border-radius: 8px;
+  background: var(--component-background);
+}
+
+.tabButton {
+  width: 100%;
   gap: .5rem;
-  width: 150px;
   padding: 10px 20px;
   font-size: 1rem;
   font-weight: 900;
   border-radius: 6px;
+  color: var(--color-light-300);
   border: none;
-  cursor: pointer;
   display: flex;
+  cursor: pointer;
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
-  color: var(--color-light-300);
-  background: var(--component-background);
+  background-color: transparent;
 }
 
-.tab.left {
+.tabButton:hover {
+  color: var(--color-primary);
+}
+
+.tabButton.left {
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
 }
 
-.tab.middle {
+.tabButton.middle {
   border-radius: 0;
 }
 
-.tab.right {
+.tabButton.right {
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
 }
 
-.tab.active {
+.tabButton.active {
   /* Gradient on the background of the active tab */
   background: linear-gradient(45deg, var(--color-primary), var(--color-secondary));
   color: var(--color-light-100);
@@ -46,7 +56,7 @@
 }
 
 /* Gradient text effect on hover for non-active tabs */
-.tab:not(.active):hover span {
+.tabButton:not(.active):hover span {
   background: linear-gradient(45deg, var(--color-primary), var(--color-secondary));
   -webkit-background-clip: text;
   background-clip: text;
@@ -54,7 +64,7 @@
 }
 
 @media (max-width: 768px) {
-  .tab {
+  .tabButton {
     width: 100%;
     min-width: 90px;
     align-items: center;

@@ -1,6 +1,6 @@
-import React from 'react';
-import { Modal } from './Modal';
 import s from './DeleteConfirmModal.module.css';
+import React from 'react';
+import { CustomModal } from './CustomModal';
 import { PrimaryButton } from '../Buttons/PrimaryButton';
 import { SecondaryButton } from '../Buttons/SecondaryButton';
 
@@ -18,7 +18,7 @@ export const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({ show, on
   }
 
   return (
-    <Modal show={show} onClose={onClose} title={title}>
+    <CustomModal show={show} onClose={onClose} title={title}>
       <div className={s.container}>
         <p>{message}</p>
         <div className={s.buttons}>
@@ -26,6 +26,6 @@ export const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({ show, on
           <PrimaryButton onClick={onConfirm} className={s.deleteButton}>Delete</PrimaryButton>
         </div>
       </div>
-    </Modal>
+    </CustomModal>
   );
 };
