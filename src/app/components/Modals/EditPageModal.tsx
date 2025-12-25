@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import s from './EditPageModal.module.css';
 import { PrimaryButton } from '../Buttons/PrimaryButton';
-import { Modal } from './Modal';
+import { CustomModal } from './CustomModal';
 import { faSave } from '@fortawesome/free-solid-svg-icons';
 
 interface EditPageModalProps {
@@ -31,7 +31,7 @@ export const EditPageModal: React.FC<EditPageModalProps> = ({
   };
 
   return (
-    <Modal show={show} onClose={onClose} title={`Editing Page ${pageNumber}`}>
+    <CustomModal show={show} onClose={onClose} title={`Editing Page ${pageNumber}`}>
       <div className={s.content}>
         <textarea
           className={s.textArea}
@@ -42,6 +42,6 @@ export const EditPageModal: React.FC<EditPageModalProps> = ({
           <PrimaryButton icon={faSave} onClick={handleSave}>Save</PrimaryButton>
         </div>
       </div>
-    </Modal>
+    </CustomModal>
   );
 };

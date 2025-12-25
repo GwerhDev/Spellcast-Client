@@ -1,5 +1,5 @@
 import React from 'react';
-import s from './Modal.module.css';
+import s from './CustomModal.module.css';
 import { IconButton } from '../Buttons/IconButton';
 import { faXmark } from '@fortawesome/free-solid-svg-icons';
 
@@ -10,7 +10,7 @@ interface ModalProps {
   children: React.ReactNode;
 }
 
-export const Modal: React.FC<ModalProps> = ({ show, onClose, title, children }) => {
+export const CustomModal: React.FC<ModalProps> = ({ show, onClose, title, children }) => {
   if (!show) {
     return null;
   }

@@ -1,11 +1,12 @@
 import React, { useMemo, useState } from 'react';
 import s from './VoiceCheckboxModal.module.css';
 import { IconButton } from '../Buttons/IconButton';
-import { faSave, faXmark } from '@fortawesome/free-solid-svg-icons';
+import { faSave } from '@fortawesome/free-solid-svg-icons';
 import { Voice } from 'src/interfaces';
 import { Spinner } from '../Spinner';
 import { useAppDispatch } from 'store/hooks';
 import { updateCredential } from 'store/credentialsSlice';
+import { CustomModal } from './CustomModal';
 
 interface VoiceCheckboxModalProps {
   voices: Voice[];
@@ -79,35 +80,30 @@ export const VoiceCheckboxModal: React.FC<VoiceCheckboxModalProps> = ({
   }
 
   return (
-    <div className={s.container} onClick={onClose}>
-      <div className={s.modalContent} onClick={(e) => e.stopPropagation()}>
-        <IconButton className={s.closeButton} icon={faXmark} onClick={onClose} />
-        <h3>Select Voices</h3>
-        <input
-          type="text"
-          placeholder="Search voices..."
-          className={s.searchInput}
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
+    <CustomModal title="Select Voices" show={show} onClose={onClose}>
+      <div className={s.container}>
+        {isLoading ? (
+          <Spinner isLoading={isLoading} />
+        ) : (
+          <>
+            <input
+              type="text"
+              placeholder="Search voices..."
+              className={s.searchInput}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <span className={s.voiceAllOption}>
+              <input
+                type="checkbox"
+                id="select-all"
+                checked={allFilteredSelected}
+                onChange={handleSelectAllChange}
+              />
+              <small>Select/Deselect All</small>
+            </span>
 
-        <span className={s.voiceOption} onClick={handleSelectAllChange}>
-          <input
-            type="checkbox"
-            id="select-all"
-            checked={allFilteredSelected}
-            onChange={() => {
-              /* Handled by onClick on li */
-            }}
-          />
-          <p>Select/Deselect All</p>
-        </span>
-
-        <ul className={s.voiceList}>
-          {isLoading ? (
-            <Spinner isLoading={isLoading} />
-          ) : (
-            <>
+            <ul className={s.voiceList}>
               {filteredVoices.map((voice) => (
                 <li
                   key={voice.value}
@@ -125,14 +121,13 @@ export const VoiceCheckboxModal: React.FC<VoiceCheckboxModalProps> = ({
                   <p>{voice.label}</p>
                 </li>
               ))}
-            </>
-          )}
-        </ul>
-
-        <IconButton icon={faSave} onClick={handleSave} disabled={isSaving}>
-          {isSaving ? 'Saving...' : 'Save'}
-        </IconButton>
+            </ul>
+            <IconButton icon={faSave} onClick={handleSave} disabled={isSaving}>
+              {isSaving ? 'Saving...' : 'Save'}
+            </IconButton>
+          </>
+        )}
       </div>
-    </div >
+    </CustomModal>
   );
 };
