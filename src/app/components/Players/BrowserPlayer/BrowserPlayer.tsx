@@ -105,7 +105,6 @@ export const BrowserPlayer = () => {
     };
 
     if (sentences.length >= 1 && sentenceIndex >= 0) {
-      console.log(sentences)
       window.speechSynthesis.speak(utterance);
       handlePlay();
     };
