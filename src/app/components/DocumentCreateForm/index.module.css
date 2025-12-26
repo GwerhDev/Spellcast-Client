@@ -37,12 +37,23 @@
   overflow: auto;
 }
 
+.pagesHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid var(--border-color);
+  padding-bottom: 0.5rem;
+}
+
 .pagesTitle {
   font-size: small;
   font-weight: bold;
-  border-bottom: 2px solid var(--border-color);
-  padding-bottom: 0.5rem;
   text-align: center;
+}
+
+.pagesActions {
+  display: flex;
+  gap: 1rem;
 }
 
 .pageEditor {
