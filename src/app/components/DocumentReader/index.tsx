@@ -10,6 +10,7 @@ import { setCurrentSentenceIndex, resetBrowserPlayer } from '../../../store/brow
 import { Spinner } from '../Spinner';
 import { IconButton } from '../Buttons/IconButton';
 import { PageSelector } from './PageSelector/PageSelector';
+import { getDocumentProgress } from '../../../db';
 
 export const DocumentReader = () => {
   const dispatch = useDispatch();
@@ -17,6 +18,7 @@ export const DocumentReader = () => {
     currentPageText,
     documentTitle,
     currentPage,
+    documentId,
     isLoaded,
     pages,
   } = useSelector((state: RootState) => state.pdfReader);
@@ -27,8 +29,14 @@ export const DocumentReader = () => {
   const textContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    dispatch(goToPage(currentPage));
-  }, [pages, currentPage, dispatch]);
+      const handleProgress = async () => {
+        const progress = await getDocumentProgress(documentId || "");
+        if (progress?.currentPage) return dispatch(goToPage(progress.currentPage));
+        return dispatch(goToPage(currentPage));
+      }
+
+      handleProgress();
+  }, [pages, currentPage, dispatch, documentId]);
 
   useEffect(() => {
     setEditedText(currentPageText);

@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import * as pdfjsLib from 'pdfjs-dist';
 import type { PDFDocumentProxy, TextItem, TextMarkedContent } from 'pdfjs-dist/types/src/display/api';
 import { RootState } from '../../../store';
-import { setPageText, goToNextPage, setPdfLoaded } from '../../../store/pdfReaderSlice';
+import { setPageText, setPdfLoaded } from '../../../store/pdfReaderSlice';
 
 // Set workerSrc for pdfjsLib
 import workerSrc from 'pdfjs-dist/build/pdf.worker?url';
@@ -14,7 +14,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 export const PdfProcessor = () => {
   const dispatch = useDispatch();
   const { selectedVoice } = useSelector((state: RootState) => state.voice);
-  const { currentPage, totalPages, pages, documentId, currentPageText } = useSelector((state: RootState) => state.pdfReader);
+  const { currentPage, totalPages, pages, documentId, currentPageText, isLoaded } = useSelector((state: RootState) => state.pdfReader);
   const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -57,6 +57,7 @@ export const PdfProcessor = () => {
     if (pdfDoc && !isProcessing) {
       const processPage = async () => {
         setIsProcessing(true);
+
         try {
           let text = pages[currentPage];
           if (!text) {
@@ -71,11 +72,6 @@ export const PdfProcessor = () => {
           if (text && text.trim() !== '') {
             // Only generate audio if it's not already for the current page
             dispatch(setPageText({ text }));
-          } else {
-            // If page is empty, go to next
-            if (currentPage < totalPages) {
-              dispatch(goToNextPage());
-            }
           }
         } catch (error) {
           console.error(`Failed to process page ${currentPage}:`, error);
@@ -89,10 +85,10 @@ export const PdfProcessor = () => {
   }, [pdfDoc, currentPage, dispatch, selectedVoice, isProcessing, totalPages, pages]);
 
   useEffect(() => {
-    if (documentId && currentPage) {
+    if (isLoaded && documentId && currentPage) {
       saveDocumentProgress({ documentId, currentPage });
     }
-  }, [currentPage, documentId]);
+  }, [currentPage, documentId, isLoaded]);
 
   return null; // Headless component
 };

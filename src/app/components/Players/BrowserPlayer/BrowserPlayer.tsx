@@ -88,7 +88,7 @@ export const BrowserPlayer = () => {
 
   const speak = useCallback((sentenceIndex: number) => {
     if (sentenceIndex > sentences.length && currentPage < totalPages) {
-      dispatch(goToNextPage());
+      handleNext()
       dispatch(setCurrentSentenceIndex(0));
       return;
     }
@@ -155,8 +155,10 @@ export const BrowserPlayer = () => {
   };
 
   const handlePlay = () => {
-    dispatch(play());
-    window.speechSynthesis.resume();
+    if (isLoaded) {
+      dispatch(play());
+      window.speechSynthesis.resume();
+    }
   };
 
   const handlePrevious = () => {
