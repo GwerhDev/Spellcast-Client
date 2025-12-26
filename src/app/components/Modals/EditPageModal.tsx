@@ -26,7 +26,7 @@ export const EditPageModal: React.FC<EditPageModalProps> = ({
   }, [pageText, pageNumber]);
 
   const handleSave = () => {
-    onSave(pageNumber, text);
+    onSave(pageNumber - 1, text);
     onClose();
   };
 

@@ -84,6 +84,14 @@ export const DocumentCreateForm: React.FC = () => {
     setPagesText(updatedPagesText);
   };
 
+  const handlePageDelete = (pageIndex: number) => {
+    setPagesText(pagesText.filter((_, index) => index !== pageIndex));
+  };
+
+  const handleAddPage = () => {
+    setPagesText([...pagesText, '']);
+  };
+
   const handleSaveLocal = async () => {
     if (!documentTitle || pagesText.length === 0) {
       alert('Please provide a title and have at least one page of content.');
@@ -147,9 +155,16 @@ export const DocumentCreateForm: React.FC = () => {
           label="Document title" value={documentTitle}
         />
       </div>
-      <h2 className={s.pagesTitle}>Pages ({pagesText.length})</h2>
+      <div className={s.pagesHeader}>
+        <h2 className={s.pagesTitle}>Pages ({pagesText.length})</h2>
+      </div>
       <div className={s.pagesContainer}>
-        <PageList pages={pagesText} onPageClick={handlePageClick} />
+        <PageList
+          pages={pagesText}
+          onPageClick={handlePageClick}
+          onPageDelete={handlePageDelete}
+          onAddPage={handleAddPage}
+        />
       </div>
       <div className={s.actions}>
         <PrimaryButton type="button" icon={faSave} className={s.saveButtonCloud} onClick={handleSaveLocal} disabled={isSaving}>
