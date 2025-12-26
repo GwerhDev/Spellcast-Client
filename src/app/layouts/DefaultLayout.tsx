@@ -10,16 +10,22 @@ import { RootState } from 'store/index';
 import { useSelector } from 'react-redux';
 import spellcastIcon from '../../assets/spellcast-logo.svg';
 import { PageSelectorModal } from '../components/Modals/PageSelectorModal';
+import { VoiceSelectorModal } from '../components/Modals/VoiceSelectorModal';
 
 export default function DefaultLayout() {
   const shouldHideMenu = location.pathname.startsWith(`/user`);
-  const [showMenu, setShowMenu] = useState(shouldHideMenu);
   const { selectedVoice } = useSelector((state: RootState) => state.voice);
+  const [showMenu, setShowMenu] = useState(shouldHideMenu);
+  const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
 
   return (
     <main>
       <PdfProcessor />
-      <PageSelectorModal/>
+      <PageSelectorModal />
+      <VoiceSelectorModal
+        show={isVoiceModalOpen}
+        onClose={() => setIsVoiceModalOpen(false)}
+      />
       <div className="header-app">
         <span className="title-container">
           <img src={spellcastIcon} alt="Spellcast Icon" />
@@ -36,7 +42,9 @@ export default function DefaultLayout() {
         </div>
       </div>
       <div className="audioplayer-container">
-        {selectedVoice.type === 'browser' ? <BrowserPlayer /> : <AudioPlayer />}
+        {selectedVoice.type === 'browser'
+          ? <BrowserPlayer showVoiceSelectorModal={setIsVoiceModalOpen} />
+          : <AudioPlayer showVoiceSelectorModal={setIsVoiceModalOpen} />}
       </div>
       <LogoutModal />
     </main>

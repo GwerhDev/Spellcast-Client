@@ -1,16 +1,15 @@
 import s from './BrowserPlayer.module.css';
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef, useCallback, SetStateAction } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../../../store';
 import {
-  stop,
-  setVoice as setBrowserVoice,
   setVolume,
   setCurrentSentenceIndex,
-  play,
+  stop,
+  play as playBrowserAudio,
+  setVoice,
 } from '../../../../store/browserPlayerSlice';
 
-import { setSelectedVoice } from '../../../../store/voiceSlice';
 import {
   goToNextPage,
   goToPreviousPage,
@@ -19,10 +18,14 @@ import {
 import { PlaybackControls } from './PlaybackControls/PlaybackControls';
 import { VolumeControls } from './VolumeControls/VolumeControls';
 import { VoiceSelectorButton } from './VoiceSelectorButton/VoiceSelectorButton';
-import { VoiceSelectorModal } from '../../Modals/VoiceSelectorModal';
 import { useNavigate } from 'react-router-dom';
+import { setSelectedVoice } from 'store/voiceSlice';
 
-export const BrowserPlayer = () => {
+interface PlayerProps {
+  showVoiceSelectorModal: React.Dispatch<SetStateAction<boolean>>;
+}
+
+export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal }) => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -33,7 +36,6 @@ export const BrowserPlayer = () => {
     sentences,
     currentSentenceIndex,
   } = useSelector((state: RootState) => state.browserPlayer);
-  const credentials = useSelector((state: RootState) => state.credentials.credentials);
   const {
     isLoaded,
     totalPages,
@@ -41,12 +43,11 @@ export const BrowserPlayer = () => {
     documentId,
     documentTitle,
   } = useSelector((state: RootState) => state.pdfReader);
+  const { selectedVoice } = useSelector((state: RootState) => state.voice);
 
-  const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [lastVolume, setLastVolume] = useState(volume);
   const [isMobile, setIsMobile] = useState<boolean>(false);
   const [showMobileVolumeSlider, setShowMobileVolumeSlider] = useState(false);
-  const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
   const mobileVolumeSliderRef = useRef<HTMLDivElement>(null);
   const mobileVolumeButtonRef = useRef<HTMLButtonElement>(null);
   const volumePercentage = volume * 100;
@@ -84,8 +85,6 @@ export const BrowserPlayer = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showMobileVolumeSlider]);
 
-  const reduxSelectedVoice = useSelector((state: RootState) => state.voice.selectedVoice);
-
   const speak = useCallback((sentenceIndex: number) => {
     if (sentenceIndex > sentences.length && currentPage < totalPages) {
       handleNext()
@@ -117,38 +116,6 @@ export const BrowserPlayer = () => {
     //eslint-disable-next-line 
   }, [currentSentenceIndex, speak, isLoaded]);
 
-  useEffect(() => {
-    const handleVoicesChanged = () => {
-      const voices = window.speechSynthesis.getVoices();
-      setAvailableVoices(voices);
-
-      if (reduxSelectedVoice.type === 'browser') {
-        const storedBrowserVoice = voices.find(v => v.name === reduxSelectedVoice.value);
-        if (storedBrowserVoice) {
-          dispatch(setBrowserVoice(storedBrowserVoice));
-        } else if (voices.length > 0) {
-          // Fallback to default browser voice if stored one is not found
-          const defaultVoice = voices.find(v => v.default);
-          dispatch(setBrowserVoice(defaultVoice || voices[0]));
-          // Also update Redux state to reflect the actual voice being used
-          dispatch(setSelectedVoice({ value: (defaultVoice || voices[0]).name, type: 'browser' }));
-        }
-      } else if (!voice && voices.length > 0) {
-        // If an AI voice is selected in Redux, but no browser voice is set yet (e.g., initial load)
-        // Set a default browser voice for potential fallback or switching
-        const defaultVoice = voices.find(v => v.default);
-        dispatch(setBrowserVoice(defaultVoice || voices[0]));
-      }
-    };
-    window.speechSynthesis.addEventListener('voiceschanged', handleVoicesChanged);
-    handleVoicesChanged();
-    return () => {
-      window.speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
-      handleStop();
-    };
-    //eslint-disable-next-line
-  }, [dispatch, voice, reduxSelectedVoice]);
-
   const handleStop = () => {
     dispatch(stop());
     window.speechSynthesis.cancel();
@@ -156,7 +123,7 @@ export const BrowserPlayer = () => {
 
   const handlePlay = () => {
     if (isLoaded) {
-      dispatch(play());
+      dispatch(playBrowserAudio());
       window.speechSynthesis.resume();
     }
   };
@@ -187,21 +154,6 @@ export const BrowserPlayer = () => {
   const isPrevDisabled = isLoaded ? currentPage === 1 : true;
   const isNextDisabled = isLoaded ? currentPage === totalPages : true;
 
-  const aiVoices = credentials?.[0]?.voices?.map(v => ({ value: v.value, label: v.label, gender: v.gender })) || [];
-  const mappedBrowserVoices = availableVoices.map(v => ({ value: v.name, label: v.name, gender: 'Unknown', isBrowser: true }));
-
-  const handleVoiceSelection = async (selected: { value: string, label: string, gender: string, isBrowser?: boolean }) => {
-    setIsVoiceModalOpen(false);
-    if (selected.isBrowser) {
-      const newVoice = availableVoices.find(v => v.name === selected.value);
-      if (newVoice) {
-        dispatch(setBrowserVoice(newVoice));
-        dispatch(setSelectedVoice({ value: selected.value, type: 'browser' }));
-        localStorage.setItem('default_browser_voice', JSON.stringify({ value: selected.value, type: 'browser' }));
-      }
-    }
-  };
-
   useEffect(() => {
     if (audioRef.current) {
       if (isPlaying) {
@@ -218,49 +170,65 @@ export const BrowserPlayer = () => {
     }
   }, [volume]);
 
+  useEffect(() => {
+    const handleVoicesChanged = () => {
+      const voices = window.speechSynthesis.getVoices();
+
+      if (selectedVoice.type === 'browser') {
+        const storedBrowserVoice = voices.find(v => v.name === selectedVoice.value);
+        if (storedBrowserVoice) {
+          dispatch(setVoice(storedBrowserVoice));
+        } else if (voices.length > 0) {
+          // Fallback to default browser voice if stored one is not found
+          const defaultVoice = voices.find(v => v.default);
+          dispatch(setVoice(defaultVoice || voices[0]));
+          // Also update Redux state to reflect the actual voice being used
+          dispatch(setSelectedVoice({ value: (defaultVoice || voices[0]).name, type: 'browser' }));
+        }
+      }
+    };
+    window.speechSynthesis.addEventListener('voiceschanged', handleVoicesChanged);
+    handleVoicesChanged();
+    return () => {
+      window.speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
+      handleStop();
+    };
+    //eslint-disable-next-line
+  }, [dispatch, voice, selectedVoice]);
+
   return (
-    <>
-      <div className={s.audioPlayerContainer}>
-        <section className={s.leftSection}>
-          <VoiceSelectorButton onClick={() => setIsVoiceModalOpen(true)} />
-          {
-            isLoaded &&
-            <div className={s.documentDetails}>
-              <p title={documentTitle || ""} onClick={handleTitle}>{documentTitle}</p>
-              <small onClick={handlePageSelector}>Page {currentPage} of {totalPages}</small>
-            </div>
-          }
-        </section>
+    <div className={s.audioPlayerContainer}>
+      <section className={s.leftSection}>
+        <VoiceSelectorButton onClick={() => showVoiceSelectorModal(true)} />
+        {
+          isLoaded &&
+          <div className={s.documentDetails}>
+            <p title={documentTitle || ""} onClick={handleTitle}>{documentTitle}</p>
+            <small onClick={handlePageSelector}>Page {currentPage} of {totalPages}</small>
+          </div>
+        }
+      </section>
 
-        <PlaybackControls
-          disabled={!isLoaded}
-          handlePrevious={handlePrevious}
-          handleNext={handleNext}
-          isPrevDisabled={isPrevDisabled}
-          isNextDisabled={isNextDisabled}
-        />
-
-        <VolumeControls
-          volume={volume}
-          handleVolumeToggle={handleVolumeToggle}
-          volumePercentage={volumePercentage}
-          isMobile={isMobile}
-          showMobileVolumeSlider={showMobileVolumeSlider}
-          setShowMobileVolumeSlider={setShowMobileVolumeSlider}
-          mobileVolumeSliderRef={mobileVolumeSliderRef}
-          mobileVolumeButtonRef={mobileVolumeButtonRef}
-          setVolume={(vol) => dispatch(setVolume(vol))}
-        />
-      </div>
-      <VoiceSelectorModal
-        show={isVoiceModalOpen}
-        onClose={() => setIsVoiceModalOpen(false)}
-        aiVoices={aiVoices}
-        browserVoices={mappedBrowserVoices}
-        setSelectedVoice={handleVoiceSelection}
-        reduxSelectedVoice={reduxSelectedVoice}
+      <PlaybackControls
+        disabled={!isLoaded}
+        handlePrevious={handlePrevious}
+        handleNext={handleNext}
+        isPrevDisabled={isPrevDisabled}
+        isNextDisabled={isNextDisabled}
       />
-    </>
+
+      <VolumeControls
+        volume={volume}
+        handleVolumeToggle={handleVolumeToggle}
+        volumePercentage={volumePercentage}
+        isMobile={isMobile}
+        showMobileVolumeSlider={showMobileVolumeSlider}
+        setShowMobileVolumeSlider={setShowMobileVolumeSlider}
+        mobileVolumeSliderRef={mobileVolumeSliderRef}
+        mobileVolumeButtonRef={mobileVolumeButtonRef}
+        setVolume={(vol) => dispatch(setVolume(vol))}
+      />
+    </div>
   );
 };
 

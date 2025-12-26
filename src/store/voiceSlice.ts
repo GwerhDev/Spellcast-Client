@@ -12,7 +12,7 @@ const loadSelectedVoice = (): SelectedVoice => {
     if (storedVoice) {
       const parsedVoice = JSON.parse(storedVoice);
       // Basic validation to ensure it matches the SelectedVoice interface
-      if (parsedVoice && typeof parsedVoice.value === 'string' && (parsedVoice.type === 'ia' || parsedVoice.type === 'browser')) {
+      if (parsedVoice && typeof parsedVoice.value === 'string' && (parsedVoice.type === 'ai' || parsedVoice.type === 'browser')) {
         return parsedVoice;
       }
     }
