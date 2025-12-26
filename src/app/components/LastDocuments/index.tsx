@@ -12,7 +12,7 @@ interface LocalDocument {
   createdAt: Date;
 }
 
-export const RecentLocalDocument: React.FC = () => {
+export const LastDocuments: React.FC = () => {
   const [documents, setDocuments] = useState<LocalDocument[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -75,7 +75,7 @@ export const RecentLocalDocument: React.FC = () => {
   return (
     <>
       <div className={s.container}>
-        <h2 className={s.title}>Recent Local Documents</h2>
+        <h2 className={s.title}>Last Documents</h2>
         <div className={s.listContainer}>
           {documents.map((doc) => (
             <div key={doc.id} className={s.docLink} onClick={() => handleDocClick(doc.id)}>
