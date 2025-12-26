@@ -41,7 +41,7 @@ export interface TTS_Credential {
 
 export interface SelectedVoice {
   value: string;
-  type: 'ia' | 'browser';
+  type: 'ai' | 'browser';
 }
 
 export interface Voice {

@@ -20,13 +20,41 @@
   border-radius: .2rem;
   display: flex;
   position: relative;
-  align-items: flex-start;
-  flex-direction: column;
-  justify-content: center;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.documentDetails {
+  width: 100%;
+  max-width: 120px;
+  overflow: hidden;
+  font-size: small;
+  text-wrap: nowrap;
+  text-overflow: ellipsis;
+}
+
+.documentDetails p:hover {
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.documentDetails small {
+  font-size: 9px;
+  cursor: pointer;
+}
+
+.documentDetails small:hover {
+  color: var(--color-primary);
 }
 
 .pdfControls {
   display: flex;
   align-items: center;
   gap: 1rem;
+}
+
+@media (max-width: 768px) {
+  .documentDetails {
+    display: none;
+  }
 }

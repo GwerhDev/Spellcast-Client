@@ -1,55 +1,49 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 interface BrowserPlayerState {
-  text: string;
   sentences: string[];
   isPlaying: boolean;
-  isPaused: boolean;
   currentSentenceIndex: number;
   voice: SpeechSynthesisVoice | null;
+  volume: number;
 }
 
 const initialState: BrowserPlayerState = {
-  text: '',
   sentences: [],
   isPlaying: false,
-  isPaused: false,
   currentSentenceIndex: -1, // Use -1 to indicate nothing is highlighted initially
   voice: null,
+  volume: 1,
 };
 
 const browserPlayerSlice = createSlice({
   name: 'browserPlayer',
   initialState,
   reducers: {
-    setText: (state, action: PayloadAction<string>) => {
-      state.text = action.payload;
+    resetBrowserPlayer: () => {
+      return initialState;
     },
-    setSentencesAndPlay: (state, action: PayloadAction<{sentences: string[], text: string, startIndex?: number}>) => {
-        state.sentences = action.payload.sentences;
-        state.text = action.payload.text;
-        state.isPlaying = true;
-        state.isPaused = false;
-        state.currentSentenceIndex = action.payload.startIndex || 0;
+    setSentences: (state, action: PayloadAction<{ sentences: string[], startIndex?: number }>) => {
+      state.sentences = action.payload.sentences;
+      state.currentSentenceIndex = action.payload.startIndex || 0;
     },
     setCurrentSentenceIndex: (state, action: PayloadAction<number>) => {
-        state.currentSentenceIndex = action.payload;
+      state.currentSentenceIndex = action.payload;
+    },
+    setVolume: (state, action: PayloadAction<number>) => {
+      state.volume = Math.max(0, Math.min(1, action.payload)); // Ensure volume is between 0 and 1
     },
     play: (state) => {
       state.isPlaying = true;
-      state.isPaused = false;
     },
     pause: (state) => {
-      state.isPaused = true;
+      state.isPlaying = false;
     },
     resume: (state) => {
-      state.isPaused = false;
+      state.isPlaying = true;
     },
     stop: (state) => {
       state.isPlaying = false;
-      state.isPaused = false;
-      state.sentences = [];
-      state.currentSentenceIndex = -1;
     },
     setVoice: (state, action: PayloadAction<SpeechSynthesisVoice | null>) => {
       state.voice = action.payload;
@@ -58,14 +52,15 @@ const browserPlayerSlice = createSlice({
 });
 
 export const {
-  setText,
-  setSentencesAndPlay,
+  setSentences,
   setCurrentSentenceIndex,
   play,
   pause,
   resume,
   stop,
   setVoice,
+  setVolume,
+  resetBrowserPlayer,
 } = browserPlayerSlice.actions;
 
 export default browserPlayerSlice.reducer;

@@ -4,42 +4,48 @@ import { Link } from 'react-router-dom';
 import { faBrain, faCircle, faDesktop } from '@fortawesome/free-solid-svg-icons';
 import { faCircle as faRegCircle } from '@fortawesome/free-regular-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { Voice, SelectedVoice } from 'src/interfaces';
 import { CustomModal } from './CustomModal';
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState } from 'store/index';
+import { setSelectedVoice } from 'store/voiceSlice';
+
 
 interface VoiceSelectorModalProps {
-  browserVoices: Voice[];
-  aiVoices: Voice[];
-  setSelectedVoice: (voice: Voice) => void;
   onClose: () => void;
   show: boolean;
-  reduxSelectedVoice: SelectedVoice; // The actual selected voice from Redux store
 }
 
-export const VoiceSelectorModal: React.FC<VoiceSelectorModalProps> = ({
-  browserVoices,
-  aiVoices,
-  setSelectedVoice,
-  onClose,
-  show,
-  reduxSelectedVoice,
-}) => {
-  const [activeTab, setActiveTab] = useState<'browser' | 'ai'>(reduxSelectedVoice.type === 'ia' ? 'ai' : reduxSelectedVoice.type);
+export const VoiceSelectorModal: React.FC<VoiceSelectorModalProps> = ({ onClose, show }) => {
+  const dispatch = useDispatch();
+  const { credentials } = useSelector((state: RootState) => state.credentials);
+  const { selectedVoice } = useSelector((state: RootState) => state.voice);
+  const [activeTab, setActiveTab] = useState<'browser' | 'ai'>(selectedVoice.type === 'ai' ? 'ai' : selectedVoice.type);
 
   useEffect(() => {
-    setActiveTab(reduxSelectedVoice.type === 'ia' ? 'ai' : reduxSelectedVoice.type);
-  }, [reduxSelectedVoice.type]);
+    setActiveTab(selectedVoice.type === 'ai' ? 'ai' : selectedVoice.type);
+  }, [selectedVoice.type]);
+
+  const voices = window.speechSynthesis.getVoices();
+
+  const aiVoices = credentials?.[0]?.voices?.map(v => ({ value: v.value, label: v.label, gender: v.gender })) || [];
+  const browserVoices = voices.map(v => ({ value: v.name, label: v.name, gender: 'Unknown', isBrowser: true }));
+
+  const voicesToShow = activeTab === 'browser' ? browserVoices : aiVoices;
+  const icon = activeTab === 'browser' ? faDesktop : faBrain;
+
+  const handleVoiceSelection = async (selected: { value: string, label: string, gender: string, isBrowser?: boolean }) => {
+    onClose();
+    if (selected?.isBrowser) {
+      dispatch(setSelectedVoice({ value: selected.value, type: 'browser' }));
+      localStorage.setItem('default_browser_voice', JSON.stringify({ value: selected.value, type: 'browser' }));
+    } else {
+      dispatch(setSelectedVoice({ value: selected.value, type: 'ai' }));
+    }
+  };
 
   if (!show) {
     return null;
   }
-
-  const handleVoiceSelection = (voice: Voice) => {
-    setSelectedVoice(voice);
-  };
-
-  const voicesToShow = activeTab === 'browser' ? browserVoices : aiVoices;
-  const icon = activeTab === 'browser' ? faDesktop : faBrain;
 
   return (
     <CustomModal title="Select a Voice" show={show} onClose={onClose}>
@@ -82,10 +88,10 @@ export const VoiceSelectorModal: React.FC<VoiceSelectorModalProps> = ({
         {voicesToShow.map((voiceOption, index) => (
           <li
             key={index}
-            className={`${s.voiceOption} ${reduxSelectedVoice.value === voiceOption.value && (reduxSelectedVoice.type === 'ia' ? 'ai' : reduxSelectedVoice.type) === activeTab ? s.activeVoice : ''}`}
+            className={`${s.voiceOption} ${selectedVoice.value === voiceOption.value && (selectedVoice.type === 'ai' ? 'ai' : selectedVoice.type) === activeTab ? s.activeVoice : ''}`}
             onClick={() => handleVoiceSelection(voiceOption)}
           >
-            <FontAwesomeIcon icon={reduxSelectedVoice.value === voiceOption.value && (reduxSelectedVoice.type === 'ia' ? 'ai' : reduxSelectedVoice.type) === activeTab ? faCircle : faRegCircle} />
+            <FontAwesomeIcon icon={selectedVoice.value === voiceOption.value && (selectedVoice.type === 'ai' ? 'ai' : selectedVoice.type) === activeTab ? faCircle : faRegCircle} />
             <span>
               {voiceOption.label}
             </span>
