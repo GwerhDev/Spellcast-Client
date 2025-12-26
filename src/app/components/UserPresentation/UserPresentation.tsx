@@ -8,7 +8,7 @@ import { RootState } from '../../../store';
 
 export const UserPresentation = () => {
   const userData: userData = useSelector((state: RootState) => state.session.userData);
-  const { loader, profilePic, username, email } = userData || {};
+  const { loader, profilePic, username, role } = userData || {};
 
   return (
     <div className={s.container}>
@@ -32,7 +32,7 @@ export const UserPresentation = () => {
           </li>
 
           <li className={`${loader ? skeleton.skeleton : ''}`}>
-            {!loader && <p>{email}</p>}
+            {!loader && <p>{role}</p>}
           </li>
         </ul>
       </div>

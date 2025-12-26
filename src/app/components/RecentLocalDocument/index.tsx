@@ -1,14 +1,10 @@
+import s from './index.module.css';
 import React, { useEffect, useState } from 'react';
 import { getDocumentsFromDB, deleteDocumentFromDB } from '../../../db';
 import { useNavigate } from 'react-router-dom';
-import s from './index.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFilePdf, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { DeleteConfirmModal } from '../Modals/DeleteConfirmModal';
-import { useDispatch } from 'react-redux';
-import { resetAudioPlayer } from 'store/audioPlayerSlice';
-import { resetDocumentState } from 'store/documentSlice';
-import { resetPdfReader } from 'store/pdfReaderSlice';
 
 interface LocalDocument {
   id: string;
@@ -22,7 +18,6 @@ export const RecentLocalDocument: React.FC = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState<{id: string, title: string} | null>(null);
   const navigate = useNavigate();
-  const dispatch = useDispatch();
 
   const fetchDocuments = async () => {
     try {
@@ -66,9 +61,6 @@ export const RecentLocalDocument: React.FC = () => {
   };
 
   const handleDocClick = (docId: string) => {
-    dispatch(resetPdfReader());
-    dispatch(resetAudioPlayer());
-    dispatch(resetDocumentState());
     navigate(`/document/local/${docId}`);
   };
 

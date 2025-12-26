@@ -11,12 +11,12 @@ import {
   playPrevious as playPreviousAudio,
 } from '../../../../store/audioPlayerSlice';
 import { setSelectedVoice } from '../../../../store/voiceSlice';
-import { goToNextPage, goToPreviousPage, startPlayback } from '../../../../store/pdfReaderSlice';
+import { goToNextPage, goToPreviousPage } from '../../../../store/pdfReaderSlice';
 import { PlaybackControls } from './PlaybackControls/PlaybackControls';
 import { VolumeControls } from './VolumeControls/VolumeControls';
 import { VoiceSelectorButton } from './VoiceSelectorButton/VoiceSelectorButton';
 import { VoiceSelectorModal } from '../../Modals/VoiceSelectorModal';
-import { setText as setBrowserText, play as playBrowserAudio, stop as stopBrowserAudio } from 'store/browserPlayerSlice';
+import { play as playBrowserAudio, stop as stopBrowserAudio } from 'store/browserPlayerSlice';
 import { textToSpeechService } from 'services/tts';
 
 export const AudioPlayer = () => {
@@ -37,7 +37,6 @@ export const AudioPlayer = () => {
     currentPage,
     isLoaded: isPdfLoaded,
     pages,
-    documentId,
   } = useSelector((state: RootState) => state.pdfReader);
 
   const [lastVolume, setLastVolume] = useState(volume);
@@ -183,8 +182,6 @@ export const AudioPlayer = () => {
   const handleTogglePlayPause = () => {
     if (playlist.length > 0) {
       dispatch(togglePlayPause());
-    } else if (documentId) {
-      dispatch(startPlayback());
     }
   };
 
@@ -211,7 +208,6 @@ export const AudioPlayer = () => {
         const text = pages[currentPage];
         if (text) {
           dispatch(stopBrowserAudio());
-          dispatch(setBrowserText(text));
           dispatch(playBrowserAudio());
         }
       }

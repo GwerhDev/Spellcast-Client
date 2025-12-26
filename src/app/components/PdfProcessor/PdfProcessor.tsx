@@ -3,74 +3,74 @@ import { useDispatch, useSelector } from 'react-redux';
 import * as pdfjsLib from 'pdfjs-dist';
 import type { PDFDocumentProxy, TextItem, TextMarkedContent } from 'pdfjs-dist/types/src/display/api';
 import { RootState } from '../../../store';
-import { textToSpeechService } from '../../../services/tts';
-import { setPlaylist, play as playAiAudio } from '../../../store/audioPlayerSlice';
-import { setText as setBrowserText, play as playBrowserAudio } from '../../../store/browserPlayerSlice';
-import { setPdfDocumentInfo, setPageText, goToNextPage } from '../../../store/pdfReaderSlice';
+import { setPageText, goToNextPage } from '../../../store/pdfReaderSlice';
 
 // Set workerSrc for pdfjsLib
 import workerSrc from 'pdfjs-dist/build/pdf.worker?url';
+import { getDocumentById, saveDocumentProgress } from '../../../db';
+import { setSentences } from 'store/browserPlayerSlice';
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
 export const PdfProcessor = () => {
   const dispatch = useDispatch();
-  const { fileContent, currentPage, totalPages, pages } = useSelector((state: RootState) => state.pdfReader);
   const { selectedVoice } = useSelector((state: RootState) => state.voice);
-  const sourceType = useSelector((state: RootState) => state.audioPlayer.sourceType);
-  const pdfPageNumber = useSelector((state: RootState) => state.audioPlayer.pdfPageNumber);
-  const isPlaying = useSelector((state: RootState) => state.audioPlayer.isPlaying);
+  const { isPlaying } = useSelector((state: RootState) => state.browserPlayer);
+  const { currentPage, totalPages, pages, documentId, currentPageText } = useSelector((state: RootState) => state.pdfReader);
   const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
+  const blobToBase64 = (blob: Blob): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  };
+
   // Effect to create pdfDoc from fileContent
   useEffect(() => {
-    if (fileContent) {
-      setPdfDoc(null);
-      const pdfData = atob(fileContent.substring(fileContent.indexOf(',') + 1));
-      pdfjsLib.getDocument({ data: pdfData }).promise.then(doc => {
-        setPdfDoc(doc);
-        if (totalPages === 0) {
-          dispatch(setPdfDocumentInfo({ totalPages: doc.numPages }));
-        }
-      });
-    } else {
-      setPdfDoc(null);
-    }
-  }, [fileContent, dispatch, totalPages]);
+    const loadDocument = async () => {
+      const fileContent = await getDocumentById(documentId || "");
+
+      if (fileContent) {
+        const pdfAsBase64 = await blobToBase64(fileContent.pdf);
+        setPdfDoc(null);
+        const pdfData = atob(pdfAsBase64.substring(pdfAsBase64.indexOf(',') + 1));
+        pdfjsLib.getDocument({ data: pdfData }).promise.then(doc => {
+          setPdfDoc(doc);
+        });
+      } else {
+        setPdfDoc(null);
+      }
+    };
+
+    loadDocument();
+  }, [dispatch, documentId]);
+
+  useEffect(() => {
+    const sentences = currentPageText?.split(/(?<=[.!?])/) || [];
+    dispatch(setSentences({ sentences: sentences }));
+  }, [currentPageText, dispatch]);
 
   // Effect to process page when currentPage changes
   useEffect(() => {
-    if (pdfDoc && currentPage > 0 && !isProcessing) {
-      // Avoid processing if audio for the current page is already playing or loaded
-      if (isPlaying && sourceType === 'pdfPage' && pdfPageNumber === currentPage) {
-        return;
-      }
-
+    if (pdfDoc && !isProcessing) {
       const processPage = async () => {
         setIsProcessing(true);
         try {
           let text = pages[currentPage];
-
           if (!text) {
             const page = await pdfDoc.getPage(currentPage);
             const content = await page.getTextContent();
             text = content.items.map((item: TextItem | TextMarkedContent) => ('str' in item ? item.str : '')).join(' ');
             text = text.replace(/\s+/g, ' ').trim();
-            dispatch(setPageText({ pageNumber: currentPage, text }));
+            dispatch(setPageText({ text }));
           }
 
           if (text && text.trim() !== '') {
             // Only generate audio if it's not already for the current page
-            if (sourceType !== 'pdfPage' || pdfPageNumber !== currentPage) {
-              if (selectedVoice.type === 'browser') {
-                dispatch(setBrowserText(text));
-                dispatch(playBrowserAudio());
-              } else {
-                const audioUrl = await textToSpeechService({ text, voice: selectedVoice.value });
-                dispatch(setPlaylist({ playlist: [audioUrl], startIndex: 0, sourceType: 'pdfPage', pdfPageNumber: currentPage }));
-                dispatch(playAiAudio());
-              }
-            }
+            dispatch(setPageText({ text }));
           } else {
             // If page is empty, go to next
             if (currentPage < totalPages) {
@@ -85,7 +85,13 @@ export const PdfProcessor = () => {
       };
       processPage();
     }
-  }, [pdfDoc, currentPage, dispatch, selectedVoice.type, selectedVoice.value, sourceType, pdfPageNumber, isPlaying, isProcessing, totalPages, pages]);
+  }, [pdfDoc, currentPage, dispatch, selectedVoice, isPlaying, isProcessing, totalPages, pages]);
+
+  useEffect(() => {
+    if (documentId && currentPage) {
+      saveDocumentProgress({ documentId, currentPage });
+    }
+  }, [currentPage, documentId]);
 
   return null; // Headless component
 };

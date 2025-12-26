@@ -1,49 +1,45 @@
 import s from './BrowserPlayer.module.css';
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../../../store';
 import {
-  pause,
-  resume,
   stop,
   setVoice as setBrowserVoice,
-  setSentencesAndPlay,
-  setCurrentSentenceIndex,
-} from '../../../../store/browserPlayerSlice';
-import {
   setVolume,
-  setPlaylist,
-  play as playAiAudio,
-} from '../../../../store/audioPlayerSlice';
+  setCurrentSentenceIndex,
+  play,
+} from '../../../../store/browserPlayerSlice';
+
 import { setSelectedVoice } from '../../../../store/voiceSlice';
 import {
   goToNextPage,
   goToPreviousPage,
-  startPlayback as requestPagePlayback,
+  setShowPageSelector,
 } from '../../../../store/pdfReaderSlice';
 import { PlaybackControls } from './PlaybackControls/PlaybackControls';
 import { VolumeControls } from './VolumeControls/VolumeControls';
 import { VoiceSelectorButton } from './VoiceSelectorButton/VoiceSelectorButton';
 import { VoiceSelectorModal } from '../../Modals/VoiceSelectorModal';
-import { textToSpeechService } from 'services/tts';
+import { useNavigate } from 'react-router-dom';
 
 export const BrowserPlayer = () => {
+  const audioRef = useRef<HTMLAudioElement>(null);
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const {
-    text,
-    isPlaying,
-    isPaused,
     voice,
+    volume,
+    isPlaying,
     sentences,
     currentSentenceIndex,
   } = useSelector((state: RootState) => state.browserPlayer);
-  const { volume } = useSelector((state: RootState) => state.audioPlayer);
   const credentials = useSelector((state: RootState) => state.credentials.credentials);
   const {
+    isLoaded,
     totalPages,
     currentPage,
-    isLoaded: isPdfLoaded,
     documentId,
+    documentTitle,
   } = useSelector((state: RootState) => state.pdfReader);
 
   const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
@@ -54,6 +50,14 @@ export const BrowserPlayer = () => {
   const mobileVolumeSliderRef = useRef<HTMLDivElement>(null);
   const mobileVolumeButtonRef = useRef<HTMLButtonElement>(null);
   const volumePercentage = volume * 100;
+
+  const handleTitle = () => {
+    navigate(`/document/local/${documentId}`);
+  };
+
+  const handlePageSelector = () => {
+    dispatch(setShowPageSelector(true));
+  };
 
   useEffect(() => {
     const checkIsMobile = () => {
@@ -81,6 +85,40 @@ export const BrowserPlayer = () => {
   }, [showMobileVolumeSlider]);
 
   const reduxSelectedVoice = useSelector((state: RootState) => state.voice.selectedVoice);
+
+  const speak = useCallback((sentenceIndex: number) => {
+    dispatch(setCurrentSentenceIndex(sentenceIndex));
+
+    if (sentenceIndex >= sentences.length) {
+      if (currentPage < totalPages) {
+        dispatch(goToNextPage());
+      }
+      return;
+    }
+
+    const utterance = new SpeechSynthesisUtterance(sentences[sentenceIndex]);
+    if (voice) utterance.voice = voice;
+    utterance.volume = volume;
+    utterance.onend = () => {
+      // Check if it was cancelled before proceeding
+      speak(sentenceIndex + 1);
+    };
+
+    if (sentences.length >= 1 && sentenceIndex >= 0) {
+      console.log(sentences)
+      window.speechSynthesis.speak(utterance);
+      handlePlay();
+    };
+    //eslint-disable-next-line
+  }, [sentences, voice, volume, dispatch, currentPage, totalPages]);
+
+  useEffect(() => {
+    // This effect triggers the start of sentence-based playback once sentences are set
+    handleStop();
+    speak(currentSentenceIndex);
+
+    //eslint-disable-next-line 
+  }, [currentSentenceIndex, speak]);
 
   useEffect(() => {
     const handleVoicesChanged = () => {
@@ -113,78 +151,25 @@ export const BrowserPlayer = () => {
     };
   }, [dispatch, voice, reduxSelectedVoice]);
 
-  const speak = useCallback((sentenceIndex: number) => {
-    if (sentenceIndex >= sentences.length) {
-      dispatch(stop());
-      if (currentPage < totalPages) {
-        dispatch(goToNextPage());
-      }
-      return;
-    }
-
-    dispatch(setCurrentSentenceIndex(sentenceIndex));
-    const utterance = new SpeechSynthesisUtterance(sentences[sentenceIndex]);
-    if (voice) utterance.voice = voice;
-    utterance.volume = volume;
-    utterance.onend = () => {
-      // Check if it was cancelled before proceeding
-      if (window.speechSynthesis.speaking || !isPaused) {
-        speak(sentenceIndex + 1);
-      }
-    };
-    window.speechSynthesis.speak(utterance);
-  }, [sentences, voice, volume, dispatch, currentPage, totalPages, isPaused]);
-
-  const startPlaybackLocal = useCallback(() => {
-    if (!text && !isPdfLoaded) return;
-    window.speechSynthesis.cancel();
-    const sentences = text.split(/(?<=[.!?])/);
-
-    const sentenceRegex = sentences.filter(s => s.trim().length > 0);
-    const textSentences = sentenceRegex || [text];
-    dispatch(setSentencesAndPlay({ sentences: textSentences, text: text }));
-  }, [text, dispatch, isPdfLoaded]);
-
-  const handlePause = () => {
-    dispatch(pause());
-    window.speechSynthesis.pause();
-  };
-
-  const handleResume = () => {
-    dispatch(resume());
-    window.speechSynthesis.resume();
-  };
-
   const handleStop = () => {
     dispatch(stop());
     window.speechSynthesis.cancel();
   };
 
-  useEffect(() => {
-    // Effect to automatically start playback when play is dispatched from another component
-    if (isPdfLoaded && isPlaying && !isPaused && text && sentences.length === 0) {
-      startPlaybackLocal();
-    }
-  }, [isPdfLoaded, isPlaying, isPaused, text, sentences, startPlaybackLocal]);
-
-  useEffect(() => {
-    // This effect triggers the start of sentence-based playback once sentences are set
-    if (isPdfLoaded && isPlaying && !isPaused && sentences.length > 0 && currentSentenceIndex >= 0) {
-      if (!window.speechSynthesis.speaking) {
-        speak(currentSentenceIndex);
-      }
-    }
-  }, [isPdfLoaded, isPlaying, isPaused, sentences, currentSentenceIndex, speak]);
+  const handlePlay = () => {
+    dispatch(play());
+    window.speechSynthesis.resume();
+  };
 
   const handlePrevious = () => {
-    if (isPdfLoaded) {
+    if (isLoaded) {
       handleStop();
       dispatch(goToPreviousPage());
     }
   };
 
   const handleNext = () => {
-    if (isPdfLoaded) {
+    if (isLoaded) {
       handleStop();
       dispatch(goToNextPage());
     }
@@ -199,26 +184,8 @@ export const BrowserPlayer = () => {
     }
   };
 
-  const togglePlayPause = () => {
-    if (isPlaying) {
-      if (isPaused) {
-        handleResume();
-      } else {
-        handlePause();
-      }
-    } else {
-      if (text) {
-        // This case happens if we press play after stopping
-        startPlaybackLocal();
-      } else if (documentId) {
-        // No text loaded, but we are in the document reader. Request text.
-        dispatch(requestPagePlayback());
-      }
-    }
-  };
-
-  const isPrevDisabled = isPdfLoaded ? currentPage === 1 : true;
-  const isNextDisabled = isPdfLoaded ? currentPage === totalPages : true;
+  const isPrevDisabled = isLoaded ? currentPage === 1 : true;
+  const isNextDisabled = isLoaded ? currentPage === totalPages : true;
 
   const aiVoices = credentials?.[0]?.voices?.map(v => ({ value: v.value, label: v.label, gender: v.gender })) || [];
   const mappedBrowserVoices = availableVoices.map(v => ({ value: v.name, label: v.name, gender: 'Unknown', isBrowser: true }));
@@ -232,32 +199,45 @@ export const BrowserPlayer = () => {
         dispatch(setSelectedVoice({ value: selected.value, type: 'browser' }));
         localStorage.setItem('default_browser_voice', JSON.stringify({ value: selected.value, type: 'browser' }));
       }
-    } else {
-      dispatch(setSelectedVoice({ value: selected.value, type: 'ia' }));
-      if (text) {
-        handleStop();
-        const audioUrl = await textToSpeechService({ text, voice: selected.value });
-        dispatch(setPlaylist({ playlist: [audioUrl], startIndex: 0 }));
-        dispatch(playAiAudio());
-      }
     }
   };
+
+  useEffect(() => {
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.play().catch(e => console.error("Error playing audio:", e));
+      } else {
+        audioRef.current.pause();
+      }
+    }
+  }, [isPlaying]);
+
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = volume;
+    }
+  }, [volume]);
 
   return (
     <>
       <div className={s.audioPlayerContainer}>
         <section className={s.leftSection}>
           <VoiceSelectorButton onClick={() => setIsVoiceModalOpen(true)} />
+          {
+            isLoaded &&
+            <div className={s.documentDetails}>
+              <p title={documentTitle || ""} onClick={handleTitle}>{documentTitle}</p>
+              <small onClick={handlePageSelector}>Page {currentPage} of {totalPages}</small>
+            </div>
+          }
         </section>
 
         <PlaybackControls
-          disabled={!isPdfLoaded}
+          disabled={!isLoaded}
           handlePrevious={handlePrevious}
           handleNext={handleNext}
-          isPlaying={isPlaying && !isPaused}
           isPrevDisabled={isPrevDisabled}
           isNextDisabled={isNextDisabled}
-          togglePlayPause={togglePlayPause}
         />
 
         <VolumeControls
