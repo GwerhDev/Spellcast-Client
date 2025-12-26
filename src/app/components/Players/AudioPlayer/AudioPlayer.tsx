@@ -12,11 +12,12 @@ import {
   stop,
   pause,
 } from '../../../../store/audioPlayerSlice';
-import { goToNextPage, goToPreviousPage } from '../../../../store/pdfReaderSlice';
+import { goToNextPage, goToPreviousPage, setShowPageSelector } from '../../../../store/pdfReaderSlice';
 import { PlaybackControls } from './PlaybackControls/PlaybackControls';
 import { VolumeControls } from './VolumeControls/VolumeControls';
 import { VoiceSelectorButton } from './VoiceSelectorButton/VoiceSelectorButton';
 import { textToSpeechService } from 'services/tts';
+import { useNavigate } from 'react-router-dom';
 
 interface PlayerProps {
   showVoiceSelectorModal: React.Dispatch<SetStateAction<boolean>>;
@@ -25,6 +26,8 @@ interface PlayerProps {
 export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal }) => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const dispatch = useDispatch();
+  const navigate = useNavigate();
+
   const {
     volume,
     playlist,
@@ -35,10 +38,12 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal }) =
     currentTrackIndex,
   } = useSelector((state: RootState) => state.audioPlayer);
   const {
+    isLoaded,
+    documentId,
     totalPages,
     currentPage,
+    documentTitle,
     currentPageText,
-    isLoaded: isPdfLoaded,
   } = useSelector((state: RootState) => state.pdfReader);
   const { selectedVoice } = useSelector((state: RootState) => state.voice);
 
@@ -145,7 +150,7 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal }) =
   };
 
   const handlePrevious = () => {
-    if (isPdfLoaded) {
+    if (isLoaded) {
       dispatch(goToPreviousPage());
     } else {
       dispatch(playPreviousAudio());
@@ -153,7 +158,7 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal }) =
   };
 
   const handleNext = () => {
-    if (isPdfLoaded) {
+    if (isLoaded) {
       dispatch(goToNextPage());
     } else {
       dispatch(playNextAudio());
@@ -197,8 +202,16 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal }) =
     audioRef.current!.pause();
   };
 
-  const isPrevDisabled = isPdfLoaded ? currentPage === 1 : currentTrackIndex === 0;
-  const isNextDisabled = isPdfLoaded ? currentPage === totalPages : currentTrackIndex === (playlist.length - 1);
+  const handleTitle = () => {
+    navigate(`/document/local/${documentId}`);
+  };
+
+  const handlePageSelector = () => {
+    dispatch(setShowPageSelector(true));
+  };
+
+  const isPrevDisabled = isLoaded ? currentPage === 1 : currentTrackIndex === 0;
+  const isNextDisabled = isLoaded ? currentPage === totalPages : currentTrackIndex === (playlist.length - 1);
 
   useEffect(() => {
     const handleVoicesChanged = async () => {
@@ -227,10 +240,17 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal }) =
       />
       <section className={s.leftSection}>
         <VoiceSelectorButton onClick={() => showVoiceSelectorModal(true)} />
+        {
+          isLoaded &&
+          <div className={s.documentDetails}>
+            <p title={documentTitle || ""} onClick={handleTitle}>{documentTitle}</p>
+            <small onClick={handlePageSelector}>Page {currentPage} of {totalPages}</small>
+          </div>
+        }
       </section>
 
       <PlaybackControls
-        disabled={!isPdfLoaded}
+        disabled={!isLoaded}
         audioRef={audioRef}
         currentTime={currentTime}
         duration={duration}
