@@ -17,7 +17,6 @@ export const DocumentReader = () => {
   const {
     currentPageText,
     documentTitle,
-    currentPage,
     documentId,
     isLoaded,
     pages,
@@ -32,11 +31,10 @@ export const DocumentReader = () => {
       const handleProgress = async () => {
         const progress = await getDocumentProgress(documentId || "");
         if (progress?.currentPage) return dispatch(goToPage(progress.currentPage));
-        return dispatch(goToPage(currentPage));
       }
 
       handleProgress();
-  }, [pages, currentPage, dispatch, documentId]);
+  }, [pages, dispatch, documentId]);
 
   useEffect(() => {
     setEditedText(currentPageText);

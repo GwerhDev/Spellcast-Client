@@ -26,13 +26,11 @@ interface PlayerProps {
 }
 
 export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal }) => {
-  const audioRef = useRef<HTMLAudioElement>(null);
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const {
     voice,
     volume,
-    isPlaying,
     sentences,
     currentSentenceIndex,
   } = useSelector((state: RootState) => state.browserPlayer);
@@ -86,12 +84,14 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal })
   }, [showMobileVolumeSlider]);
 
   const speak = useCallback((sentenceIndex: number) => {
-    if (sentenceIndex > sentences.length && currentPage < totalPages) {
-      handleNext()
-      dispatch(setCurrentSentenceIndex(0));
+    handleStop();
+    
+    if (sentenceIndex >= sentences.length && currentPage < totalPages) {
+      handleNext();
       return;
     }
-
+    
+    dispatch(setCurrentSentenceIndex(sentenceIndex));
     const utterance = new SpeechSynthesisUtterance(sentences[sentenceIndex]);
     if (voice) utterance.voice = voice;
     utterance.volume = volume;
@@ -102,19 +102,16 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal })
 
     window.speechSynthesis.speak(utterance);
     handlePlay();
-    dispatch(setCurrentSentenceIndex(sentenceIndex));
     //eslint-disable-next-line
   }, [sentences, voice, volume, dispatch, currentPage, totalPages]);
 
   useEffect(() => {
     // This effect triggers the start of sentence-based playback once sentences are set
-    if (isLoaded) {
-      handleStop();
+    if (isLoaded && sentences.length > 0) {
       speak(currentSentenceIndex);
     }
 
-    //eslint-disable-next-line 
-  }, [currentSentenceIndex, speak, isLoaded]);
+  }, [currentSentenceIndex, sentences, speak, isLoaded]);
 
   const handleStop = () => {
     dispatch(stop());
@@ -130,14 +127,12 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal })
 
   const handlePrevious = () => {
     if (isLoaded) {
-      handleStop();
       dispatch(goToPreviousPage());
     }
   };
 
   const handleNext = () => {
     if (isLoaded) {
-      handleStop();
       dispatch(goToNextPage());
     }
   };
@@ -153,22 +148,6 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal })
 
   const isPrevDisabled = isLoaded ? currentPage === 1 : true;
   const isNextDisabled = isLoaded ? currentPage === totalPages : true;
-
-  useEffect(() => {
-    if (audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.play().catch(e => console.error("Error playing audio:", e));
-      } else {
-        audioRef.current.pause();
-      }
-    }
-  }, [isPlaying]);
-
-  useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.volume = volume;
-    }
-  }, [volume]);
 
   useEffect(() => {
     const handleVoicesChanged = () => {
