@@ -40,6 +40,7 @@ export const DocumentCreateForm: React.FC = () => {
   useEffect(() => {
     const extractTextFromPdf = async () => {
       if (!fileContent) {
+        setPagesText(['']);
         setIsLoading(false);
         return;
       }
@@ -132,15 +133,6 @@ export const DocumentCreateForm: React.FC = () => {
 
   if (isLoading) {
     return <Spinner isLoading />;
-  }
-
-  if (!fileContent) {
-    return (
-      <div className={s.container}>
-        <h2>No document loaded</h2>
-        <p>Please go back and upload a PDF file to begin.</p>
-      </div>
-    );
   }
 
   return (

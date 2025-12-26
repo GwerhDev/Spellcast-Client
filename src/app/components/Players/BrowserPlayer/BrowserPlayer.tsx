@@ -8,6 +8,7 @@ import {
   stop,
   play as playBrowserAudio,
   setVoice,
+  pause,
 } from '../../../../store/browserPlayerSlice';
 
 import {
@@ -84,13 +85,13 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal })
   }, [showMobileVolumeSlider]);
 
   const speak = useCallback((sentenceIndex: number) => {
-    handleStop();
-    
-    if (sentenceIndex >= sentences.length && currentPage < totalPages) {
-      handleNext();
-      return;
+    handlePause();
+
+    if (sentenceIndex >= sentences.length) {
+      if (currentPage < totalPages) return handleNext();
+      return handleStop();
     }
-    
+
     dispatch(setCurrentSentenceIndex(sentenceIndex));
     const utterance = new SpeechSynthesisUtterance(sentences[sentenceIndex]);
     if (voice) utterance.voice = voice;
@@ -114,9 +115,16 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal })
   }, [currentSentenceIndex, sentences, speak, isLoaded]);
 
   const handleStop = () => {
+    dispatch(setCurrentSentenceIndex(0));
     dispatch(stop());
     window.speechSynthesis.cancel();
   };
+
+  const handlePause = () => {
+    dispatch(pause());
+    window.speechSynthesis.cancel();
+  };
+
 
   const handlePlay = () => {
     if (isLoaded) {
