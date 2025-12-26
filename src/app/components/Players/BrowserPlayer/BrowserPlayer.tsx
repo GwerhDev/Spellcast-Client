@@ -87,12 +87,9 @@ export const BrowserPlayer = () => {
   const reduxSelectedVoice = useSelector((state: RootState) => state.voice.selectedVoice);
 
   const speak = useCallback((sentenceIndex: number) => {
-    dispatch(setCurrentSentenceIndex(sentenceIndex));
-
-    if (sentenceIndex >= sentences.length) {
-      if (currentPage < totalPages) {
-        dispatch(goToNextPage());
-      }
+    if (sentenceIndex > sentences.length && currentPage < totalPages) {
+      dispatch(goToNextPage());
+      dispatch(setCurrentSentenceIndex(0));
       return;
     }
 
@@ -104,20 +101,21 @@ export const BrowserPlayer = () => {
       speak(sentenceIndex + 1);
     };
 
-    if (sentences.length >= 1 && sentenceIndex >= 0) {
-      window.speechSynthesis.speak(utterance);
-      handlePlay();
-    };
+    window.speechSynthesis.speak(utterance);
+    handlePlay();
+    dispatch(setCurrentSentenceIndex(sentenceIndex));
     //eslint-disable-next-line
   }, [sentences, voice, volume, dispatch, currentPage, totalPages]);
 
   useEffect(() => {
     // This effect triggers the start of sentence-based playback once sentences are set
-    handleStop();
-    speak(currentSentenceIndex);
+    if (isLoaded) {
+      handleStop();
+      speak(currentSentenceIndex);
+    }
 
     //eslint-disable-next-line 
-  }, [currentSentenceIndex, speak]);
+  }, [currentSentenceIndex, speak, isLoaded]);
 
   useEffect(() => {
     const handleVoicesChanged = () => {
@@ -146,8 +144,9 @@ export const BrowserPlayer = () => {
     handleVoicesChanged();
     return () => {
       window.speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
-      window.speechSynthesis.cancel();
+      handleStop();
     };
+    //eslint-disable-next-line
   }, [dispatch, voice, reduxSelectedVoice]);
 
   const handleStop = () => {

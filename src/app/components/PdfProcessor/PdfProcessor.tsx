@@ -3,18 +3,17 @@ import { useDispatch, useSelector } from 'react-redux';
 import * as pdfjsLib from 'pdfjs-dist';
 import type { PDFDocumentProxy, TextItem, TextMarkedContent } from 'pdfjs-dist/types/src/display/api';
 import { RootState } from '../../../store';
-import { setPageText, goToNextPage } from '../../../store/pdfReaderSlice';
+import { setPageText, goToNextPage, setPdfLoaded } from '../../../store/pdfReaderSlice';
 
 // Set workerSrc for pdfjsLib
 import workerSrc from 'pdfjs-dist/build/pdf.worker?url';
 import { getDocumentById, saveDocumentProgress } from '../../../db';
-import { setSentences } from 'store/browserPlayerSlice';
+import { setCurrentSentenceIndex, setSentences } from 'store/browserPlayerSlice';
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
 export const PdfProcessor = () => {
   const dispatch = useDispatch();
   const { selectedVoice } = useSelector((state: RootState) => state.voice);
-  const { isPlaying } = useSelector((state: RootState) => state.browserPlayer);
   const { currentPage, totalPages, pages, documentId, currentPageText } = useSelector((state: RootState) => state.pdfReader);
   const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -66,6 +65,7 @@ export const PdfProcessor = () => {
             text = content.items.map((item: TextItem | TextMarkedContent) => ('str' in item ? item.str : '')).join(' ');
             text = text.replace(/\s+/g, ' ').trim();
             dispatch(setPageText({ text }));
+            dispatch(setCurrentSentenceIndex(0));
           }
 
           if (text && text.trim() !== '') {
@@ -81,11 +81,12 @@ export const PdfProcessor = () => {
           console.error(`Failed to process page ${currentPage}:`, error);
         } finally {
           setIsProcessing(false);
+          dispatch(setPdfLoaded(true)); // Set isLoaded to true after all pages are processed
         }
       };
       processPage();
     }
-  }, [pdfDoc, currentPage, dispatch, selectedVoice, isPlaying, isProcessing, totalPages, pages]);
+  }, [pdfDoc, currentPage, dispatch, selectedVoice, isProcessing, totalPages, pages]);
 
   useEffect(() => {
     if (documentId && currentPage) {

@@ -44,7 +44,6 @@ const browserPlayerSlice = createSlice({
     },
     stop: (state) => {
       state.isPlaying = false;
-      state.currentSentenceIndex = -1;
     },
     setVoice: (state, action: PayloadAction<SpeechSynthesisVoice | null>) => {
       state.voice = action.payload;

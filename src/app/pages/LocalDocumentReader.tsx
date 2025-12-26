@@ -61,7 +61,6 @@ export const LocalDocumentReader: React.FC = () => {
           dispatch(goToPage(progress.currentPage));
         }
         dispatch(setHasInitialPageSet(true)); // Set flag after initial page is determined
-        dispatch(setPdfLoaded(true)); // Set isLoaded to true after all pages are processed
         setIsLoading(false);
       } catch (err) {
         console.error('Failed to load local document:', err);
