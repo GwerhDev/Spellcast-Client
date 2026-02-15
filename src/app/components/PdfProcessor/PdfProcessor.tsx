@@ -13,8 +13,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
 export const PdfProcessor = () => {
   const dispatch = useDispatch();
-  const { selectedVoice } = useSelector((state: RootState) => state.voice);
-  const { currentPage, totalPages, pages, documentId, currentPageText, isLoaded } = useSelector((state: RootState) => state.pdfReader);
+  const { currentPage, pages, documentId, currentPageText, isLoaded } = useSelector((state: RootState) => state.pdfReader);
   const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -82,7 +81,8 @@ export const PdfProcessor = () => {
       };
       processPage();
     }
-  }, [pdfDoc, currentPage, dispatch, selectedVoice, isProcessing, totalPages, pages]);
+    //eslint-disable-next-line
+  }, [pdfDoc, currentPage, dispatch]);
 
   useEffect(() => {
     if (isLoaded && documentId && currentPage) {
