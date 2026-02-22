@@ -17,25 +17,15 @@ export const PdfProcessor = () => {
   const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const blobToBase64 = (blob: Blob): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-  };
-
   // Effect to create pdfDoc from fileContent
   useEffect(() => {
     const loadDocument = async () => {
       const fileContent = await getDocumentById(documentId || "");
 
       if (fileContent) {
-        const pdfAsBase64 = await blobToBase64(fileContent.pdf);
+        const arrayBuffer = await fileContent.pdf.arrayBuffer();
         setPdfDoc(null);
-        const pdfData = atob(pdfAsBase64.substring(pdfAsBase64.indexOf(',') + 1));
-        pdfjsLib.getDocument({ data: pdfData }).promise.then(doc => {
+        pdfjsLib.getDocument({ data: arrayBuffer }).promise.then(doc => {
           setPdfDoc(doc);
         });
       } else {
