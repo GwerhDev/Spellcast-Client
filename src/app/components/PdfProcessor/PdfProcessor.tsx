@@ -9,10 +9,12 @@ import { setPageText, setPdfLoaded } from '../../../store/pdfReaderSlice';
 import workerSrc from 'pdfjs-dist/build/pdf.worker?url';
 import { getDocumentById, saveDocumentProgress } from '../../../db';
 import { setCurrentSentenceIndex, setSentences } from 'store/browserPlayerSlice';
+import { useAppSelector } from 'store/hooks';
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
 export const PdfProcessor = () => {
   const dispatch = useDispatch();
+  const { userData } = useAppSelector((state) => state.session);
   const { currentPage, pages, documentId, currentPageText, isLoaded } = useSelector((state: RootState) => state.pdfReader);
   const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -20,7 +22,7 @@ export const PdfProcessor = () => {
   // Effect to create pdfDoc from fileContent
   useEffect(() => {
     const loadDocument = async () => {
-      const fileContent = await getDocumentById(documentId || "");
+      const fileContent = await getDocumentById(documentId || "", userData.id);
 
       if (fileContent) {
         const arrayBuffer = await fileContent.pdf.arrayBuffer();
@@ -34,7 +36,7 @@ export const PdfProcessor = () => {
     };
 
     loadDocument();
-  }, [dispatch, documentId]);
+  }, [dispatch, documentId, userData.id]);
 
   useEffect(() => {
     const sentences = currentPageText?.split(/(?<=[.!?])/) || [];

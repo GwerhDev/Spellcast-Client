@@ -1,6 +1,7 @@
 import s from './index.module.css';
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useAppSelector } from '../../../store/hooks';
 import { RootState } from 'store';
 import * as pdfjsLib from 'pdfjs-dist';
 import type { TextItem, TextMarkedContent } from 'pdfjs-dist/types/src/display/api';
@@ -22,6 +23,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
 export const DocumentCreateForm: React.FC = () => {
   const { fileContent, title } = useSelector((state: RootState) => state.document);
+  const { userData, logged } = useAppSelector((state: RootState) => state.session);
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [documentTitle, setDocumentTitle] = useState(title || '');
@@ -99,6 +101,11 @@ export const DocumentCreateForm: React.FC = () => {
       return;
     }
 
+    if (!logged) {
+      alert('You must be logged in to save a document.');
+      return;
+    }
+
     setIsSaving(true);
     try {
       const pdf = new jsPDF();
@@ -118,6 +125,7 @@ export const DocumentCreateForm: React.FC = () => {
       const newId = await saveDocumentToDB({
         title: documentTitle,
         pdf: pdfBlob,
+        userId: userData.id,
       });
 
       dispatch(resetPdfReader());

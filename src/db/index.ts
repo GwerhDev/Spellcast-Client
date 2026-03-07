@@ -1,5 +1,5 @@
 const DB_NAME = 'SpellcastDB';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 const DOCUMENTS_STORE_NAME = 'documents';
 const DOCUMENT_PROGRESS_STORE_NAME = 'documentProgress';
 
@@ -8,6 +8,7 @@ interface Document {
   title: string;
   pdf: Blob;
   createdAt: Date;
+  userId: string | undefined;
 }
 
 interface DocumentProgress {
@@ -25,6 +26,7 @@ const openDB = (): Promise<IDBDatabase> => {
         const store = db.createObjectStore(DOCUMENTS_STORE_NAME, { keyPath: 'id' });
         store.createIndex('title', 'title', { unique: false });
         store.createIndex('createdAt', 'createdAt', { unique: false });
+        store.createIndex('userId', 'userId', { unique: false });
       }
       if (!db.objectStoreNames.contains(DOCUMENT_PROGRESS_STORE_NAME)) {
         db.createObjectStore(DOCUMENT_PROGRESS_STORE_NAME, { keyPath: 'documentId' });
@@ -51,7 +53,7 @@ export const saveDocumentToDB = async (document: Omit<Document, 'id' | 'createdA
     id: crypto.randomUUID(),
     createdAt: new Date(),
   };
-
+  console.log(newDocument)
   return new Promise((resolve, reject) => {
     const request = store.add(newDocument);
     request.onsuccess = () => resolve(newDocument.id);
@@ -59,13 +61,13 @@ export const saveDocumentToDB = async (document: Omit<Document, 'id' | 'createdA
   });
 };
 
-export const getDocumentsFromDB = async (): Promise<Document[]> => {
+export const getDocumentsFromDB = async (userId: string | undefined): Promise<Document[]> => {
   const db = await openDB();
   const transaction = db.transaction(DOCUMENTS_STORE_NAME, 'readonly');
   const store = transaction.objectStore(DOCUMENTS_STORE_NAME);
-
+  const index = store.index('userId');
   return new Promise((resolve, reject) => {
-    const request = store.getAll();
+    const request = index.getAll(userId);
     request.onsuccess = (event) => {
       resolve((event.target as IDBRequest).result as Document[]);
     };
@@ -75,7 +77,7 @@ export const getDocumentsFromDB = async (): Promise<Document[]> => {
   });
 };
 
-export const getDocumentById = async (id: string): Promise<Document | undefined> => {
+export const getDocumentById = async (id: string, userId: string | undefined): Promise<Document | undefined> => {
   const db = await openDB();
   const transaction = db.transaction(DOCUMENTS_STORE_NAME, 'readonly');
   const store = transaction.objectStore(DOCUMENTS_STORE_NAME);
@@ -83,7 +85,12 @@ export const getDocumentById = async (id: string): Promise<Document | undefined>
   return new Promise((resolve, reject) => {
     const request = store.get(id);
     request.onsuccess = (event) => {
-      resolve((event.target as IDBRequest).result as Document | undefined);
+      const result = (event.target as IDBRequest).result as Document | undefined;
+      if (result && result.userId === userId) {
+        resolve(result);
+      } else {
+        resolve(undefined);
+      }
     };
     request.onerror = (event) => {
       reject((event.target as IDBRequest).error);
@@ -91,10 +98,15 @@ export const getDocumentById = async (id: string): Promise<Document | undefined>
   });
 };
 
-export const deleteDocumentFromDB = async (id: string): Promise<void> => {
+export const deleteDocumentFromDB = async (id: string, userId: string | undefined): Promise<void> => {
   const db = await openDB();
   const transaction = db.transaction(DOCUMENTS_STORE_NAME, 'readwrite');
   const store = transaction.objectStore(DOCUMENTS_STORE_NAME);
+  const doc = await getDocumentById(id, userId);
+
+  if (!doc) {
+    return Promise.reject('Document not found or you do not have permission to delete it.');
+  }
 
   return new Promise((resolve, reject) => {
     const request = store.delete(id);

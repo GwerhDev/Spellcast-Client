@@ -20,12 +20,19 @@ export const LocalDocumentReader: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const { userData, logged } = useAppSelector((state) => state.session);
   const { documentId } = useAppSelector((state) => state.pdfReader);
 
   useEffect(() => {
     const loadDocument = async () => {
       if (!id) {
         setError('No document ID provided.');
+        setIsLoading(false);
+        return;
+      }
+
+      if (!logged) {
+        setError('You must be logged in to view this document.');
         setIsLoading(false);
         return;
       }
@@ -41,7 +48,7 @@ export const LocalDocumentReader: React.FC = () => {
         dispatch(resetAudioPlayer()); // Stop audio playback
         dispatch(resetBrowserPlayer());
         dispatch(setPdfLoaded(false)); // Set isLoaded to false at the start of loading
-        const doc = await getDocumentById(id);
+        const doc = await getDocumentById(id, userData.id);
         if (!doc) {
           setError('Document not found.');
           setIsLoading(false);
@@ -65,7 +72,7 @@ export const LocalDocumentReader: React.FC = () => {
     };
 
     loadDocument();
-  }, [id, dispatch, documentId]);
+  }, [id, dispatch, documentId, logged, userData.id]);
 
   if (isLoading) {
     return <Spinner isLoading message="Loading local document..." />;

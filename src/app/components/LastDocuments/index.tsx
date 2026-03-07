@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFilePdf, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { DeleteConfirmModal } from '../Modals/DeleteConfirmModal';
+import { useAppSelector } from 'store/hooks';
 
 interface LocalDocument {
   id: string;
@@ -13,16 +14,17 @@ interface LocalDocument {
 }
 
 export const LastDocuments: React.FC = () => {
+  const { userData } = useAppSelector((state) => state.session);
   const [documents, setDocuments] = useState<LocalDocument[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [selectedDoc, setSelectedDoc] = useState<{id: string, title: string} | null>(null);
+  const [selectedDoc, setSelectedDoc] = useState<{ id: string, title: string } | null>(null);
   const navigate = useNavigate();
 
   const fetchDocuments = async () => {
     try {
       setIsLoading(true);
-      const docs = await getDocumentsFromDB();
+      const docs = await getDocumentsFromDB(userData.id);
       const sortedDocs = docs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       setDocuments(sortedDocs.slice(0, 3));
     } catch (error) {
@@ -34,7 +36,8 @@ export const LastDocuments: React.FC = () => {
 
   useEffect(() => {
     fetchDocuments();
-  }, []);
+    //eslint-disable-next-line
+  }, [userData.id]);
 
   const openDeleteModal = (id: string, title: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -50,7 +53,7 @@ export const LastDocuments: React.FC = () => {
   const handleDeleteConfirm = async () => {
     if (selectedDoc) {
       try {
-        await deleteDocumentFromDB(selectedDoc.id);
+        await deleteDocumentFromDB(selectedDoc.id, userData.id);
         fetchDocuments();
       } catch (error) {
         console.error('Failed to delete document:', error);
