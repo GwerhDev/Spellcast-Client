@@ -377,3 +377,27 @@ a:hover {
     opacity: .5;
   }
 }
+
+.tiptap.ProseMirror.simple-editor {
+  width: 100%;
+  height: 100%;
+  padding: 1rem;
+  font-size: 1rem;
+  overflow-y: auto;
+  border-radius: 10px;
+  color: var(--color-light-100);
+  background-color: transparent;
+  border: 1px solid var(--color-dark-300);
+  resize: none;
+  box-sizing: border-box;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+
+.tiptap.ProseMirror.simple-editor:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.tiptap.ProseMirror.simple-editor:read-only {
+  border: 1px solid transparent;
+}

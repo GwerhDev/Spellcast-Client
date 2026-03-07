@@ -1,5 +1,4 @@
 import { forwardRef, useCallback } from "react"
-
 // --- Tiptap UI ---
 import type { UseBlockquoteConfig } from "../../../components/tiptap-ui/blockquote-button"
 import {

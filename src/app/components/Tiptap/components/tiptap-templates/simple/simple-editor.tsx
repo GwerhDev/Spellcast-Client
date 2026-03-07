@@ -1,6 +1,4 @@
-"use client"
-
-import { useEffect, useRef, useState } from "react"
+import { useRef } from "react"
 import { EditorContent, EditorContext, useEditor } from "@tiptap/react"
 
 // --- Tiptap Core Extensions ---
@@ -15,12 +13,9 @@ import { Superscript } from "@tiptap/extension-superscript"
 import { Selection } from "@tiptap/extensions"
 
 // --- UI Primitives ---
-import { Button } from "../../tiptap-ui-primitive/button"
-import { Spacer } from "../../tiptap-ui-primitive/spacer"
 import {
   Toolbar,
   ToolbarGroup,
-  ToolbarSeparator,
 } from "../../tiptap-ui-primitive/toolbar"
 
 // --- Tiptap Node ---
@@ -35,27 +30,13 @@ import { BlockquoteButton } from "../../tiptap-ui/blockquote-button"
 import { CodeBlockButton } from "../../tiptap-ui/code-block-button"
 import {
   ColorHighlightPopover,
-  ColorHighlightPopoverContent,
-  ColorHighlightPopoverButton,
 } from "../../tiptap-ui/color-highlight-popover"
 import {
   LinkPopover,
-  LinkContent,
-  LinkButton,
 } from "../../tiptap-ui/link-popover"
 import { MarkButton } from "../../tiptap-ui/mark-button"
 import { TextAlignButton } from "../../tiptap-ui/text-align-button"
 import { UndoRedoButton } from "../../tiptap-ui/undo-redo-button"
-
-// --- Icons ---
-import { ArrowLeftIcon } from "../../tiptap-icons/arrow-left-icon"
-import { HighlighterIcon } from "../../tiptap-icons/highlighter-icon"
-import { LinkIcon } from "../../tiptap-icons/link-icon"
-
-// --- Hooks ---
-import { useIsBreakpoint } from "../../../hooks/use-is-breakpoint"
-import { useWindowSize } from "../../../hooks/use-window-size"
-import { useCursorVisibility } from "../../../hooks/use-cursor-visibility"
 
 // --- Lib ---
 import { handleImageUpload, MAX_FILE_SIZE } from "../../../lib/tiptap-utils"
@@ -69,115 +50,39 @@ import "../../tiptap-node/image-node/image-node.module.css"
 import "../../tiptap-node/heading-node/heading-node.module.css"
 import "../../tiptap-node/paragraph-node/paragraph-node.module.css"
 
-
-const MainToolbarContent = ({
-  onHighlighterClick,
-  onLinkClick,
-  isMobile,
-}: {
-  onHighlighterClick: () => void
-  onLinkClick: () => void
-  isMobile: boolean
-}) => {
+const MainToolbarContent = () => {
   return (
     <>
-      <Spacer />
-
       <ToolbarGroup>
         <UndoRedoButton action="undo" />
         <UndoRedoButton action="redo" />
-      </ToolbarGroup>
-
-      <ToolbarSeparator />
-
-      <ToolbarGroup>
-        <HeadingDropdownMenu levels={[1, 2, 3, 4]} portal={isMobile} />
+        <HeadingDropdownMenu levels={[1, 2, 3, 4]} />
         <ListDropdownMenu
           types={["bulletList", "orderedList", "taskList"]}
-          portal={isMobile}
         />
         <BlockquoteButton />
         <CodeBlockButton />
-      </ToolbarGroup>
-
-      <ToolbarSeparator />
-
-      <ToolbarGroup>
         <MarkButton type="bold" />
         <MarkButton type="italic" />
         <MarkButton type="strike" />
         <MarkButton type="code" />
         <MarkButton type="underline" />
-        {!isMobile ? (
-          <ColorHighlightPopover />
-        ) : (
-          <ColorHighlightPopoverButton onClick={onHighlighterClick} />
-        )}
-        {!isMobile ? <LinkPopover /> : <LinkButton onClick={onLinkClick} />}
-      </ToolbarGroup>
-
-      <ToolbarSeparator />
-
-      <ToolbarGroup>
+        <ColorHighlightPopover />
+        <LinkPopover />
         <MarkButton type="superscript" />
         <MarkButton type="subscript" />
-      </ToolbarGroup>
-
-      <ToolbarSeparator />
-
-      <ToolbarGroup>
         <TextAlignButton align="left" />
         <TextAlignButton align="center" />
         <TextAlignButton align="right" />
         <TextAlignButton align="justify" />
-      </ToolbarGroup>
-
-      <ToolbarSeparator />
-
-      <ToolbarGroup>
         <ImageUploadButton text="Add" />
       </ToolbarGroup>
 
-      <Spacer />
     </>
   )
 }
 
-const MobileToolbarContent = ({
-  type,
-  onBack,
-}: {
-  type: "highlighter" | "link"
-  onBack: () => void
-}) => (
-  <>
-    <ToolbarGroup>
-      <Button variant="ghost" onClick={onBack}>
-        <ArrowLeftIcon className="tiptap-button-icon" />
-        {type === "highlighter" ? (
-          <HighlighterIcon className="tiptap-button-icon" />
-        ) : (
-          <LinkIcon className="tiptap-button-icon" />
-        )}
-      </Button>
-    </ToolbarGroup>
-
-    <ToolbarSeparator />
-
-    {type === "highlighter" ? (
-      <ColorHighlightPopoverContent />
-    ) : (
-      <LinkContent />
-    )}
-  </>
-)
-
 export function SimpleEditor({ content, onContentChange }: { content: string, onContentChange: (content: string) => void }) {
-  const isMobile = useIsBreakpoint()
-  const { height } = useWindowSize()
-  const [mobileView, setMobileView] = useState<"main" | "highlighter" | "link">(
-    "main"
-  )
   const toolbarRef = useRef<HTMLDivElement>(null)
 
   const editor = useEditor({
@@ -223,42 +128,11 @@ export function SimpleEditor({ content, onContentChange }: { content: string, on
     }
   })
 
-  const rect = useCursorVisibility({
-    editor,
-    overlayHeight: toolbarRef.current?.getBoundingClientRect().height ?? 0,
-  })
-
-  useEffect(() => {
-    if (!isMobile && mobileView !== "main") {
-      setMobileView("main")
-    }
-  }, [isMobile, mobileView])
-
   return (
     <div className={s["simple-editor-wrapper"]}>
       <EditorContext.Provider value={{ editor }}>
-        <Toolbar
-          ref={toolbarRef}
-          style={{
-            ...(isMobile
-              ? {
-                  bottom: `calc(100% - ${height - rect.y}px)`,
-                }
-              : {}),
-          }}
-        >
-          {mobileView === "main" ? (
-            <MainToolbarContent
-              onHighlighterClick={() => setMobileView("highlighter")}
-              onLinkClick={() => setMobileView("link")}
-              isMobile={isMobile}
-            />
-          ) : (
-            <MobileToolbarContent
-              type={mobileView === "highlighter" ? "highlighter" : "link"}
-              onBack={() => setMobileView("main")}
-            />
-          )}
+        <Toolbar ref={toolbarRef} >
+          <MainToolbarContent />
         </Toolbar>
 
         <EditorContent
