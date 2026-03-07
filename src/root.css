@@ -58,13 +58,6 @@
   --size-11: 44px;
   --size-12: 48px;
 
-  background: var(--background-gradient-color);
-  background-position: center;
-  background-repeat: no-repeat;
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  height: 100vh;
-  margin: 0;
-  padding: 0;
 }
 
 html.light {
@@ -102,7 +95,12 @@ html.light {
 }
 
 #root {
+  background: var(--background-gradient-color);
+  display: flex;
+  background-position: center;
+  background-repeat: no-repeat;
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   margin: 0;
   padding: 0;
-  height: 100%;
+  flex-grow: 1;
 }

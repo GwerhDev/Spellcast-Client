@@ -1,13 +1,16 @@
-
 .simple-editor-wrapper {
   width: 100%;
-  height: 100%;
+  white-space: pre-wrap;
+  color: var(--color-light-100);
+  border-radius: 10px;
+  border: 1px solid transparent;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  overflow: hidden;
 }
 
 .simple-editor-content {
-  width: 100%;
-  height: 100%;
   display: flex;
   overflow-y: auto;
 }
-

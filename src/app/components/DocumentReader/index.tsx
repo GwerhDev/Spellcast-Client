@@ -11,6 +11,7 @@ import { Spinner } from '../Spinner';
 import { IconButton } from '../Buttons/IconButton';
 import { PageSelector } from './PageSelector/PageSelector';
 import { getDocumentProgress } from '../../../db';
+import { SimpleEditor } from '../Tiptap/components/tiptap-templates/simple/simple-editor';
 
 export const DocumentReader = () => {
   const dispatch = useDispatch();
@@ -28,12 +29,12 @@ export const DocumentReader = () => {
   const textContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-      const handleProgress = async () => {
-        const progress = await getDocumentProgress(documentId || "");
-        if (progress?.currentPage) return dispatch(goToPage(progress.currentPage));
-      }
+    const handleProgress = async () => {
+      const progress = await getDocumentProgress(documentId || "");
+      if (progress?.currentPage) return dispatch(goToPage(progress.currentPage));
+    }
 
-      handleProgress();
+    handleProgress();
   }, [pages, dispatch, documentId]);
 
   useEffect(() => {
@@ -57,8 +58,8 @@ export const DocumentReader = () => {
     setIsEditing(false);
   };
 
-  const handleTextChange = (e: React.FormEvent<HTMLDivElement>) => {
-    setEditedText(e.currentTarget.innerText);
+  const handleTextChange = (e: string) => {
+    setEditedText(e);
   };
 
   const handleSentenceClick = (clickedIndex: number) => {
@@ -110,19 +111,24 @@ export const DocumentReader = () => {
           )}
         </div>
       </div>
-      <div
-        ref={textContainerRef}
-        className={`${s.textContainer} ${isEditing ? s.editing : ''}`}
-        contentEditable={isEditing}
-        onInput={handleTextChange}
-        suppressContentEditableWarning={true}
-      >
-        {isLoaded ? (
-          renderContent()
-        ) : (
-          <Spinner isLoading message="Loading..." />
-        )}
-      </div>
+      {
+        isEditing
+          ?
+            <SimpleEditor content={currentPageText || ""} onContentChange={handleTextChange} />
+          :
+          <div
+            ref={textContainerRef}
+            className={s.textContainer}
+            contentEditable={isEditing}
+            suppressContentEditableWarning={true}
+          >
+            {isLoaded ? (
+              renderContent()
+            ) : (
+              <Spinner isLoading message="Loading..." />
+            )}
+          </div>
+      }
     </div>
   )
 }

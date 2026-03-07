@@ -1,7 +1,8 @@
 .pdfReaderContainer {
   gap: 1rem;
   width: 100%;
-  height: 100%;
+  flex-grow: 1;
+  overflow: auto;
   display: flex;
   flex-direction: column;
   border-radius: 10px;
@@ -11,12 +12,24 @@
 
 .textContainer {
   width: 100%;
-  height: 100%;
+  flex-grow: 1;
   white-space: pre-wrap;
   color: var(--color-light-100);
   background-color: var(--component-background);
   border-radius: 10px;
   padding: 1rem;
+  overflow-y: auto;
+  border: 1px solid transparent;
+}
+
+.editTextContainer {
+  width: 100%;
+  height: 100%;
+  flex-grow: 1;
+  white-space: pre-wrap;
+  color: var(--color-light-100);
+  background-color: var(--component-background);
+  border-radius: 10px;
   overflow-y: auto;
   border: 1px solid transparent;
 }
