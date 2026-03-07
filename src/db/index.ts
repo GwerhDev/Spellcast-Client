@@ -53,7 +53,7 @@ export const saveDocumentToDB = async (document: Omit<Document, 'id' | 'createdA
     id: crypto.randomUUID(),
     createdAt: new Date(),
   };
-  console.log(newDocument)
+
   return new Promise((resolve, reject) => {
     const request = store.add(newDocument);
     request.onsuccess = () => resolve(newDocument.id);
