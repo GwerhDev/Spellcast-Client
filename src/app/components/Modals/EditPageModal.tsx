@@ -3,6 +3,7 @@ import s from './EditPageModal.module.css';
 import { PrimaryButton } from '../Buttons/PrimaryButton';
 import { CustomModal } from './CustomModal';
 import { faSave } from '@fortawesome/free-solid-svg-icons';
+import { SimpleEditor } from '../Tiptap/components/tiptap-templates/simple/simple-editor';
 
 interface EditPageModalProps {
   show: boolean;
@@ -30,14 +31,14 @@ export const EditPageModal: React.FC<EditPageModalProps> = ({
     onClose();
   };
 
+  const handleContentChange = (newContent: string) => {
+    setText(newContent);
+  };
+
   return (
     <CustomModal show={show} onClose={onClose} title={`Editing Page ${pageNumber}`}>
       <div className={s.content}>
-        <textarea
-          className={s.textArea}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-        />
+        <SimpleEditor content={text} onContentChange={handleContentChange} />
         <div className={s.actions}>
           <PrimaryButton icon={faSave} onClick={handleSave}>Save</PrimaryButton>
         </div>
