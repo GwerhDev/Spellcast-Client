@@ -104,7 +104,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal })
     window.speechSynthesis.speak(utterance);
     handlePlay();
     //eslint-disable-next-line
-  }, [sentences, voice, volume, dispatch, currentPage, totalPages]);
+  }, [sentences, currentSentenceIndex, voice, volume, dispatch, currentPage, totalPages]);
 
   useEffect(() => {
     // This effect triggers the start of sentence-based playback once sentences are set
@@ -127,7 +127,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal })
 
 
   const handlePlay = () => {
-    if (isLoaded) {
+    if (isLoaded && currentSentenceIndex > -1) {
       dispatch(playBrowserAudio());
       window.speechSynthesis.resume();
     }

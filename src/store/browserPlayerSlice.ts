@@ -25,7 +25,7 @@ const browserPlayerSlice = createSlice({
     },
     setSentences: (state, action: PayloadAction<{ sentences: string[], startIndex?: number }>) => {
       state.sentences = action.payload.sentences;
-      state.currentSentenceIndex = action.payload.startIndex || 0;
+      state.currentSentenceIndex = action.payload.startIndex || -1;
     },
     setCurrentSentenceIndex: (state, action: PayloadAction<number>) => {
       state.currentSentenceIndex = action.payload;
