@@ -30,6 +30,7 @@ export const PlaybackControls: React.FC<PlaybackControlsProps> = ({
       dispatch(pause());
       return;
     };
+    
     window.speechSynthesis.resume();
     dispatch(play());
     return;

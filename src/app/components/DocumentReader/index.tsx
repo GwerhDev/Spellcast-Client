@@ -5,37 +5,33 @@ import { useDispatch, useSelector } from 'react-redux';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowLeft, faEdit, faFilePdf, faSave, faXmark } from '@fortawesome/free-solid-svg-icons';
 import { RootState } from '../../../store';
-import { goToPage, setPageText } from '../../../store/pdfReaderSlice';
-import { setCurrentSentenceIndex, resetBrowserPlayer } from '../../../store/browserPlayerSlice';
+import { goToPage, setPageText, setCurrentSentenceIndex } from '../../../store/pdfReaderSlice';
+import { resetBrowserPlayer } from '../../../store/browserPlayerSlice';
 import { Spinner } from '../Spinner';
 import { IconButton } from '../Buttons/IconButton';
 import { PageSelector } from './PageSelector/PageSelector';
-import { getDocumentProgress } from '../../../db';
 import { SimpleEditor } from '../Tiptap/components/tiptap-templates/simple/simple-editor';
 
 export const DocumentReader = () => {
   const dispatch = useDispatch();
   const {
+    currentPage,
     currentPageText,
     documentTitle,
-    documentId,
     isLoaded,
-    pages,
+    sentences,
+    currentSentenceIndex,
   } = useSelector((state: RootState) => state.pdfReader);
-  const { selectedVoice } = useSelector((state: RootState) => state.voice);
-  const { sentences, currentSentenceIndex } = useSelector((state: RootState) => state.browserPlayer);
+  const { selectedVoice, } = useSelector((state: RootState) => state.voice);
   const [editedText, setEditedText] = useState<string | null>('');
   const [isEditing, setIsEditing] = useState(false);
   const textContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const handleProgress = async () => {
-      const progress = await getDocumentProgress(documentId || "");
-      if (progress?.currentPage) return dispatch(goToPage(progress.currentPage));
+    if (isLoaded && currentPage) {
+      dispatch(goToPage(currentPage));
     }
-
-    handleProgress();
-  }, [pages, dispatch, documentId]);
+  }, [dispatch, currentPage, isLoaded]);
 
   useEffect(() => {
     setEditedText(currentPageText);
@@ -114,7 +110,7 @@ export const DocumentReader = () => {
       {
         isEditing
           ?
-            <SimpleEditor content={currentPageText || ""} onContentChange={handleTextChange} />
+          <SimpleEditor content={currentPageText || ""} onContentChange={handleTextChange} />
           :
           <div
             ref={textContainerRef}

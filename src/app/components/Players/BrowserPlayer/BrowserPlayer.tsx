@@ -4,9 +4,8 @@ import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../../../store';
 import {
   setVolume,
-  setCurrentSentenceIndex,
   stop,
-  play as playBrowserAudio,
+  play,
   setVoice,
   pause,
 } from '../../../../store/browserPlayerSlice';
@@ -15,6 +14,7 @@ import {
   goToNextPage,
   goToPreviousPage,
   setShowPageSelector,
+  setCurrentSentenceIndex,
 } from '../../../../store/pdfReaderSlice';
 import { PlaybackControls } from './PlaybackControls/PlaybackControls';
 import { VolumeControls } from './VolumeControls/VolumeControls';
@@ -32,8 +32,6 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal })
   const {
     voice,
     volume,
-    sentences,
-    currentSentenceIndex,
   } = useSelector((state: RootState) => state.browserPlayer);
   const {
     isLoaded,
@@ -41,6 +39,8 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal })
     currentPage,
     documentId,
     documentTitle,
+    sentences,
+    currentSentenceIndex,
   } = useSelector((state: RootState) => state.pdfReader);
   const { selectedVoice } = useSelector((state: RootState) => state.voice);
 
@@ -92,12 +92,12 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal })
       return handleStop();
     }
 
-    dispatch(setCurrentSentenceIndex(sentenceIndex));
     const utterance = new SpeechSynthesisUtterance(sentences[sentenceIndex]);
     if (voice) utterance.voice = voice;
     utterance.volume = volume;
     utterance.onend = () => {
       // Check if it was cancelled before proceeding
+      dispatch(setCurrentSentenceIndex(sentenceIndex + 1));
       speak(sentenceIndex + 1);
     };
 
@@ -108,27 +108,25 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal })
 
   useEffect(() => {
     // This effect triggers the start of sentence-based playback once sentences are set
-    if (isLoaded && sentences.length > 0) {
+    if (isLoaded && sentences.length > 0 && currentSentenceIndex > -1) {
       speak(currentSentenceIndex);
     }
 
   }, [currentSentenceIndex, sentences, speak, isLoaded]);
 
   const handleStop = () => {
-    dispatch(setCurrentSentenceIndex(0));
     dispatch(stop());
     window.speechSynthesis.cancel();
   };
 
   const handlePause = () => {
     dispatch(pause());
-    window.speechSynthesis.cancel();
+    window.speechSynthesis.pause();
   };
-
 
   const handlePlay = () => {
     if (isLoaded && currentSentenceIndex > -1) {
-      dispatch(playBrowserAudio());
+      dispatch(play());
       window.speechSynthesis.resume();
     }
   };

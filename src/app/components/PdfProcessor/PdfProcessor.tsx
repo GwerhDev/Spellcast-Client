@@ -3,19 +3,19 @@ import { useDispatch, useSelector } from 'react-redux';
 import * as pdfjsLib from 'pdfjs-dist';
 import type { PDFDocumentProxy, TextItem, TextMarkedContent } from 'pdfjs-dist/types/src/display/api';
 import { RootState } from '../../../store';
-import { setPageText, setPdfLoaded } from '../../../store/pdfReaderSlice';
+import { setPageText, setPdfLoaded, setSentences } from '../../../store/pdfReaderSlice';
 
 // Set workerSrc for pdfjsLib
 import workerSrc from 'pdfjs-dist/build/pdf.worker?url';
-import { getDocumentById, saveDocumentProgress } from '../../../db';
-import { setCurrentSentenceIndex, setSentences } from 'store/browserPlayerSlice';
+import { getDocumentById, updateDocumentProgress } from '../../../db';
 import { useAppSelector } from 'store/hooks';
+import { DocumentProgress } from '../../../interfaces/index';
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
 export const PdfProcessor = () => {
   const dispatch = useDispatch();
   const { userData } = useAppSelector((state) => state.session);
-  const { currentPage, pages, documentId, currentPageText, isLoaded } = useSelector((state: RootState) => state.pdfReader);
+  const { currentPage, pages, documentId, currentPageText, isLoaded,currentSentenceIndex } = useSelector((state: RootState) => state.pdfReader);
   const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -57,7 +57,6 @@ export const PdfProcessor = () => {
             text = content.items.map((item: TextItem | TextMarkedContent) => ('str' in item ? item.str : '')).join(' ');
             text = text.replace(/\s+/g, ' ').trim();
             dispatch(setPageText({ text }));
-            dispatch(setCurrentSentenceIndex(0));
           }
 
           if (text && text.trim() !== '') {
@@ -77,10 +76,24 @@ export const PdfProcessor = () => {
   }, [pdfDoc, currentPage, dispatch]);
 
   useEffect(() => {
-    if (isLoaded && documentId && currentPage) {
-      saveDocumentProgress({ documentId, currentPage });
+    if (isLoaded && currentSentenceIndex > -1) {
+      const progress: DocumentProgress = {
+        currentPage: currentPage,
+        pagesProgress: [],
+        lastReadSentenceIndex: currentSentenceIndex,
+      };
+      updateDocumentProgress(documentId || "", userData.id || "", progress);
     }
-  }, [currentPage, documentId, isLoaded]);
+
+    if (isLoaded && currentSentenceIndex === -1) {
+      const progress: DocumentProgress = {
+        currentPage: currentPage,
+        pagesProgress: [],
+        lastReadSentenceIndex: 0,
+      };
+      updateDocumentProgress(documentId || "", userData.id || "", progress);
+    }
+  }, [currentPage, documentId, isLoaded, currentSentenceIndex, userData.id]);
 
   return null; // Headless component
 };

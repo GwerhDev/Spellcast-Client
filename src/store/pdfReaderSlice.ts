@@ -1,4 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { DocumentProgress } from '../interfaces';
 
 interface PdfReaderState {
   documentId: string | null;
@@ -11,6 +12,9 @@ interface PdfReaderState {
   isContinuousPlayActive: boolean;
   showPageSelector: boolean;
   currentPageText: string | null;
+  progress?: DocumentProgress; // Add progress to state
+  currentSentenceIndex: number;
+  sentences: string[];
 }
 
 const initialState: PdfReaderState = {
@@ -20,19 +24,37 @@ const initialState: PdfReaderState = {
   currentPage: 1,
   isLoaded: false,
   pages: {},
+  sentences: [],
+  currentSentenceIndex: -1, // Use -1 to indicate nothing is highlighted initially
   currentPageText: null,
   hasInitialPageSet: false, // Initialize new flag
   isContinuousPlayActive: false,
   showPageSelector: false,
+  progress: {
+    currentPage: 0,
+    pagesProgress: [],
+    lastReadSentenceIndex: 0,
+  } // Initialize progress
 };
 
 const pdfReaderSlice = createSlice({
   name: 'pdfReader',
   initialState,
   reducers: {
-    setPdfFile(state, action: PayloadAction<{ id: string, title: string }>) {
+    setPdfFile(state, action: PayloadAction<{ id: string, title: string, progress?: DocumentProgress }>) {
       state.documentId = action.payload.id;
       state.documentTitle = action.payload.title;
+      state.progress = action.payload.progress;
+      if (action.payload.progress) {
+        state.currentPage = action.payload.progress.currentPage;
+        state.currentSentenceIndex = action.payload.progress.lastReadSentenceIndex;
+      }
+    },
+    setSentences: (state, action: PayloadAction<{ sentences: string[], startIndex?: number }>) => {
+      state.sentences = action.payload.sentences;
+    },
+    setCurrentSentenceIndex: (state, action: PayloadAction<number>) => {
+      state.currentSentenceIndex = action.payload;
     },
     setPdfLoaded(state, action: PayloadAction<boolean>) {
       state.isLoaded = action.payload;
@@ -46,15 +68,18 @@ const pdfReaderSlice = createSlice({
     goToNextPage(state) {
       if (state.currentPage < state.totalPages) {
         state.currentPage += 1;
+        state.currentSentenceIndex = 0;
       }
     },
     goToPreviousPage(state) {
       if (state.currentPage > 1) {
         state.currentPage -= 1;
+        state.currentSentenceIndex = 0;
       }
     },
     goToPage(state, action: PayloadAction<number>) {
       state.currentPage = action.payload;
+      state.currentSentenceIndex = state.progress?.currentPage === state.currentPage ? state.progress.lastReadSentenceIndex : 0;
     },
     resetPdfReader() {
       return initialState;
@@ -83,6 +108,8 @@ export const {
   setHasInitialPageSet,
   setContinuousPlay,
   setShowPageSelector,
+  setSentences,
+  setCurrentSentenceIndex,
 } = pdfReaderSlice.actions;
 
 export default pdfReaderSlice.reducer;

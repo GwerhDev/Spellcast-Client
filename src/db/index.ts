@@ -1,7 +1,7 @@
 const DB_NAME = 'SpellcastDB';
-const DB_VERSION = 3;
+const DB_VERSION = 5; // Incremented version to trigger onupgradeneeded
 const DOCUMENTS_STORE_NAME = 'documents';
-const DOCUMENT_PROGRESS_STORE_NAME = 'documentProgress';
+const DOCUMENT_PROGRESS_STORE_NAME = 'documentProgress'; // Keep for migration
 
 interface Document {
   id: string;
@@ -9,11 +9,13 @@ interface Document {
   pdf: Blob;
   createdAt: Date;
   userId: string | undefined;
+  progress?: DocumentProgress;
 }
 
 interface DocumentProgress {
-  documentId: string;
   currentPage: number;
+  pagesProgress: number[];
+  lastReadSentenceIndex: number;
 }
 
 const openDB = (): Promise<IDBDatabase> => {
@@ -28,8 +30,9 @@ const openDB = (): Promise<IDBDatabase> => {
         store.createIndex('createdAt', 'createdAt', { unique: false });
         store.createIndex('userId', 'userId', { unique: false });
       }
-      if (!db.objectStoreNames.contains(DOCUMENT_PROGRESS_STORE_NAME)) {
-        db.createObjectStore(DOCUMENT_PROGRESS_STORE_NAME, { keyPath: 'documentId' });
+      // Remove the old progress store if it exists
+      if (db.objectStoreNames.contains(DOCUMENT_PROGRESS_STORE_NAME)) {
+        db.deleteObjectStore(DOCUMENT_PROGRESS_STORE_NAME);
       }
     };
 
@@ -43,7 +46,7 @@ const openDB = (): Promise<IDBDatabase> => {
   });
 };
 
-export const saveDocumentToDB = async (document: Omit<Document, 'id' | 'createdAt'>): Promise<string> => {
+export const saveDocumentToDB = async (document: Omit<Document, 'id' | 'createdAt' | 'progress'>): Promise<string> => {
   const db = await openDB();
   const transaction = db.transaction(DOCUMENTS_STORE_NAME, 'readwrite');
   const store = transaction.objectStore(DOCUMENTS_STORE_NAME);
@@ -52,6 +55,11 @@ export const saveDocumentToDB = async (document: Omit<Document, 'id' | 'createdA
     ...document,
     id: crypto.randomUUID(),
     createdAt: new Date(),
+    progress: {
+      currentPage: 0,
+      pagesProgress: [],
+      lastReadSentenceIndex: 0,
+    }
   };
 
   return new Promise((resolve, reject) => {
@@ -64,15 +72,18 @@ export const saveDocumentToDB = async (document: Omit<Document, 'id' | 'createdA
 export const getDocumentsFromDB = async (userId: string | undefined): Promise<Document[]> => {
   const db = await openDB();
   const transaction = db.transaction(DOCUMENTS_STORE_NAME, 'readonly');
-  const store = transaction.objectStore(DOCUMENTS_STORE_NAME);
-  const index = store.index('userId');
+  const docStore = transaction.objectStore(DOCUMENTS_STORE_NAME);
+  const docIndex = docStore.index('userId');
+
   return new Promise((resolve, reject) => {
-    const request = index.getAll(userId);
-    request.onsuccess = (event) => {
-      resolve((event.target as IDBRequest).result as Document[]);
+    const getAllRequest = docIndex.getAll(userId);
+
+    getAllRequest.onerror = () => {
+      reject(getAllRequest.error);
     };
-    request.onerror = (event) => {
-      reject((event.target as IDBRequest).error);
+
+    getAllRequest.onsuccess = () => {
+      resolve(getAllRequest.result);
     };
   });
 };
@@ -80,29 +91,29 @@ export const getDocumentsFromDB = async (userId: string | undefined): Promise<Do
 export const getDocumentById = async (id: string, userId: string | undefined): Promise<Document | undefined> => {
   const db = await openDB();
   const transaction = db.transaction(DOCUMENTS_STORE_NAME, 'readonly');
-  const store = transaction.objectStore(DOCUMENTS_STORE_NAME);
+  const docStore = transaction.objectStore(DOCUMENTS_STORE_NAME);
 
   return new Promise((resolve, reject) => {
-    const request = store.get(id);
-    request.onsuccess = (event) => {
-      const result = (event.target as IDBRequest).result as Document | undefined;
-      if (result && result.userId === userId) {
-        resolve(result);
-      } else {
-        resolve(undefined);
-      }
+    const docRequest = docStore.get(id);
+
+    docRequest.onerror = () => {
+      reject(docRequest.error);
     };
-    request.onerror = (event) => {
-      reject((event.target as IDBRequest).error);
+
+    docRequest.onsuccess = () => {
+      const doc = docRequest.result as Document | undefined;
+      if (!doc || doc.userId !== userId) {
+        return resolve(undefined);
+      }
+      resolve(doc);
     };
   });
 };
 
 export const deleteDocumentFromDB = async (id: string, userId: string | undefined): Promise<void> => {
   const db = await openDB();
-  const transaction = db.transaction([DOCUMENTS_STORE_NAME, DOCUMENT_PROGRESS_STORE_NAME], 'readwrite');
+  const transaction = db.transaction(DOCUMENTS_STORE_NAME, 'readwrite');
   const docStore = transaction.objectStore(DOCUMENTS_STORE_NAME);
-  const progressStore = transaction.objectStore(DOCUMENT_PROGRESS_STORE_NAME);
 
   return new Promise((resolve, reject) => {
     transaction.oncomplete = () => resolve();
@@ -113,7 +124,6 @@ export const deleteDocumentFromDB = async (id: string, userId: string | undefine
       const doc = getRequest.result as Document | undefined;
       if (doc?.userId === userId) {
         docStore.delete(id);
-        progressStore.delete(id);
       } else {
         transaction.abort();
         reject('Document not found or you do not have permission to delete it.');
@@ -122,30 +132,27 @@ export const deleteDocumentFromDB = async (id: string, userId: string | undefine
   });
 };
 
-export const saveDocumentProgress = async (progress: DocumentProgress): Promise<void> => {
-  const db = await openDB();
-  const transaction = db.transaction(DOCUMENT_PROGRESS_STORE_NAME, 'readwrite');
-  const store = transaction.objectStore(DOCUMENT_PROGRESS_STORE_NAME);
+export const updateDocumentProgress = async (documentId: string, userId: string, progress: DocumentProgress): Promise<void> => {
+    const db = await openDB();
+    const transaction = db.transaction(DOCUMENTS_STORE_NAME, 'readwrite');
+    const store = transaction.objectStore(DOCUMENTS_STORE_NAME);
 
-  return new Promise((resolve, reject) => {
-    const request = store.put(progress);
-    request.onsuccess = () => resolve();
-    request.onerror = (event) => reject((event.target as IDBRequest).error);
-  });
-};
+    return new Promise((resolve, reject) => {
+        const getRequest = store.get(documentId);
 
-export const getDocumentProgress = async (documentId: string): Promise<DocumentProgress | undefined> => {
-  const db = await openDB();
-  const transaction = db.transaction(DOCUMENT_PROGRESS_STORE_NAME, 'readonly');
-  const store = transaction.objectStore(DOCUMENT_PROGRESS_STORE_NAME);
+        getRequest.onsuccess = () => {
+            const document = getRequest.result as Document | undefined;
+            if (document && document.userId === userId) {
+                const updatedDocument = { ...document, progress };
+                const putRequest = store.put(updatedDocument);
 
-  return new Promise((resolve, reject) => {
-    const request = store.get(documentId);
-    request.onsuccess = (event) => {
-      resolve((event.target as IDBRequest).result as DocumentProgress | undefined);
-    };
-    request.onerror = (event) => {
-      reject((event.target as IDBRequest).error);
-    };
-  });
+                putRequest.onsuccess = () => resolve();
+                putRequest.onerror = (event) => reject((event.target as IDBRequest).error);
+            } else {
+                reject(new Error('Document not found or user mismatch.'));
+            }
+        };
+
+        getRequest.onerror = (event) => reject((event.target as IDBRequest).error);
+    });
 };
