@@ -100,21 +100,24 @@ export const getDocumentById = async (id: string, userId: string | undefined): P
 
 export const deleteDocumentFromDB = async (id: string, userId: string | undefined): Promise<void> => {
   const db = await openDB();
-  const transaction = db.transaction(DOCUMENTS_STORE_NAME, 'readwrite');
-  const store = transaction.objectStore(DOCUMENTS_STORE_NAME);
-  const doc = await getDocumentById(id, userId);
-
-  if (!doc) {
-    return Promise.reject('Document not found or you do not have permission to delete it.');
-  }
+  const transaction = db.transaction([DOCUMENTS_STORE_NAME, DOCUMENT_PROGRESS_STORE_NAME], 'readwrite');
+  const docStore = transaction.objectStore(DOCUMENTS_STORE_NAME);
+  const progressStore = transaction.objectStore(DOCUMENT_PROGRESS_STORE_NAME);
 
   return new Promise((resolve, reject) => {
-    const request = store.delete(id);
-    request.onsuccess = () => {
-      resolve();
-    };
-    request.onerror = (event) => {
-      reject((event.target as IDBRequest).error);
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = () => reject(transaction.error);
+
+    const getRequest = docStore.get(id);
+    getRequest.onsuccess = () => {
+      const doc = getRequest.result as Document | undefined;
+      if (doc?.userId === userId) {
+        docStore.delete(id);
+        progressStore.delete(id);
+      } else {
+        transaction.abort();
+        reject('Document not found or you do not have permission to delete it.');
+      }
     };
   });
 };
