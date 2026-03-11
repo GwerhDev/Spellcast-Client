@@ -20,7 +20,7 @@ interface PdfReaderState {
 const initialState: PdfReaderState = {
   documentId: null,
   documentTitle: null,
-  totalPages: 0,
+  totalPages: 1,
   currentPage: 1,
   isLoaded: false,
   pages: {},
@@ -31,7 +31,7 @@ const initialState: PdfReaderState = {
   isContinuousPlayActive: false,
   showPageSelector: false,
   progress: {
-    currentPage: 0,
+    currentPage: 1,
     pagesProgress: [],
     lastReadSentenceIndex: 0,
   } // Initialize progress
@@ -46,8 +46,8 @@ const pdfReaderSlice = createSlice({
       state.documentTitle = action.payload.title;
       state.progress = action.payload.progress;
       if (action.payload.progress) {
-        state.currentPage = action.payload.progress.currentPage;
-        state.currentSentenceIndex = action.payload.progress.lastReadSentenceIndex;
+        state.currentPage = action.payload.progress.currentPage || 1;
+        state.currentSentenceIndex = action.payload.progress.lastReadSentenceIndex || 0;
       }
     },
     setSentences: (state, action: PayloadAction<{ sentences: string[], startIndex?: number }>) => {
