@@ -23,7 +23,7 @@ export const DocumentReader = () => {
     currentSentenceIndex,
   } = useSelector((state: RootState) => state.pdfReader);
   const { selectedVoice, } = useSelector((state: RootState) => state.voice);
-  const [editedText, setEditedText] = useState<string | null>('');
+  const [editedText, setEditedText] = useState<string>('');
   const [isEditing, setIsEditing] = useState(false);
   const textContainerRef = useRef<HTMLDivElement>(null);
 
@@ -50,7 +50,7 @@ export const DocumentReader = () => {
   };
 
   const handleCancel = () => {
-    setEditedText(currentPageText || "");
+    setEditedText(currentPageText);
     setIsEditing(false);
   };
 
@@ -64,10 +64,6 @@ export const DocumentReader = () => {
   };
 
   const renderContent = () => {
-    if (isEditing) {
-      return editedText;
-    }
-
     if (selectedVoice.type === 'browser') {
       return sentences.map((sentence, index) => (
         <span
@@ -107,24 +103,20 @@ export const DocumentReader = () => {
           )}
         </div>
       </div>
-      {
-        isEditing
-          ?
-          <SimpleEditor content={currentPageText || ""} onContentChange={handleTextChange} />
-          :
-          <div
-            ref={textContainerRef}
-            className={s.textContainer}
-            contentEditable={isEditing}
-            suppressContentEditableWarning={true}
-          >
-            {isLoaded ? (
-              renderContent()
-            ) : (
-              <Spinner isLoading message="Loading..." />
-            )}
-          </div>
-      }
+      <SimpleEditor isEditable={isEditing} content={editedText} onContentChange={handleTextChange}>
+        <div
+          ref={textContainerRef}
+          className={s.textContainer}
+          contentEditable={isEditing}
+          suppressContentEditableWarning={true}
+        >
+          {isLoaded ? (
+            renderContent()
+          ) : (
+            <Spinner isLoading message="Loading..." />
+          )}
+        </div>
+      </SimpleEditor>
     </div>
   )
 }

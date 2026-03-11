@@ -37,7 +37,7 @@ export const EditPageModal: React.FC<EditPageModalProps> = ({
 
   return (
     <CustomModal show={show} onClose={onClose} title={`Editing Page ${pageNumber}`}>
-      <SimpleEditor content={text} onContentChange={handleContentChange} />
+      <SimpleEditor isEditable={true} content={text} onContentChange={handleContentChange} />
       <div className={s.actions}>
         <PrimaryButton icon={faSave} onClick={handleSave}>Save</PrimaryButton>
       </div>

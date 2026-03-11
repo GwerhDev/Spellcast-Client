@@ -1,4 +1,4 @@
-import { useRef } from "react"
+import { ReactElement, useRef } from "react"
 import { EditorContent, EditorContext, useEditor } from "@tiptap/react"
 
 // --- Tiptap Core Extensions ---
@@ -82,7 +82,7 @@ const MainToolbarContent = () => {
   )
 }
 
-export function SimpleEditor({ content, onContentChange }: { content: string, onContentChange: (content: string) => void }) {
+export function SimpleEditor({ children, content, onContentChange, isEditable }: { children?: ReactElement, content: string, onContentChange: (content: string) => void, isEditable?: boolean }) {
   const toolbarRef = useRef<HTMLDivElement>(null)
 
   const editor = useEditor({
@@ -122,11 +122,17 @@ export function SimpleEditor({ content, onContentChange }: { content: string, on
         onError: (error) => console.error("Upload failed:", error),
       }),
     ],
-    content,
+    content: content,
     onUpdate: ({ editor }) => {
       onContentChange(editor.getHTML());
     }
   })
+
+  if (!isEditable) return (
+    <>
+      {children}
+    </>
+  )
 
   return (
     <div className={s["simple-editor-wrapper"]}>
@@ -134,7 +140,6 @@ export function SimpleEditor({ content, onContentChange }: { content: string, on
         <Toolbar ref={toolbarRef} >
           <MainToolbarContent />
         </Toolbar>
-
         <EditorContent
           editor={editor}
           role="presentation"

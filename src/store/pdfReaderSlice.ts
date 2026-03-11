@@ -11,7 +11,7 @@ interface PdfReaderState {
   hasInitialPageSet: boolean; // New flag
   isContinuousPlayActive: boolean;
   showPageSelector: boolean;
-  currentPageText: string | null;
+  currentPageText: string;
   progress?: DocumentProgress; // Add progress to state
   currentSentenceIndex: number;
   sentences: string[];
@@ -26,7 +26,7 @@ const initialState: PdfReaderState = {
   pages: {},
   sentences: [],
   currentSentenceIndex: -1, // Use -1 to indicate nothing is highlighted initially
-  currentPageText: null,
+  currentPageText: "",
   hasInitialPageSet: false, // Initialize new flag
   isContinuousPlayActive: false,
   showPageSelector: false,
