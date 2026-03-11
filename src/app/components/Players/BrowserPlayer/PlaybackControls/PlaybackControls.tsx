@@ -2,8 +2,7 @@ import s from './PlaybackControls.module.css';
 import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlay, faPause, faStepBackward, faStepForward } from '@fortawesome/free-solid-svg-icons';
-import { useDispatch, useSelector } from 'react-redux';
-import { pause, play } from 'store/browserPlayerSlice';
+import { useSelector } from 'react-redux';
 import { RootState } from 'store/index';
 
 interface PlaybackControlsProps {
@@ -12,6 +11,7 @@ interface PlaybackControlsProps {
   disabled: boolean;
   isPrevDisabled: boolean;
   isNextDisabled: boolean;
+  handleTogglePlayPause: () => void;
 }
 
 export const PlaybackControls: React.FC<PlaybackControlsProps> = ({
@@ -20,21 +20,9 @@ export const PlaybackControls: React.FC<PlaybackControlsProps> = ({
   disabled,
   isPrevDisabled,
   isNextDisabled,
+  handleTogglePlayPause,
 }) => {
-  const dispatch = useDispatch();
   const { isPlaying } = useSelector((state: RootState) => state.browserPlayer);
-
-  const handleTogglePlayPause = () => {
-    if (isPlaying) {
-      window.speechSynthesis.pause();
-      dispatch(pause());
-      return;
-    };
-    
-    window.speechSynthesis.resume();
-    dispatch(play());
-    return;
-  };
 
   return (
     <section className={s.controlsContainer}>

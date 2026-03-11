@@ -15,7 +15,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 export const PdfProcessor = () => {
   const dispatch = useDispatch();
   const { userData } = useAppSelector((state) => state.session);
-  const { currentPage, pages, documentId, currentPageText, isLoaded,currentSentenceIndex } = useSelector((state: RootState) => state.pdfReader);
+  const { currentPage, pages, documentId, isLoaded, currentSentenceIndex } = useSelector((state: RootState) => state.pdfReader);
   const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -38,11 +38,6 @@ export const PdfProcessor = () => {
     loadDocument();
   }, [dispatch, documentId, userData.id]);
 
-  useEffect(() => {
-    const sentences = currentPageText?.split(/(?<=[.!?])/) || [];
-    dispatch(setSentences({ sentences: sentences }));
-  }, [currentPageText, dispatch]);
-
   // Effect to process page when currentPage changes
   useEffect(() => {
     if (pdfDoc && !isProcessing) {
@@ -57,11 +52,15 @@ export const PdfProcessor = () => {
             text = content.items.map((item: TextItem | TextMarkedContent) => ('str' in item ? item.str : '')).join(' ');
             text = text.replace(/\s+/g, ' ').trim();
             dispatch(setPageText({ text }));
+            const sentences = text?.split(/(?<=[.!?])/) || [];
+            dispatch(setSentences({ sentences: sentences }));
           }
 
           if (text && text.trim() !== '') {
             // Only generate audio if it's not already for the current page
             dispatch(setPageText({ text }));
+            const sentences = text?.split(/(?<=[.!?])/) || [];
+            dispatch(setSentences({ sentences: sentences }));
           }
         } catch (error) {
           console.error(`Failed to process page ${currentPage}:`, error);

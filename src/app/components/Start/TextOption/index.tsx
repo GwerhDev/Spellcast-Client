@@ -5,7 +5,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { textToSpeechService } from '../../../../services/tts';
 import { setPlaylist, play as playAiAudio } from '../../../../store/audioPlayerSlice';
 import { play as playBrowserAudio } from '../../../../store/browserPlayerSlice';
-import { setPageText } from 'store/pdfReaderSlice';
+import { setPageText, setSentences } from 'store/pdfReaderSlice';
 
 interface TextOptionProps {
   isLoading?: boolean;
@@ -36,7 +36,9 @@ export const TextOption: React.FC<TextOptionProps> = () => {
     if (selectedVoice.type !== 'browser') {
       await generateAiAudio(text, selectedVoice.value);
     } else {
-      dispatch(setPageText({ text }))
+      dispatch(setPageText({ text }));
+      const sentences = text?.split(/(?<=[.!?])/) || [];
+      dispatch(setSentences({ sentences: sentences }));
       dispatch(playBrowserAudio());
     }
   };

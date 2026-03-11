@@ -1,5 +1,5 @@
 import s from './BrowserPlayer.module.css';
-import { useEffect, useState, useRef, useCallback, SetStateAction } from 'react';
+import { useEffect, useState, useRef, SetStateAction } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../../../store';
 import {
@@ -32,6 +32,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal })
   const {
     voice,
     volume,
+    isPlaying,
   } = useSelector((state: RootState) => state.browserPlayer);
   const {
     isLoaded,
@@ -84,51 +85,62 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal })
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showMobileVolumeSlider]);
 
-  const speak = useCallback((sentenceIndex: number) => {
-    handlePause();
-
-    if (sentenceIndex >= sentences.length) {
-      if (currentPage < totalPages) return handleNext();
-      return handleStop();
-    }
-
-    const utterance = new SpeechSynthesisUtterance(sentences[sentenceIndex]);
-    if (voice) utterance.voice = voice;
-    utterance.volume = volume;
-    utterance.onend = () => {
-      // Check if it was cancelled before proceeding
-      dispatch(setCurrentSentenceIndex(sentenceIndex + 1));
-      speak(sentenceIndex + 1);
-    };
-
-    window.speechSynthesis.speak(utterance);
-    handlePlay();
-    //eslint-disable-next-line
-  }, [sentences, currentSentenceIndex, voice, volume, dispatch, currentPage, totalPages]);
-
   useEffect(() => {
     // This effect triggers the start of sentence-based playback once sentences are set
-    if (isLoaded && sentences.length > 0 && currentSentenceIndex > -1) {
-      speak(currentSentenceIndex);
-    }
+    handleStop();
 
-  }, [currentSentenceIndex, sentences, speak, isLoaded]);
+    if (isLoaded && sentences.length > 0 && currentSentenceIndex > -1) {
+      if (currentSentenceIndex >= sentences.length) {
+        if (currentPage < totalPages) return handleNext();
+        return handleStop();
+      }
+
+      const utterance = new SpeechSynthesisUtterance(sentences[currentSentenceIndex]);
+      if (voice) utterance.voice = voice;
+      utterance.volume = volume;
+      window.speechSynthesis.speak(utterance);
+
+      utterance.onstart = () => {
+        handlePlay();
+      };
+
+      utterance.onend = () => {
+        dispatch(setCurrentSentenceIndex(currentSentenceIndex + 1));
+      };
+    }
+    //eslint-disable-next-line
+  }, [currentSentenceIndex, sentences, isLoaded, currentPage]);
+
+  const handleTogglePlayPause = () => {
+    if (isPlaying) {
+      window.speechSynthesis.pause();
+      dispatch(pause());
+      return;
+    };
+    const utterance = new SpeechSynthesisUtterance(sentences[currentSentenceIndex]);
+    if (voice) utterance.voice = voice;
+    utterance.volume = volume;
+    window.speechSynthesis.speak(utterance);
+
+    utterance.onstart = () => {
+      handlePlay();
+    };
+
+    utterance.onend = () => {
+      dispatch(setCurrentSentenceIndex(currentSentenceIndex + 1));
+    };
+    handlePlay();
+    return;
+  };
 
   const handleStop = () => {
     dispatch(stop());
     window.speechSynthesis.cancel();
   };
 
-  const handlePause = () => {
-    dispatch(pause());
-    window.speechSynthesis.pause();
-  };
-
   const handlePlay = () => {
-    if (isLoaded && currentSentenceIndex > -1) {
-      dispatch(play());
-      window.speechSynthesis.resume();
-    }
+    dispatch(play());
+    window.speechSynthesis.resume();
   };
 
   const handlePrevious = () => {
@@ -176,9 +188,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal })
     handleVoicesChanged();
     return () => {
       window.speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
-      handleStop();
     };
-    //eslint-disable-next-line
   }, [dispatch, voice, selectedVoice]);
 
   return (
@@ -196,10 +206,11 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal })
 
       <PlaybackControls
         disabled={!isLoaded}
-        handlePrevious={handlePrevious}
         handleNext={handleNext}
+        handlePrevious={handlePrevious}
         isPrevDisabled={isPrevDisabled}
         isNextDisabled={isNextDisabled}
+        handleTogglePlayPause={handleTogglePlayPause}
       />
 
       <VolumeControls
