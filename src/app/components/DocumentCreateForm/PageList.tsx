@@ -19,6 +19,9 @@ export const PageList: React.FC<PageListProps> = ({ pages, onPageClick, onPageDe
 
   return (
     <div className={s.pageGrid}>
+      <div className={s.pagesHeader}>
+        <h2 className={s.pagesTitle}>Pages ({pages.length})</h2>
+      </div>
       {pages.map((_, index) => (
         <div
           key={index}
@@ -26,15 +29,15 @@ export const PageList: React.FC<PageListProps> = ({ pages, onPageClick, onPageDe
           onClick={() => onPageClick(index)}
         >
           <button className={s.deleteButton} onClick={(e) => handleDelete(e, index)}>
-            <FontAwesomeIcon icon={faTrash} size='xs'/>
+            <FontAwesomeIcon icon={faTrash} size='xs' />
           </button>
           <FontAwesomeIcon icon={faNewspaper} />
-          <span className={s.pageNumber}>Page {index + 1}</span>
+          <small className={s.pageNumber}>Page {index + 1}</small>
         </div>
       ))}
       <div className={s.addPageItem} onClick={onAddPage}>
         <FontAwesomeIcon icon={faPlus} size="2x" />
-        <span>Add Page</span>
+        <small>Add Page</small>
       </div>
     </div>
   );

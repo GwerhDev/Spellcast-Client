@@ -1,9 +1,6 @@
+import s from './index.module.css';
 import React, { useState, useEffect } from 'react';
-import s from './EditPageModal.module.css';
-import { PrimaryButton } from '../Buttons/PrimaryButton';
-import { CustomModal } from './CustomModal';
-import { faSave } from '@fortawesome/free-solid-svg-icons';
-import { SimpleEditor } from '../Tiptap/components/tiptap-templates/simple/simple-editor';
+import { SimpleEditor } from '../../Tiptap/components/tiptap-templates/simple/simple-editor';
 import { JSONContent } from '@tiptap/core';
 
 const emptyContent: JSONContent = {
@@ -35,19 +32,15 @@ const safeParseJSON = (str: string): JSONContent => {
 };
 
 interface EditPageModalProps {
-  show: boolean;
-  onClose: () => void;
   pageNumber: number;
   pageText: string;
-  onSave: (pageNumber: number, newText: string) => void;
+  title: string;
 }
 
-export const EditPageModal: React.FC<EditPageModalProps> = ({
-  show,
-  onClose,
+export const DocumentEditor: React.FC<EditPageModalProps> = ({
   pageNumber,
   pageText,
-  onSave,
+  title,
 }) => {
   const [text, setText] = useState<JSONContent>(safeParseJSON(pageText));
 
@@ -55,21 +48,14 @@ export const EditPageModal: React.FC<EditPageModalProps> = ({
     setText(safeParseJSON(pageText));
   }, [pageText, pageNumber]);
 
-  const handleSave = () => {
-    onSave(pageNumber - 1, JSON.stringify(text));
-    onClose();
-  };
-
   const handleContentChange = (newContent: JSONContent) => {
     setText(newContent);
   };
 
   return (
-    <CustomModal show={show} onClose={onClose} title={`Editing Page ${pageNumber}`}>
+    <div className={s.container}>
+      <h2 className={s.title}>{title}</h2>
       <SimpleEditor isEditable={true} content={text} onContentChange={handleContentChange} />
-      <div className={s.actions}>
-        <PrimaryButton icon={faSave} onClick={handleSave}>Save</PrimaryButton>
-      </div>
-    </CustomModal>
+    </div>
   );
 };

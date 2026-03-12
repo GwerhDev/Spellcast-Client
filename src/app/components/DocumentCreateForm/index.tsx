@@ -7,14 +7,12 @@ import * as pdfjsLib from 'pdfjs-dist';
 import type { TextItem, TextMarkedContent } from 'pdfjs-dist/types/src/display/api';
 import { Spinner } from '../Spinner';
 import { PageList } from './PageList';
-import { EditPageModal } from '../Modals/EditPageModal';
+import { DocumentEditor } from '../Editors/DocumentEditor';
 import jsPDF from 'jspdf';
 import { saveDocumentToDB } from '../../../db';
 import { useNavigate } from 'react-router-dom';
-
 // The workerSrc import is important for pdfjs-dist to work
 import workerSrc from 'pdfjs-dist/build/pdf.worker?url';
-import { LabeledInput } from '../Inputs/LabeledInput';
 import { faCloud, faSave } from '@fortawesome/free-solid-svg-icons';
 import { PrimaryButton } from '../Buttons/PrimaryButton';
 import { resetDocumentState } from 'store/documentSlice';
@@ -30,8 +28,7 @@ export const DocumentCreateForm: React.FC = () => {
   const [pagesText, setPagesText] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingPageIndex, setEditingPageIndex] = useState<number | null>(null);
+  const [editingPageIndex, setEditingPageIndex] = useState<number>(0);
 
   useEffect(() => {
     if (title) {
@@ -73,18 +70,6 @@ export const DocumentCreateForm: React.FC = () => {
 
   const handlePageClick = (pageIndex: number) => {
     setEditingPageIndex(pageIndex);
-    setIsModalOpen(true);
-  };
-
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setEditingPageIndex(null);
-  };
-
-  const handleSavePage = (pageIndex: number, newText: string) => {
-    const updatedPagesText = [...pagesText];
-    updatedPagesText[pageIndex] = newText;
-    setPagesText(updatedPagesText);
   };
 
   const handlePageDelete = (pageIndex: number) => {
@@ -146,24 +131,19 @@ export const DocumentCreateForm: React.FC = () => {
     <div className={s.container}>
       <div className={s.titleGroup}>
         <h1 className={s.mainTitle}>Create Document</h1>
-        <LabeledInput
-          onChange={(e) => setDocumentTitle(e.target.value)}
-          id="document-title"
-          name="document-title"
-          htmlFor="document-title"
-          label="Document title" value={documentTitle}
-        />
       </div>
-      <div className={s.pagesHeader}>
-        <h2 className={s.pagesTitle}>Pages ({pagesText.length})</h2>
-      </div>
-      <div className={s.pagesContainer}>
-        <PageList
-          pages={pagesText}
-          onPageClick={handlePageClick}
-          onPageDelete={handlePageDelete}
-          onAddPage={handleAddPage}
-        />
+
+      <div className={s.editorContainer}>
+        <DocumentEditor title={documentTitle} pageNumber={editingPageIndex + 1} pageText={pagesText[editingPageIndex]} />
+
+        <div className={s.pagesContainer}>
+          <PageList
+            pages={pagesText}
+            onPageClick={handlePageClick}
+            onPageDelete={handlePageDelete}
+            onAddPage={handleAddPage}
+          />
+        </div>
       </div>
       <div className={s.actions}>
         <PrimaryButton type="button" icon={faSave} className={s.saveButtonCloud} onClick={handleSaveLocal} disabled={isSaving}>
@@ -174,15 +154,6 @@ export const DocumentCreateForm: React.FC = () => {
         </PrimaryButton>
       </div>
 
-      {editingPageIndex !== null && (
-        <EditPageModal
-          show={isModalOpen}
-          onClose={handleCloseModal}
-          pageNumber={editingPageIndex + 1}
-          pageText={pagesText[editingPageIndex]}
-          onSave={handleSavePage}
-        />
-      )}
     </div>
   );
 };
