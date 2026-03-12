@@ -5,12 +5,13 @@ import { faNewspaper, faTrash, faPlus } from '@fortawesome/free-solid-svg-icons'
 
 interface PageListProps {
   pages: string[];
+  currentPage: number;
   onPageClick: (pageIndex: number) => void;
   onPageDelete: (pageIndex: number) => void;
   onAddPage: () => void;
 }
 
-export const PageList: React.FC<PageListProps> = ({ pages, onPageClick, onPageDelete, onAddPage }) => {
+export const PageList: React.FC<PageListProps> = ({ pages, currentPage, onPageClick, onPageDelete, onAddPage }) => {
 
   const handleDelete = (e: React.MouseEvent, index: number) => {
     e.stopPropagation();
@@ -25,7 +26,7 @@ export const PageList: React.FC<PageListProps> = ({ pages, onPageClick, onPageDe
       {pages.map((_, index) => (
         <div
           key={index}
-          className={s.pageItem}
+          className={`${s.pageItem} ${index === currentPage && s.activePage}`}
           onClick={() => onPageClick(index)}
         >
           <button className={s.deleteButton} onClick={(e) => handleDelete(e, index)}>

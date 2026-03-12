@@ -55,7 +55,7 @@ export const DocumentEditor: React.FC<EditPageModalProps> = ({
   return (
     <div className={s.container}>
       <h2 className={s.title}>{title}</h2>
-      <SimpleEditor isEditable={true} content={text} onContentChange={handleContentChange} />
+      <SimpleEditor isEditable content={text} onContentChange={handleContentChange} />
     </div>
   );
 };

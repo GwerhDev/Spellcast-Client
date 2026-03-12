@@ -139,6 +139,7 @@ export const DocumentCreateForm: React.FC = () => {
         <div className={s.pagesContainer}>
           <PageList
             pages={pagesText}
+            currentPage={editingPageIndex}
             onPageClick={handlePageClick}
             onPageDelete={handlePageDelete}
             onAddPage={handleAddPage}
@@ -153,7 +154,6 @@ export const DocumentCreateForm: React.FC = () => {
           Save Cloud
         </PrimaryButton>
       </div>
-
     </div>
   );
 };

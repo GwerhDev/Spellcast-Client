@@ -83,7 +83,7 @@ const MainToolbarContent = () => {
 }
 
 export function SimpleEditor({ children, content, onContentChange, isEditable }: { children?: ReactElement, content: JSONContent, onContentChange: (content: JSONContent) => void, isEditable?: boolean }) {
-  const toolbarRef = useRef<HTMLDivElement>(null)
+  const toolbarRef = useRef<HTMLDivElement>(null);
 
   const editor = useEditor({
     editable: isEditable,

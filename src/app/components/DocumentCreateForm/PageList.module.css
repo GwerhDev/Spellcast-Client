@@ -35,6 +35,11 @@
   text-align: center;
 }
 
+.activePage {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-color: var(--color-primary);
+}
+
 .pageItem:hover {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   border-color: var(--color-primary);
