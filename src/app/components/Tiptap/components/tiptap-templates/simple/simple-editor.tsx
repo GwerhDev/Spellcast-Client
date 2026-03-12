@@ -86,6 +86,7 @@ export function SimpleEditor({ children, content, onContentChange, isEditable }:
   const toolbarRef = useRef<HTMLDivElement>(null)
 
   const editor = useEditor({
+    editable: isEditable,
     immediatelyRender: false,
     editorProps: {
       attributes: {
@@ -126,7 +127,7 @@ export function SimpleEditor({ children, content, onContentChange, isEditable }:
     onUpdate: ({ editor }) => {
       onContentChange(editor.getHTML());
     }
-  })
+  }, [isEditable]);
 
   if (!isEditable) return (
     <>
