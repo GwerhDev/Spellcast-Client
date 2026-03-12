@@ -1,5 +1,5 @@
 import { ReactElement, useRef } from "react"
-import { EditorContent, EditorContext, useEditor } from "@tiptap/react"
+import { EditorContent, EditorContext, JSONContent, useEditor } from "@tiptap/react"
 
 // --- Tiptap Core Extensions ---
 import { StarterKit } from "@tiptap/starter-kit"
@@ -82,7 +82,7 @@ const MainToolbarContent = () => {
   )
 }
 
-export function SimpleEditor({ children, content, onContentChange, isEditable }: { children?: ReactElement, content: string, onContentChange: (content: string) => void, isEditable?: boolean }) {
+export function SimpleEditor({ children, content, onContentChange, isEditable }: { children?: ReactElement, content: JSONContent, onContentChange: (content: JSONContent) => void, isEditable?: boolean }) {
   const toolbarRef = useRef<HTMLDivElement>(null)
 
   const editor = useEditor({
@@ -125,7 +125,7 @@ export function SimpleEditor({ children, content, onContentChange, isEditable }:
     ],
     content: content,
     onUpdate: ({ editor }) => {
-      onContentChange(editor.getHTML());
+      onContentChange(editor.getJSON());
     }
   }, [isEditable]);
 

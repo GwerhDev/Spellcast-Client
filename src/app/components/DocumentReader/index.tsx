@@ -11,6 +11,35 @@ import { Spinner } from '../Spinner';
 import { IconButton } from '../Buttons/IconButton';
 import { PageSelector } from './PageSelector/PageSelector';
 import { SimpleEditor } from '../Tiptap/components/tiptap-templates/simple/simple-editor';
+import { JSONContent } from '@tiptap/core';
+
+const emptyContent: JSONContent = {
+  type: 'doc',
+  content: [{
+    type: 'paragraph',
+  }]
+};
+
+const safeParseJSON = (str: string): JSONContent => {
+  if (!str) {
+    return emptyContent;
+  }
+  try {
+    const parsed = JSON.parse(str);
+    return parsed;
+  } catch {
+    return {
+      type: 'doc',
+      content: [{
+        type: 'paragraph',
+        content: [{
+          type: 'text',
+          text: str,
+        }]
+      }]
+    };
+  }
+};
 
 export const DocumentReader = () => {
   const dispatch = useDispatch();
@@ -23,8 +52,8 @@ export const DocumentReader = () => {
     currentSentenceIndex,
   } = useSelector((state: RootState) => state.pdfReader);
   const { selectedVoice, } = useSelector((state: RootState) => state.voice);
-  const [editedText, setEditedText] = useState<string>('');
-  const [isEditing, setIsEditing] = useState(false);
+  const [editedText, setEditedText] = useState<JSONContent>(emptyContent);
+  const [isEditing, setIsEditing] = useState<boolean>(false);
   const textContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -34,7 +63,7 @@ export const DocumentReader = () => {
   }, [dispatch, currentPage, isLoaded]);
 
   useEffect(() => {
-    setEditedText(currentPageText);
+    setEditedText(safeParseJSON(currentPageText));
   }, [currentPageText]);
 
   const handleEdit = () => {
@@ -42,19 +71,17 @@ export const DocumentReader = () => {
   };
 
   const handleSave = () => {
-    const newText = textContainerRef.current?.innerText || editedText || "";
     dispatch(resetBrowserPlayer());
-    dispatch(setPageText({ text: newText }));
-    setEditedText(newText);
+    dispatch(setPageText({ text: JSON.stringify(editedText) }));
     setIsEditing(false);
   };
 
   const handleCancel = () => {
-    setEditedText(currentPageText);
+    setEditedText(safeParseJSON(currentPageText));
     setIsEditing(false);
   };
 
-  const handleTextChange = (e: string) => {
+  const handleTextChange = (e: JSONContent) => {
     setEditedText(e);
   };
 
