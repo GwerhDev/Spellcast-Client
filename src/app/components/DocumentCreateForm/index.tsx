@@ -109,7 +109,6 @@ export const DocumentCreateForm: React.FC = () => {
     setIsSaving(true);
     try {
       const pdf = new jsPDF();
-      pdf.text(documentTitle, 10, 10);
 
       pagesText.forEach((pageText, index) => {
         if (index > 0) {
