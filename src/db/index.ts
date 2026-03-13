@@ -1,7 +1,4 @@
-const DB_NAME = 'SpellcastDB';
-const DB_VERSION = 5; // Incremented version to trigger onupgradeneeded
-const DOCUMENTS_STORE_NAME = 'documents';
-const DOCUMENT_PROGRESS_STORE_NAME = 'documentProgress'; // Keep for migration
+import { DB_NAME, DB_VERSION, DOCUMENTS_STORE_NAME } from "../config/api";
 
 interface Document {
   id: string;
@@ -18,32 +15,68 @@ interface DocumentProgress {
   lastReadSentenceIndex: number;
 }
 
-const openDB = (): Promise<IDBDatabase> => {
+let dbPromise: Promise<IDBDatabase> | null = null;
+
+export const clearAllData = async (): Promise<void> => {
+  const db = await openDB();
+  const transaction = db.transaction(DOCUMENTS_STORE_NAME, 'readwrite');
+  const store = transaction.objectStore(DOCUMENTS_STORE_NAME);
+
   return new Promise((resolve, reject) => {
+    const request = store.clear();
+    request.onsuccess = () => resolve();
+    request.onerror = (event) => reject((event.target as IDBRequest).error);
+  });
+};
+
+const openDB = (): Promise<IDBDatabase> => {
+  if (dbPromise) {
+    return dbPromise;
+  }
+
+  dbPromise = new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
 
     request.onupgradeneeded = (event) => {
       const db = (event.target as IDBOpenDBRequest).result;
-      if (!db.objectStoreNames.contains(DOCUMENTS_STORE_NAME)) {
-        const store = db.createObjectStore(DOCUMENTS_STORE_NAME, { keyPath: 'id' });
-        store.createIndex('title', 'title', { unique: false });
-        store.createIndex('createdAt', 'createdAt', { unique: false });
-        store.createIndex('userId', 'userId', { unique: false });
+      const oldVersion = event.oldVersion;
+
+      if (oldVersion > 0) {
+        const storeNames = Array.from(db.objectStoreNames);
+        storeNames.forEach(name => {
+          db.deleteObjectStore(name);
+        });
       }
-      // Remove the old progress store if it exists
-      if (db.objectStoreNames.contains(DOCUMENT_PROGRESS_STORE_NAME)) {
-        db.deleteObjectStore(DOCUMENT_PROGRESS_STORE_NAME);
-      }
+
+      const store = db.createObjectStore(DOCUMENTS_STORE_NAME, { keyPath: 'id' });
+      store.createIndex('title', 'title', { unique: false });
+      store.createIndex('createdAt', 'createdAt', { unique: false });
+      store.createIndex('userId', 'userId', { unique: false });
     };
 
     request.onsuccess = (event) => {
-      resolve((event.target as IDBOpenDBRequest).result);
+      const db = (event.target as IDBOpenDBRequest).result;
+      if (!db.objectStoreNames.contains(DOCUMENTS_STORE_NAME)) {
+        db.close();
+        const deleteRequest = indexedDB.deleteDatabase(DB_NAME);
+        deleteRequest.onsuccess = () => {
+          console.warn("Broken database detected and deleted. Reloading the page to fix the issue.");
+          window.location.reload();
+        };
+        deleteRequest.onerror = () => {
+          reject(new Error("Failed to delete corrupt database."));
+        };
+      } else {
+        resolve(db);
+      }
     };
 
     request.onerror = (event) => {
       reject((event.target as IDBOpenDBRequest).error);
     };
   });
+
+  return dbPromise;
 };
 
 export const saveDocumentToDB = async (document: Omit<Document, 'id' | 'createdAt' | 'progress'>): Promise<string> => {

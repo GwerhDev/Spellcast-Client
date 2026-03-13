@@ -7,6 +7,7 @@ import { faFilePdf, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { DeleteConfirmModal } from '../Modals/DeleteConfirmModal';
 
 import { useAppSelector } from '../../../store/hooks';
+import { Spinner } from '../Spinner';
 
 interface LocalDocument {
   id: string;
@@ -20,7 +21,7 @@ export const DocumentList: React.FC = () => {
   const [documents, setDocuments] = useState<LocalDocument[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [selectedDoc, setSelectedDoc] = useState<{id: string, title: string} | null>(null);
+  const [selectedDoc, setSelectedDoc] = useState<{ id: string, title: string } | null>(null);
 
   const fetchDocuments = async () => {
     if (!logged) {
@@ -74,7 +75,7 @@ export const DocumentList: React.FC = () => {
   };
 
   if (isLoading) {
-    return <p>Loading documents...</p>;
+    return <Spinner isLoading />;
   }
 
   if (documents.length === 0) {

@@ -22,16 +22,21 @@ export const PdfProcessor = () => {
   // Effect to create pdfDoc from fileContent
   useEffect(() => {
     const loadDocument = async () => {
-      const fileContent = await getDocumentById(documentId || "", userData.id);
+      try {
+        const fileContent = await getDocumentById(documentId || "", userData.id);
 
-      if (fileContent) {
-        const arrayBuffer = await fileContent.pdf.arrayBuffer();
-        setPdfDoc(null);
-        pdfjsLib.getDocument({ data: arrayBuffer }).promise.then(doc => {
-          setPdfDoc(doc);
-        });
-      } else {
-        setPdfDoc(null);
+        if (fileContent) {
+          const arrayBuffer = await fileContent.pdf.arrayBuffer();
+          setPdfDoc(null);
+          pdfjsLib.getDocument({ data: arrayBuffer }).promise.then(doc => {
+            setPdfDoc(doc);
+          });
+        } else {
+          setPdfDoc(null);
+        }
+      } catch (error) {
+        console.error("Failed to load document from IndexedDB:", error);
+        setPdfDoc(null); // Ensure pdfDoc is null on error
       }
     };
 

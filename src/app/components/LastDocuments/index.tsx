@@ -7,6 +7,7 @@ import { faFilePdf, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { DeleteConfirmModal } from '../Modals/DeleteConfirmModal';
 import { useAppSelector } from 'store/hooks';
 import { Document } from 'src/interfaces';
+import { Spinner } from '../Spinner';
 
 export const LastDocuments: React.FC = () => {
   const { userData } = useAppSelector((state) => state.session);
@@ -62,7 +63,11 @@ export const LastDocuments: React.FC = () => {
   };
 
   if (isLoading) {
-    return <p>Loading recent documents...</p>;
+    return (
+      <div className={s.container}>
+        <Spinner isLoading />
+      </div>
+    );
   }
 
   if (documents.length === 0) {
