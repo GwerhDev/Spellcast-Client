@@ -4,18 +4,19 @@ import { SimpleEditor } from '../../Tiptap/components/tiptap-templates/simple/si
 import { JSONContent } from '@tiptap/core';
 import { useDispatch } from 'react-redux';
 import { setDocumentTitle } from 'store/documentSlice';
+import { DocumentState } from 'src/interfaces';
 
 interface EditPageModalProps {
   pageNumber: number;
   pageContent: JSONContent;
-  title: string;
+  document: DocumentState;
   onPageContentChange: (newContent: JSONContent) => void;
 }
 
 export const DocumentEditor: React.FC<EditPageModalProps> = ({
   pageNumber,
   pageContent,
-  title,
+  document,
   onPageContentChange,
 }) => {
   const [text, setText] = useState<JSONContent>(pageContent);
@@ -33,7 +34,7 @@ export const DocumentEditor: React.FC<EditPageModalProps> = ({
 
   return (
     <div className={s.container}>
-      <input placeholder={"Please, provide a Title for your Document"} readOnly={title.length > 0 && !editTitle} className={s.title} onMouseLeave={() => setEditTitle(false)} onClick={() => setEditTitle(true)} value={title} onChange={(e) => dispatch(setDocumentTitle(e.target.value))} type="text" />
+      <input placeholder={"Please, provide a Title for your Document"} readOnly={document.title.length > 0 && !editTitle} className={s.title} onClick={() => setEditTitle(true)} value={document.title} onChange={(e) => dispatch(setDocumentTitle(e.target.value))} type="text" />
       <SimpleEditor isEditable content={text} onContentChange={handleContentChange} />
     </div>
   );
