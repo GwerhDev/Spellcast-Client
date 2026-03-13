@@ -44,8 +44,8 @@ export const DocumentCard = (props: DocumentCardProps) => {
     <div className={s.container}>
       <FontAwesomeIcon size="2x" icon={getFileTypeIcon(document.type)} />
       <div className={s.metadata} onMouseLeave={() => setEditTitle(false)}>
-        <input readOnly={document.title !== null && document.title.length > 0 && !editTitle} className={s.title} onClick={() => setEditTitle(true)} value={document.title || undefined} onChange={(e) => dispatch(setDocumentTitle(e.target.value))} type="text" />
-        <small>{formatBytes(document.size || 0)} - {document.totalPages} pages</small>
+        <input placeholder={"Please, provide a Title for your Document"} readOnly={document.title.length > 0 && !editTitle} className={s.title} onClick={() => setEditTitle(true)} value={document.title} onChange={(e) => dispatch(setDocumentTitle(e.target.value))} type="text" />
+        <small>{formatBytes(document.size || 0)} {document.totalPages > 0 && ` - ${document.totalPages} pages` }</small>
       </div>
       <button onMouseEnter={() => setButtonHovered(true)} onMouseLeave={() => setButtonHovered(false)} onClick={() => navigate("/document/create")} className={s.continueButton}>
         {

@@ -99,8 +99,8 @@ export interface Document {
 
 export interface DocumentState {
   size: number | null;
-  type?: string | null;
-  title: string | null;
+  type?: string;
+  title: string;
   totalPages: number;
   currentPage: number;
   fileContent: string | null;

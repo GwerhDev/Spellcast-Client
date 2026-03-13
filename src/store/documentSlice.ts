@@ -3,10 +3,10 @@ import { DocumentState } from 'src/interfaces';
 
 const initialState: DocumentState = {
   size: null,
-  type: null,
-  title: null,
-  totalPages: 1,
-  currentPage: 1,
+  type: "",
+  title: "",
+  totalPages: 0,
+  currentPage: 0,
   fileContent: null,
   isLoaded: false,
 };
