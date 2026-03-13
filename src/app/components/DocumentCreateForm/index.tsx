@@ -122,12 +122,15 @@ export const DocumentCreateForm: React.FC = () => {
     setIsSaving(true);
     try {
       const pdf = new jsPDF();
+      const margin = 1;
+      const startY = 1;
+      const lineHeight = 1;
 
       pagesContent.forEach((pageContent, index) => {
         if (index > 0) {
           pdf.addPage();
         }
-        // Convert JSONContent to plain text for jsPDF
+        
         const plainText = pageContent.content?.map(node => {
           if (node.type === 'paragraph' && node.content) {
             return node.content.map(item => 'text' in item ? item.text : '').join('');
@@ -135,9 +138,19 @@ export const DocumentCreateForm: React.FC = () => {
           return '';
         }).join('\n') || '';
 
-        // Split text into lines that fit the page width.
-        const lines = pdf.splitTextToSize(plainText, 180);
-        pdf.text(lines, 10, 20);
+        const lines = pdf.splitTextToSize(plainText, pdf.internal.pageSize.width - margin * 2);
+        
+        let y = startY;
+        const pageHeight = pdf.internal.pageSize.height;
+
+        for (const line of lines) {
+          if (y + lineHeight > pageHeight - margin) {
+            pdf.addPage();
+            y = startY;
+          }
+          pdf.text(line, margin, y);
+          y += lineHeight;
+        }
       });
 
       const pdfBlob = pdf.output('blob');
