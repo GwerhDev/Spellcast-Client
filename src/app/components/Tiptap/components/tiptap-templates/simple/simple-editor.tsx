@@ -1,4 +1,4 @@
-import { ReactElement, useRef } from "react"
+import { ReactElement, useEffect, useRef } from "react"
 import { EditorContent, EditorContext, JSONContent, useEditor } from "@tiptap/react"
 
 // --- Tiptap Core Extensions ---
@@ -98,6 +98,7 @@ export function SimpleEditor({ children, content, onContentChange, isEditable }:
       },
     },
     extensions: [
+      // --- Tiptap Core Extensions ---
       StarterKit.configure({
         horizontalRule: false,
         link: {
@@ -128,6 +129,17 @@ export function SimpleEditor({ children, content, onContentChange, isEditable }:
       onContentChange(editor.getJSON());
     }
   }, [isEditable]);
+
+  // Update editor content when the 'content' prop changes from parent
+  useEffect(() => {
+    if (editor && content && !editor.isDestroyed) {
+      const currentContent = editor.getJSON();
+      // Only update if the content is actually different to prevent unnecessary re-renders
+      if (JSON.stringify(currentContent) !== JSON.stringify(content)) {
+        editor.commands.setContent(content, { emitUpdate: false });
+      }
+    }
+  }, [content, editor]);
 
   if (!isEditable) return (
     <>

@@ -11,6 +11,7 @@ import { DocumentEditor } from '../Editors/DocumentEditor';
 import jsPDF from 'jspdf';
 import { saveDocumentToDB } from '../../../db';
 import { useNavigate } from 'react-router-dom';
+import { JSONContent } from '@tiptap/core';
 // The workerSrc import is important for pdfjs-dist to work
 import workerSrc from 'pdfjs-dist/build/pdf.worker?url';
 import { faCloud, faSave } from '@fortawesome/free-solid-svg-icons';
@@ -19,13 +20,20 @@ import { resetDocumentState } from 'store/documentSlice';
 import { resetPdfReader } from 'store/pdfReaderSlice';
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
+const emptyContent: JSONContent = {
+  type: 'doc',
+  content: [{
+    type: 'paragraph',
+  }]
+};
+
 export const DocumentCreateForm: React.FC = () => {
   const { fileContent, title } = useSelector((state: RootState) => state.document);
   const { userData, logged } = useAppSelector((state: RootState) => state.session);
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [documentTitle, setDocumentTitle] = useState(title || '');
-  const [pagesText, setPagesText] = useState<string[]>([]);
+  const [pagesContent, setPagesContent] = useState<JSONContent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [editingPageIndex, setEditingPageIndex] = useState<number>(0);
@@ -39,7 +47,7 @@ export const DocumentCreateForm: React.FC = () => {
   useEffect(() => {
     const extractTextFromPdf = async () => {
       if (!fileContent) {
-        setPagesText(['']);
+        setPagesContent([emptyContent]);
         setIsLoading(false);
         return;
       }
@@ -50,14 +58,28 @@ export const DocumentCreateForm: React.FC = () => {
         const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
         const numPages = pdf.numPages;
 
-        const allPagesText: string[] = [];
+        const allPagesContent: JSONContent[] = [];
         for (let i = 1; i <= numPages; i++) {
           const page = await pdf.getPage(i);
           const content = await page.getTextContent();
-          const text = content.items.map((item: TextItem | TextMarkedContent) => ('str' in item ? item.str : '')).join(' ');
-          allPagesText.push(text.replace(/\s+/g, ' ').trim());
+          const text = content.items.map((item: TextItem | TextMarkedContent) => ('str' in item ? item.str : '')).join(' ').replace(/\s+/g, ' ').trim();
+
+          if (text) {
+            allPagesContent.push({
+              type: 'doc',
+              content: [{
+                type: 'paragraph',
+                content: [{
+                  type: 'text',
+                  text: text,
+                }]
+              }]
+            });
+          } else {
+            allPagesContent.push(emptyContent);
+          }
         }
-        setPagesText(allPagesText);
+        setPagesContent(allPagesContent);
       } catch (error) {
         console.error('Failed to extract text from PDF:', error);
       } finally {
@@ -73,15 +95,21 @@ export const DocumentCreateForm: React.FC = () => {
   };
 
   const handlePageDelete = (pageIndex: number) => {
-    setPagesText(pagesText.filter((_, index) => index !== pageIndex));
+    setPagesContent(pagesContent.filter((_, index) => index !== pageIndex));
   };
 
   const handleAddPage = () => {
-    setPagesText([...pagesText, '']);
+    setPagesContent([...pagesContent, emptyContent]);
+  };
+
+  const handlePageContentChange = (newContent: JSONContent) => {
+    const updatedPagesContent = [...pagesContent];
+    updatedPagesContent[editingPageIndex] = newContent;
+    setPagesContent(updatedPagesContent);
   };
 
   const handleSaveLocal = async () => {
-    if (!documentTitle || pagesText.length === 0) {
+    if (!documentTitle || pagesContent.length === 0) {
       alert('Please provide a title and have at least one page of content.');
       return;
     }
@@ -95,12 +123,20 @@ export const DocumentCreateForm: React.FC = () => {
     try {
       const pdf = new jsPDF();
 
-      pagesText.forEach((pageText, index) => {
+      pagesContent.forEach((pageContent, index) => {
         if (index > 0) {
           pdf.addPage();
         }
+        // Convert JSONContent to plain text for jsPDF
+        const plainText = pageContent.content?.map(node => {
+          if (node.type === 'paragraph' && node.content) {
+            return node.content.map(item => 'text' in item ? item.text : '').join('');
+          }
+          return '';
+        }).join('\n') || '';
+
         // Split text into lines that fit the page width.
-        const lines = pdf.splitTextToSize(pageText, 180);
+        const lines = pdf.splitTextToSize(plainText, 180);
         pdf.text(lines, 10, 20);
       });
 
@@ -134,11 +170,16 @@ export const DocumentCreateForm: React.FC = () => {
       </div>
 
       <div className={s.editorContainer}>
-        <DocumentEditor title={documentTitle} pageNumber={editingPageIndex + 1} pageText={pagesText[editingPageIndex]} />
+        <DocumentEditor
+          title={documentTitle}
+          pageNumber={editingPageIndex + 1}
+          pageContent={pagesContent[editingPageIndex]}
+          onPageContentChange={handlePageContentChange}
+        />
 
         <div className={s.pagesContainer}>
           <PageList
-            pages={pagesText}
+            pages={pagesContent.map(() => '')} // PageList still expects string[], so we map to empty strings
             currentPage={editingPageIndex}
             onPageClick={handlePageClick}
             onPageDelete={handlePageDelete}

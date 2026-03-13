@@ -31,14 +31,8 @@ const documentSlice = createSlice({
       state.totalPages = action.payload.totalPages;
       state.isLoaded = true;
     },
-    resetDocumentState(state) {
-      state.fileContent = null;
-      state.title = null;
-      state.size = null;
-      state.totalPages = 0;
-      state.currentPage = 1;
-      state.isLoaded = false;
-      state.pages = {};
+    resetDocumentState() {
+      return initialState;
     },
     setDocumentTitle(state, action: PayloadAction<string>) {
       state.title = action.payload;
