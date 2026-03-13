@@ -1,34 +1,26 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-
-interface DocumentState {
-  fileContent: string | null;
-  title: string | null;
-  size: number | null;
-  totalPages: number;
-  currentPage: number;
-  isLoaded: boolean;
-  pages: { [pageNumber: number]: string };
-}
+import { DocumentState } from 'src/interfaces';
 
 const initialState: DocumentState = {
-  fileContent: null,
-  title: null,
   size: null,
+  type: null,
+  title: null,
   totalPages: 1,
   currentPage: 1,
+  fileContent: null,
   isLoaded: false,
-  pages: {},
 };
 
 const documentSlice = createSlice({
   name: 'document',
   initialState,
   reducers: {
-    setDocumentDetails(state, action: PayloadAction<{ fileContent: string; title: string; size: number; totalPages: number }>) {
-      state.fileContent = action.payload.fileContent;
-      state.title = action.payload.title;
+    setDocumentDetails(state, action: PayloadAction<{ fileContent: string; title: string; type?: string; size: number; totalPages: number }>) {
+      state.type = action.payload.type;
       state.size = action.payload.size;
+      state.title = action.payload.title;
       state.totalPages = action.payload.totalPages;
+      state.fileContent = action.payload.fileContent;
       state.isLoaded = true;
     },
     resetDocumentState() {
