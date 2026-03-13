@@ -5,15 +5,15 @@ import { Tab } from '../../../interfaces';
 
 export const TabButton = (props: { tab: Tab, loading: boolean, setShowMenu: (e: boolean) => void; }) => {
   const { tab, setShowMenu } = props || {};
-  const { title, icon, route, showMenu } = tab || {};
+  const { title, icon, route, showMenu, type } = tab || {};
   const navigate = useNavigate();
 
   const handleOnClick = () => {
     setShowMenu(showMenu);
-    navigate(route);
+    if (route) navigate(route);
   };
 
-  const isActive = location.pathname === route || location.pathname.startsWith(`${route}/`);
+  const isActive = location.pathname === route || location.pathname.startsWith(`${route}/`) || (type === "menu" && !showMenu);
 
   const container = isActive ? `${s.container} ${s.selected}` : s.container;
 

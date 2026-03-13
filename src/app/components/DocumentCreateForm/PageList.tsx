@@ -20,9 +20,6 @@ export const PageList: React.FC<PageListProps> = ({ pages, currentPage, onPageCl
 
   return (
     <div className={s.pageGrid}>
-      <div className={s.pagesHeader}>
-        <h2 className={s.pagesTitle}>Pages ({pages.length})</h2>
-      </div>
       {pages.map((_, index) => (
         <div
           key={index}
