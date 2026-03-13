@@ -6,6 +6,9 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFilePdf, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { DeleteConfirmModal } from '../Modals/DeleteConfirmModal';
 
+import { useAppSelector } from '../../../store/hooks';
+import { Spinner } from '../Spinner';
+
 interface LocalDocument {
   id: string;
   title: string;
@@ -14,15 +17,21 @@ interface LocalDocument {
 
 export const DocumentList: React.FC = () => {
   const navigate = useNavigate();
+  const { userData, logged } = useAppSelector(state => state.session);
   const [documents, setDocuments] = useState<LocalDocument[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [selectedDoc, setSelectedDoc] = useState<{id: string, title: string} | null>(null);
+  const [selectedDoc, setSelectedDoc] = useState<{ id: string, title: string } | null>(null);
 
   const fetchDocuments = async () => {
+    if (!logged) {
+      setIsLoading(false);
+      return;
+    };
+
     try {
       setIsLoading(true);
-      const docs = await getDocumentsFromDB();
+      const docs = await getDocumentsFromDB(userData.id);
       const sortedDocs = docs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       setDocuments(sortedDocs);
     } catch (error) {
@@ -34,7 +43,8 @@ export const DocumentList: React.FC = () => {
 
   useEffect(() => {
     fetchDocuments();
-  }, []);
+    //eslint-disable-next-line
+  }, [userData.id]);
 
   const openDeleteModal = (id: string, title: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -48,9 +58,9 @@ export const DocumentList: React.FC = () => {
   };
 
   const handleDeleteConfirm = async () => {
-    if (selectedDoc) {
+    if (selectedDoc && userData?.id) {
       try {
-        await deleteDocumentFromDB(selectedDoc.id);
+        await deleteDocumentFromDB(selectedDoc.id, userData.id);
         fetchDocuments();
       } catch (error) {
         console.error('Failed to delete document:', error);
@@ -65,7 +75,7 @@ export const DocumentList: React.FC = () => {
   };
 
   if (isLoading) {
-    return <p>Loading documents...</p>;
+    return <Spinner isLoading />;
   }
 
   if (documents.length === 0) {

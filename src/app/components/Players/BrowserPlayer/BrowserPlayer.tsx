@@ -1,12 +1,11 @@
 import s from './BrowserPlayer.module.css';
-import { useEffect, useState, useRef, useCallback, SetStateAction } from 'react';
+import { useEffect, useState, useRef, SetStateAction } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../../../store';
 import {
   setVolume,
-  setCurrentSentenceIndex,
   stop,
-  play as playBrowserAudio,
+  play,
   setVoice,
   pause,
 } from '../../../../store/browserPlayerSlice';
@@ -15,6 +14,7 @@ import {
   goToNextPage,
   goToPreviousPage,
   setShowPageSelector,
+  setCurrentSentenceIndex,
 } from '../../../../store/pdfReaderSlice';
 import { PlaybackControls } from './PlaybackControls/PlaybackControls';
 import { VolumeControls } from './VolumeControls/VolumeControls';
@@ -32,8 +32,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal })
   const {
     voice,
     volume,
-    sentences,
-    currentSentenceIndex,
+    isPlaying,
   } = useSelector((state: RootState) => state.browserPlayer);
   const {
     isLoaded,
@@ -41,6 +40,8 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal })
     currentPage,
     documentId,
     documentTitle,
+    sentences,
+    currentSentenceIndex,
   } = useSelector((state: RootState) => state.pdfReader);
   const { selectedVoice } = useSelector((state: RootState) => state.voice);
 
@@ -84,53 +85,62 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal })
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showMobileVolumeSlider]);
 
-  const speak = useCallback((sentenceIndex: number) => {
-    handlePause();
-
-    if (sentenceIndex >= sentences.length) {
-      if (currentPage < totalPages) return handleNext();
-      return handleStop();
-    }
-
-    dispatch(setCurrentSentenceIndex(sentenceIndex));
-    const utterance = new SpeechSynthesisUtterance(sentences[sentenceIndex]);
-    if (voice) utterance.voice = voice;
-    utterance.volume = volume;
-    utterance.onend = () => {
-      // Check if it was cancelled before proceeding
-      speak(sentenceIndex + 1);
-    };
-
-    window.speechSynthesis.speak(utterance);
-    handlePlay();
-    //eslint-disable-next-line
-  }, [sentences, voice, volume, dispatch, currentPage, totalPages]);
-
   useEffect(() => {
     // This effect triggers the start of sentence-based playback once sentences are set
-    if (isLoaded && sentences.length > 0) {
-      speak(currentSentenceIndex);
-    }
+    handleStop();
 
-  }, [currentSentenceIndex, sentences, speak, isLoaded]);
+    if (isLoaded && sentences.length > 0 && currentSentenceIndex > -1) {
+      if (currentSentenceIndex >= sentences.length) {
+        if (currentPage < totalPages) return handleNext();
+        return handleStop();
+      }
+
+      const utterance = new SpeechSynthesisUtterance(sentences[currentSentenceIndex]);
+      if (voice) utterance.voice = voice;
+      utterance.volume = volume;
+      window.speechSynthesis.speak(utterance);
+
+      utterance.onstart = () => {
+        handlePlay();
+      };
+
+      utterance.onend = () => {
+        dispatch(setCurrentSentenceIndex(currentSentenceIndex + 1));
+      };
+    }
+    //eslint-disable-next-line
+  }, [currentSentenceIndex, sentences, isLoaded, currentPage]);
+
+  const handleTogglePlayPause = () => {
+    if (isPlaying) {
+      window.speechSynthesis.pause();
+      dispatch(pause());
+      return;
+    };
+    const utterance = new SpeechSynthesisUtterance(sentences[currentSentenceIndex]);
+    if (voice) utterance.voice = voice;
+    utterance.volume = volume;
+    window.speechSynthesis.speak(utterance);
+
+    utterance.onstart = () => {
+      handlePlay();
+    };
+
+    utterance.onend = () => {
+      dispatch(setCurrentSentenceIndex(currentSentenceIndex + 1));
+    };
+    handlePlay();
+    return;
+  };
 
   const handleStop = () => {
-    dispatch(setCurrentSentenceIndex(0));
     dispatch(stop());
     window.speechSynthesis.cancel();
   };
 
-  const handlePause = () => {
-    dispatch(pause());
-    window.speechSynthesis.cancel();
-  };
-
-
   const handlePlay = () => {
-    if (isLoaded) {
-      dispatch(playBrowserAudio());
-      window.speechSynthesis.resume();
-    }
+    dispatch(play());
+    window.speechSynthesis.resume();
   };
 
   const handlePrevious = () => {
@@ -178,9 +188,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal })
     handleVoicesChanged();
     return () => {
       window.speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
-      handleStop();
     };
-    //eslint-disable-next-line
   }, [dispatch, voice, selectedVoice]);
 
   return (
@@ -198,10 +206,11 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal })
 
       <PlaybackControls
         disabled={!isLoaded}
-        handlePrevious={handlePrevious}
         handleNext={handleNext}
+        handlePrevious={handlePrevious}
         isPrevDisabled={isPrevDisabled}
         isNextDisabled={isNextDisabled}
+        handleTogglePlayPause={handleTogglePlayPause}
       />
 
       <VolumeControls

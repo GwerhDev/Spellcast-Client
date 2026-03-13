@@ -1,0 +1,14 @@
+.dark {
+  --tt-toolbar-bg-color: var(--black);
+  --tt-toolbar-border-color: var(--tt-gray-dark-a-50);
+}
+
+.tiptap-toolbar {
+  display: flex;
+}
+
+.tiptap-toolbar-group {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, 30px);
+}

@@ -80,3 +80,18 @@ export interface FieldDefinition {
   label: string;
   required?: boolean;
 }
+
+export interface DocumentProgress {
+  currentPage: number;
+  pagesProgress: number[];
+  lastReadSentenceIndex: number;
+}
+
+export interface Document {
+  id: string;
+  title: string;
+  pdf: Blob;
+  createdAt: Date;
+  userId: string | undefined;
+  progress?: DocumentProgress;
+}

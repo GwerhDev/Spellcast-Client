@@ -7,6 +7,7 @@
     background-color: rgba(82, 82, 82, 0.014);
     display: flex;
     position: fixed;
+    overflow-y: auto;
     align-items: center;
     justify-content: center;
     backdrop-filter: blur(10px);
@@ -29,15 +30,17 @@
     gap: 1.5rem;
     width: 90%;
     padding: 1rem;
+    max-width: 800px;
+    max-height: 90%;
     background: var(--component-background);
     border-radius: 12px;
-    max-width: 800px;
-    display: flex;
-    flex-direction: column;
+    outline-offset: .5rem;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
     outline: solid .5px var(--color-dark-300);
-    outline-offset: .5rem;
+    display: flex;
     position: relative;
+    overflow-y: auto;
+    flex-direction: column;
 }
 
 .modalContent h3 {

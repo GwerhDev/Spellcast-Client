@@ -6,8 +6,8 @@ import {
   setVolume,
   setCurrentTime,
   setDuration,
-  playNext as playNextAudio,
-  playPrevious as playPreviousAudio,
+  playNext,
+  playPrevious,
   play,
   stop,
   pause,
@@ -145,7 +145,7 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal }) =
         dispatch(goToNextPage());
       }
     } else {
-      dispatch(playNextAudio());
+      dispatch(playNext());
     }
   };
 
@@ -153,7 +153,7 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal }) =
     if (isLoaded) {
       dispatch(goToPreviousPage());
     } else {
-      dispatch(playPreviousAudio());
+      dispatch(playPrevious());
     }
   };
 
@@ -161,7 +161,7 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal }) =
     if (isLoaded) {
       dispatch(goToNextPage());
     } else {
-      dispatch(playNextAudio());
+      dispatch(playNext());
     }
   };
 

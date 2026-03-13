@@ -16,7 +16,7 @@ export const Unauthorized = () => {
   }, [logged, navigate]);
 
   return (
-    <div className='d-flex h-full justify-content-center align-items-center flex-dir-col'>
+    <div className="dashboard-sections">
       <UnauthorizedForm />
     </div>
   )

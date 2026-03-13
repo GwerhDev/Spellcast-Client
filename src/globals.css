@@ -33,8 +33,9 @@ p {
 body {
   margin: 0;
   padding: 0;
-  height: 100%;
+  height: 100vh;
   color: var(--text-color);
+  display: flex;
 }
 
 ul {
@@ -198,8 +199,8 @@ textarea:read-only {
 main {
   margin: 0;
   padding: 0;
-  width: 100vw;
-  height: 100%;
+  width: 100%;
+  flex-grow: 1;
   max-width: var(--max-width);
   display: flex;
   flex-direction: column;
@@ -207,7 +208,7 @@ main {
 
 .app-viewer {
   width: 100%;
-  height: 100%;
+  flex-grow: 1;
   display: flex;
   position: relative;
   flex-direction: column;
@@ -281,7 +282,7 @@ a:hover {
 .dashboard-container {
   gap: .5rem;
   width: 100vw;
-  height: 100vh;
+  flex-grow: 1;
   display: flex;
   overflow-y: auto;
   padding-bottom: .5rem;
@@ -321,7 +322,7 @@ a:hover {
 
 .dashboard-sections {
   width: 100%;
-  height: 100%;
+  flex-grow: 1;
   border-radius: 10px;
   display: flex;
   overflow: auto;
@@ -376,4 +377,27 @@ a:hover {
   100% {
     opacity: .5;
   }
+}
+
+.tiptap.ProseMirror.simple-editor {
+  width: 100%;
+  flex-grow: 1;
+  padding: 1rem;
+  font-size: 1rem;
+  border-radius: 10px;
+  overflow-y: auto;
+  color: var(--color-light-100);
+  background-color: transparent;
+  border: 1px solid var(--color-dark-300);
+  box-sizing: border-box;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+
+.tiptap.ProseMirror.simple-editor:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.tiptap.ProseMirror.simple-editor:read-only {
+  border: 1px solid transparent;
 }

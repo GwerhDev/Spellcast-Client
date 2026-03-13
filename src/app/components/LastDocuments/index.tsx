@@ -5,24 +5,22 @@ import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFilePdf, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { DeleteConfirmModal } from '../Modals/DeleteConfirmModal';
-
-interface LocalDocument {
-  id: string;
-  title: string;
-  createdAt: Date;
-}
+import { useAppSelector } from 'store/hooks';
+import { Document } from 'src/interfaces';
+import { Spinner } from '../Spinner';
 
 export const LastDocuments: React.FC = () => {
-  const [documents, setDocuments] = useState<LocalDocument[]>([]);
+  const { userData } = useAppSelector((state) => state.session);
+  const [documents, setDocuments] = useState<Document[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [selectedDoc, setSelectedDoc] = useState<{id: string, title: string} | null>(null);
+  const [selectedDoc, setSelectedDoc] = useState<{ id: string, title: string } | null>(null);
   const navigate = useNavigate();
 
   const fetchDocuments = async () => {
     try {
       setIsLoading(true);
-      const docs = await getDocumentsFromDB();
+      const docs = await getDocumentsFromDB(userData.id);
       const sortedDocs = docs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       setDocuments(sortedDocs.slice(0, 3));
     } catch (error) {
@@ -34,7 +32,8 @@ export const LastDocuments: React.FC = () => {
 
   useEffect(() => {
     fetchDocuments();
-  }, []);
+    //eslint-disable-next-line
+  }, [userData.id]);
 
   const openDeleteModal = (id: string, title: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -50,7 +49,7 @@ export const LastDocuments: React.FC = () => {
   const handleDeleteConfirm = async () => {
     if (selectedDoc) {
       try {
-        await deleteDocumentFromDB(selectedDoc.id);
+        await deleteDocumentFromDB(selectedDoc.id, userData.id);
         fetchDocuments();
       } catch (error) {
         console.error('Failed to delete document:', error);
@@ -59,13 +58,16 @@ export const LastDocuments: React.FC = () => {
       }
     }
   };
-
-  const handleDocClick = (docId: string) => {
-    navigate(`/document/local/${docId}`);
+  const handleDocClick = (doc: Document) => {
+    navigate(`/document/local/${doc.id}`);
   };
 
   if (isLoading) {
-    return <p>Loading recent documents...</p>;
+    return (
+      <div className={s.container}>
+        <Spinner isLoading />
+      </div>
+    );
   }
 
   if (documents.length === 0) {
@@ -78,7 +80,7 @@ export const LastDocuments: React.FC = () => {
         <h2 className={s.title}>Last Documents</h2>
         <div className={s.listContainer}>
           {documents.map((doc) => (
-            <div key={doc.id} className={s.docLink} onClick={() => handleDocClick(doc.id)}>
+            <div key={doc.id} className={s.docLink} onClick={() => handleDocClick(doc)}>
               <div className={s.docInfo}>
                 <FontAwesomeIcon icon={faFilePdf} size="2x" />
                 <div>

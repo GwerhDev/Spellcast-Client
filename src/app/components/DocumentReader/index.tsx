@@ -5,39 +5,65 @@ import { useDispatch, useSelector } from 'react-redux';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowLeft, faEdit, faFilePdf, faSave, faXmark } from '@fortawesome/free-solid-svg-icons';
 import { RootState } from '../../../store';
-import { goToPage, setPageText } from '../../../store/pdfReaderSlice';
-import { setCurrentSentenceIndex, resetBrowserPlayer } from '../../../store/browserPlayerSlice';
+import { goToPage, setPageText, setCurrentSentenceIndex } from '../../../store/pdfReaderSlice';
+import { resetBrowserPlayer } from '../../../store/browserPlayerSlice';
 import { Spinner } from '../Spinner';
 import { IconButton } from '../Buttons/IconButton';
 import { PageSelector } from './PageSelector/PageSelector';
-import { getDocumentProgress } from '../../../db';
+import { SimpleEditor } from '../Tiptap/components/tiptap-templates/simple/simple-editor';
+import { JSONContent } from '@tiptap/core';
+
+const emptyContent: JSONContent = {
+  type: 'doc',
+  content: [{
+    type: 'paragraph',
+  }]
+};
+
+const safeParseJSON = (str: string): JSONContent => {
+  if (!str) {
+    return emptyContent;
+  }
+  try {
+    const parsed = JSON.parse(str);
+    return parsed;
+  } catch {
+    return {
+      type: 'doc',
+      content: [{
+        type: 'paragraph',
+        content: [{
+          type: 'text',
+          text: str,
+        }]
+      }]
+    };
+  }
+};
 
 export const DocumentReader = () => {
   const dispatch = useDispatch();
   const {
+    currentPage,
     currentPageText,
     documentTitle,
-    documentId,
     isLoaded,
-    pages,
+    sentences,
+    currentSentenceIndex,
   } = useSelector((state: RootState) => state.pdfReader);
-  const { selectedVoice } = useSelector((state: RootState) => state.voice);
-  const { sentences, currentSentenceIndex } = useSelector((state: RootState) => state.browserPlayer);
-  const [editedText, setEditedText] = useState<string | null>('');
-  const [isEditing, setIsEditing] = useState(false);
+  const { selectedVoice, } = useSelector((state: RootState) => state.voice);
+  const [editedText, setEditedText] = useState<JSONContent>(emptyContent);
+  const [isEditing, setIsEditing] = useState<boolean>(false);
   const textContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-      const handleProgress = async () => {
-        const progress = await getDocumentProgress(documentId || "");
-        if (progress?.currentPage) return dispatch(goToPage(progress.currentPage));
-      }
-
-      handleProgress();
-  }, [pages, dispatch, documentId]);
+    if (isLoaded && currentPage) {
+      dispatch(goToPage(currentPage));
+    }
+  }, [dispatch, currentPage, isLoaded]);
 
   useEffect(() => {
-    setEditedText(currentPageText);
+    setEditedText(safeParseJSON(currentPageText));
   }, [currentPageText]);
 
   const handleEdit = () => {
@@ -45,20 +71,18 @@ export const DocumentReader = () => {
   };
 
   const handleSave = () => {
-    const newText = textContainerRef.current?.innerText || editedText || "";
     dispatch(resetBrowserPlayer());
-    dispatch(setPageText({ text: newText }));
-    setEditedText(newText);
+    dispatch(setPageText({ text: JSON.stringify(editedText) }));
     setIsEditing(false);
   };
 
   const handleCancel = () => {
-    setEditedText(currentPageText || "");
+    setEditedText(safeParseJSON(currentPageText));
     setIsEditing(false);
   };
 
-  const handleTextChange = (e: React.FormEvent<HTMLDivElement>) => {
-    setEditedText(e.currentTarget.innerText);
+  const handleTextChange = (e: JSONContent) => {
+    setEditedText(e);
   };
 
   const handleSentenceClick = (clickedIndex: number) => {
@@ -67,10 +91,6 @@ export const DocumentReader = () => {
   };
 
   const renderContent = () => {
-    if (isEditing) {
-      return editedText;
-    }
-
     if (selectedVoice.type === 'browser') {
       return sentences.map((sentence, index) => (
         <span
@@ -110,19 +130,20 @@ export const DocumentReader = () => {
           )}
         </div>
       </div>
-      <div
-        ref={textContainerRef}
-        className={`${s.textContainer} ${isEditing ? s.editing : ''}`}
-        contentEditable={isEditing}
-        onInput={handleTextChange}
-        suppressContentEditableWarning={true}
-      >
-        {isLoaded ? (
-          renderContent()
-        ) : (
-          <Spinner isLoading message="Loading..." />
-        )}
-      </div>
+      <SimpleEditor isEditable={isEditing} content={editedText} onContentChange={handleTextChange}>
+        <div
+          ref={textContainerRef}
+          className={s.textContainer}
+          contentEditable={isEditing}
+          suppressContentEditableWarning={true}
+        >
+          {isLoaded ? (
+            renderContent()
+          ) : (
+            <Spinner isLoading message="Loading..." />
+          )}
+        </div>
+      </SimpleEditor>
     </div>
   )
 }
