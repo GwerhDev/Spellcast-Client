@@ -1,14 +1,15 @@
 import s from './TabBar.module.css';
-import { faCompass, faHome, faUser } from '@fortawesome/free-solid-svg-icons';
+import { faBookOpen, faCompass, faHome } from '@fortawesome/free-solid-svg-icons';
 import { Tab } from '../../../interfaces';
 import { TabButton } from '../Buttons/TabButton';
 
 interface TabBarProps {
+  showMenu?: boolean,
   setShowMenu: (e: boolean) => void;
 };
 
 export const TabBar = (props: TabBarProps) => {
-  const { setShowMenu } = props;
+  const { setShowMenu, showMenu } = props;
 
   const tabList: Tab[] = [
     {
@@ -17,10 +18,11 @@ export const TabBar = (props: TabBarProps) => {
       icon: faHome,
       showMenu: false,
     }, {
-      title: 'User',
-      route: '/user',
-      icon: faUser,
-      showMenu: true,
+      title: 'Menu',
+      route: null,
+      type: "menu",
+      icon: faBookOpen,
+      showMenu: !showMenu,
     }, {
       title: 'Explore',
       route: '/explore',

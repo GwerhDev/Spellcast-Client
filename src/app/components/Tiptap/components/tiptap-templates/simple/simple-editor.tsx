@@ -11,6 +11,7 @@ import { Highlight } from "@tiptap/extension-highlight"
 import { Subscript } from "@tiptap/extension-subscript"
 import { Superscript } from "@tiptap/extension-superscript"
 import { Selection } from "@tiptap/extensions"
+import { CharacterCount } from "@tiptap/extension-character-count"
 
 // --- UI Primitives ---
 import {
@@ -123,6 +124,7 @@ export function SimpleEditor({ children, content, onContentChange, isEditable }:
         upload: handleImageUpload,
         onError: (error) => console.error("Upload failed:", error),
       }),
+      CharacterCount,
     ],
     content: content,
     onUpdate: ({ editor }) => {
@@ -158,6 +160,11 @@ export function SimpleEditor({ children, content, onContentChange, isEditable }:
           role="presentation"
           className={s["simple-editor-content"]}
         />
+        {editor && (
+          <div className={s.characterCount}>
+            {editor.storage.characterCount.characters()} characters
+          </div>
+        )}
       </EditorContext.Provider>
     </div>
   )

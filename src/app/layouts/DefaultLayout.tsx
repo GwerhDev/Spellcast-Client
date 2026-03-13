@@ -34,7 +34,7 @@ export default function DefaultLayout() {
       </div>
       <div className='dashboard-container'>
         <aside className="aside-container">
-          <TabBar setShowMenu={setShowMenu} />
+          <TabBar showMenu={showMenu} setShowMenu={setShowMenu} />
           {showMenu && <LateralMenu />}
         </aside>
         <div className="app-viewer">

@@ -2,8 +2,9 @@ import { IconProp } from "@fortawesome/fontawesome-svg-core";
 
 export interface Tab {
   title: string;
+  type?: "menu";
   icon?: IconProp;
-  route: string;
+  route?: string | null;
   showMenu: boolean;
 }
 
