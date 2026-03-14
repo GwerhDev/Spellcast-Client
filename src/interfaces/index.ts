@@ -96,3 +96,13 @@ export interface Document {
   userId: string | undefined;
   progress?: DocumentProgress;
 }
+
+export interface DocumentState {
+  size: number | null;
+  type?: string;
+  title: string;
+  totalPages: number;
+  currentPage: number;
+  fileContent: string | null;
+  isLoaded: boolean;
+}

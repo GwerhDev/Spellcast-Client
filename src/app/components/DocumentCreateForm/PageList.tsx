@@ -16,7 +16,7 @@ export const PageList: React.FC<PageListProps> = ({ pages, currentPage, onPageCl
   const handleDelete = (e: React.MouseEvent, index: number) => {
     e.stopPropagation();
     onPageDelete(index);
-  }
+  };
 
   return (
     <div className={s.pageGrid}>
@@ -33,9 +33,8 @@ export const PageList: React.FC<PageListProps> = ({ pages, currentPage, onPageCl
           <small className={s.pageNumber}>Page {index + 1}</small>
         </div>
       ))}
-      <div className={s.addPageItem} onClick={onAddPage}>
-        <FontAwesomeIcon icon={faPlus} size="2x" />
-        <small>Add Page</small>
+      <div title={"Add Page"} className={s.addPageItem} onClick={onAddPage}>
+        <FontAwesomeIcon icon={faPlus} />
       </div>
     </div>
   );

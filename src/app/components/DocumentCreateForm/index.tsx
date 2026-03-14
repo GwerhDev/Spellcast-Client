@@ -28,25 +28,25 @@ const emptyContent: JSONContent = {
 };
 
 export const DocumentCreateForm: React.FC = () => {
-  const { fileContent, title } = useSelector((state: RootState) => state.document);
+  const document = useSelector((state: RootState) => state.document);
   const { userData, logged } = useAppSelector((state: RootState) => state.session);
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const [documentTitle, setDocumentTitle] = useState(title || '');
+  const [documentTitle, setDocumentTitle] = useState(document.title || '');
   const [pagesContent, setPagesContent] = useState<JSONContent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [editingPageIndex, setEditingPageIndex] = useState<number>(0);
 
   useEffect(() => {
-    if (title) {
-      setDocumentTitle(title);
+    if (document.title) {
+      setDocumentTitle(document.title);
     }
-  }, [title]);
+  }, [document]);
 
   useEffect(() => {
     const extractTextFromPdf = async () => {
-      if (!fileContent) {
+      if (!document.fileContent) {
         setPagesContent([emptyContent]);
         setIsLoading(false);
         return;
@@ -54,7 +54,7 @@ export const DocumentCreateForm: React.FC = () => {
 
       try {
         setIsLoading(true);
-        const pdfData = atob(fileContent.substring(fileContent.indexOf(',') + 1));
+        const pdfData = atob(document.fileContent.substring(document.fileContent.indexOf(',') + 1));
         const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
         const numPages = pdf.numPages;
 
@@ -88,7 +88,7 @@ export const DocumentCreateForm: React.FC = () => {
     };
 
     extractTextFromPdf();
-  }, [fileContent]);
+  }, [document]);
 
   const handlePageClick = (pageIndex: number) => {
     setEditingPageIndex(pageIndex);
@@ -184,7 +184,7 @@ export const DocumentCreateForm: React.FC = () => {
 
       <div className={s.editorContainer}>
         <DocumentEditor
-          title={documentTitle}
+          document={document}
           pageNumber={editingPageIndex + 1}
           pageContent={pagesContent[editingPageIndex]}
           onPageContentChange={handlePageContentChange}

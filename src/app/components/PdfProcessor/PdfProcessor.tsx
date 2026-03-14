@@ -4,13 +4,9 @@ import * as pdfjsLib from 'pdfjs-dist';
 import type { PDFDocumentProxy, TextItem, TextMarkedContent } from 'pdfjs-dist/types/src/display/api';
 import { RootState } from '../../../store';
 import { setPageText, setPdfLoaded, setSentences } from '../../../store/pdfReaderSlice';
-
-// Set workerSrc for pdfjsLib
-import workerSrc from 'pdfjs-dist/build/pdf.worker?url';
 import { getDocumentById, updateDocumentProgress } from '../../../db';
 import { useAppSelector } from 'store/hooks';
 import { DocumentProgress } from '../../../interfaces/index';
-pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
 export const PdfProcessor = () => {
   const dispatch = useDispatch();
