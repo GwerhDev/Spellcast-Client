@@ -1,3 +1,4 @@
+export const VITE_ENV = import.meta.env.VITE_ENV;
 export const API_BASE = import.meta.env.VITE_API_URL;
 export const CLIENT_BASE = import.meta.env.VITE_CLIENT_URL;
 export const CLIENT_NAME = import.meta.env.VITE_CLIENT_NAME;
