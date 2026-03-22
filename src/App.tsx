@@ -3,10 +3,9 @@ import { RootState } from './store';
 import { useSelector } from 'react-redux';
 import { userData } from './interfaces';
 import { useInitSession } from './hooks/useInitSession';
+import { Toast } from './app/components/Toast';
 import { Loader } from './app/components/Loader';
-import { Toast } from './app/components/Toast/Toast';
 import { RootBackground } from './app/components/Backgrounds/RootBackground';
-import { New } from './app/pages/New';
 import { Home } from './app/pages/Home';
 import { Audios } from './app/pages/Audios';
 import { Library } from './app/pages/Library';
@@ -16,14 +15,14 @@ import { NotFound } from './app/pages/NotFound';
 import { Settings } from './app/pages/Settings';
 import { Dashboard } from './app/pages/Dashboard';
 import { UserGroups } from './app/pages/UserGroups';
-import { UserArchive } from './app/pages/UserArchive';
-import { Unauthorized } from './app/pages/Unauthorized';
-import { UserCredentials } from './app/pages/UserCredentials';
 import { Appearance } from './app/pages/Appearance';
-import DefaultLayout from './app/layouts/DefaultLayout';
+import { UserArchive } from './app/pages/UserArchive';
 import { ThemeProvider } from './context/ThemeContext';
+import { Unauthorized } from './app/pages/Unauthorized';
 import { DocumentCreate } from './app/pages/DocumentCreate';
+import { UserCredentials } from './app/pages/UserCredentials';
 import { LocalDocumentReader } from './app/pages/LocalDocumentReader';
+import DefaultLayout from './app/layouts/DefaultLayout';
 
 function App() {
   const userData: userData = useSelector((state: RootState) => state.session.userData);
@@ -41,7 +40,6 @@ function App() {
             <Route path="/unauthorized" element={<Unauthorized />} />
             <Route element={<DefaultLayout />}>
               <Route path="/" element={<Home />} />
-              <Route path="/new" element={<New />} />
               <Route path="/document/create" element={<DocumentCreate />} />
               <Route path="/document/local/:id" element={<LocalDocumentReader />} />
               <Route path="/user/archive" element={<UserArchive />} />
