@@ -1,8 +1,8 @@
+import s from './index.module.css';
 import React, { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '../../../store';
 import { removeApiResponse } from '../../../store/apiResponsesSlice';
-import s from './Toast.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheckCircle, faTriangleExclamation } from '@fortawesome/free-solid-svg-icons';
 

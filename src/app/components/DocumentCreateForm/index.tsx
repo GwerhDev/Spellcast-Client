@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useAppSelector } from '../../../store/hooks';
 import { RootState } from 'store';
 import * as pdfjsLib from 'pdfjs-dist';
-import type { TextItem, TextMarkedContent } from 'pdfjs-dist/types/src/display/api';
+import type { TextItem } from 'pdfjs-dist/types/src/display/api';
 import { Spinner } from '../Spinner';
 import { PageList } from './PageList';
 import { DocumentEditor } from '../Editors/DocumentEditor';
@@ -59,22 +59,151 @@ export const DocumentCreateForm: React.FC = () => {
         const numPages = pdf.numPages;
 
         const allPagesContent: JSONContent[] = [];
-        for (let i = 1; i <= numPages; i++) {
-          const page = await pdf.getPage(i);
-          const content = await page.getTextContent();
-          const text = content.items.map((item: TextItem | TextMarkedContent) => ('str' in item ? item.str : '')).join(' ').replace(/\s+/g, ' ').trim();
 
-          if (text) {
-            allPagesContent.push({
-              type: 'doc',
-              content: [{
-                type: 'paragraph',
-                content: [{
-                  type: 'text',
-                  text: text,
-                }]
-              }]
+        for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+          const page = await pdf.getPage(pageNum);
+          const content = await page.getTextContent();
+          
+          if (content.items.length === 0) {
+            allPagesContent.push(emptyContent);
+            continue;
+          }
+
+          const items = content.items as TextItem[];
+          items.sort((a, b) => {
+            if (a.transform[5] > b.transform[5]) return -1;
+            if (a.transform[5] < b.transform[5]) return 1;
+            return a.transform[4] - b.transform[4];
+          });
+
+          // 1. Group into lines
+          const lines: { items: TextItem[], y: number, height: number, x: number }[] = [];
+          if (items.length > 0) {
+            let currentLine: TextItem[] = [];
+            let lastY = items[0].transform[5];
+            for (const item of items) {
+              if (Math.abs(item.transform[5] - lastY) > 1) {
+                currentLine.sort((a, b) => a.transform[4] - b.transform[4]);
+                lines.push({ 
+                  items: currentLine, 
+                  y: lastY, 
+                  height: currentLine.reduce((max, i) => Math.max(max, i.height), 0),
+                  x: currentLine[0]?.transform[4] || 0
+                });
+                currentLine = [];
+              }
+              currentLine.push(item);
+              lastY = item.transform[5];
+            }
+            currentLine.sort((a, b) => a.transform[4] - b.transform[4]);
+            lines.push({ 
+              items: currentLine, 
+              y: lastY, 
+              height: currentLine.reduce((max, i) => Math.max(max, i.height), 0),
+              x: currentLine[0]?.transform[4] || 0
             });
+          }
+
+          // 2. Group lines into paragraphs
+          const allLineHeights = lines.map(l => l.height).filter(h => h > 0);
+          const avgLineHeight = allLineHeights.reduce((sum, h) => sum + h, 0) / (allLineHeights.length || 1);
+          const paragraphs: { lines: typeof lines }[] = [];
+          if (lines.length > 0) {
+            let currentParagraph: typeof lines = [];
+            if(lines[0].items.length > 0) currentParagraph.push(lines[0]);
+
+            for (let j = 1; j < lines.length; j++) {
+              const prevLine = lines[j-1];
+              const currLine = lines[j];
+              const yDiff = prevLine.y - currLine.y;
+              const paragraphThreshold = Math.max(prevLine.height, currLine.height, avgLineHeight) * 1.5;
+
+              if (yDiff > paragraphThreshold) {
+                paragraphs.push({ lines: currentParagraph });
+                const numEmptyLines = Math.floor(yDiff / avgLineHeight) - 1;
+                for (let k = 0; k < numEmptyLines; k++) {
+                  paragraphs.push({ lines: [] });
+                }
+                currentParagraph = [];
+                if(currLine.items.length > 0) currentParagraph.push(currLine);
+              } else {
+                if(currLine.items.length > 0) currentParagraph.push(currLine);
+              }
+            }
+            paragraphs.push({ lines: currentParagraph });
+          }
+
+          // 3. Generate Tiptap JSON
+          const pageContent: JSONContent = { type: 'doc', content: [] };
+
+          for (const p of paragraphs) {
+
+            if (p.lines.length === 0) {
+              pageContent.content!.push({ type: 'paragraph' });
+              continue;
+            }
+
+            const contentNodes: object[] = [];
+            
+            for (let i = 0; i < p.lines.length; i++) {
+              const line = p.lines[i];
+              if (i > 0) {
+                contentNodes.push({ type: 'hardBreak' });
+              }
+
+              const indentation = line.x - (lines[0].x);
+              if (indentation > 5) {
+                const spaceWidth = 4; // Approximation
+                const numSpaces = Math.round(indentation / spaceWidth);
+                if (numSpaces > 0) {
+                  contentNodes.push({ type: 'text', text: ' '.repeat(numSpaces) });
+                }
+              }
+
+              for (const item of line.items) {
+                if (item.str.length === 0) continue;
+
+                const textNode: { type: 'text', text: string, marks?: object[] } = {
+                  type: 'text',
+                  text: item.str,
+                  marks: []
+                };
+
+                const fontName = item.fontName.toLowerCase();
+                if (fontName.includes('bold')) textNode.marks!.push({ type: 'bold' });
+                if (fontName.includes('italic') || fontName.includes('oblique')) textNode.marks!.push({ type: 'italic' });
+                
+                if (textNode.marks?.length === 0) delete textNode.marks;
+                contentNodes.push(textNode);
+              }
+            }
+
+            if (contentNodes.length === 0) continue;
+
+            const firstLineHeight = p.lines[0]?.height || 0;
+            let nodeType = 'paragraph';
+            let attrs = {};
+
+            if (firstLineHeight > avgLineHeight * 1.8) {
+              nodeType = 'heading';
+              attrs = { level: 1 };
+            } else if (firstLineHeight > avgLineHeight * 1.5) {
+              nodeType = 'heading';
+              attrs = { level: 2 };
+            } else if (firstLineHeight > avgLineHeight * 1.2) {
+              nodeType = 'heading';
+              attrs = { level: 3 };
+            }
+            
+            pageContent.content!.push({
+              type: nodeType,
+              attrs: attrs,
+              content: contentNodes
+            });
+          }
+
+          if (pageContent.content!.length > 0) {
+            allPagesContent.push(pageContent);
           } else {
             allPagesContent.push(emptyContent);
           }
