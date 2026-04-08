@@ -16,7 +16,11 @@ const extractSentencesFromJSON = (text: string): string[] => {
     for (const node of (json.content || [])) {
       if (node.type !== 'paragraph' && node.type !== 'heading') continue;
       const nodeText = (node.content || [])
-        .map((c: JSONContent) => c.type === 'text' ? ((c.text as string) || '') : '')
+        .map((c: JSONContent) => {
+          if (c.type === 'text') return (c.text as string) || '';
+          if (c.type === 'hardBreak') return ' ';
+          return '';
+        })
         .join('')
         .trim();
       if (!nodeText) continue;

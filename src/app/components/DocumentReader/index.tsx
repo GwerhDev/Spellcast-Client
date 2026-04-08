@@ -130,7 +130,11 @@ export const DocumentReader = () => {
       if (node.type !== 'paragraph' && node.type !== 'heading') return null;
 
       const nodeText = (node.content || [])
-        .map((c) => (c.type === 'text' ? ((c as { type: string; text?: string }).text || '') : ''))
+        .map((c) => {
+          if (c.type === 'text') return (c as { type: string; text?: string }).text || '';
+          if (c.type === 'hardBreak') return ' ';
+          return '';
+        })
         .join('')
         .trim();
 
