@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowLeft, faEdit, faFilePdf, faSave, faXmark } from '@fortawesome/free-solid-svg-icons';
+import { faArrowLeft, faEdit, faFilePdf, faSave, faXmark, faGear } from '@fortawesome/free-solid-svg-icons';
 import { RootState } from '../../../store';
 import { goToPage, setPageText, setCurrentSentenceIndex } from '../../../store/pdfReaderSlice';
 import { resetBrowserPlayer } from '../../../store/browserPlayerSlice';
@@ -54,6 +54,8 @@ export const DocumentReader = () => {
   const { selectedVoice, } = useSelector((state: RootState) => state.voice);
   const [editedText, setEditedText] = useState<JSONContent>(emptyContent);
   const [isEditing, setIsEditing] = useState<boolean>(false);
+  const [fitToWidth, setFitToWidth] = useState(true);
+  const [showSettings, setShowSettings] = useState(false);
   const textContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -90,7 +92,7 @@ export const DocumentReader = () => {
     dispatch(setCurrentSentenceIndex(clickedIndex));
   };
 
-  const renderFormattedContent = () => {
+  const renderFormattedContent = (fit: boolean) => {
     if (!editedText?.content) return null;
 
     return editedText.content.map((node, nIdx) => {
@@ -103,7 +105,7 @@ export const DocumentReader = () => {
       const Tag = (node.type === 'heading' ? `h${level}` : 'p') as keyof JSX.IntrinsicElements;
 
       const inlineContent = nodeContent.map((child, cIdx) => {
-        if (child.type === 'hardBreak') return <span key={cIdx}> </span>;
+        if (child.type === 'hardBreak') return fit ? <span key={cIdx}> </span> : <br key={cIdx} />;
         if (child.type !== 'text') return null;
 
         const text = (child as { type: string; text?: string; marks?: { type: string }[] }).text || '';
@@ -121,7 +123,7 @@ export const DocumentReader = () => {
     });
   };
 
-  const renderFormattedSentences = () => {
+  const renderFormattedSentences = (fit: boolean) => {
     if (!editedText?.content) return null;
 
     let sentIdx = 0;
@@ -132,7 +134,7 @@ export const DocumentReader = () => {
       const nodeText = (node.content || [])
         .map((c) => {
           if (c.type === 'text') return (c as { type: string; text?: string }).text || '';
-          if (c.type === 'hardBreak') return ' ';
+          if (c.type === 'hardBreak') return fit ? ' ' : '\n';
           return '';
         })
         .join('')
@@ -140,7 +142,7 @@ export const DocumentReader = () => {
 
       if (!nodeText) return <p key={nIdx} className={s.emptyBlock} />;
 
-      const nodeSentences = nodeText.split(/(?<=[.!?])\s*/).filter(Boolean);
+      const nodeSentences = nodeText.split(fit ? /(?<=[.!?])\s*/ : /(?<=[.!?])/).filter(Boolean);
       const level = node.type === 'heading' ? ((node.attrs as { level?: number })?.level ?? 1) : 0;
       const Tag = (node.type === 'heading' ? `h${level}` : 'p') as keyof JSX.IntrinsicElements;
 
@@ -174,15 +176,15 @@ export const DocumentReader = () => {
 
     if (selectedVoice.type === 'browser') {
       return (
-        <div ref={textContainerRef} className={`${s.textContainer} ${s.readerContent}`}>
-          {renderFormattedSentences()}
+        <div ref={textContainerRef} className={`${s.textContainer} ${s.readerContent} ${!fitToWidth ? s.pdfMode : ''}`}>
+          {renderFormattedSentences(fitToWidth)}
         </div>
       );
     }
 
     return (
-      <div className={`${s.textContainer} ${s.readerContent}`}>
-        {renderFormattedContent()}
+      <div className={`${s.textContainer} ${s.readerContent} ${!fitToWidth ? s.pdfMode : ''}`}>
+        {renderFormattedContent(fitToWidth)}
       </div>
     );
   };
@@ -207,11 +209,39 @@ export const DocumentReader = () => {
               <IconButton icon={faXmark} variant='transparent' onClick={handleCancel} />
             </>
           ) : (
-            isLoaded && <IconButton icon={faEdit} variant='transparent' onClick={handleEdit} />
+            <>
+              {isLoaded && <IconButton icon={faEdit} variant='transparent' onClick={handleEdit} />}
+              {isLoaded && (
+                <IconButton
+                  icon={faGear}
+                  variant='transparent'
+                  onClick={() => setShowSettings(prev => !prev)}
+                />
+              )}
+            </>
           )}
         </div>
       </div>
-      {renderBody()}
+      <div className={s.bodyWrapper}>
+        {renderBody()}
+        {showSettings && !isEditing && (
+          <div className={s.settingsPanel}>
+            <p className={s.settingsPanelTitle}>Display</p>
+            <button
+              className={fitToWidth ? s.settingsOptionActive : s.settingsOption}
+              onClick={() => setFitToWidth(true)}
+            >
+              Fit to width
+            </button>
+            <button
+              className={!fitToWidth ? s.settingsOptionActive : s.settingsOption}
+              onClick={() => setFitToWidth(false)}
+            >
+              View as PDF
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
