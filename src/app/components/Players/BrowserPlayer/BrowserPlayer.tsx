@@ -26,7 +26,7 @@ interface PlayerProps {
   showVoiceSelectorModal: React.Dispatch<SetStateAction<boolean>>;
 }
 
-const MAX_UTTERANCE_LEN = 200;
+const MAX_UTTERANCE_LEN = 150;
 
 const splitIntoChunks = (text: string, maxLen: number): string[] => {
   if (text.length <= maxLen) return [text];
@@ -105,17 +105,31 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal })
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showMobileVolumeSlider]);
 
-  const speakSentence = (text: string, onEnd: () => void, onStart?: () => void) => {
-    const chunks = splitIntoChunks(text, MAX_UTTERANCE_LEN);
-    chunks.forEach((chunk, i) => {
-      const utterance = new SpeechSynthesisUtterance(chunk);
-      if (voice) utterance.voice = voice;
-      utterance.volume = volume;
-      if (i === 0 && onStart) utterance.onstart = onStart;
-      if (i === chunks.length - 1) utterance.onend = onEnd;
-      window.speechSynthesis.speak(utterance);
-    });
+  const speakChunk = (chunks: string[], index: number, onEnd: () => void, onStart?: () => void) => {
+    if (index >= chunks.length) { onEnd(); return; }
+    const utterance = new SpeechSynthesisUtterance(chunks[index]);
+    if (voice) utterance.voice = voice;
+    utterance.volume = volume;
+    if (index === 0 && onStart) utterance.onstart = onStart;
+    utterance.onend = () => speakChunk(chunks, index + 1, onEnd);
+    window.speechSynthesis.speak(utterance);
   };
+
+  const speakSentence = (text: string, onEnd: () => void, onStart?: () => void) => {
+    speakChunk(splitIntoChunks(text, MAX_UTTERANCE_LEN), 0, onEnd, onStart);
+  };
+
+  // Chrome bug workaround: speechSynthesis freezes silently after ~14s without this
+  useEffect(() => {
+    if (!isPlaying) return;
+    const id = setInterval(() => {
+      if (window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
+        window.speechSynthesis.pause();
+        window.speechSynthesis.resume();
+      }
+    }, 10000);
+    return () => clearInterval(id);
+  }, [isPlaying]);
 
   useEffect(() => {
     // This effect triggers the start of sentence-based playback once sentences are set
