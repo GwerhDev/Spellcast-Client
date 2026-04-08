@@ -87,6 +87,9 @@ const pdfReaderSlice = createSlice({
     setPageText(state, action: PayloadAction<{ text: string }>) {
       state.currentPageText = action.payload.text;
     },
+    setPagesCache(state, action: PayloadAction<{ [pageNumber: number]: string }>) {
+      state.pages = { ...state.pages, ...action.payload };
+    },
     setHasInitialPageSet(state, action: PayloadAction<boolean>) { // New action
       state.hasInitialPageSet = action.payload;
     },
@@ -104,6 +107,7 @@ export const {
   goToPage,
   resetPdfReader,
   setPageText,
+  setPagesCache,
   setPdfLoaded,
   setHasInitialPageSet,
   setContinuousPlay,

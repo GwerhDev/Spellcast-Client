@@ -64,5 +64,5 @@
   width: 100%;
   padding-inline: 1rem;
   color: var(--text-color);
-  background-color: var(--color-primary-darker);
+  background-color: transparent;
 }

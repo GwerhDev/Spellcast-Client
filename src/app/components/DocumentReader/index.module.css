@@ -101,3 +101,30 @@
   color: var(--color-dark-900);
   border-radius: 3px;
 }
+
+/* Browser TTS structured reader */
+.readerContent h1,
+.readerContent h2,
+.readerContent h3,
+.readerContent h4 {
+  color: var(--color-light-100);
+  font-weight: bold;
+  background: none;
+  -webkit-background-clip: unset;
+  background-clip: unset;
+}
+
+.readerContent h1 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+.readerContent h2 { font-size: 1.25rem; margin-bottom: 0.5rem; }
+.readerContent h3 { font-size: 1.125rem; margin-bottom: 0.4rem; }
+.readerContent h4 { font-size: 1rem; margin-bottom: 0.4rem; }
+
+.readerBlock {
+  margin-bottom: 0.75rem;
+  line-height: 1.6;
+}
+
+.emptyBlock {
+  display: block;
+  height: 0.75rem;
+}

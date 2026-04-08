@@ -1,12 +1,13 @@
 import * as pdfjsLib from 'pdfjs-dist';
 import React, { useEffect, useState } from 'react';
+import { JSONContent } from '@tiptap/core';
 import { useParams } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { getDocumentById } from '../../db';
 import { useAppSelector } from '../../store/hooks';
 import { resetAudioPlayer } from '../../store/audioPlayerSlice';
 import { resetBrowserPlayer, stop } from '../../store/browserPlayerSlice';
-import { setPdfFile, setPdfDocumentInfo, resetPdfReader, setPdfLoaded, setHasInitialPageSet } from '../../store/pdfReaderSlice';
+import { setPdfFile, setPdfDocumentInfo, resetPdfReader, setPdfLoaded, setHasInitialPageSet, setPagesCache } from '../../store/pdfReaderSlice';
 import { Spinner } from '../components/Spinner';
 import { DocumentReader } from '../components/DocumentReader';
 
@@ -56,10 +57,23 @@ export const LocalDocumentReader: React.FC = () => {
         }
         
         dispatch(setPdfFile({ id, title: doc.title, progress: doc.progress }));
-        
+
+        if (doc.pagesContent) {
+          try {
+            const pages: JSONContent[] = JSON.parse(doc.pagesContent);
+            const pagesCache: { [pageNumber: number]: string } = {};
+            pages.forEach((page, index) => {
+              pagesCache[index + 1] = JSON.stringify(page);
+            });
+            dispatch(setPagesCache(pagesCache));
+          } catch {
+            // ignore parse errors, PdfProcessor will extract from PDF
+          }
+        }
+
         const pdfData = await doc.pdf.arrayBuffer();
         const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
-        
+
         dispatch(setPdfDocumentInfo({ totalPages: pdf.numPages }));
 
         dispatch(setHasInitialPageSet(true)); // Set flag after initial page is determined

@@ -288,6 +288,7 @@ export const DocumentCreateForm: React.FC = () => {
         title: documentTitle,
         pdf: pdfBlob,
         userId: userData.id,
+        pagesContent: JSON.stringify(pagesContent),
       });
 
       dispatch(resetPdfReader());
