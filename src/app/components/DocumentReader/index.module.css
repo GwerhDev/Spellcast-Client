@@ -13,13 +13,17 @@
 .textContainer {
   width: 100%;
   flex-grow: 1;
-  white-space: pre-wrap;
+  white-space: normal;
   color: var(--color-light-100);
   background-color: var(--component-background);
   border-radius: 10px;
   padding: 1rem;
   overflow-y: auto;
   border: 1px solid transparent;
+}
+
+.pdfMode {
+  white-space: pre-wrap;
 }
 
 .textContainer:focus {
@@ -100,4 +104,92 @@
   background-color: var(--color-primary);
   color: var(--color-dark-900);
   border-radius: 3px;
+}
+
+/* Body wrapper (content + settings panel side by side) */
+.bodyWrapper {
+  display: flex;
+  flex-direction: row;
+  flex-grow: 1;
+  gap: 0.5rem;
+  overflow: hidden;
+}
+
+/* Settings side panel */
+.settingsPanel {
+  width: 180px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+  border-radius: 10px;
+  border: 1px solid var(--color-dark-300);
+  background: var(--component-background);
+  overflow-y: auto;
+}
+
+.settingsPanelTitle {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-light-300);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.25rem;
+}
+
+.settingsOption {
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  background: transparent;
+  color: var(--color-light-200);
+  border: 1px solid transparent;
+  transition: background 0.15s;
+}
+
+.settingsOption:hover {
+  background: var(--color-dark-300);
+  color: var(--color-light-100);
+}
+
+.settingsOptionActive {
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  background: var(--color-primary);
+  color: var(--color-dark-900);
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+
+/* Browser TTS structured reader */
+.readerContent h1,
+.readerContent h2,
+.readerContent h3,
+.readerContent h4 {
+  color: var(--color-light-100);
+  font-weight: bold;
+  background: none;
+  -webkit-background-clip: unset;
+  background-clip: unset;
+}
+
+.readerContent h1 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+.readerContent h2 { font-size: 1.25rem; margin-bottom: 0.5rem; }
+.readerContent h3 { font-size: 1.125rem; margin-bottom: 0.4rem; }
+.readerContent h4 { font-size: 1rem; margin-bottom: 0.4rem; }
+
+.readerBlock {
+  margin-bottom: 0.75rem;
+  line-height: 1.6;
+}
+
+.emptyBlock {
+  display: block;
+  height: 0.75rem;
 }

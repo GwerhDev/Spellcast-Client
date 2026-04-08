@@ -45,24 +45,30 @@
 
 .continueButton {
   width: 8rem;
-  padding: 0;
+  padding: 0rem 0rem;
   border-radius: 4rem;
   display: flex;
   cursor: pointer;
   align-items: center;
-  justify-content: end;
+  justify-content: flex-end;
+  gap: 0.25rem;
   background-color: transparent;
-  transition-duration: .4s;
+  border: 1.5px solid transparent;
+  color: var(--color-primary);
+  transition: all 0.25s ease;
 }
 
 .continueButton:hover {
-  color: var(--text-color);
-  background-color: var(--color-primary-darker);
+  border-color: var(--color-primary);
+  background-color: var(--color-dark-300);
 }
 
 .continueButton p {
   width: 100%;
-  padding-inline: 1rem;
-  color: var(--text-color);
-  background-color: var(--color-primary-darker);
+  padding-inline: 4rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-light-100);
+  background-color: transparent;
+  white-space: nowrap;
 }

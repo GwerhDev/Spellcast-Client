@@ -1,4 +1,4 @@
-import { ReactElement, useEffect, useRef } from "react"
+import { useEffect, useRef } from "react"
 import { EditorContent, EditorContext, JSONContent, useEditor } from "@tiptap/react"
 
 // --- Tiptap Core Extensions ---
@@ -83,7 +83,7 @@ const MainToolbarContent = () => {
   )
 }
 
-export function SimpleEditor({ children, content, onContentChange, isEditable }: { children?: ReactElement, content: JSONContent, onContentChange: (content: JSONContent) => void, isEditable?: boolean }) {
+export function SimpleEditor({ content, onContentChange, isEditable }: { content: JSONContent, onContentChange: (content: JSONContent) => void, isEditable?: boolean }) {
   const toolbarRef = useRef<HTMLDivElement>(null);
 
   const editor = useEditor({
@@ -144,9 +144,11 @@ export function SimpleEditor({ children, content, onContentChange, isEditable }:
   }, [content, editor]);
 
   if (!isEditable) return (
-    <>
-      {children}
-    </>
+    <EditorContent
+      editor={editor}
+      role="presentation"
+      className={s["simple-editor-content"]}
+    />
   )
 
   return (

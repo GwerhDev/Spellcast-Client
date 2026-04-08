@@ -2,11 +2,36 @@ import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import * as pdfjsLib from 'pdfjs-dist';
 import type { PDFDocumentProxy, TextItem, TextMarkedContent } from 'pdfjs-dist/types/src/display/api';
+import { JSONContent } from '@tiptap/core';
 import { RootState } from '../../../store';
 import { setPageText, setPdfLoaded, setSentences } from '../../../store/pdfReaderSlice';
 import { getDocumentById, updateDocumentProgress } from '../../../db';
 import { useAppSelector } from 'store/hooks';
 import { DocumentProgress } from '../../../interfaces/index';
+
+const extractSentencesFromJSON = (text: string): string[] => {
+  try {
+    const json = JSON.parse(text) as JSONContent;
+    const sentences: string[] = [];
+    for (const node of (json.content || [])) {
+      if (node.type !== 'paragraph' && node.type !== 'heading') continue;
+      const nodeText = (node.content || [])
+        .map((c: JSONContent) => {
+          if (c.type === 'text') return (c.text as string) || '';
+          if (c.type === 'hardBreak') return ' ';
+          return '';
+        })
+        .join('')
+        .trim();
+      if (!nodeText) continue;
+      const nodeSentences = nodeText.split(/(?<=[.!?])\s*/).filter(Boolean);
+      sentences.push(...nodeSentences);
+    }
+    return sentences.length > 0 ? sentences : text.split(/(?<=[.!?])/).filter(Boolean);
+  } catch {
+    return text.split(/(?<=[.!?])/).filter(Boolean);
+  }
+};
 
 export const PdfProcessor = () => {
   const dispatch = useDispatch();
@@ -58,10 +83,11 @@ export const PdfProcessor = () => {
           }
 
           if (text && text.trim() !== '') {
-            // Only generate audio if it's not already for the current page
             dispatch(setPageText({ text }));
-            const sentences = text?.split(/(?<=[.!?])/) || [];
-            dispatch(setSentences({ sentences: sentences }));
+            const sentences = text.trimStart().startsWith('{')
+              ? extractSentencesFromJSON(text)
+              : text.split(/(?<=[.!?])/).filter(Boolean);
+            dispatch(setSentences({ sentences }));
           }
         } catch (error) {
           console.error(`Failed to process page ${currentPage}:`, error);
