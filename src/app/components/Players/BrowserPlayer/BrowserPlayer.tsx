@@ -26,6 +26,26 @@ interface PlayerProps {
   showVoiceSelectorModal: React.Dispatch<SetStateAction<boolean>>;
 }
 
+const MAX_UTTERANCE_LEN = 200;
+
+const splitIntoChunks = (text: string, maxLen: number): string[] => {
+  if (text.length <= maxLen) return [text];
+  const breakPoints = [', ', '; ', ': '];
+  for (const bp of breakPoints) {
+    const idx = text.lastIndexOf(bp, maxLen);
+    if (idx > maxLen / 3) {
+      const before = text.slice(0, idx + bp.length - 1).trim();
+      const after = text.slice(idx + bp.length).trim();
+      return [...splitIntoChunks(before, maxLen), ...splitIntoChunks(after, maxLen)];
+    }
+  }
+  const idx = text.lastIndexOf(' ', maxLen);
+  if (idx > 0) {
+    return [...splitIntoChunks(text.slice(0, idx), maxLen), ...splitIntoChunks(text.slice(idx + 1), maxLen)];
+  }
+  return [text.slice(0, maxLen), ...splitIntoChunks(text.slice(maxLen), maxLen)];
+};
+
 export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -85,6 +105,18 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal })
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showMobileVolumeSlider]);
 
+  const speakSentence = (text: string, onEnd: () => void, onStart?: () => void) => {
+    const chunks = splitIntoChunks(text, MAX_UTTERANCE_LEN);
+    chunks.forEach((chunk, i) => {
+      const utterance = new SpeechSynthesisUtterance(chunk);
+      if (voice) utterance.voice = voice;
+      utterance.volume = volume;
+      if (i === 0 && onStart) utterance.onstart = onStart;
+      if (i === chunks.length - 1) utterance.onend = onEnd;
+      window.speechSynthesis.speak(utterance);
+    });
+  };
+
   useEffect(() => {
     // This effect triggers the start of sentence-based playback once sentences are set
     window.speechSynthesis.cancel();
@@ -95,18 +127,11 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal })
         return handleStop();
       }
 
-      const utterance = new SpeechSynthesisUtterance(sentences[currentSentenceIndex]);
-      if (voice) utterance.voice = voice;
-      utterance.volume = volume;
-      window.speechSynthesis.speak(utterance);
-
-      utterance.onstart = () => {
-        handlePlay();
-      };
-
-      utterance.onend = () => {
-        dispatch(setCurrentSentenceIndex(currentSentenceIndex + 1));
-      };
+      speakSentence(
+        sentences[currentSentenceIndex],
+        () => dispatch(setCurrentSentenceIndex(currentSentenceIndex + 1)),
+        () => handlePlay(),
+      );
     }
     //eslint-disable-next-line
   }, [currentSentenceIndex, sentences, isLoaded, currentPage]);
@@ -116,21 +141,13 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal })
       window.speechSynthesis.pause();
       dispatch(pause());
       return;
-    };
-    const utterance = new SpeechSynthesisUtterance(sentences[currentSentenceIndex]);
-    if (voice) utterance.voice = voice;
-    utterance.volume = volume;
-    window.speechSynthesis.speak(utterance);
-
-    utterance.onstart = () => {
-      handlePlay();
-    };
-
-    utterance.onend = () => {
-      dispatch(setCurrentSentenceIndex(currentSentenceIndex + 1));
-    };
+    }
+    speakSentence(
+      sentences[currentSentenceIndex],
+      () => dispatch(setCurrentSentenceIndex(currentSentenceIndex + 1)),
+      () => handlePlay(),
+    );
     handlePlay();
-    return;
   };
 
   const handleStop = () => {
