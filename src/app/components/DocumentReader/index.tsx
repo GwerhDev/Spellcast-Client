@@ -1,6 +1,7 @@
 import s from './index.module.css';
 import { Link } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
+import type { JSX } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowLeft, faEdit, faFilePdf, faSave, faXmark, faGear } from '@fortawesome/free-solid-svg-icons';
@@ -48,7 +49,6 @@ export const DocumentReader = () => {
     currentPageText,
     documentTitle,
     isLoaded,
-    sentences,
     currentSentenceIndex,
   } = useSelector((state: RootState) => state.pdfReader);
   const { selectedVoice, } = useSelector((state: RootState) => state.voice);
