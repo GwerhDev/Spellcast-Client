@@ -164,6 +164,8 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal })
         return;
       }
 
+      if (!isPlayingRef.current) return;
+
       speakSentence(
         sentences[currentSentenceIndex],
         () => dispatch(setCurrentSentenceIndex(currentSentenceIndex + 1)),
