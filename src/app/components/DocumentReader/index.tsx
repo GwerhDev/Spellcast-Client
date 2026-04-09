@@ -1,5 +1,5 @@
 import s from './index.module.css';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import type { JSX } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -42,18 +42,24 @@ const safeParseJSON = (str: string): JSONContent => {
   }
 };
 
-export const DocumentReader = () => {
+interface DocumentReaderProps {
+  initialIsEditing?: boolean;
+}
+
+export const DocumentReader = ({ initialIsEditing }: DocumentReaderProps) => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const {
     currentPage,
     currentPageText,
     documentTitle,
+    documentId,
     isLoaded,
     currentSentenceIndex,
   } = useSelector((state: RootState) => state.pdfReader);
   const { selectedVoice, } = useSelector((state: RootState) => state.voice);
   const [editedText, setEditedText] = useState<JSONContent>(emptyContent);
-  const [isEditing, setIsEditing] = useState<boolean>(false);
+  const isEditing = initialIsEditing ?? false;
   const [fitToWidth, setFitToWidth] = useState(() => {
     const stored = localStorage.getItem('reader:fitToWidth');
     return stored === null ? true : stored === 'true';
@@ -72,18 +78,18 @@ export const DocumentReader = () => {
   }, [currentPageText]);
 
   const handleEdit = () => {
-    setIsEditing(true);
+    navigate(`/document/${documentId}/reader/edit`);
   };
 
   const handleSave = () => {
     dispatch(resetBrowserPlayer());
     dispatch(setPageText({ text: JSON.stringify(editedText) }));
-    setIsEditing(false);
+    navigate(`/document/${documentId}/reader`);
   };
 
   const handleCancel = () => {
     setEditedText(safeParseJSON(currentPageText));
-    setIsEditing(false);
+    navigate(`/document/${documentId}/reader`);
   };
 
   const handleTextChange = (e: JSONContent) => {
@@ -226,9 +232,7 @@ export const DocumentReader = () => {
     <div className={s.pdfReaderContainer}>
       <div className={s.pageInfoContainer}>
         <span className={s.headerControls}>
-          <Link to={'/'}>
-            <IconButton variant='transparent' icon={faArrowLeft} />
-          </Link>
+          <IconButton variant='transparent' icon={faArrowLeft} onClick={() => documentId ? navigate(`/document/${documentId}`) : navigate(-1)} />
           {isLoaded && <PageSelector />}
         </span>
         <div className={s.titleContainer}>

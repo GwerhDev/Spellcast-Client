@@ -1,12 +1,12 @@
 import * as pdfjsLib from 'pdfjs-dist';
 import React, { useEffect, useState } from 'react';
 import { JSONContent } from '@tiptap/core';
-import { useParams } from 'react-router-dom';
+import { useParams, useLocation } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { getDocumentById } from '../../db';
 import { useAppSelector } from '../../store/hooks';
 import { resetAudioPlayer } from '../../store/audioPlayerSlice';
-import { resetBrowserPlayer, stop } from '../../store/browserPlayerSlice';
+import { resetBrowserPlayer, stop, setAutoPlayOnLoad } from '../../store/browserPlayerSlice';
 import { setPdfFile, setPdfDocumentInfo, resetPdfReader, setPdfLoaded, setHasInitialPageSet, setPagesCache } from '../../store/pdfReaderSlice';
 import { Spinner } from '../components/Spinner';
 import { DocumentReader } from '../components/DocumentReader';
@@ -15,8 +15,13 @@ import { DocumentReader } from '../components/DocumentReader';
 import workerSrc from 'pdfjs-dist/build/pdf.worker?url';
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
-export const LocalDocumentReader: React.FC = () => {
+interface LocalDocumentReaderProps {
+  editMode?: boolean;
+}
+
+export const LocalDocumentReader: React.FC<LocalDocumentReaderProps> = ({ editMode }) => {
   const { id } = useParams<{ id: string }>();
+  const location = useLocation();
   const dispatch = useDispatch();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -40,6 +45,7 @@ export const LocalDocumentReader: React.FC = () => {
 
       if (id === documentId) {
         setIsLoading(false);
+        if (location.state?.autoPlay) dispatch(setAutoPlayOnLoad(true));
         return;
       }
 
@@ -48,6 +54,7 @@ export const LocalDocumentReader: React.FC = () => {
         dispatch(resetPdfReader());
         dispatch(resetAudioPlayer()); // Stop audio playback
         dispatch(resetBrowserPlayer());
+        if (location.state?.autoPlay) dispatch(setAutoPlayOnLoad(true));
         dispatch(setPdfLoaded(false)); // Set isLoaded to false at the start of loading
         const doc = await getDocumentById(id, userData.id);
         if (!doc) {
@@ -101,5 +108,5 @@ export const LocalDocumentReader: React.FC = () => {
     );
   }
 
-  return <DocumentReader />;
+  return <DocumentReader initialIsEditing={editMode} />;
 };

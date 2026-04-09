@@ -203,7 +203,7 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal }) =
   };
 
   const handleTitle = () => {
-    navigate(`/document/local/${documentId}`);
+    navigate(`/document/${documentId}/reader`);
   };
 
   const handlePageSelector = () => {

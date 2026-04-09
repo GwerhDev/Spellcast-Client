@@ -293,7 +293,7 @@ export const DocumentCreateForm: React.FC = () => {
 
       dispatch(resetPdfReader());
       dispatch(resetDocumentState());
-      navigate(`/document/local/${newId}`);
+      navigate(`/document/${newId}/reader`);
 
     } catch (error) {
       console.error('Failed to save document locally:', error);

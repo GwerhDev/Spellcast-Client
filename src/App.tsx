@@ -22,6 +22,7 @@ import { ThemeProvider } from './context/ThemeContext';
 import { Unauthorized } from './app/pages/Unauthorized';
 import { DocumentCreate } from './app/pages/DocumentCreate';
 import { DocumentEdit } from './app/pages/DocumentEdit';
+import { DocumentDetailPage } from './app/pages/DocumentDetail';
 import { UserCredentials } from './app/pages/UserCredentials';
 import { LocalDocumentReader } from './app/pages/LocalDocumentReader';
 import DefaultLayout from './app/layouts/DefaultLayout';
@@ -44,8 +45,10 @@ function App() {
             <Route element={<DefaultLayout />}>
               <Route path="/" element={<Home />} />
               <Route path="/document/create" element={<DocumentCreate />} />
-              <Route path="/document/local/:id" element={<LocalDocumentReader />} />
-              <Route path="/document/local/:id/edit" element={<DocumentEdit />} />
+              <Route path="/document/:id" element={<DocumentDetailPage />} />
+              <Route path="/document/:id/reader" element={<LocalDocumentReader />} />
+              <Route path="/document/:id/edit" element={<DocumentEdit />} />
+              <Route path="/document/:id/reader/edit" element={<LocalDocumentReader editMode />} />
               <Route path="/user/archive" element={<UserArchive />} />
 
               <Route path="/user/dashboard" element={<Dashboard />} />

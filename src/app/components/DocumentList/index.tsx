@@ -70,9 +70,10 @@ export const DocumentList: React.FC = () => {
             <DocumentCard
               key={doc.id}
               doc={doc}
-              onClick={() => navigate(`/document/local/${doc.id}`)}
-              onEdit={(e) => { e.stopPropagation(); navigate(`/document/local/${doc.id}/edit`); }}
+              onClick={() => navigate(`/document/${doc.id}`)}
+              onEdit={(e) => { e.stopPropagation(); navigate(`/document/${doc.id}/edit`); }}
               onDelete={(e) => openDeleteModal(doc.id, doc.title, e)}
+              onPlay={() => navigate(`/document/${doc.id}/reader`, { state: { autoPlay: true } })}
             />
           ))}
         </div>
