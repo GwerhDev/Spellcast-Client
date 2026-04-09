@@ -78,8 +78,9 @@ const pdfReaderSlice = createSlice({
       }
     },
     goToPage(state, action: PayloadAction<number>) {
+      if (state.currentPage === action.payload) return;
       state.currentPage = action.payload;
-      state.currentSentenceIndex = state.progress?.currentPage === state.currentPage ? state.progress.lastReadSentenceIndex : 0;
+      state.currentSentenceIndex = state.progress?.currentPage === action.payload ? state.progress.lastReadSentenceIndex : 0;
     },
     resetPdfReader() {
       return initialState;

@@ -70,6 +70,13 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal })
   const [showMobileVolumeSlider, setShowMobileVolumeSlider] = useState(false);
   const mobileVolumeSliderRef = useRef<HTMLDivElement>(null);
   const mobileVolumeButtonRef = useRef<HTMLButtonElement>(null);
+  const isPlayingRef = useRef(isPlaying);
+  useEffect(() => { isPlayingRef.current = isPlaying; }, [isPlaying]);
+
+  // Prevent advancing on stale empty sentences before PdfProcessor loads the new page
+  const waitingForSentencesRef = useRef(false);
+  useEffect(() => { waitingForSentencesRef.current = true; }, [currentPage]);
+  useEffect(() => { waitingForSentencesRef.current = false; }, [sentences]);
   const volumePercentage = volume * 100;
 
   const handleTitle = () => {
@@ -135,10 +142,13 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal })
     // This effect triggers the start of sentence-based playback once sentences are set
     window.speechSynthesis.cancel();
 
-    if (isLoaded && sentences.length > 0 && currentSentenceIndex > -1) {
-      if (currentSentenceIndex >= sentences.length) {
-        if (currentPage < totalPages) return handleNext();
-        return handleStop();
+    if (isLoaded && currentSentenceIndex > -1) {
+      if (sentences.length === 0 || currentSentenceIndex >= sentences.length) {
+        if (isPlayingRef.current && !waitingForSentencesRef.current) {
+          if (currentPage < totalPages) return handleNext();
+          return handleStop();
+        }
+        return;
       }
 
       speakSentence(
@@ -154,6 +164,13 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal })
     if (isPlaying) {
       window.speechSynthesis.pause();
       dispatch(pause());
+      return;
+    }
+    if (sentences.length === 0) {
+      isPlayingRef.current = true;
+      dispatch(play());
+      if (currentPage < totalPages) handleNext();
+      else handleStop();
       return;
     }
     speakSentence(
