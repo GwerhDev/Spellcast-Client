@@ -27,7 +27,7 @@ const extractSentencesFromJSON = (text: string): string[] => {
       const nodeSentences = nodeText.split(/(?<=[.!?])\s*/).filter(Boolean);
       sentences.push(...nodeSentences);
     }
-    return sentences.length > 0 ? sentences : text.split(/(?<=[.!?])/).filter(Boolean);
+    return sentences;
   } catch {
     return text.split(/(?<=[.!?])/).filter(Boolean);
   }
@@ -77,17 +77,16 @@ export const PdfProcessor = () => {
             const content = await page.getTextContent();
             text = content.items.map((item: TextItem | TextMarkedContent) => ('str' in item ? item.str : '')).join(' ');
             text = text.replace(/\s+/g, ' ').trim();
-            dispatch(setPageText({ text }));
-            const sentences = text?.split(/(?<=[.!?])/) || [];
-            dispatch(setSentences({ sentences: sentences }));
           }
 
+          dispatch(setPageText({ text: text || '' }));
           if (text && text.trim() !== '') {
-            dispatch(setPageText({ text }));
             const sentences = text.trimStart().startsWith('{')
               ? extractSentencesFromJSON(text)
               : text.split(/(?<=[.!?])/).filter(Boolean);
             dispatch(setSentences({ sentences }));
+          } else {
+            dispatch(setSentences({ sentences: [] }));
           }
         } catch (error) {
           console.error(`Failed to process page ${currentPage}:`, error);

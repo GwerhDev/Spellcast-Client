@@ -45,6 +45,9 @@
   --background-color-dark-transparency: #1e1e1ead;
   --background-gradient-color: linear-gradient(to right top, var(--background-color-dark), var(--background-color-light));
 
+  --paper-bg: #25283096;
+  --paper-shadow: 0 4px 28px rgba(0, 0, 0, 0.55);
+
   --size-1: 4px;
   --size-2: 8px;
   --size-3: 12px;
@@ -92,6 +95,9 @@ html.light {
   --background-color-light: #e0e0e0;
   --background-color-dark-transparency: #fafafae4;
   --background-gradient-color: linear-gradient(to right top, var(--background-color-dark), var(--background-color-light));
+
+  --paper-bg: #ffffff;
+  --paper-shadow: 0 4px 28px rgba(0, 0, 0, 0.2);
 }
 
 #root {

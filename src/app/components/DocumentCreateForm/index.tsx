@@ -16,7 +16,7 @@ import { JSONContent } from '@tiptap/core';
 import workerSrc from 'pdfjs-dist/build/pdf.worker?url';
 import { faCloud, faSave } from '@fortawesome/free-solid-svg-icons';
 import { PrimaryButton } from '../Buttons/PrimaryButton';
-import { resetDocumentState } from 'store/documentSlice';
+import { resetDocumentState, setDocumentTitle } from 'store/documentSlice';
 import { resetPdfReader } from 'store/pdfReaderSlice';
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
@@ -312,9 +312,19 @@ export const DocumentCreateForm: React.FC = () => {
         <h1 className={s.mainTitle}>Create Document</h1>
       </div>
 
+      <input
+        className={s.documentTitle}
+        type="text"
+        placeholder="Document title..."
+        value={documentTitle}
+        onChange={(e) => {
+          setDocumentTitle(e.target.value);
+          dispatch(setDocumentTitle(e.target.value));
+        }}
+      />
+
       <div className={s.editorContainer}>
         <DocumentEditor
-          document={document}
           pageNumber={editingPageIndex + 1}
           pageContent={pagesContent[editingPageIndex]}
           onPageContentChange={handlePageContentChange}

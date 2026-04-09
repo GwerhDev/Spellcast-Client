@@ -193,3 +193,32 @@
   display: block;
   height: 0.75rem;
 }
+
+/* Paper mode — outer scroll area */
+.paperBackground {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow: auto;
+  padding: 2rem 1rem;
+  flex-grow: 1;
+  min-height: 0;
+  border-radius: 10px;
+}
+
+/* Paper mode — the sheet itself */
+.paperSheet {
+  width: 800px;
+  flex-shrink: 0;
+  background: var(--paper-bg);
+  border-radius: 2px;
+  padding: 3rem 4rem;
+  box-shadow: var(--paper-shadow);
+  color: var(--color-light-100);
+}
+
+/* Strip editor border/bg when inside a paper sheet */
+.paperSheet :global(.tiptap.ProseMirror.simple-editor) {
+  border: 1px solid transparent;
+  background: transparent;
+}
