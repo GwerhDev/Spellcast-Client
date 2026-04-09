@@ -26,25 +26,6 @@ interface PlayerProps {
   showVoiceSelectorModal: React.Dispatch<SetStateAction<boolean>>;
 }
 
-const MAX_UTTERANCE_LEN = 150;
-
-const splitIntoChunks = (text: string, maxLen: number): string[] => {
-  if (text.length <= maxLen) return [text];
-  const breakPoints = [', ', '; ', ': '];
-  for (const bp of breakPoints) {
-    const idx = text.lastIndexOf(bp, maxLen);
-    if (idx > maxLen / 3) {
-      const before = text.slice(0, idx + bp.length - 1).trim();
-      const after = text.slice(idx + bp.length).trim();
-      return [...splitIntoChunks(before, maxLen), ...splitIntoChunks(after, maxLen)];
-    }
-  }
-  const idx = text.lastIndexOf(' ', maxLen);
-  if (idx > 0) {
-    return [...splitIntoChunks(text.slice(0, idx), maxLen), ...splitIntoChunks(text.slice(idx + 1), maxLen)];
-  }
-  return [text.slice(0, maxLen), ...splitIntoChunks(text.slice(maxLen), maxLen)];
-};
 
 export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal }) => {
   const dispatch = useDispatch();
@@ -112,18 +93,50 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal })
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showMobileVolumeSlider]);
 
-  const speakChunk = (chunks: string[], index: number, onEnd: () => void, onStart?: () => void) => {
-    if (index >= chunks.length) { onEnd(); return; }
-    const utterance = new SpeechSynthesisUtterance(chunks[index]);
+  const speakSentence = (text: string, onEnd: () => void, onStart?: () => void, isRetry = false) => {
+    const utterance = new SpeechSynthesisUtterance(text);
     if (voice) utterance.voice = voice;
     utterance.volume = volume;
-    if (index === 0 && onStart) utterance.onstart = onStart;
-    utterance.onend = () => speakChunk(chunks, index + 1, onEnd);
-    window.speechSynthesis.speak(utterance);
-  };
 
-  const speakSentence = (text: string, onEnd: () => void, onStart?: () => void) => {
-    speakChunk(splitIntoChunks(text, MAX_UTTERANCE_LEN), 0, onEnd, onStart);
+    let lastBoundaryIndex = 0;
+    utterance.onboundary = (e) => {
+      if (e.name === 'word') lastBoundaryIndex = e.charIndex;
+    };
+
+    if (!isRetry && onStart) utterance.onstart = onStart;
+
+    const tryResume = () => {
+      if (lastBoundaryIndex > 0 && lastBoundaryIndex < text.length * 0.85) {
+        const remaining = text.slice(lastBoundaryIndex).trimStart();
+        if (remaining.length > 5) {
+          speakSentence(remaining, onEnd, undefined, true);
+          return true;
+        }
+      }
+      return false;
+    };
+
+    utterance.onend = () => {
+      if (text.length > 100 && tryResume()) return;
+      onEnd();
+    };
+
+    utterance.onerror = (e) => {
+      if (e.error === 'interrupted' || e.error === 'canceled') return;
+      if (e.error === 'text-too-long') {
+        // Browser rejected the text — split at midpoint word boundary
+        const mid = Math.floor(text.length / 2);
+        const split = text.lastIndexOf(' ', mid);
+        const pivot = split > 0 ? split : mid;
+        speakSentence(text.slice(0, pivot).trimEnd(), () => {
+          speakSentence(text.slice(pivot).trimStart(), onEnd, undefined, true);
+        }, undefined, true);
+        return;
+      }
+      if (!tryResume()) onEnd();
+    };
+
+    window.speechSynthesis.speak(utterance);
   };
 
   // Chrome bug workaround: speechSynthesis freezes silently after ~14s without this
