@@ -52,7 +52,7 @@ export const DocumentDetail: React.FC = () => {
 
   return (
     <div className={s.container}>
-      <div className={s.topBar}>
+      <div className={s.pageInfoContainer}>
         <IconButton className={s.backButton} icon={faArrowLeft} variant="transparent" onClick={() => navigate("/")} />
       </div>
       <div className={s.detailsContainer}>

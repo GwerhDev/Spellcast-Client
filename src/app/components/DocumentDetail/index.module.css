@@ -2,24 +2,30 @@
   gap: 1rem;
   width: 100%;
   flex-grow: 1;
-  padding: 2rem;
   overflow: auto;
   display: flex;
-  align-items: center;
   flex-direction: column;
   border-radius: 10px;
+  padding: 1rem;
   border: solid 1px var(--color-dark-300);
 }
 
 .detailsContainer {
+  gap: 0.5rem;
   display: flex;
-  gap: 2rem;
+  overflow: auto;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
 }
 
-.topBar {
-  width: 100%;
+.pageInfoContainer {
+  gap: 1rem;
+  height: 3rem;
+  padding: .5rem;
+  padding-inline: 1rem;
   display: flex;
-  justify-content: flex-start;
+  justify-content: space-between;
 }
 
 .backButton {
