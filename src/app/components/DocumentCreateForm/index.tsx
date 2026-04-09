@@ -42,7 +42,7 @@ export const DocumentCreateForm: React.FC = () => {
     if (document.title) {
       setDocumentTitle(document.title);
     }
-  }, [document]);
+  }, [document.title]);
 
   useEffect(() => {
     const extractTextFromPdf = async () => {
@@ -217,7 +217,7 @@ export const DocumentCreateForm: React.FC = () => {
     };
 
     extractTextFromPdf();
-  }, [document]);
+  }, [document.fileContent]);
 
   const handlePageClick = (pageIndex: number) => {
     setEditingPageIndex(pageIndex);

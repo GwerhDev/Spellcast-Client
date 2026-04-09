@@ -1,6 +1,7 @@
 import { Routes, Route } from 'react-router-dom';
 import { RootState } from './store';
-import { useSelector } from 'react-redux';
+import { useSelector, } from 'react-redux';
+import { useState } from 'react';
 import { userData } from './interfaces';
 import { useInitSession } from './hooks/useInitSession';
 import { Toast } from './app/components/Toast';
@@ -20,6 +21,7 @@ import { UserArchive } from './app/pages/UserArchive';
 import { ThemeProvider } from './context/ThemeContext';
 import { Unauthorized } from './app/pages/Unauthorized';
 import { DocumentCreate } from './app/pages/DocumentCreate';
+import { DocumentEdit } from './app/pages/DocumentEdit';
 import { UserCredentials } from './app/pages/UserCredentials';
 import { LocalDocumentReader } from './app/pages/LocalDocumentReader';
 import DefaultLayout from './app/layouts/DefaultLayout';
@@ -27,14 +29,15 @@ import DefaultLayout from './app/layouts/DefaultLayout';
 function App() {
   const userData: userData = useSelector((state: RootState) => state.session.userData);
   const { loader } = userData || {};
-  useInitSession();
+  const [loaderProgress, setLoaderProgress] = useState(0);
+  useInitSession(setLoaderProgress);
 
   return (
     <ThemeProvider>
       {
         loader
           ?
-          <Loader />
+          <Loader progress={loaderProgress} />
           :
           <Routes>
             <Route path="/unauthorized" element={<Unauthorized />} />
@@ -42,6 +45,7 @@ function App() {
               <Route path="/" element={<Home />} />
               <Route path="/document/create" element={<DocumentCreate />} />
               <Route path="/document/local/:id" element={<LocalDocumentReader />} />
+              <Route path="/document/local/:id/edit" element={<DocumentEdit />} />
               <Route path="/user/archive" element={<UserArchive />} />
 
               <Route path="/user/dashboard" element={<Dashboard />} />

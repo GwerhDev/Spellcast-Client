@@ -7,7 +7,7 @@ export const dashboardDirectoryList = [
 ];
 
 export const storageDirectoryList = [
-  { name: "Library", icon: faBuildingColumns, path: "storage/Library" },
+  { name: "Library", icon: faBuildingColumns, path: "storage/library" },
   { name: "Audios", icon: faHeadphones, path: "storage/audios" },
 ];
 

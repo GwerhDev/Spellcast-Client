@@ -1,5 +1,5 @@
 import { useSelector } from 'react-redux';
-import { DocumentCard } from '../../Cards/DocumentCard';
+import { DocumentCreateInput } from '../../Inputs/DocumentCreateInput';
 import { RootState } from 'store/index';
 
 export const CreateOption = () => {
@@ -7,7 +7,7 @@ export const CreateOption = () => {
 
   return (
     <form onSubmit={(e) => e.preventDefault()} className='flex flex-col gap-4'>
-      <DocumentCard document={document} />
+      <DocumentCreateInput document={document} />
     </form>
   );
 };

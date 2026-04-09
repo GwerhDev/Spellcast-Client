@@ -1,0 +1,56 @@
+.container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  overflow: auto;
+  padding: 1rem;
+  gap: .5rem;
+}
+
+.documentTitle {
+  width: 100%;
+  font-size: 1.4rem;
+  font-weight: bold;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--color-dark-300);
+  color: var(--color-light-100);
+  padding: 0.4rem 0.25rem;
+  outline: none;
+}
+
+.documentTitle::placeholder {
+  color: var(--color-light-400);
+  font-weight: normal;
+}
+
+.documentTitle:focus {
+  border-bottom-color: var(--color-primary);
+}
+
+.editorContainer {
+  gap: 1rem;
+  width: 100%;
+  flex-grow: 1;
+  display: flex;
+  overflow-y: auto;
+}
+
+.pagesContainer {
+  gap: 5rem;
+  display: flex;
+  flex-grow: 1;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.error {
+  padding: 2rem;
+  color: var(--color-danger-100);
+}

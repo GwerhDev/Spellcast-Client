@@ -2,12 +2,11 @@ import s from './index.module.css';
 import React, { useEffect, useState } from 'react';
 import { getDocumentsFromDB, deleteDocumentFromDB } from '../../../db';
 import { useNavigate } from 'react-router-dom';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faFilePdf, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { DeleteConfirmModal } from '../Modals/DeleteConfirmModal';
 import { useAppSelector } from 'store/hooks';
 import { Document } from 'src/interfaces';
 import { Spinner } from '../Spinner';
+import { DocumentCard } from '../Cards/DocumentCard';
 
 export const LastDocuments: React.FC = () => {
   const { userData } = useAppSelector((state) => state.session);
@@ -21,8 +20,7 @@ export const LastDocuments: React.FC = () => {
     try {
       setIsLoading(true);
       const docs = await getDocumentsFromDB(userData.id);
-      const sortedDocs = docs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-      setDocuments(sortedDocs.slice(0, 3));
+      setDocuments(docs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
     } catch (error) {
       console.error('Failed to fetch local documents:', error);
     } finally {
@@ -58,9 +56,6 @@ export const LastDocuments: React.FC = () => {
       }
     }
   };
-  const handleDocClick = (doc: Document) => {
-    navigate(`/document/local/${doc.id}`);
-  };
 
   if (isLoading) {
     return (
@@ -78,20 +73,15 @@ export const LastDocuments: React.FC = () => {
     <>
       <div className={s.container}>
         <h2 className={s.title}>Last Documents</h2>
-        <div className={s.listContainer}>
+        <div className={s.slider}>
           {documents.map((doc) => (
-            <div key={doc.id} className={s.docLink} onClick={() => handleDocClick(doc)}>
-              <div className={s.docInfo}>
-                <FontAwesomeIcon icon={faFilePdf} size="2x" />
-                <div>
-                  <span className={s.docTitle}>{doc.title}</span>
-                  <small className={s.docDate}>{new Date(doc.createdAt).toLocaleString()}</small>
-                </div>
-              </div>
-              <button className={s.deleteButton} onClick={(e) => openDeleteModal(doc.id, doc.title, e)}>
-                <FontAwesomeIcon icon={faTrash} />
-              </button>
-            </div>
+            <DocumentCard
+              key={doc.id}
+              doc={doc}
+              onClick={() => navigate(`/document/local/${doc.id}`)}
+              onEdit={(e) => { e.stopPropagation(); navigate(`/document/local/${doc.id}/edit`); }}
+              onDelete={(e) => openDeleteModal(doc.id, doc.title, e)}
+            />
           ))}
         </div>
       </div>
