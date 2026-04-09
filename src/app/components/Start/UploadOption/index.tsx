@@ -7,7 +7,7 @@ import { RootState } from 'store/index';
 import { resetDocumentState, setDocumentDetails } from 'store/documentSlice';
 import * as pdfjsLib from 'pdfjs-dist';
 import workerSrc from 'pdfjs-dist/build/pdf.worker?url';
-import { DocumentCard } from '../../Cards/DocumentCard';
+import { DocumentCreateInput } from '../../Inputs/DocumentCreateInput';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
@@ -72,7 +72,7 @@ export const UploadOption: React.FC<UploadOptionProps> = () => {
   return (
     document.fileContent ? (
       <>
-        <DocumentCard document={document} />
+        <DocumentCreateInput document={document} />
         <p onClick={() => dispatch(resetDocumentState())} className={s.resetPdf}>
           Or upload a new one
         </p>

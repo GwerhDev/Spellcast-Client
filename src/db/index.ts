@@ -166,6 +166,27 @@ export const deleteDocumentFromDB = async (id: string, userId: string | undefine
   });
 };
 
+export const updateDocumentContent = async (id: string, userId: string, updates: { title: string; pdf: Blob; pagesContent: string }): Promise<void> => {
+  const db = await openDB();
+  const transaction = db.transaction(DOCUMENTS_STORE_NAME, 'readwrite');
+  const store = transaction.objectStore(DOCUMENTS_STORE_NAME);
+
+  return new Promise((resolve, reject) => {
+    const getRequest = store.get(id);
+    getRequest.onsuccess = () => {
+      const doc = getRequest.result as Document | undefined;
+      if (doc && doc.userId === userId) {
+        const putRequest = store.put({ ...doc, ...updates });
+        putRequest.onsuccess = () => resolve();
+        putRequest.onerror = (e) => reject((e.target as IDBRequest).error);
+      } else {
+        reject(new Error('Document not found or user mismatch.'));
+      }
+    };
+    getRequest.onerror = (e) => reject((e.target as IDBRequest).error);
+  });
+};
+
 export const updateDocumentProgress = async (documentId: string, userId: string, progress: DocumentProgress): Promise<void> => {
     const db = await openDB();
     const transaction = db.transaction(DOCUMENTS_STORE_NAME, 'readwrite');
