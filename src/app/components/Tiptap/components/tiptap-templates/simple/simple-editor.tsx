@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, type ReactNode } from "react"
 import { EditorContent, EditorContext, JSONContent, useEditor } from "@tiptap/react"
 
 // --- Tiptap Core Extensions ---
@@ -83,7 +83,7 @@ const MainToolbarContent = () => {
   )
 }
 
-export function SimpleEditor({ content, onContentChange, isEditable }: { content: JSONContent, onContentChange: (content: JSONContent) => void, isEditable?: boolean }) {
+export function SimpleEditor({ content, onContentChange, isEditable, wrapContent }: { content: JSONContent, onContentChange: (content: JSONContent) => void, isEditable?: boolean, wrapContent?: (content: ReactNode) => ReactNode }) {
   const toolbarRef = useRef<HTMLDivElement>(null);
 
   const editor = useEditor({
@@ -151,17 +151,21 @@ export function SimpleEditor({ content, onContentChange, isEditable }: { content
     />
   )
 
+  const editorContent = (
+    <EditorContent
+      editor={editor}
+      role="presentation"
+      className={s["simple-editor-content"]}
+    />
+  );
+
   return (
     <div className={s["simple-editor-wrapper"]}>
       <EditorContext.Provider value={{ editor }}>
         <Toolbar ref={toolbarRef} >
           <MainToolbarContent />
         </Toolbar>
-        <EditorContent
-          editor={editor}
-          role="presentation"
-          className={s["simple-editor-content"]}
-        />
+        {wrapContent ? wrapContent(editorContent) : editorContent}
         {editor && (
           <div className={s.characterCount}>
             {editor.storage.characterCount.characters()} characters

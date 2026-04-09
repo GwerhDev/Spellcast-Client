@@ -54,7 +54,10 @@ export const DocumentReader = () => {
   const { selectedVoice, } = useSelector((state: RootState) => state.voice);
   const [editedText, setEditedText] = useState<JSONContent>(emptyContent);
   const [isEditing, setIsEditing] = useState<boolean>(false);
-  const [fitToWidth, setFitToWidth] = useState(true);
+  const [fitToWidth, setFitToWidth] = useState(() => {
+    const stored = localStorage.getItem('reader:fitToWidth');
+    return stored === null ? true : stored === 'true';
+  });
   const [showSettings, setShowSettings] = useState(false);
   const textContainerRef = useRef<HTMLDivElement>(null);
 
@@ -170,21 +173,51 @@ export const DocumentReader = () => {
 
     if (isEditing) {
       return (
-        <SimpleEditor isEditable={true} content={editedText} onContentChange={handleTextChange} />
+        <SimpleEditor
+          isEditable={true}
+          content={editedText}
+          onContentChange={handleTextChange}
+          wrapContent={(content) => (
+            <div className={s.paperBackground}>
+              <div className={s.paperSheet}>
+                {content}
+              </div>
+            </div>
+          )}
+        />
       );
     }
 
     if (selectedVoice.type === 'browser') {
+      if (!fitToWidth) {
+        return (
+          <div ref={textContainerRef} className={s.paperBackground}>
+            <div className={`${s.paperSheet} ${s.readerContent} ${s.pdfMode}`}>
+              {renderFormattedSentences(false)}
+            </div>
+          </div>
+        );
+      }
       return (
-        <div ref={textContainerRef} className={`${s.textContainer} ${s.readerContent} ${!fitToWidth ? s.pdfMode : ''}`}>
-          {renderFormattedSentences(fitToWidth)}
+        <div ref={textContainerRef} className={`${s.textContainer} ${s.readerContent}`}>
+          {renderFormattedSentences(true)}
+        </div>
+      );
+    }
+
+    if (!fitToWidth) {
+      return (
+        <div className={s.paperBackground}>
+          <div className={`${s.paperSheet} ${s.readerContent} ${s.pdfMode}`}>
+            {renderFormattedContent(false)}
+          </div>
         </div>
       );
     }
 
     return (
-      <div className={`${s.textContainer} ${s.readerContent} ${!fitToWidth ? s.pdfMode : ''}`}>
-        {renderFormattedContent(fitToWidth)}
+      <div className={`${s.textContainer} ${s.readerContent}`}>
+        {renderFormattedContent(true)}
       </div>
     );
   };
@@ -229,13 +262,13 @@ export const DocumentReader = () => {
             <p className={s.settingsPanelTitle}>Display</p>
             <button
               className={fitToWidth ? s.settingsOptionActive : s.settingsOption}
-              onClick={() => setFitToWidth(true)}
+              onClick={() => { setFitToWidth(true); localStorage.setItem('reader:fitToWidth', 'true'); }}
             >
               Fit to width
             </button>
             <button
               className={!fitToWidth ? s.settingsOptionActive : s.settingsOption}
-              onClick={() => setFitToWidth(false)}
+              onClick={() => { setFitToWidth(false); localStorage.setItem('reader:fitToWidth', 'false'); }}
             >
               View as PDF
             </button>
