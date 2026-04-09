@@ -8,6 +8,19 @@
   gap: .5rem;
 }
 
+.pageInfoContainer {
+  gap: 1rem;
+  height: 3rem;
+  padding: .5rem;
+  padding-inline: 1rem;
+  display: flex;
+  justify-content: space-between;
+}
+
+.backButton {
+  width: auto;
+}
+
 .documentTitle {
   width: 100%;
   font-size: 1.4rem;

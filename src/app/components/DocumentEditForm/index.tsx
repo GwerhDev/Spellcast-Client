@@ -95,7 +95,9 @@ export const DocumentEditForm: React.FC = () => {
 
   return (
     <div className={s.container}>
-      <IconButton icon={faArrowLeft} variant='transparent' onClick={() => navigate(`/document/${id}/reader`)} />
+      <div className={s.pageInfoContainer}>
+        <IconButton icon={faArrowLeft} className={s.backButton} variant='transparent' onClick={() => navigate(`/document/${id}/reader`)} />
+      </div>
       <input
         className={s.documentTitle}
         type="text"
