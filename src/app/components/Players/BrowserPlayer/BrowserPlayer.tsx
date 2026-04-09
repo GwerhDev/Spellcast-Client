@@ -122,7 +122,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal })
     };
 
     utterance.onerror = (e) => {
-      if (e.error === 'interrupted' || e.error === 'canceled') return;
+      if (e.error === 'interrupted' || e.error === 'canceled' || e.error === 'not-allowed') return;
       if (e.error === 'text-too-long') {
         // Browser rejected the text — split at midpoint word boundary
         const mid = Math.floor(text.length / 2);
