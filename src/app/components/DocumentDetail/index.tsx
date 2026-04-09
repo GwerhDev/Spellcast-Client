@@ -3,22 +3,26 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { useAppSelector } from '../../../store/hooks';
-import { getDocumentById } from '../../../db';
-import { setAutoPlayOnLoad } from '../../../store/browserPlayerSlice';
+import { getDocumentById, deleteDocumentFromDB } from '../../../db';
+import { setAutoPlayOnLoad, resetBrowserPlayer } from '../../../store/browserPlayerSlice';
+import { resetPdfReader } from '../../../store/pdfReaderSlice';
 import { Spinner } from '../Spinner';
 import { PrimaryButton } from '../Buttons/PrimaryButton';
 import { IconButton } from '../Buttons/IconButton';
+import { DeleteConfirmModal } from '../Modals/DeleteConfirmModal';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faFilePdf, faPlay, faBookOpen, faPen, faArrowLeft } from '@fortawesome/free-solid-svg-icons';
+import { faFilePdf, faPlay, faBookOpen, faPen, faArrowLeft, faTrash } from '@fortawesome/free-solid-svg-icons';
 
 export const DocumentDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { userData, logged } = useAppSelector((state) => state.session);
+  const currentPlayingId = useAppSelector((state) => state.pdfReader.documentId);
   const [doc, setDoc] = useState<Awaited<ReturnType<typeof getDocumentById>> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -43,6 +47,22 @@ export const DocumentDetail: React.FC = () => {
 
   const handleContinueReading = () => navigate(`/document/${id}/reader`);
   const handleEdit = () => navigate(`/document/${id}/edit`);
+
+  const handleDeleteConfirm = async () => {
+    if (!id || !userData?.id) return;
+    try {
+      await deleteDocumentFromDB(id, userData.id);
+      if (currentPlayingId === id) {
+        dispatch(resetBrowserPlayer());
+        dispatch(resetPdfReader());
+      }
+      navigate('/');
+    } catch {
+      setError('Failed to delete document.');
+    } finally {
+      setShowDeleteModal(false);
+    }
+  };
 
   if (isLoading) return <Spinner isLoading />;
   if (error || !doc) return <div>{error || 'Document not found.'}</div>;
@@ -69,8 +89,16 @@ export const DocumentDetail: React.FC = () => {
           <PrimaryButton icon={faPlay} onClick={handlePlay}>Play</PrimaryButton>
           <PrimaryButton icon={faBookOpen} onClick={handleContinueReading}>Continue Reading</PrimaryButton>
           <PrimaryButton icon={faPen} onClick={handleEdit}>Edit Document</PrimaryButton>
+          <PrimaryButton icon={faTrash} onClick={() => setShowDeleteModal(true)}>Delete Document</PrimaryButton>
         </div>
       </div>
+      <DeleteConfirmModal
+        show={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Document"
+        message={`Are you sure you want to delete "${doc.title}"? This action cannot be undone.`}
+      />
     </div>
   );
 };
