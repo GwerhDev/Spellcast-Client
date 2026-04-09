@@ -13,6 +13,14 @@
     backdrop-filter: blur(10px);
 }
 
+.closeButtonContainer {
+    top: 0;
+    right: 0;
+    width: 30px;
+    height: 30px;
+    position: absolute;
+}
+
 .closeButton {
     top: 0;
     right: 0;
@@ -22,7 +30,6 @@
     margin: .5rem;
     border-radius: 50%;
     position: absolute;
-    background: var(--component-background);
     color: var(--text-color);
 }
 
