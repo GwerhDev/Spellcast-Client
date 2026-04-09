@@ -18,6 +18,30 @@
 
 .card:hover {
   border: 0.5px solid var(--color-primary);
+  background: var(--component-background);
+}
+
+.playAction {
+  top: 0.5rem;
+  left: 0.5rem;
+  padding: .6rem;
+  aspect-ratio: 1;
+  border-radius: 100%;
+  display: flex;
+  position: absolute;
+  align-items: center;
+  pointer-events: none;
+  justify-content: center;
+  background: transparent;
+}
+
+.playAction:hover {
+  background: var(--color-secondary);
+}
+
+.card:hover .playAction {
+  pointer-events: all;
+  background: var(--color-primary);
 }
 
 .actions {

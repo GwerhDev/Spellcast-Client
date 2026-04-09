@@ -8,6 +8,7 @@ import {
   play,
   setVoice,
   pause,
+  setAutoPlayOnLoad,
 } from '../../../../store/browserPlayerSlice';
 
 import {
@@ -34,6 +35,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal })
     voice,
     volume,
     isPlaying,
+    autoPlayOnLoad,
   } = useSelector((state: RootState) => state.browserPlayer);
   const {
     isLoaded,
@@ -61,7 +63,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal })
   const volumePercentage = volume * 100;
 
   const handleTitle = () => {
-    navigate(`/document/local/${documentId}`);
+    navigate(`/document/${documentId}/reader`);
   };
 
   const handlePageSelector = () => {
@@ -164,7 +166,15 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal })
         return;
       }
 
-      if (!isPlayingRef.current) return;
+      if (!isPlayingRef.current) {
+        if (autoPlayOnLoad) {
+          dispatch(setAutoPlayOnLoad(false));
+          isPlayingRef.current = true;
+          dispatch(play());
+        } else {
+          return;
+        }
+      }
 
       speakSentence(
         sentences[currentSentenceIndex],
@@ -173,7 +183,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal })
       );
     }
     //eslint-disable-next-line
-  }, [currentSentenceIndex, sentences, isLoaded, currentPage]);
+  }, [currentSentenceIndex, sentences, isLoaded, currentPage, autoPlayOnLoad]);
 
   const handleTogglePlayPause = () => {
     if (isPlaying) {

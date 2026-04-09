@@ -1,6 +1,6 @@
 import s from './DocumentCard.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faFilePdf, faTrash, faPen } from '@fortawesome/free-solid-svg-icons';
+import { faFilePdf, faTrash, faPen, faPlay } from '@fortawesome/free-solid-svg-icons';
 import { Document } from 'src/interfaces';
 
 interface DocumentCardProps {
@@ -8,9 +8,10 @@ interface DocumentCardProps {
   onClick: () => void;
   onDelete: (e: React.MouseEvent) => void;
   onEdit: (e: React.MouseEvent) => void;
+  onPlay?: (e: React.MouseEvent) => void;
 }
 
-export const DocumentCard = ({ doc, onClick, onDelete, onEdit }: DocumentCardProps) => {
+export const DocumentCard = ({ doc, onClick, onDelete, onEdit, onPlay }: DocumentCardProps) => {
   return (
     <div className={s.card} onClick={onClick}>
       <div className={s.actions}>
@@ -21,6 +22,11 @@ export const DocumentCard = ({ doc, onClick, onDelete, onEdit }: DocumentCardPro
           <FontAwesomeIcon icon={faTrash} />
         </button>
       </div>
+      {onPlay && (
+        <button className={s.playAction} onClick={(e) => { e.stopPropagation(); onPlay(e); }}>
+          <FontAwesomeIcon icon={faPlay} />
+        </button>
+      )}
       <FontAwesomeIcon icon={faFilePdf} size="3x" className={s.icon} />
       <span className={s.title}>{doc.title}</span>
       <small className={s.date}>{new Date(doc.createdAt).toLocaleDateString()}</small>

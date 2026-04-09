@@ -166,7 +166,7 @@ export const deleteDocumentFromDB = async (id: string, userId: string | undefine
   });
 };
 
-export const updateDocumentContent = async (id: string, userId: string, updates: { title: string; pdf: Blob; pagesContent: string }): Promise<void> => {
+export const updateDocumentContent = async (id: string, userId: string, updates: { title: string; pagesContent: string }): Promise<void> => {
   const db = await openDB();
   const transaction = db.transaction(DOCUMENTS_STORE_NAME, 'readwrite');
   const store = transaction.objectStore(DOCUMENTS_STORE_NAME);
@@ -176,7 +176,7 @@ export const updateDocumentContent = async (id: string, userId: string, updates:
     getRequest.onsuccess = () => {
       const doc = getRequest.result as Document | undefined;
       if (doc && doc.userId === userId) {
-        const putRequest = store.put({ ...doc, ...updates });
+        const putRequest = store.put({ ...doc, title: updates.title, pagesContent: updates.pagesContent });
         putRequest.onsuccess = () => resolve();
         putRequest.onerror = (e) => reject((e.target as IDBRequest).error);
       } else {

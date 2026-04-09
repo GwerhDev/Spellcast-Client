@@ -7,9 +7,9 @@ import { getDocumentById, updateDocumentContent } from '../../../db';
 import { Spinner } from '../Spinner';
 import { PageList } from '../DocumentCreateForm/PageList';
 import { DocumentEditor } from '../Editors/DocumentEditor';
-import jsPDF from 'jspdf';
-import { faCloud, faSave } from '@fortawesome/free-solid-svg-icons';
+import { faArrowLeft, faCloud, faSave } from '@fortawesome/free-solid-svg-icons';
 import { PrimaryButton } from '../Buttons/PrimaryButton';
+import { IconButton } from '../Buttons/IconButton';
 
 const emptyContent: JSONContent = {
   type: 'doc',
@@ -77,34 +77,12 @@ export const DocumentEditForm: React.FC = () => {
 
     setIsSaving(true);
     try {
-      const pdf = new jsPDF();
-      const margin = 1;
-      const lineHeight = 1;
-
-      pagesContent.forEach((pageContent, index) => {
-        if (index > 0) pdf.addPage();
-        const plainText = pageContent.content?.map(node => {
-          if (node.type === 'paragraph' && node.content) {
-            return node.content.map(item => 'text' in item ? item.text : '').join('');
-          }
-          return '';
-        }).join('\n') || '';
-        const lines = pdf.splitTextToSize(plainText, pdf.internal.pageSize.width - margin * 2);
-        let y = margin;
-        for (const line of lines) {
-          if (y + lineHeight > pdf.internal.pageSize.height - margin) { pdf.addPage(); y = margin; }
-          pdf.text(line, margin, y);
-          y += lineHeight;
-        }
-      });
-
       await updateDocumentContent(docId, userData.id!, {
         title: documentTitle,
-        pdf: pdf.output('blob'),
         pagesContent: JSON.stringify(pagesContent),
       });
 
-      navigate(`/document/local/${id}`);
+      navigate(`/document/${docId}/reader`);
     } catch (err) {
       console.error('Failed to save document:', err);
     } finally {
@@ -117,6 +95,7 @@ export const DocumentEditForm: React.FC = () => {
 
   return (
     <div className={s.container}>
+      <IconButton icon={faArrowLeft} variant='transparent' onClick={() => navigate(`/document/${id}/reader`)} />
       <input
         className={s.documentTitle}
         type="text"
