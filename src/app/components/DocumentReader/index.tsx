@@ -58,6 +58,7 @@ export const DocumentReader = ({ initialIsEditing }: DocumentReaderProps) => {
     currentSentenceIndex,
   } = useSelector((state: RootState) => state.pdfReader);
   const { selectedVoice, } = useSelector((state: RootState) => state.voice);
+  const { isPlaying } = useSelector((state: RootState) => state.browserPlayer);
   const [editedText, setEditedText] = useState<JSONContent>(emptyContent);
   const isEditing = initialIsEditing ?? false;
   const [fitToWidth, setFitToWidth] = useState(() => {
@@ -81,7 +82,7 @@ export const DocumentReader = ({ initialIsEditing }: DocumentReaderProps) => {
     if (selectedVoice.type !== 'browser' || currentSentenceIndex < 0) return;
     const highlighted = scrollContainerRef.current?.querySelector(`.${s.highlight}`) as HTMLElement | null;
     highlighted?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-  }, [currentSentenceIndex, selectedVoice.type]);
+  }, [currentSentenceIndex, isPlaying, selectedVoice.type]);
 
   useEffect(() => {
     if (selectedVoice.type === 'browser') return;
