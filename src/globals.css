@@ -379,6 +379,32 @@ a:hover {
   }
 }
 
+/* Fullscreen reader mode */
+body.fullscreen-reader .aside-container {
+  display: none;
+}
+
+body.fullscreen-reader .audioplayer-container {
+  position: fixed;
+  bottom: 0.5rem;
+  left: 0.5rem;
+  right: 0.5rem;
+  margin: 0;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  z-index: 1000;
+}
+
+body.fullscreen-reader .audioplayer-container:hover {
+  opacity: 1;
+}
+
+@media (max-width: 768px) {
+  body.fullscreen-reader .audioplayer-container {
+    opacity: 0.5;
+  }
+}
+
 .tiptap.ProseMirror.simple-editor {
   width: 100%;
   flex-grow: 1;

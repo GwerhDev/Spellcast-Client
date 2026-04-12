@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import type { JSX } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowLeft, faEdit, faFilePdf, faSave, faXmark, faGear } from '@fortawesome/free-solid-svg-icons';
+import { faArrowLeft, faEdit, faFilePdf, faSave, faXmark, faGear, faExpand, faCompress } from '@fortawesome/free-solid-svg-icons';
 import { RootState } from '../../../store';
 import { goToPage, setPageText, setCurrentSentenceIndex } from '../../../store/pdfReaderSlice';
 import { resetBrowserPlayer } from '../../../store/browserPlayerSlice';
@@ -66,7 +66,13 @@ export const DocumentReader = ({ initialIsEditing }: DocumentReaderProps) => {
     return stored === null ? true : stored === 'true';
   });
   const [showSettings, setShowSettings] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    document.body.classList.toggle('fullscreen-reader', isFullscreen);
+    return () => document.body.classList.remove('fullscreen-reader');
+  }, [isFullscreen]);
 
   useEffect(() => {
     if (isLoaded && currentPage) {
@@ -243,16 +249,20 @@ export const DocumentReader = ({ initialIsEditing }: DocumentReaderProps) => {
   return (
     <div className={s.pdfReaderContainer}>
       <div className={s.pageInfoContainer}>
-        <span className={s.headerControls}>
-          <IconButton variant='transparent' icon={faArrowLeft} onClick={() => documentId ? navigate(`/document/${documentId}`) : navigate(-1)} />
-          {isLoaded && <PageSelector />}
-        </span>
-        <div className={s.titleContainer}>
-          <FontAwesomeIcon icon={faFilePdf} />
-          {documentTitle} {isEditing && "(editing)"}
-        </div>
+        {!isFullscreen && (
+          <span className={s.headerControls}>
+            <IconButton variant='transparent' icon={faArrowLeft} onClick={() => documentId ? navigate(`/document/${documentId}`) : navigate(-1)} />
+            {isLoaded && <PageSelector />}
+          </span>
+        )}
+        {!isFullscreen && (
+          <div className={s.titleContainer}>
+            <FontAwesomeIcon icon={faFilePdf} />
+            {documentTitle} {isEditing && "(editing)"}
+          </div>
+        )}
         <div className={s.controlsContainer}>
-          {isLoaded && isEditing ? (
+          {!isFullscreen && (isLoaded && isEditing ? (
             <>
               <IconButton icon={faSave} variant='transparent' onClick={handleSave} />
               <IconButton icon={faXmark} variant='transparent' onClick={handleCancel} />
@@ -268,6 +278,13 @@ export const DocumentReader = ({ initialIsEditing }: DocumentReaderProps) => {
                 />
               )}
             </>
+          ))}
+          {isLoaded && (
+            <IconButton
+              icon={isFullscreen ? faCompress : faExpand}
+              variant='transparent'
+              onClick={() => setIsFullscreen(prev => !prev)}
+            />
           )}
         </div>
       </div>
