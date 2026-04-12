@@ -68,10 +68,28 @@ export const DocumentReader = ({ initialIsEditing }: DocumentReaderProps) => {
   const [showSettings, setShowSettings] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const playerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     document.body.classList.toggle('fullscreen-reader', isFullscreen);
     return () => document.body.classList.remove('fullscreen-reader');
+  }, [isFullscreen]);
+
+  useEffect(() => {
+    if (!isFullscreen) return;
+    const showPlayer = () => {
+      document.body.classList.add('fullscreen-player-visible');
+      if (playerTimerRef.current) clearTimeout(playerTimerRef.current);
+      playerTimerRef.current = setTimeout(() => {
+        document.body.classList.remove('fullscreen-player-visible');
+      }, 2000);
+    };
+    document.addEventListener('mousemove', showPlayer);
+    return () => {
+      document.removeEventListener('mousemove', showPlayer);
+      document.body.classList.remove('fullscreen-player-visible');
+      if (playerTimerRef.current) clearTimeout(playerTimerRef.current);
+    };
   }, [isFullscreen]);
 
   useEffect(() => {

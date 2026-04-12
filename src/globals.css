@@ -395,7 +395,7 @@ body.fullscreen-reader .audioplayer-container {
   z-index: 1000;
 }
 
-body.fullscreen-reader .audioplayer-container:hover {
+body.fullscreen-reader.fullscreen-player-visible .audioplayer-container {
   opacity: 1;
 }
 
