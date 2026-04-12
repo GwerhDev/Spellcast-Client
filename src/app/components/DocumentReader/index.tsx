@@ -65,7 +65,7 @@ export const DocumentReader = ({ initialIsEditing }: DocumentReaderProps) => {
     return stored === null ? true : stored === 'true';
   });
   const [showSettings, setShowSettings] = useState(false);
-  const textContainerRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isLoaded && currentPage) {
@@ -76,6 +76,17 @@ export const DocumentReader = ({ initialIsEditing }: DocumentReaderProps) => {
   useEffect(() => {
     setEditedText(safeParseJSON(currentPageText));
   }, [currentPageText]);
+
+  useEffect(() => {
+    if (selectedVoice.type !== 'browser' || currentSentenceIndex < 0) return;
+    const highlighted = scrollContainerRef.current?.querySelector(`.${s.highlight}`) as HTMLElement | null;
+    highlighted?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }, [currentSentenceIndex, selectedVoice.type]);
+
+  useEffect(() => {
+    if (selectedVoice.type === 'browser') return;
+    if (scrollContainerRef.current) scrollContainerRef.current.scrollTop = 0;
+  }, [currentPage, selectedVoice.type]);
 
   const handleEdit = () => {
     navigate(`/document/${documentId}/reader/edit`);
@@ -197,7 +208,7 @@ export const DocumentReader = ({ initialIsEditing }: DocumentReaderProps) => {
     if (selectedVoice.type === 'browser') {
       if (!fitToWidth) {
         return (
-          <div ref={textContainerRef} className={s.paperBackground}>
+          <div ref={scrollContainerRef} className={s.paperBackground}>
             <div className={`${s.paperSheet} ${s.readerContent} ${s.pdfMode}`}>
               {renderFormattedSentences(false)}
             </div>
@@ -205,7 +216,7 @@ export const DocumentReader = ({ initialIsEditing }: DocumentReaderProps) => {
         );
       }
       return (
-        <div ref={textContainerRef} className={`${s.textContainer} ${s.readerContent}`}>
+        <div ref={scrollContainerRef} className={`${s.textContainer} ${s.readerContent}`}>
           {renderFormattedSentences(true)}
         </div>
       );
@@ -213,7 +224,7 @@ export const DocumentReader = ({ initialIsEditing }: DocumentReaderProps) => {
 
     if (!fitToWidth) {
       return (
-        <div className={s.paperBackground}>
+        <div ref={scrollContainerRef} className={s.paperBackground}>
           <div className={`${s.paperSheet} ${s.readerContent} ${s.pdfMode}`}>
             {renderFormattedContent(false)}
           </div>
@@ -222,7 +233,7 @@ export const DocumentReader = ({ initialIsEditing }: DocumentReaderProps) => {
     }
 
     return (
-      <div className={`${s.textContainer} ${s.readerContent}`}>
+      <div ref={scrollContainerRef} className={`${s.textContainer} ${s.readerContent}`}>
         {renderFormattedContent(true)}
       </div>
     );
