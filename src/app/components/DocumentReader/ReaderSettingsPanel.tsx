@@ -1,7 +1,7 @@
 import s from './ReaderSettingsPanel.module.css';
 import { useDispatch, useSelector } from 'react-redux';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faXmark } from '@fortawesome/free-solid-svg-icons';
+import { faXmark, faArrowsLeftRight, faFilePdf } from '@fortawesome/free-solid-svg-icons';
 import { RootState } from '../../../store';
 import { setShowReaderSettings, setFitToWidth } from '../../../store/pdfReaderSlice';
 
@@ -29,12 +29,14 @@ export const ReaderSettingsPanel = () => {
             className={fitToWidth ? s.optionActive : s.option}
             onClick={() => handleFitToWidth(true)}
           >
+            <FontAwesomeIcon icon={faArrowsLeftRight} />
             Fit to width
           </li>
           <li
             className={!fitToWidth ? s.optionActive : s.option}
             onClick={() => handleFitToWidth(false)}
           >
+            <FontAwesomeIcon icon={faFilePdf} />
             View as PDF
           </li>
         </ul>
