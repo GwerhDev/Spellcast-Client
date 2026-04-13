@@ -67,6 +67,10 @@ export const DocumentReader = ({ initialIsEditing }: DocumentReaderProps) => {
   const playerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
+    if (isEditing) setIsFullscreen(false);
+  }, [isEditing]);
+
+  useEffect(() => {
     document.body.classList.toggle('fullscreen-reader', isFullscreen);
     return () => document.body.classList.remove('fullscreen-reader');
   }, [isFullscreen]);
