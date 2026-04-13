@@ -15,6 +15,8 @@ interface PdfReaderState {
   progress?: DocumentProgress; // Add progress to state
   currentSentenceIndex: number;
   sentences: string[];
+  showReaderSettings: boolean;
+  fitToWidth: boolean;
 }
 
 const initialState: PdfReaderState = {
@@ -30,6 +32,8 @@ const initialState: PdfReaderState = {
   hasInitialPageSet: false, // Initialize new flag
   isContinuousPlayActive: false,
   showPageSelector: false,
+  showReaderSettings: false,
+  fitToWidth: localStorage.getItem('reader:fitToWidth') !== 'false',
   progress: {
     currentPage: 1,
     pagesProgress: [],
@@ -97,6 +101,12 @@ const pdfReaderSlice = createSlice({
     setContinuousPlay(state, action: PayloadAction<boolean>) {
       state.isContinuousPlayActive = action.payload;
     },
+    setShowReaderSettings(state, action: PayloadAction<boolean>) {
+      state.showReaderSettings = action.payload;
+    },
+    setFitToWidth(state, action: PayloadAction<boolean>) {
+      state.fitToWidth = action.payload;
+    },
   },
 });
 
@@ -115,6 +125,8 @@ export const {
   setShowPageSelector,
   setSentences,
   setCurrentSentenceIndex,
+  setShowReaderSettings,
+  setFitToWidth,
 } = pdfReaderSlice.actions;
 
 export default pdfReaderSlice.reducer;
