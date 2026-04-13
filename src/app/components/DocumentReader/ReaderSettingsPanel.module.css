@@ -7,7 +7,7 @@
   flex-shrink: 0;
   flex-grow: 1;
   width: 220px;
-  border: solid 0.5px var(--color-dark-300);
+  border: solid .5px var(--color-dark-300);
 }
 
 .container {
@@ -34,7 +34,7 @@
 .title {
   font-size: 0.75rem;
   font-weight: 600;
-  color: var(--color-light-300);
+  color: var(--text-color);
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
