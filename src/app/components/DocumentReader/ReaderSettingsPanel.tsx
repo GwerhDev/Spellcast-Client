@@ -2,7 +2,7 @@ import { useRef, useEffect } from 'react';
 import s from './ReaderSettingsPanel.module.css';
 import { useDispatch, useSelector } from 'react-redux';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faXmark, faArrowsLeftRight, faFilePdf } from '@fortawesome/free-solid-svg-icons';
+import { faArrowsLeftRight, faFilePdf } from '@fortawesome/free-solid-svg-icons';
 import { RootState } from '../../../store';
 import { setShowReaderSettings, setFitToWidth } from '../../../store/pdfReaderSlice';
 
@@ -32,9 +32,6 @@ export const ReaderSettingsPanel = () => {
       <div className={s.menuContainer}>
         <div className={s.header}>
           <span className={s.title}>Display</span>
-          <button className={s.closeButton} onClick={() => dispatch(setShowReaderSettings(false))}>
-            <FontAwesomeIcon icon={faXmark} />
-          </button>
         </div>
         <ul className={s.optionList}>
           <li
