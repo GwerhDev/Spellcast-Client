@@ -71,4 +71,5 @@
   align-items: center;
   list-style: none;
   background-color: var(--color-primary);
+  color: var(--color-light-100);
 }
