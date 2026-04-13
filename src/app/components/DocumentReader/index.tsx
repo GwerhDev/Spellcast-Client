@@ -293,7 +293,7 @@ export const DocumentReader = ({ initialIsEditing }: DocumentReaderProps) => {
               )}
             </>
           )}
-          {isLoaded && (
+          {isLoaded && !isEditing && (
             <IconButton
               icon={isFullscreen ? faCompress : faExpand}
               variant='transparent'
