@@ -6,7 +6,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowLeft, faEdit, faFilePdf, faSave, faXmark, faGear, faExpand, faCompress } from '@fortawesome/free-solid-svg-icons';
 import { RootState } from '../../../store';
-import { goToPage, setPageText, setCurrentSentenceIndex } from '../../../store/pdfReaderSlice';
+import { goToPage, setPageText, setCurrentSentenceIndex, setShowReaderSettings } from '../../../store/pdfReaderSlice';
 import { resetBrowserPlayer } from '../../../store/browserPlayerSlice';
 import { Spinner } from '../Spinner';
 import { IconButton } from '../Buttons/IconButton';
@@ -56,16 +56,12 @@ export const DocumentReader = ({ initialIsEditing }: DocumentReaderProps) => {
     documentId,
     isLoaded,
     currentSentenceIndex,
+    fitToWidth,
   } = useSelector((state: RootState) => state.pdfReader);
   const { selectedVoice, } = useSelector((state: RootState) => state.voice);
   const { isPlaying } = useSelector((state: RootState) => state.browserPlayer);
   const [editedText, setEditedText] = useState<JSONContent>(emptyContent);
   const isEditing = initialIsEditing ?? false;
-  const [fitToWidth, setFitToWidth] = useState(() => {
-    const stored = localStorage.getItem('reader:fitToWidth');
-    return stored === null ? true : stored === 'true';
-  });
-  const [showSettings, setShowSettings] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const playerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -266,21 +262,17 @@ export const DocumentReader = ({ initialIsEditing }: DocumentReaderProps) => {
 
   return (
     <div className={s.pdfReaderContainer}>
-      <div className={s.pageInfoContainer}>
-        {!isFullscreen && (
-          <span className={s.headerControls}>
-            <IconButton variant='transparent' icon={faArrowLeft} onClick={() => documentId ? navigate(`/document/${documentId}`) : navigate(-1)} />
-            {isLoaded && <PageSelector />}
-          </span>
-        )}
-        {!isFullscreen && (
-          <div className={s.titleContainer}>
-            <FontAwesomeIcon icon={faFilePdf} />
-            {documentTitle} {isEditing && "(editing)"}
-          </div>
-        )}
+      <div className={`${s.pageInfoContainer} reader-top-bar`}>
+        <span className={s.headerControls}>
+          <IconButton variant='transparent' icon={faArrowLeft} onClick={() => documentId ? navigate(`/document/${documentId}`) : navigate(-1)} />
+          {isLoaded && <PageSelector />}
+        </span>
+        <div className={s.titleContainer}>
+          <FontAwesomeIcon icon={faFilePdf} />
+          {documentTitle} {isEditing && "(editing)"}
+        </div>
         <div className={s.controlsContainer}>
-          {!isFullscreen && (isLoaded && isEditing ? (
+          {isLoaded && isEditing ? (
             <>
               <IconButton icon={faSave} variant='transparent' onClick={handleSave} />
               <IconButton icon={faXmark} variant='transparent' onClick={handleCancel} />
@@ -292,11 +284,11 @@ export const DocumentReader = ({ initialIsEditing }: DocumentReaderProps) => {
                 <IconButton
                   icon={faGear}
                   variant='transparent'
-                  onClick={() => setShowSettings(prev => !prev)}
+                  onClick={() => dispatch(setShowReaderSettings(true))}
                 />
               )}
             </>
-          ))}
+          )}
           {isLoaded && (
             <IconButton
               icon={isFullscreen ? faCompress : faExpand}
@@ -308,23 +300,6 @@ export const DocumentReader = ({ initialIsEditing }: DocumentReaderProps) => {
       </div>
       <div className={s.bodyWrapper}>
         {renderBody()}
-        {showSettings && !isEditing && (
-          <div className={s.settingsPanel}>
-            <p className={s.settingsPanelTitle}>Display</p>
-            <button
-              className={fitToWidth ? s.settingsOptionActive : s.settingsOption}
-              onClick={() => { setFitToWidth(true); localStorage.setItem('reader:fitToWidth', 'true'); }}
-            >
-              Fit to width
-            </button>
-            <button
-              className={!fitToWidth ? s.settingsOptionActive : s.settingsOption}
-              onClick={() => { setFitToWidth(false); localStorage.setItem('reader:fitToWidth', 'false'); }}
-            >
-              View as PDF
-            </button>
-          </div>
-        )}
       </div>
     </div>
   )
