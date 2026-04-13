@@ -31,14 +31,15 @@ function App() {
   const userData: userData = useSelector((state: RootState) => state.session.userData);
   const { loader } = userData || {};
   const [loaderProgress, setLoaderProgress] = useState(0);
-  useInitSession(setLoaderProgress);
+  const [loaderMessage, setLoaderMessage] = useState('');
+  useInitSession(setLoaderProgress, setLoaderMessage);
 
   return (
     <ThemeProvider>
       {
         loader
           ?
-          <Loader progress={loaderProgress} />
+          <Loader progress={loaderProgress} message={loaderMessage} />
           :
           <Routes>
             <Route path="/unauthorized" element={<Unauthorized />} />

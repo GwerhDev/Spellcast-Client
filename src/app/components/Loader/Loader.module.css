@@ -24,3 +24,10 @@
   background: linear-gradient(to right, var(--color-primary), var(--color-secondary));
   transition: width 0.4s ease;
 }
+
+.message {
+  font-size: 0.7rem;
+  color: var(--color-light-300);
+  letter-spacing: 0.04em;
+  margin-top: -1rem;
+}
