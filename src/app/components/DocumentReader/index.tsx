@@ -266,21 +266,17 @@ export const DocumentReader = ({ initialIsEditing }: DocumentReaderProps) => {
 
   return (
     <div className={s.pdfReaderContainer}>
-      <div className={s.pageInfoContainer}>
-        {!isFullscreen && (
-          <span className={s.headerControls}>
-            <IconButton variant='transparent' icon={faArrowLeft} onClick={() => documentId ? navigate(`/document/${documentId}`) : navigate(-1)} />
-            {isLoaded && <PageSelector />}
-          </span>
-        )}
-        {!isFullscreen && (
-          <div className={s.titleContainer}>
-            <FontAwesomeIcon icon={faFilePdf} />
-            {documentTitle} {isEditing && "(editing)"}
-          </div>
-        )}
+      <div className={`${s.pageInfoContainer} reader-top-bar`}>
+        <span className={s.headerControls}>
+          <IconButton variant='transparent' icon={faArrowLeft} onClick={() => documentId ? navigate(`/document/${documentId}`) : navigate(-1)} />
+          {isLoaded && <PageSelector />}
+        </span>
+        <div className={s.titleContainer}>
+          <FontAwesomeIcon icon={faFilePdf} />
+          {documentTitle} {isEditing && "(editing)"}
+        </div>
         <div className={s.controlsContainer}>
-          {!isFullscreen && (isLoaded && isEditing ? (
+          {isLoaded && isEditing ? (
             <>
               <IconButton icon={faSave} variant='transparent' onClick={handleSave} />
               <IconButton icon={faXmark} variant='transparent' onClick={handleCancel} />
@@ -296,7 +292,7 @@ export const DocumentReader = ({ initialIsEditing }: DocumentReaderProps) => {
                 />
               )}
             </>
-          ))}
+          )}
           {isLoaded && (
             <IconButton
               icon={isFullscreen ? faCompress : faExpand}
