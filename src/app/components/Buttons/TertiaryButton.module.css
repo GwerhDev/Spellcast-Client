@@ -1,0 +1,25 @@
+.container {
+  gap: .5rem;
+  width: 100%;
+  max-width: 500px;
+  font-weight: 600;
+  display: flex;
+  text-wrap: nowrap;
+  align-items: center;
+  justify-content: center;
+  transition-duration: .4s;
+  border-radius: var(--size-4);
+  color: var(--text-color-accent);
+  background: transparent;
+  border: solid 1px var(--color-light-400);
+;
+}
+
+.container:hover {
+  color: var(--text-color-accent);
+  background: var(--color-primary);
+}
+
+.container:disabled:hover {
+  background-color: var(--color-light-300);
+}
