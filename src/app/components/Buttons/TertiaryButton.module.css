@@ -9,14 +9,14 @@
   justify-content: center;
   transition-duration: .4s;
   border-radius: var(--size-4);
-  color: var(--text-color-accent);
+  color: var(--text-color);
   background: transparent;
-  border: solid 1px var(--color-light-400);
+  border: solid 1px var(--text-color);
 ;
 }
 
 .container:hover {
-  color: var(--text-color-accent);
+  color: var(--text-color);
   background: var(--color-primary);
 }
 
