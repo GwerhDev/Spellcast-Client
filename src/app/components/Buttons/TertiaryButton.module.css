@@ -12,11 +12,10 @@
   color: var(--text-color);
   background: transparent;
   border: solid 1px var(--text-color);
-;
 }
 
 .container:hover {
-  color: var(--text-color);
+  color: #e0e0e0;
   background: var(--color-primary);
 }
 
