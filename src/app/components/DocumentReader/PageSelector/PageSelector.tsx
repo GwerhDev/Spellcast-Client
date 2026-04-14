@@ -1,7 +1,7 @@
 import s from './PageSelector.module.css';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../../../store';
-import { PrimaryButton } from '../../Buttons/PrimaryButton';
+import { TertiaryButton } from '../../Buttons/TertiaryButton';
 import { setShowPageSelector } from 'store/pdfReaderSlice';
 
 interface PageSelectorProps {
@@ -18,9 +18,9 @@ export const PageSelector: React.FC<PageSelectorProps> = () => {
 
   return (
     <div className={s.pageSelectorContainer}>
-      <PrimaryButton onClick={handleClick}>
+      <TertiaryButton onClick={handleClick}>
         {`Page ${currentPage} of ${totalPages}`}
-      </PrimaryButton>
+      </TertiaryButton>
     </div>
   );
 };
