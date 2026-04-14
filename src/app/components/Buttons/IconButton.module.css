@@ -29,7 +29,3 @@
   padding: 0;
   background-color: transparent;
 }
-
-.transparent:hover {
-  background: var(--background-color-dark-transparency);
-}
