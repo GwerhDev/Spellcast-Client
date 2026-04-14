@@ -49,7 +49,7 @@ function App() {
               <Route path="/document/:id" element={<DocumentDetailPage />} />
               <Route path="/document/:id/reader" element={<LocalDocumentReader />} />
               <Route path="/document/:id/edit" element={<DocumentEdit />} />
-              <Route path="/document/:id/reader/edit" element={<LocalDocumentReader editMode />} />
+              <Route path="/document/:id/edit/:page" element={<DocumentEdit />} />
               <Route path="/user/archive" element={<UserArchive />} />
 
               <Route path="/user/dashboard" element={<Dashboard />} />

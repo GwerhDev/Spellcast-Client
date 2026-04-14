@@ -233,3 +233,9 @@
   border: 1px solid transparent;
   background: transparent;
 }
+
+@media (max-width: 768px) {
+  .titleContainer {
+    display: none;
+  }
+}

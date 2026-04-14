@@ -64,7 +64,7 @@ export const DocumentDetail: React.FC = () => {
     }
   };
 
-  if (isLoading) return <Spinner isLoading />;
+  if (isLoading) return <div className={s.container}><Spinner isLoading message="Loading..." /></div>;
   if (error || !doc) return <div>{error || 'Document not found.'}</div>;
 
   const pagesCount = doc.pagesContent ? JSON.parse(doc.pagesContent).length : null;

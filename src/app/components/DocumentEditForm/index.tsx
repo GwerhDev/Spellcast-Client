@@ -7,8 +7,7 @@ import { getDocumentById, updateDocumentContent } from '../../../db';
 import { Spinner } from '../Spinner';
 import { PageList } from '../DocumentCreateForm/PageList';
 import { DocumentEditor } from '../Editors/DocumentEditor';
-import { faArrowLeft, faCloud, faSave } from '@fortawesome/free-solid-svg-icons';
-import { PrimaryButton } from '../Buttons/PrimaryButton';
+import { faArrowLeft, faCloudUpload, faSave } from '@fortawesome/free-solid-svg-icons';
 import { IconButton } from '../Buttons/IconButton';
 
 const emptyContent: JSONContent = {
@@ -17,13 +16,13 @@ const emptyContent: JSONContent = {
 };
 
 export const DocumentEditForm: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+  const { id, page } = useParams<{ id: string, page?: string }>();
   const navigate = useNavigate();
   const { userData, logged } = useAppSelector((state) => state.session);
 
   const [documentTitle, setDocumentTitle] = useState('');
   const [pagesContent, setPagesContent] = useState<JSONContent[]>([]);
-  const [editingPageIndex, setEditingPageIndex] = useState(0);
+  const [editingPageIndex, setEditingPageIndex] = useState(Number(page) - 1 || 0);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -53,7 +52,7 @@ export const DocumentEditForm: React.FC = () => {
   const handlePageDelete = (index: number) => {
     const updated = pagesContent.filter((_, i) => i !== index);
     setPagesContent(updated);
-    setEditingPageIndex(Math.min(editingPageIndex, updated.length - 1));
+    setEditingPageIndex(Math.min(Number(editingPageIndex), updated.length - 1));
   };
 
   const handleAddPage = () => {
@@ -63,7 +62,7 @@ export const DocumentEditForm: React.FC = () => {
 
   const handlePageContentChange = (newContent: JSONContent) => {
     const updated = [...pagesContent];
-    updated[editingPageIndex] = newContent;
+    updated[Number(editingPageIndex)] = newContent;
     setPagesContent(updated);
   };
 
@@ -90,47 +89,44 @@ export const DocumentEditForm: React.FC = () => {
     }
   };
 
-  if (isLoading) return <Spinner isLoading />;
-  if (error) return <div className={s.error}>{error}</div>;
+  if (isLoading) return <div className={s.container}><Spinner isLoading /></div>;
+  if (error) return <div className={s.container}><div className={s.error}>{error}</div></div>;
 
   return (
     <div className={s.container}>
       <div className={s.pageInfoContainer}>
-        <IconButton icon={faArrowLeft} className={s.backButton} variant='transparent' onClick={() => navigate(`/document/${id}`)} />
+        <IconButton icon={faArrowLeft} className={s.backButton} variant='transparent' onClick={() => navigate(-1)} />
+        <span className={s.titleContainer}>
+          <input
+            className={s.documentTitle}
+            type="text"
+            placeholder="Document title..."
+            value={documentTitle}
+            onChange={(e) => setDocumentTitle(e.target.value)}
+          />
+        </span>
+
+        <IconButton disabled={isSaving} icon={faSave} variant='transparent' onClick={handleSave} />
+        <IconButton icon={faCloudUpload} disabled variant='transparent' onClick={handleSave} />
       </div>
-      <input
-        className={s.documentTitle}
-        type="text"
-        placeholder="Document title..."
-        value={documentTitle}
-        onChange={(e) => setDocumentTitle(e.target.value)}
-      />
 
       <div className={s.editorContainer}>
         <DocumentEditor
-          pageNumber={editingPageIndex + 1}
-          pageContent={pagesContent[editingPageIndex]}
+          pageNumber={Number(editingPageIndex) + 1}
+          pageContent={pagesContent[Number(editingPageIndex)]}
           onPageContentChange={handlePageContentChange}
         />
         <div className={s.pagesContainer}>
           <PageList
             pages={pagesContent.map(() => '')}
-            currentPage={editingPageIndex}
+            currentPage={Number(editingPageIndex)}
             onPageClick={handlePageClick}
             onPageDelete={handlePageDelete}
             onAddPage={handleAddPage}
           />
         </div>
       </div>
-
-      <div className={s.actions}>
-        <PrimaryButton type="button" icon={faSave} onClick={handleSave} disabled={isSaving}>
-          {isSaving ? 'Saving...' : 'Save'}
-        </PrimaryButton>
-        <PrimaryButton type="button" icon={faCloud} disabled>
-          Save Cloud
-        </PrimaryButton>
-      </div>
     </div>
+
   );
 };
