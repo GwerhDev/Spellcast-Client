@@ -410,6 +410,7 @@ body.fullscreen-reader .reader-top-bar {
   transition: opacity 0.25s ease;
   background: linear-gradient(to bottom, rgba(0, 0, 0, 0.15) 0%, transparent 100%);
   padding: 0.5rem 2.5rem;
+  backdrop-filter: blur(10px);
 }
 
 body.fullscreen-reader.fullscreen-player-visible .reader-top-bar {
