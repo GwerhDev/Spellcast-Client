@@ -15,7 +15,7 @@ interface IconButtonProps {
 }
 
 export const IconButton = (props: IconButtonProps) => {
-  const { icon, text, children, className, disabled, onClick, variant = "primary" } = props;
+  const { icon, text, children, className, disabled, onClick, variant = "transparent" } = props;
 
   const variantClass = {
     primary: s.primary,
