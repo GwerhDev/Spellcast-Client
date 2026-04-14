@@ -291,7 +291,6 @@ a:hover {
 
 @media (max-width: 768px) {
   .dashboard-container {
-    margin: 0;
     flex-direction: column;
   }
 
@@ -383,7 +382,7 @@ a:hover {
 
   .audioplayer-container {
     padding: 0;
-    padding-bottom: 6rem;
+    padding-bottom: 5.3rem;
     display: flex;
   }
 }
@@ -415,15 +414,14 @@ a:hover {
 }
 
 /* Fullscreen reader mode */
-body.fullscreen-reader .aside-container {
+
+body.fullscreen-reader .nav-container {
   display: none;
 }
 
 body.fullscreen-reader .audioplayer-container {
   position: fixed;
-  bottom: 0.5rem;
-  left: 0.5rem;
-  right: 0.5rem;
+  bottom: 0;
   margin: 0;
   opacity: 0;
   transition: opacity 0.25s ease;
