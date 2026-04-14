@@ -6,7 +6,6 @@
   display: flex;
   flex-direction: column;
   border-radius: 10px;
-  padding: 1rem;
   border: solid 1px var(--color-dark-300);
   position: relative;
 }
@@ -38,9 +37,8 @@
 
 .pageInfoContainer {
   gap: 1rem;
-  height: 3rem;
-  padding: .5rem;
-  padding-inline: 1rem;
+  padding: 1rem;
+  min-height: 4rem;
   display: flex;
   justify-content: space-between;
 }
@@ -179,10 +177,25 @@
   background-clip: unset;
 }
 
-.readerContent h1 { font-size: 1.5rem; margin-bottom: 0.5rem; }
-.readerContent h2 { font-size: 1.25rem; margin-bottom: 0.5rem; }
-.readerContent h3 { font-size: 1.125rem; margin-bottom: 0.4rem; }
-.readerContent h4 { font-size: 1rem; margin-bottom: 0.4rem; }
+.readerContent h1 {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.readerContent h2 {
+  font-size: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.readerContent h3 {
+  font-size: 1.125rem;
+  margin-bottom: 0.4rem;
+}
+
+.readerContent h4 {
+  font-size: 1rem;
+  margin-bottom: 0.4rem;
+}
 
 .readerBlock {
   margin-bottom: 0.75rem;
@@ -196,14 +209,12 @@
 
 /* Paper mode — outer scroll area */
 .paperBackground {
+  width: 100%;
+  padding: 2rem;
   display: flex;
-  flex-direction: column;
-  align-items: center;
   overflow: auto;
-  padding: 2rem 1rem;
-  flex-grow: 1;
-  min-height: 0;
-  border-radius: 10px;
+  align-items: center;
+  flex-direction: column;
 }
 
 /* Paper mode — the sheet itself */
