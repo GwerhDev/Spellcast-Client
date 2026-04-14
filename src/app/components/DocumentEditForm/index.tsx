@@ -82,7 +82,7 @@ export const DocumentEditForm: React.FC = () => {
         pagesContent: JSON.stringify(pagesContent),
       });
 
-      navigate(`/document/${docId}/reader`);
+      navigate(`/document/${docId}`);
     } catch (err) {
       console.error('Failed to save document:', err);
     } finally {
@@ -96,7 +96,7 @@ export const DocumentEditForm: React.FC = () => {
   return (
     <div className={s.container}>
       <div className={s.pageInfoContainer}>
-        <IconButton icon={faArrowLeft} className={s.backButton} variant='transparent' onClick={() => navigate(`/document/${id}/reader`)} />
+        <IconButton icon={faArrowLeft} className={s.backButton} variant='transparent' onClick={() => navigate(`/document/${id}`)} />
       </div>
       <input
         className={s.documentTitle}
