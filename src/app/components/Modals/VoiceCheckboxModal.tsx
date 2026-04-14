@@ -34,9 +34,11 @@ export const VoiceCheckboxModal: React.FC<VoiceCheckboxModalProps> = ({
   const filteredVoices = (voices || []).filter(
     (voice: Voice) =>
       voice &&
-      voice.label &&
-      voice.label.toLowerCase().includes(searchTerm.toLowerCase())
+      voice.name &&
+      voice.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  console.log(filteredVoices)
 
   const allFilteredSelected = useMemo(() =>
     filteredVoices.length > 0 &&
@@ -118,13 +120,15 @@ export const VoiceCheckboxModal: React.FC<VoiceCheckboxModalProps> = ({
                       /* Handled by onClick on li */
                     }}
                   />
-                  <p>{voice.label}</p>
+                  <p>{voice.name}</p>
                 </li>
               ))}
             </ul>
-            <IconButton icon={faSave} onClick={handleSave} disabled={isSaving}>
-              {isSaving ? 'Saving...' : 'Save'}
-            </IconButton>
+            <div className={s.buttonContainer}>
+              <IconButton variant="primary" icon={faSave} onClick={handleSave} disabled={isSaving}>
+                {isSaving ? 'Saving...' : 'Save'}
+              </IconButton>
+            </div>
           </>
         )}
       </div>

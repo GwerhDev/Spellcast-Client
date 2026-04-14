@@ -27,13 +27,13 @@ export const VoiceSelectorModal: React.FC<VoiceSelectorModalProps> = ({ onClose,
 
   const voices = window.speechSynthesis.getVoices();
 
-  const aiVoices = credentials?.[0]?.voices?.map(v => ({ value: v.value, label: v.label, gender: v.gender })) || [];
-  const browserVoices = voices.map(v => ({ value: v.name, label: v.name, gender: 'Unknown', isBrowser: true }));
+  const aiVoices = credentials?.[0]?.voices?.map(v => ({ value: v.value, name: v.name, gender: v.gender })) || [];
+  const browserVoices = voices.map(v => ({ value: v.name, name: v.name, gender: 'Unknown', isBrowser: true }));
 
   const voicesToShow = activeTab === 'browser' ? browserVoices : aiVoices;
   const icon = activeTab === 'browser' ? faDesktop : faBrain;
 
-  const handleVoiceSelection = async (selected: { value: string, label: string, gender: string, isBrowser?: boolean }) => {
+  const handleVoiceSelection = async (selected: { value: string, name: string, gender: string, isBrowser?: boolean }) => {
     onClose();
     if (selected?.isBrowser) {
       dispatch(setSelectedVoice({ value: selected.value, type: 'browser' }));
@@ -93,7 +93,7 @@ export const VoiceSelectorModal: React.FC<VoiceSelectorModalProps> = ({ onClose,
           >
             <FontAwesomeIcon icon={selectedVoice.value === voiceOption.value && (selectedVoice.type === 'ai' ? 'ai' : selectedVoice.type) === activeTab ? faCircle : faRegCircle} />
             <span>
-              {voiceOption.label}
+              {voiceOption.name}
             </span>
             <FontAwesomeIcon icon={icon} className={s.genderIcon} />
           </li>

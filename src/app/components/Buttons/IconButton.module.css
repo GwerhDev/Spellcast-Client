@@ -1,5 +1,4 @@
 .base {
-  width: 100%;
   max-width: 500px;
   border-radius: var(--size-4);
   text-wrap: nowrap;
@@ -15,15 +14,22 @@
 }
 
 .primary {
-  background: transparent;
-  color: var(--text-color);
+  padding-inline: 3rem;
+  color: var(--text-color-accent);
+  background-color: black;
+  background: linear-gradient(45deg, var(--color-primary), var(--color-secondary));
 }
 
 .primary:hover {
-  background: var(--background-color-dark-transparency);
+  color: var(--text-color-accent);
+  background: linear-gradient(45deg, var(--color-primary-accent), var(--color-secondary-accent));
 }
 
 .transparent {
   padding: 0;
   background-color: transparent;
+}
+
+.transparent:hover {
+  background: var(--background-color-dark-transparency);
 }

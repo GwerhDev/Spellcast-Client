@@ -47,7 +47,7 @@ export interface SelectedVoice {
 
 export interface Voice {
   value: string;
-  label: string;
+  name: string;
   gender: string;
   isSelected?: boolean;
 }

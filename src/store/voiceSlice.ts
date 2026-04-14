@@ -25,7 +25,7 @@ const loadSelectedVoice = (): SelectedVoice => {
 const initialState: VoiceState = {
   selectedVoice: loadSelectedVoice(),
   voices: [
-    { label: 'Browser', value: 'browser', gender: 'Male' },
+    { name: 'Browser', value: 'browser', gender: 'Male' },
   ],
 };
 
