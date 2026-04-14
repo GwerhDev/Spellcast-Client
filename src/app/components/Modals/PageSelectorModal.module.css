@@ -63,27 +63,27 @@
 }
 
 .pageOption {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    color: var(--text-color);
-    border: 1px solid var(--text-color);
     padding: 1rem;
     border-radius: 8px;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     text-align: center;
+    border: 1px solid transparent;
     transition: all 0.2s ease-in-out;
+    color: var(--text-color);
+    background-color: var(--color-options-background);
 }
 
 .pageOption:hover {
+    color: var(--app-white);
     background: var(--color-primary);
-    border-color: var(--color-primary);
-    color: white;
 }
 
 .activePage {
-    background: var(--color-primary);
-    color: white;
     font-weight: bold;
+    color: var(--app-white);
+    background: var(--color-primary);
     border-color: var(--color-primary);
 }
