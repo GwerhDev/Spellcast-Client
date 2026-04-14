@@ -59,8 +59,9 @@
 }
 
 .continueButton:hover {
-  border-color: var(--color-primary);
-  background-color: var(--color-dark-300);
+  border-color: var(--color-primary-accent);
+  color: var(--app-white);
+  background-color: var(--color-primary-accent);
 }
 
 .continueButton p {
@@ -68,7 +69,7 @@
   padding-inline: 4rem;
   font-size: 0.875rem;
   font-weight: 500;
-  color: var(--color-light-100);
+  color: var(--app-white);
   background-color: transparent;
   white-space: nowrap;
 }

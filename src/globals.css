@@ -408,19 +408,13 @@ body.fullscreen-reader .reader-top-bar {
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.25s ease;
-  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.65) 0%, transparent 100%);
-  padding: 0.5rem 1rem;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.15) 0%, transparent 100%);
+  padding: 0.5rem 2.5rem;
 }
 
 body.fullscreen-reader.fullscreen-player-visible .reader-top-bar {
   opacity: 1;
   pointer-events: auto;
-}
-
-@media (max-width: 768px) {
-  body.fullscreen-reader .audioplayer-container {
-    opacity: 0.5;
-  }
 }
 
 .tiptap.ProseMirror.simple-editor {
