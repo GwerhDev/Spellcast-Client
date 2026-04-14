@@ -285,13 +285,19 @@ a:hover {
   flex-grow: 1;
   display: flex;
   overflow-y: auto;
-  padding-bottom: .5rem;
+  margin-bottom: .5rem;
   padding-inline: .5rem;
 }
 
 @media (max-width: 768px) {
   .dashboard-container {
     flex-direction: column;
+  }
+
+  .app-viewer {
+    overflow-y: auto;
+    margin: 0;
+    padding: 0;
   }
 }
 
@@ -329,28 +335,56 @@ a:hover {
   flex-direction: column;
 }
 
-.aside-container {
+.nav-container {
+  display: flex;
+  width: auto;
+}
+
+.aside-inner-container {
   gap: .5rem;
+  height: 100%;
   padding: .5rem;
   border-radius: 10px;
   display: flex;
   border: solid .5px var(--color-dark-300);
-}
-
-@media (max-width: 768px) {
-  .aside-container {
-    flex-direction: column;
-  }
 }
 
 .audioplayer-container {
-  gap: .5rem;
-  padding: .5rem;
-  border-radius: 10px;
-  display: flex;
-  border: solid .5px var(--color-dark-300);
-  margin-inline: .5rem;
-  margin-bottom: .5rem;
+  width: 100%;
+  padding-inline: .5rem;
+  padding-bottom: .5rem;
+}
+
+@media (max-width: 768px) {
+  .nav-container {
+    width: 100%;
+    height: auto;
+    padding-top: 4.3rem;
+    padding-inline: 0;
+    display: flex;
+  }
+
+  .aside-container {
+    left: 0;
+    margin: 0;
+    top: 1.4rem;
+    width: 100%;
+    z-index: 99;
+    padding-inline: .5rem;
+    position: fixed;
+    flex-direction: column;
+  }
+
+  .aside-inner-container {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .audioplayer-container {
+    padding: 0;
+    padding-bottom: 5.3rem;
+    display: flex;
+  }
 }
 
 .logo {
@@ -380,15 +414,14 @@ a:hover {
 }
 
 /* Fullscreen reader mode */
-body.fullscreen-reader .aside-container {
+
+body.fullscreen-reader .nav-container {
   display: none;
 }
 
 body.fullscreen-reader .audioplayer-container {
   position: fixed;
-  bottom: 0.5rem;
-  left: 0.5rem;
-  right: 0.5rem;
+  bottom: 0;
   margin: 0;
   opacity: 0;
   transition: opacity 0.25s ease;

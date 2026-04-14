@@ -231,52 +231,56 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal }) =
   }, [dispatch, selectedVoice]);
 
   return (
-    <div className={s.audioPlayerContainer}>
-      <audio
-        ref={audioRef}
-        onTimeUpdate={handleTimeUpdate}
-        onLoadedMetadata={handleLoadedMetadata}
-        onEnded={handleEnded}
-      />
-      <section className={s.leftSection}>
-        <VoiceSelectorButton onClick={() => showVoiceSelectorModal(true)} />
-        {
-          isLoaded &&
-          <div className={s.documentDetails}>
-            <p title={documentTitle || ""} onClick={handleTitle}>{documentTitle}</p>
-            <small onClick={handlePageSelector}>Page {currentPage} of {totalPages}</small>
-          </div>
-        }
-      </section>
+    <div className={s.outterContainer}>
+      <div className={s.container}>
+        <div className={s.audioPlayerContainer}>
+          <audio
+            ref={audioRef}
+            onTimeUpdate={handleTimeUpdate}
+            onLoadedMetadata={handleLoadedMetadata}
+            onEnded={handleEnded}
+          />
+          <section className={s.leftSection}>
+            <VoiceSelectorButton onClick={() => showVoiceSelectorModal(true)} />
+            {
+              isLoaded &&
+              <div className={s.documentDetails}>
+                <p title={documentTitle || ""} onClick={handleTitle}>{documentTitle}</p>
+                <small onClick={handlePageSelector}>Page {currentPage} of {totalPages}</small>
+              </div>
+            }
+          </section>
 
-      <PlaybackControls
-        disabled={!isLoaded}
-        audioRef={audioRef}
-        currentTime={currentTime}
-        duration={duration}
-        progressPercentage={progressPercentage}
-        handlePrevious={handlePrevious}
-        handleNext={handleNext}
-        isPlaying={isPlaying}
-        isPrevDisabled={isPrevDisabled}
-        isNextDisabled={isNextDisabled}
-        currentTrackIndex={currentTrackIndex}
-        formatTime={formatTime}
-        togglePlayPause={handleTogglePlayPause}
-        setCurrentTime={(time) => dispatch(setCurrentTime(time))}
-      />
+          <PlaybackControls
+            disabled={!isLoaded}
+            audioRef={audioRef}
+            currentTime={currentTime}
+            duration={duration}
+            progressPercentage={progressPercentage}
+            handlePrevious={handlePrevious}
+            handleNext={handleNext}
+            isPlaying={isPlaying}
+            isPrevDisabled={isPrevDisabled}
+            isNextDisabled={isNextDisabled}
+            currentTrackIndex={currentTrackIndex}
+            formatTime={formatTime}
+            togglePlayPause={handleTogglePlayPause}
+            setCurrentTime={(time) => dispatch(setCurrentTime(time))}
+          />
 
-      <VolumeControls
-        volume={volume}
-        handleVolumeToggle={handleVolumeToggle}
-        volumePercentage={volumePercentage}
-        isMobile={isMobile}
-        showMobileVolumeSlider={showMobileVolumeSlider}
-        setShowMobileVolumeSlider={setShowMobileVolumeSlider}
-        mobileVolumeSliderRef={mobileVolumeSliderRef}
-        mobileVolumeButtonRef={mobileVolumeButtonRef}
-        setVolume={(vol) => dispatch(setVolume(vol))}
-      />
+          <VolumeControls
+            volume={volume}
+            handleVolumeToggle={handleVolumeToggle}
+            volumePercentage={volumePercentage}
+            isMobile={isMobile}
+            showMobileVolumeSlider={showMobileVolumeSlider}
+            setShowMobileVolumeSlider={setShowMobileVolumeSlider}
+            mobileVolumeSliderRef={mobileVolumeSliderRef}
+            mobileVolumeButtonRef={mobileVolumeButtonRef}
+            setVolume={(vol) => dispatch(setVolume(vol))}
+          />
+        </div>
+      </div>
     </div>
   );
 };

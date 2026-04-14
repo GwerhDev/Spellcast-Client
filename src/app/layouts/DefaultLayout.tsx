@@ -34,11 +34,15 @@ export default function DefaultLayout() {
           <small className="font-bold nowrap">{"Spellcast"}</small>
         </span>
       </div>
-      <div className='dashboard-container'>
-        <aside className="aside-container">
-          <TabBar showMenu={showMenu} setShowMenu={setShowMenu} />
-          {showMenu && <LateralMenu />}
-        </aside>
+      <div className="dashboard-container">
+        <nav className="nav-container">
+          <aside className="aside-container">
+            <div className="aside-inner-container">
+              <TabBar showMenu={showMenu} setShowMenu={setShowMenu} />
+              {showMenu && <LateralMenu />}
+            </div>
+          </aside>
+        </nav>
         <div className="app-viewer">
           <Outlet />
         </div>

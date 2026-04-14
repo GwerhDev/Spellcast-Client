@@ -27,7 +27,6 @@ interface PlayerProps {
   showVoiceSelectorModal: React.Dispatch<SetStateAction<boolean>>;
 }
 
-
 export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -265,38 +264,42 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal })
   }, [dispatch, voice, selectedVoice]);
 
   return (
-    <div className={s.audioPlayerContainer}>
-      <section className={s.leftSection}>
-        <VoiceSelectorButton onClick={() => showVoiceSelectorModal(true)} />
-        {
-          isLoaded &&
-          <div className={s.documentDetails}>
-            <p title={documentTitle || ""} onClick={handleTitle}>{documentTitle}</p>
-            <small onClick={handlePageSelector}>Page {currentPage} of {totalPages}</small>
-          </div>
-        }
-      </section>
+    <div className={s.outterContainer}>
+      <div className={s.container}>
+        <div className={s.audioPlayerContainer}>
+          <section className={s.leftSection}>
+            <VoiceSelectorButton onClick={() => showVoiceSelectorModal(true)} />
+            {
+              isLoaded &&
+              <div className={s.documentDetails}>
+                <p title={documentTitle || ""} onClick={handleTitle}>{documentTitle}</p>
+                <small onClick={handlePageSelector}>Page {currentPage} of {totalPages}</small>
+              </div>
+            }
+          </section>
 
-      <PlaybackControls
-        disabled={!isLoaded}
-        handleNext={handleNext}
-        handlePrevious={handlePrevious}
-        isPrevDisabled={isPrevDisabled}
-        isNextDisabled={isNextDisabled}
-        handleTogglePlayPause={handleTogglePlayPause}
-      />
+          <PlaybackControls
+            disabled={!isLoaded}
+            handleNext={handleNext}
+            handlePrevious={handlePrevious}
+            isPrevDisabled={isPrevDisabled}
+            isNextDisabled={isNextDisabled}
+            handleTogglePlayPause={handleTogglePlayPause}
+          />
 
-      <VolumeControls
-        volume={volume}
-        handleVolumeToggle={handleVolumeToggle}
-        volumePercentage={volumePercentage}
-        isMobile={isMobile}
-        showMobileVolumeSlider={showMobileVolumeSlider}
-        setShowMobileVolumeSlider={setShowMobileVolumeSlider}
-        mobileVolumeSliderRef={mobileVolumeSliderRef}
-        mobileVolumeButtonRef={mobileVolumeButtonRef}
-        setVolume={(vol) => dispatch(setVolume(vol))}
-      />
+          <VolumeControls
+            volume={volume}
+            handleVolumeToggle={handleVolumeToggle}
+            volumePercentage={volumePercentage}
+            isMobile={isMobile}
+            showMobileVolumeSlider={showMobileVolumeSlider}
+            setShowMobileVolumeSlider={setShowMobileVolumeSlider}
+            mobileVolumeSliderRef={mobileVolumeSliderRef}
+            mobileVolumeButtonRef={mobileVolumeButtonRef}
+            setVolume={(vol) => dispatch(setVolume(vol))}
+          />
+        </div>
+      </div>
     </div>
   );
 };
