@@ -5,7 +5,6 @@ import { useNavigate } from 'react-router-dom';
 import { DeleteConfirmModal } from '../Modals/DeleteConfirmModal';
 import { useAppSelector } from 'store/hooks';
 import { Document } from 'src/interfaces';
-import { Spinner } from '../Spinner';
 import { DocumentCard } from '../Cards/DocumentCard';
 
 export const LastDocuments: React.FC = () => {
@@ -60,7 +59,6 @@ export const LastDocuments: React.FC = () => {
   if (isLoading) {
     return (
       <div className={s.container}>
-        <Spinner isLoading />
       </div>
     );
   }

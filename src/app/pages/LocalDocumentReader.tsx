@@ -15,11 +15,9 @@ import { DocumentReader } from '../components/DocumentReader';
 import workerSrc from 'pdfjs-dist/build/pdf.worker?url';
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
-interface LocalDocumentReaderProps {
-  editMode?: boolean;
-}
 
-export const LocalDocumentReader: React.FC<LocalDocumentReaderProps> = ({ editMode }) => {
+
+export const LocalDocumentReader: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const location = useLocation();
   const dispatch = useDispatch();
@@ -93,6 +91,7 @@ export const LocalDocumentReader: React.FC<LocalDocumentReaderProps> = ({ editMo
     };
 
     loadDocument();
+    //eslint-disable-next-line
   }, [id, dispatch, documentId, logged, userData.id]);
 
   if (isLoading) {
@@ -108,5 +107,5 @@ export const LocalDocumentReader: React.FC<LocalDocumentReaderProps> = ({ editMo
     );
   }
 
-  return <DocumentReader initialIsEditing={editMode} />;
+  return <DocumentReader />;
 };

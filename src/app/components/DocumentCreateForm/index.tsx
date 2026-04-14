@@ -12,9 +12,8 @@ import jsPDF from 'jspdf';
 import { saveDocumentToDB } from '../../../db';
 import { useNavigate } from 'react-router-dom';
 import { JSONContent } from '@tiptap/core';
-// The workerSrc import is important for pdfjs-dist to work
 import workerSrc from 'pdfjs-dist/build/pdf.worker?url';
-import { faCloud, faSave } from '@fortawesome/free-solid-svg-icons';
+import { faCloudUpload, faSave } from '@fortawesome/free-solid-svg-icons';
 import { PrimaryButton } from '../Buttons/PrimaryButton';
 import { resetDocumentState, setDocumentTitle as setDocumentTitleAction } from 'store/documentSlice';
 import { resetPdfReader } from 'store/pdfReaderSlice';
@@ -344,7 +343,7 @@ export const DocumentCreateForm: React.FC = () => {
         <PrimaryButton type="button" icon={faSave} className={s.saveButtonCloud} onClick={handleSaveLocal} disabled={isSaving}>
           {isSaving ? 'Saving...' : 'Save Local'}
         </PrimaryButton>
-        <PrimaryButton type="button" icon={faCloud} className={s.saveButtonCloud} disabled>
+        <PrimaryButton type="button" icon={faCloudUpload} className={s.saveButtonCloud} disabled>
           Save Cloud
         </PrimaryButton>
       </div>

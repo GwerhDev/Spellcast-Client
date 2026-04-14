@@ -15,7 +15,7 @@ interface IconButtonProps {
 }
 
 export const IconButton = (props: IconButtonProps) => {
-  const { icon, text, children, className, disabled, onClick, variant = "transparent" } = props;
+  const { icon, text, children, className, disabled, onClick, variant = "transparent", ...rest } = props;
 
   const variantClass = {
     primary: s.primary,
@@ -28,7 +28,7 @@ export const IconButton = (props: IconButtonProps) => {
 
   return (
     <button disabled={disabled} className={buttonClassName} onClick={onClick}>
-      <FontAwesomeIcon icon={icon} />
+      <FontAwesomeIcon {...rest} icon={icon} />
       {text || children}
     </button>
   );

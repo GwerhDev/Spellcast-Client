@@ -4,14 +4,12 @@ import { useState, useEffect, useRef } from 'react';
 import type { JSX } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowLeft, faEdit, faFilePdf, faSave, faXmark, faGear, faExpand, faCompress } from '@fortawesome/free-solid-svg-icons';
+import { faArrowLeft, faEdit, faFilePdf, faGear, faExpand, faCompress, faInfoCircle } from '@fortawesome/free-solid-svg-icons';
 import { RootState } from '../../../store';
-import { goToPage, setPageText, setCurrentSentenceIndex, setShowReaderSettings } from '../../../store/pdfReaderSlice';
-import { resetBrowserPlayer } from '../../../store/browserPlayerSlice';
+import { goToPage, setCurrentSentenceIndex, setShowReaderSettings } from '../../../store/pdfReaderSlice';
 import { Spinner } from '../Spinner';
 import { IconButton } from '../Buttons/IconButton';
 import { PageSelector } from './PageSelector/PageSelector';
-import { SimpleEditor } from '../Tiptap/components/tiptap-templates/simple/simple-editor';
 import { JSONContent } from '@tiptap/core';
 
 const emptyContent: JSONContent = {
@@ -42,11 +40,7 @@ const safeParseJSON = (str: string): JSONContent => {
   }
 };
 
-interface DocumentReaderProps {
-  initialIsEditing?: boolean;
-}
-
-export const DocumentReader = ({ initialIsEditing }: DocumentReaderProps) => {
+export const DocumentReader = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const {
@@ -61,14 +55,9 @@ export const DocumentReader = ({ initialIsEditing }: DocumentReaderProps) => {
   const { selectedVoice, } = useSelector((state: RootState) => state.voice);
   const { isPlaying } = useSelector((state: RootState) => state.browserPlayer);
   const [editedText, setEditedText] = useState<JSONContent>(emptyContent);
-  const isEditing = initialIsEditing ?? false;
   const [isFullscreen, setIsFullscreen] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const playerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    if (isEditing) setIsFullscreen(false);
-  }, [isEditing]);
 
   useEffect(() => {
     document.body.classList.toggle('fullscreen-reader', isFullscreen);
@@ -114,26 +103,11 @@ export const DocumentReader = ({ initialIsEditing }: DocumentReaderProps) => {
   }, [currentPage, selectedVoice.type]);
 
   const handleEdit = () => {
-    navigate(`/document/${documentId}/reader/edit`);
-  };
-
-  const handleSave = () => {
-    dispatch(resetBrowserPlayer());
-    dispatch(setPageText({ text: JSON.stringify(editedText) }));
-    navigate(`/document/${documentId}/reader`);
-  };
-
-  const handleCancel = () => {
-    setEditedText(safeParseJSON(currentPageText));
-    navigate(`/document/${documentId}/reader`);
-  };
-
-  const handleTextChange = (e: JSONContent) => {
-    setEditedText(e);
+    navigate(`/document/${documentId}/edit/${currentPage}`);
   };
 
   const handleSentenceClick = (clickedIndex: number) => {
-    if (selectedVoice.type !== 'browser' || isEditing) return;
+    if (selectedVoice.type !== 'browser') return;
     dispatch(setCurrentSentenceIndex(clickedIndex));
   };
 
@@ -210,24 +184,7 @@ export const DocumentReader = ({ initialIsEditing }: DocumentReaderProps) => {
 
   const renderBody = () => {
     if (!isLoaded) {
-      return <Spinner isLoading message="Loading..." />;
-    }
-
-    if (isEditing) {
-      return (
-        <SimpleEditor
-          isEditable={true}
-          content={editedText}
-          onContentChange={handleTextChange}
-          wrapContent={(content) => (
-            <div className={s.paperBackground}>
-              <div className={s.paperSheet}>
-                {content}
-              </div>
-            </div>
-          )}
-        />
-      );
+      return <div className={s.container}><Spinner isLoading message="Loading..." /></div>;
     }
 
     if (selectedVoice.type === 'browser') {
@@ -273,33 +230,13 @@ export const DocumentReader = ({ initialIsEditing }: DocumentReaderProps) => {
         </span>
         <div className={s.titleContainer}>
           <FontAwesomeIcon icon={faFilePdf} />
-          {documentTitle} {isEditing && "(editing)"}
+          {documentTitle}
         </div>
         <div className={s.controlsContainer}>
-          {isLoaded && isEditing ? (
-            <>
-              <IconButton icon={faSave} variant='transparent' onClick={handleSave} />
-              <IconButton icon={faXmark} variant='transparent' onClick={handleCancel} />
-            </>
-          ) : (
-            <>
-              {isLoaded && <IconButton icon={faEdit} variant='transparent' onClick={handleEdit} />}
-              {isLoaded && (
-                <IconButton
-                  icon={faGear}
-                  variant='transparent'
-                  onClick={() => dispatch(setShowReaderSettings(true))}
-                />
-              )}
-            </>
-          )}
-          {isLoaded && !isEditing && (
-            <IconButton
-              icon={isFullscreen ? faCompress : faExpand}
-              variant='transparent'
-              onClick={() => setIsFullscreen(prev => !prev)}
-            />
-          )}
+          {isLoaded && <IconButton icon={faInfoCircle} variant='transparent' />}
+          {isLoaded && <IconButton icon={faEdit} variant='transparent' onClick={handleEdit} />}
+          {isLoaded && <IconButton icon={faGear} variant='transparent' onClick={() => dispatch(setShowReaderSettings(true))} />}
+          {isLoaded && <IconButton icon={isFullscreen ? faCompress : faExpand} variant='transparent' onClick={() => setIsFullscreen(prev => !prev)} />}
         </div>
       </div>
       <div className={s.bodyWrapper}>

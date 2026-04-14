@@ -1,23 +1,30 @@
 .container {
   width: 100%;
-  display: flex;
-  flex-direction: column;
   flex-grow: 1;
   overflow: auto;
-  gap: .5rem;
+  display: flex;
+  flex-direction: column;
+  border-radius: 10px;
+  border: solid 1px var(--color-dark-300);
+  position: relative;
 }
 
 .pageInfoContainer {
   gap: 1rem;
-  min-height: 4rem;
+  width: 100%;
   padding: 1rem;
+  min-height: 4rem;
   padding-inline: 1rem;
   display: flex;
-  justify-content: space-between;
+  align-items: center;
 }
 
 .backButton {
   width: auto;
+}
+
+.titleContainer {
+  width: 100%;
 }
 
 .documentTitle {
@@ -26,11 +33,11 @@
   font-weight: bold;
   background: transparent;
   border: none;
-  border-bottom: 1px solid var(--color-dark-300);
+  border: 1px solid transparent;
   color: var(--color-light-100);
-  padding: 0.4rem 0.25rem;
-  margin-inline: 1rem;
   outline: none;
+  border-radius: 0;
+  padding: 0;
 }
 
 .documentTitle::placeholder {
@@ -44,9 +51,9 @@
 
 .editorContainer {
   gap: 1rem;
-  padding: 1rem;
   width: 100%;
   flex-grow: 1;
+  padding-inline: 1rem;
   display: flex;
   overflow-y: auto;
 }
@@ -56,6 +63,17 @@
   display: flex;
   flex-grow: 1;
 }
+
+@media (max-width: 768px) {
+  .editorContainer {
+    flex-direction: column;
+  }
+
+  .pagesContainer {
+    flex-direction: row;
+  }
+}
+
 
 .actions {
   display: flex;
