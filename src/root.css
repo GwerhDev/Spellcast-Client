@@ -3,12 +3,16 @@
 @tailwind utilities;
 
 :root {
+  --app-white: #e0e0e0;
+
   --color-primary: #73a5cc;
   --color-secondary: #8469bb;
   --color-button-primary: #73a5cc;
   --color-button-primary-hover: #8469bb;
   --color-primary-darker: #2d3134;
   --color-secondary-darker: #2b2a2e;
+
+  --color-highlight: #84b4d8;
 
   --text-color: #e0e0e0;
   --text-color-accent: rgb(238, 238, 238);
@@ -70,6 +74,8 @@ html.light {
   --color-button-primary-hover: #8469bb;
   --color-primary-lighter: #dde8f2;
   --color-secondary-lighter: #ddd6e8;
+
+  --color-highlight: #b7d7f0;
 
   --text-color: #616161;
   --color-sentence-hover: #cacaca;

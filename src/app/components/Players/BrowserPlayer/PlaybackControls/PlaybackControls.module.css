@@ -97,10 +97,11 @@
   cursor: pointer;
   align-items: center;
   justify-content: center;
-  color: var(--color-light-100);
+  color: var(--app-white);
   background: var(--color-button-primary);
 }
 
 .playPauseButton:hover {
-  background-color: var(--color-button-primary-hover);
+  color: var(--app-white);
+  background-color: var(--color-primary-accent);
 }

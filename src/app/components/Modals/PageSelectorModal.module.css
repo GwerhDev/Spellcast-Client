@@ -66,9 +66,8 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    background-color: var(--color-dark-400);
     color: var(--text-color);
-    border: 1px solid transparent;
+    border: 1px solid var(--text-color);
     padding: 1rem;
     border-radius: 8px;
     cursor: pointer;

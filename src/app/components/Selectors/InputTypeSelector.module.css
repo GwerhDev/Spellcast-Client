@@ -51,7 +51,7 @@
 .tabButton.active {
   /* Gradient on the background of the active tab */
   background: linear-gradient(45deg, var(--color-primary), var(--color-secondary));
-  color: var(--color-light-100);
+  color: var(--app-white);
   /* Solid text color for active tab */
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }

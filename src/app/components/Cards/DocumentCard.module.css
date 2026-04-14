@@ -41,6 +41,7 @@
 
 .card:hover .playAction {
   pointer-events: all;
+  color: var(--app-white);
   background: var(--color-primary);
 }
 
