@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import { TabBar } from '../components/Tabs/TabBar';
 import { LogoutModal } from '../components/Modals/LogoutModal';
@@ -19,6 +19,18 @@ export default function DefaultLayout() {
   const { showReaderSettings } = useSelector((state: RootState) => state.pdfReader);
   const [showMenu, setShowMenu] = useState(shouldHideMenu);
   const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
+  const navRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (!window.matchMedia('(max-width: 768px)').matches) return;
+      if (navRef.current && !navRef.current.contains(e.target as Node)) {
+        setShowMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   return (
     <main>
@@ -35,11 +47,11 @@ export default function DefaultLayout() {
         </span>
       </div>
       <div className="dashboard-container">
-        <nav className="nav-container">
+        <nav className="nav-container" ref={navRef}>
           <aside className="aside-container">
             <div className="aside-inner-container">
               <TabBar showMenu={showMenu} setShowMenu={setShowMenu} />
-              {showMenu && <LateralMenu />}
+              {showMenu && <LateralMenu onNavigate={() => { if (window.matchMedia('(max-width: 768px)').matches) setShowMenu(false); }} />}
             </div>
           </aside>
         </nav>
