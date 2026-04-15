@@ -1,5 +1,4 @@
 .pdfReaderContainer {
-  gap: 1rem;
   width: 100%;
   flex-grow: 1;
   overflow: auto;
@@ -106,11 +105,11 @@
 
 /* Body wrapper (content + settings panel side by side) */
 .bodyWrapper {
-  display: flex;
-  flex-direction: row;
-  flex-grow: 1;
   gap: 0.5rem;
-  overflow: hidden;
+  flex-grow: 1;
+  display: flex;
+  overflow: auto;
+  flex-direction: column;
 }
 
 /* Settings side panel */
@@ -165,38 +164,6 @@
   border: 1px solid transparent;
 }
 
-/* Browser TTS structured reader */
-.readerContent h1,
-.readerContent h2,
-.readerContent h3,
-.readerContent h4 {
-  color: var(--color-light-100);
-  font-weight: bold;
-  background: none;
-  -webkit-background-clip: unset;
-  background-clip: unset;
-}
-
-.readerContent h1 {
-  font-size: 1.5rem;
-  margin-bottom: 0.5rem;
-}
-
-.readerContent h2 {
-  font-size: 1.25rem;
-  margin-bottom: 0.5rem;
-}
-
-.readerContent h3 {
-  font-size: 1.125rem;
-  margin-bottom: 0.4rem;
-}
-
-.readerContent h4 {
-  font-size: 1rem;
-  margin-bottom: 0.4rem;
-}
-
 .readerBlock {
   margin-bottom: 0.75rem;
   line-height: 1.6;
@@ -210,28 +177,22 @@
 /* Paper mode — outer scroll area */
 .paperBackground {
   width: 100%;
+  
   padding: 2rem;
+  flex-grow: 1;
   display: flex;
-  overflow: auto;
-  align-items: center;
-  flex-direction: column;
+  justify-content: center;
 }
 
 /* Paper mode — the sheet itself */
 .paperSheet {
   width: 800px;
-  flex-shrink: 0;
+  height: 100%;
   background: var(--paper-bg);
   border-radius: 2px;
   padding: 3rem 4rem;
   box-shadow: var(--paper-shadow);
   color: var(--color-light-100);
-}
-
-/* Strip editor border/bg when inside a paper sheet */
-.paperSheet :global(.tiptap.ProseMirror.simple-editor) {
-  border: 1px solid transparent;
-  background: transparent;
 }
 
 @media (max-width: 768px) {
