@@ -7,7 +7,7 @@
   flex-shrink: 0;
   flex-grow: 1;
   width: 220px;
-  background: #66656511;
+  background: var(--component-background-transparency);
   backdrop-filter: blur(10px);
   border: solid .5px var(--color-dark-300);
 }

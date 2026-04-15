@@ -3,7 +3,7 @@
     border-radius: 8px;
     margin-bottom: 1.5rem;
     display: flex;
-    background: #66656511;
+    background: var(--component-background-transparency);
     backdrop-filter: blur(10px);
     border: solid .5px var(--color-dark-300);
 }
