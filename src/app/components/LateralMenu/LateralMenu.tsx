@@ -4,9 +4,13 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBox, faGear, faTableColumns } from '@fortawesome/free-solid-svg-icons';
 import { dashboardDirectoryList, settingsDirectoryList, storageDirectoryList } from '../../../config/consts';
 
-export const LateralMenu = () => {
+interface LateralMenuProps {
+  onNavigate?: () => void;
+}
+
+export const LateralMenu = ({ onNavigate }: LateralMenuProps) => {
   return (
-    <div className={s.container}>
+    <div className={s.container} onClick={onNavigate}>
       <div className={s.outterMenuContainer}>
         <div className={s.menuContainer}>
           <div className={s.mainMenu}>

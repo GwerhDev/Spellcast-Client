@@ -1,9 +1,11 @@
 .tabContainer {
-    display: flex;
-    margin-bottom: 1.5rem;
-    border-radius: 8px;
-    border: solid .5px var(--color-dark-300);
     padding: .5rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    display: flex;
+    background: var(--component-background-transparency);
+    backdrop-filter: blur(10px);
+    border: solid .5px var(--color-dark-300);
 }
 
 .tabButton {

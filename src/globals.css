@@ -340,12 +340,18 @@ a:hover {
   width: auto;
 }
 
+.aside-container {
+  display: flex;
+}
+
 .aside-inner-container {
   gap: .5rem;
-  height: 100%;
+  flex-grow: 1;
   padding: .5rem;
   border-radius: 10px;
   display: flex;
+  background: var(--component-background-transparency);
+  backdrop-filter: blur(10px);
   border: solid .5px var(--color-dark-300);
 }
 
@@ -370,14 +376,15 @@ a:hover {
     top: 1.4rem;
     width: 100%;
     z-index: 99;
+    max-height: 90%;
     padding-inline: .5rem;
     position: fixed;
-    flex-direction: column;
+    display: flex;
   }
 
   .aside-inner-container {
-    width: 100%;
     flex-direction: column;
+    
   }
 
   .audioplayer-container {

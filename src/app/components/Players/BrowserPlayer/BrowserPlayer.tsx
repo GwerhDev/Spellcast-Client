@@ -54,6 +54,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal })
   const mobileVolumeButtonRef = useRef<HTMLButtonElement>(null);
   const isPlayingRef = useRef(isPlaying);
   useEffect(() => { isPlayingRef.current = isPlaying; }, [isPlaying]);
+  const activeUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
   // Prevent advancing on stale empty sentences before PdfProcessor loads the new page
   const waitingForSentencesRef = useRef(false);
@@ -96,6 +97,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal })
 
   const speakSentence = (text: string, onEnd: () => void, onStart?: () => void, isRetry = false) => {
     const utterance = new SpeechSynthesisUtterance(text);
+    if (!isRetry) activeUtteranceRef.current = utterance;
     if (voice) utterance.voice = voice;
     utterance.volume = volume;
 
@@ -118,14 +120,19 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal })
     };
 
     utterance.onend = () => {
+      if (!isRetry && activeUtteranceRef.current !== utterance) return;
       if (text.length > 100 && tryResume()) return;
       onEnd();
     };
 
     utterance.onerror = (e) => {
-      if (e.error === 'interrupted' || e.error === 'canceled' || e.error === 'not-allowed') return;
+      if (!isRetry && activeUtteranceRef.current !== utterance) return;
+      if (e.error === 'interrupted' || e.error === 'canceled') return;
+      if (e.error === 'not-allowed') {
+        handleStop();
+        return;
+      }
       if (e.error === 'text-too-long') {
-        // Browser rejected the text — split at midpoint word boundary
         const mid = Math.floor(text.length / 2);
         const split = text.lastIndexOf(' ', mid);
         const pivot = split > 0 ? split : mid;
@@ -154,6 +161,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal })
 
   useEffect(() => {
     // This effect triggers the start of sentence-based playback once sentences are set
+    activeUtteranceRef.current = null;
     window.speechSynthesis.cancel();
 
     if (isLoaded && currentSentenceIndex > -1) {
@@ -197,15 +205,21 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal })
       else handleStop();
       return;
     }
+    if (window.speechSynthesis.paused) {
+      handlePlay();
+      return;
+    }
     speakSentence(
       sentences[currentSentenceIndex],
       () => dispatch(setCurrentSentenceIndex(currentSentenceIndex + 1)),
       () => handlePlay(),
     );
-    handlePlay();
+    isPlayingRef.current = true;
+    dispatch(play());
   };
 
   const handleStop = () => {
+    activeUtteranceRef.current = null;
     dispatch(stop());
     window.speechSynthesis.cancel();
   };
