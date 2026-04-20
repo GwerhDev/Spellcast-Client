@@ -5,6 +5,7 @@ import { addApiResponse } from '../store/apiResponsesSlice';
 import { getCredentials } from '../store/credentialsSlice';
 import { useAppDispatch } from '../store/hooks';
 import { setLoader, setSession } from '../store/sessionSlice';
+import { loadVoicePreference } from '../store/voiceSlice';
 
 export function useInitSession(
   onProgress?: (progress: number) => void,
@@ -37,6 +38,7 @@ export function useInitSession(
       onProgress?.(100);
       onMessage?.('');
       dispatch(setSession(session));
+      if (session.userData?.id) dispatch(loadVoicePreference(session.userData.id));
       setTimeout(() => dispatch(setLoader(false)), 400);
     })();
     //eslint-disable-next-line

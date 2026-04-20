@@ -1,6 +1,6 @@
 import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlay, faPause, faStepBackward, faStepForward } from '@fortawesome/free-solid-svg-icons';
+import { faPlay, faPause, faStepBackward, faStepForward, faSpinner } from '@fortawesome/free-solid-svg-icons';
 import s from './PlaybackControls.module.css';
 
 interface PlaybackControlsProps {
@@ -12,6 +12,7 @@ interface PlaybackControlsProps {
   handleNext: () => void;
   disabled: boolean;
   isPlaying: boolean;
+  isFetching?: boolean;
   isPrevDisabled: boolean;
   isNextDisabled: boolean;
   currentTrackIndex: number | null;
@@ -28,6 +29,7 @@ export const PlaybackControls: React.FC<PlaybackControlsProps> = ({
   handlePrevious,
   handleNext,
   isPlaying,
+  isFetching,
   isPrevDisabled,
   isNextDisabled,
   formatTime,
@@ -38,24 +40,34 @@ export const PlaybackControls: React.FC<PlaybackControlsProps> = ({
   return (
     <section className={s.controlsContainer}>
       <div className={s.progressBarContainer}>
-        <input
-          type="range"
-          min="0"
-          max={duration}
-          step="0.01"
-          value={currentTime}
-          onChange={(e) => {
-            if (audioRef.current) {
-              audioRef.current.currentTime = parseFloat(e.target.value);
-            }
-            setCurrentTime(parseFloat(e.target.value));
-          }}
-          className={s.progressBar}
-          style={{ '--progress-value': `${progressPercentage}%` } as React.CSSProperties}
-        />
+        {isFetching ? (
+          <div className={s.fetchingTrack}>
+            <div className={s.fetchingBar} />
+          </div>
+        ) : (
+          <input
+            type="range"
+            min="0"
+            max={duration}
+            step="0.01"
+            value={currentTime}
+            onChange={(e) => {
+              if (audioRef.current) {
+                audioRef.current.currentTime = parseFloat(e.target.value);
+              }
+              setCurrentTime(parseFloat(e.target.value));
+            }}
+            className={s.progressBar}
+            style={{ '--progress-value': `${progressPercentage}%` } as React.CSSProperties}
+          />
+        )}
         <div className={s.timeDisplay}>
           <span>{formatTime(currentTime)}</span>
-          <span>{formatTime(duration)}</span>
+          {isFetching ? (
+            <FontAwesomeIcon icon={faSpinner} className={s.fetchingIcon} spin />
+          ) : (
+            <span>{formatTime(duration)}</span>
+          )}
         </div>
       </div>
       <div className={s.controls}>

@@ -20,7 +20,8 @@ export const TextOption: React.FC<TextOptionProps> = () => {
   const generateAiAudio = useCallback(async (textToSpeak: string, voice: string) => {
     setIsLoading(true);
     try {
-      const audioUrl = await textToSpeechService({ text: textToSpeak, voice });
+      const blob = await textToSpeechService({ text: textToSpeak, voice });
+      const audioUrl = URL.createObjectURL(blob);
       dispatch(setPlaylist({ playlist: [audioUrl], startIndex: 0 }));
       dispatch(playAiAudio());
     } catch (error) {

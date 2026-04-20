@@ -12,6 +12,7 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
       'store': path.resolve(__dirname, './src/store'),
       'services': path.resolve(__dirname, './src/services'),
+      'db': path.resolve(__dirname, './src/db'),
     },
   },
   define: {

@@ -8,6 +8,9 @@ import { CustomModal } from './CustomModal';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from 'store/index';
 import { setSelectedVoice } from 'store/voiceSlice';
+import { stop as stopAudio } from 'store/audioPlayerSlice';
+import { stop as stopBrowser } from 'store/browserPlayerSlice';
+import { saveVoicePreference } from '../../../db/preferences';
 
 
 interface VoiceSelectorModalProps {
@@ -19,6 +22,7 @@ export const VoiceSelectorModal: React.FC<VoiceSelectorModalProps> = ({ onClose,
   const dispatch = useDispatch();
   const { credentials } = useSelector((state: RootState) => state.credentials);
   const { selectedVoice } = useSelector((state: RootState) => state.voice);
+  const userId = useSelector((state: RootState) => state.session.userData?.id);
   const [activeTab, setActiveTab] = useState<'browser' | 'ai'>(selectedVoice.type === 'ai' ? 'ai' : selectedVoice.type);
 
   useEffect(() => {
@@ -35,11 +39,19 @@ export const VoiceSelectorModal: React.FC<VoiceSelectorModalProps> = ({ onClose,
 
   const handleVoiceSelection = async (selected: { value: string, name: string, gender: string, isBrowser?: boolean }) => {
     onClose();
-    if (selected?.isBrowser) {
-      dispatch(setSelectedVoice({ value: selected.value, type: 'browser' }));
-      localStorage.setItem('default_browser_voice', JSON.stringify({ value: selected.value, type: 'browser' }));
-    } else {
-      dispatch(setSelectedVoice({ value: selected.value, type: 'ai' }));
+    const newVoice = { value: selected.value, type: selected.isBrowser ? 'browser' : 'ai' } as const;
+    const typeChanged = newVoice.type !== selectedVoice.type;
+
+    if (typeChanged) {
+      window.speechSynthesis.cancel();
+      dispatch(stopBrowser());
+      dispatch(stopAudio());
+    }
+
+    dispatch(setSelectedVoice(newVoice));
+
+    if (userId) {
+      await saveVoicePreference(userId, newVoice);
     }
   };
 

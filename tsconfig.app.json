@@ -20,7 +20,8 @@
     "paths": {
       "store/*": ["./src/store/*"],
       "store": ["./src/store/index.tsx"],
-      "services/*": ["./src/services/*"]
+      "services/*": ["./src/services/*"],
+      "db/*": ["./src/db/*"]
     },
 
     /* Linting */

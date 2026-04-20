@@ -13,15 +13,15 @@
   gap: 1rem;
   padding: 15px;
   border-radius: 8px;
-  color: var(--color-light-200);
   font-weight: bold;
   cursor: pointer;
+  background: var(--component-background);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   transition: opacity 0.3s ease-in-out;
 }
 
 .toast.success {
-  background-color: var(--color-dark-200);
+  background: var(--component-background);
 }
 
 .toast.error {

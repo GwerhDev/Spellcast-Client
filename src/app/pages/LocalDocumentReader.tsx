@@ -5,7 +5,7 @@ import { useParams, useLocation } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { getDocumentById } from '../../db';
 import { useAppSelector } from '../../store/hooks';
-import { resetAudioPlayer } from '../../store/audioPlayerSlice';
+import { resetAudioPlayer, setAutoPlayOnLoad as setAudioAutoPlayOnLoad } from '../../store/audioPlayerSlice';
 import { resetBrowserPlayer, stop, setAutoPlayOnLoad } from '../../store/browserPlayerSlice';
 import { setPdfFile, setPdfDocumentInfo, resetPdfReader, setPdfLoaded, setHasInitialPageSet, setPagesCache } from '../../store/pdfReaderSlice';
 import { Spinner } from '../components/Spinner';
@@ -43,7 +43,10 @@ export const LocalDocumentReader: React.FC = () => {
 
       if (id === documentId) {
         setIsLoading(false);
-        if (location.state?.autoPlay) dispatch(setAutoPlayOnLoad(true));
+        if (location.state?.autoPlay) {
+          dispatch(setAutoPlayOnLoad(true));
+          dispatch(setAudioAutoPlayOnLoad(true));
+        }
         return;
       }
 
@@ -52,7 +55,10 @@ export const LocalDocumentReader: React.FC = () => {
         dispatch(resetPdfReader());
         dispatch(resetAudioPlayer()); // Stop audio playback
         dispatch(resetBrowserPlayer());
-        if (location.state?.autoPlay) dispatch(setAutoPlayOnLoad(true));
+        if (location.state?.autoPlay) {
+          dispatch(setAutoPlayOnLoad(true));
+          dispatch(setAudioAutoPlayOnLoad(true));
+        }
         dispatch(setPdfLoaded(false)); // Set isLoaded to false at the start of loading
         const doc = await getDocumentById(id, userData.id);
         if (!doc) {

@@ -14,6 +14,32 @@ interface TiptapNode {
   attrs?: Record<string, unknown>;
 }
 
+const collectInlineNodes = (node: TiptapNode): TiptapNode[] => {
+  if (node.type === 'text') return node.text?.trim() ? [node] : [];
+  if (node.type === 'hardBreak') return [{ type: 'text', text: ' ' }];
+  return (node.content ?? []).flatMap(collectInlineNodes);
+};
+
+const mergeTextNodes = (nodes: TiptapNode[]): TiptapNode[] =>
+  nodes.reduce<TiptapNode[]>((acc, node) => {
+    const last = acc[acc.length - 1];
+    if (
+      node.type === 'text' &&
+      last?.type === 'text' &&
+      JSON.stringify(last.marks ?? []) === JSON.stringify(node.marks ?? [])
+    ) {
+      acc[acc.length - 1] = { ...last, text: (last.text ?? '') + (node.text ?? '') };
+      return acc;
+    }
+    acc.push(node);
+    return acc;
+  }, []);
+
+const flattenToSingleParagraph = (doc: TiptapNode): TiptapNode => ({
+  ...doc,
+  content: [{ type: 'paragraph', content: mergeTextNodes(doc.content?.flatMap(collectInlineNodes) ?? []) }],
+});
+
 const injectDefaultVoice = (node: TiptapNode, voice: string): TiptapNode => {
   if (node.type === 'text') {
     const hasTtsMark = node.marks?.some(m => m.type === 'tts');
@@ -47,7 +73,10 @@ export async function getVoicesByCredential(credentialId: string): Promise<Voice
   }
 }
 
-export async function textToSpeechService(data: { text: string; voice: string }): Promise<string> {
+export async function textToSpeechService(
+  data: { text: string; voice: string },
+  signal?: AbortSignal,
+): Promise<Blob> {
   try {
     let doc: TiptapNode;
     try {
@@ -56,13 +85,14 @@ export async function textToSpeechService(data: { text: string; voice: string })
       doc = { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: data.text }] }] };
     }
 
-    const body = injectDefaultVoice(doc, data.voice);
+    const body = injectDefaultVoice(flattenToSingleParagraph(doc), data.voice);
 
     const response = await fetch(`${API_BASE}/tts/`, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
+      signal,
     });
 
     if (!response.ok) {
@@ -70,8 +100,7 @@ export async function textToSpeechService(data: { text: string; voice: string })
       throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
     }
 
-    const audioBlob = await response.blob();
-    return URL.createObjectURL(audioBlob);
+    return await response.blob();
   } catch (error) {
     console.error(error);
     throw error;

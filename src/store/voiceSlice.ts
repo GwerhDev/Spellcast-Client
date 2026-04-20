@@ -1,33 +1,26 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { SelectedVoice, Voice } from 'src/interfaces';
+import { getVoicePreference } from '../db/preferences';
 
 interface VoiceState {
   selectedVoice: SelectedVoice;
   voices: Voice[];
 }
 
-const loadSelectedVoice = (): SelectedVoice => {
-  try {
-    const storedVoice = localStorage.getItem('default_browser_voice');
-    if (storedVoice) {
-      const parsedVoice = JSON.parse(storedVoice);
-      // Basic validation to ensure it matches the SelectedVoice interface
-      if (parsedVoice && typeof parsedVoice.value === 'string' && (parsedVoice.type === 'ai' || parsedVoice.type === 'browser')) {
-        return parsedVoice;
-      }
-    }
-  } catch (error) {
-    console.error("Failed to parse stored voice from localStorage", error);
-  }
-  return { value: 'default', type: 'browser' }; // Fallback default
-};
-
 const initialState: VoiceState = {
-  selectedVoice: loadSelectedVoice(),
+  selectedVoice: { value: 'default', type: 'browser' },
   voices: [
     { name: 'Browser', value: 'browser', gender: 'Male' },
   ],
 };
+
+export const loadVoicePreference = createAsyncThunk(
+  'voice/loadPreference',
+  async (userId: string) => {
+    const stored = await getVoicePreference(userId);
+    return stored;
+  }
+);
 
 const voiceSlice = createSlice({
   name: 'voice',
@@ -40,7 +33,14 @@ const voiceSlice = createSlice({
       state.voices = action.payload;
     },
   },
+  extraReducers: (builder) => {
+    builder.addCase(loadVoicePreference.fulfilled, (state, action) => {
+      if (action.payload) {
+        state.selectedVoice = action.payload;
+      }
+    });
+  },
 });
 
-export const { setSelectedVoice } = voiceSlice.actions;
+export const { setSelectedVoice, setVoices } = voiceSlice.actions;
 export default voiceSlice.reducer;

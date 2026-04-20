@@ -6,6 +6,11 @@
   margin-bottom: 15px;
 }
 
+@keyframes fetchingShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
 .progressBar {
   width: 100%;
   height: 4px;
@@ -16,6 +21,27 @@
   -webkit-appearance: none;
   appearance: none;
   cursor: pointer;
+}
+
+.fetchingTrack {
+  width: 100%;
+  height: 8px;
+  border-radius: 5px;
+  background: var(--color-dark-500);
+  overflow: hidden;
+}
+
+.fetchingBar {
+  height: 100%;
+  border-radius: 5px;
+  background: linear-gradient(
+    90deg,
+    var(--color-dark-500) 0%,
+    var(--color-primary) 50%,
+    var(--color-dark-500) 100%
+  );
+  background-size: 200% 100%;
+  animation: fetchingShimmer 1.2s linear infinite;
 }
 
 .progressBar::-webkit-slider-runnable-track {
@@ -55,6 +81,11 @@
   justify-content: space-between;
   font-size: 12px;
   margin-top: 5px;
+}
+
+.fetchingIcon {
+  font-size: 11px;
+  opacity: 0.8;
 }
 
 .controlsContainer {

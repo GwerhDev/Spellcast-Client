@@ -11,12 +11,14 @@ import {
   play,
   stop,
   pause,
+  setAutoPlayOnLoad,
 } from '../../../../store/audioPlayerSlice';
 import { goToNextPage, goToPreviousPage, setShowPageSelector } from '../../../../store/pdfReaderSlice';
 import { PlaybackControls } from './PlaybackControls/PlaybackControls';
 import { VolumeControls } from './VolumeControls/VolumeControls';
 import { VoiceSelectorButton } from './VoiceSelectorButton/VoiceSelectorButton';
 import { textToSpeechService } from 'services/tts';
+import { getCachedAudio, setCachedAudio } from 'db/audioCache';
 import { useNavigate } from 'react-router-dom';
 
 interface PlayerProps {
@@ -33,9 +35,9 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal }) =
     playlist,
     duration,
     isPlaying,
-    sourceType,
     currentTime,
     currentTrackIndex,
+    autoPlayOnLoad,
   } = useSelector((state: RootState) => state.audioPlayer);
   const {
     isLoaded,
@@ -44,29 +46,48 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal }) =
     currentPage,
     documentTitle,
     currentPageText,
+    pages,
   } = useSelector((state: RootState) => state.pdfReader);
   const { selectedVoice } = useSelector((state: RootState) => state.voice);
 
   const [lastVolume, setLastVolume] = useState(volume);
   const [isMobile, setIsMobile] = useState(false);
+  const [isFetching, setIsFetching] = useState(false);
+  const [willAutoPlay, setWillAutoPlay] = useState(false);
   const [showMobileVolumeSlider, setShowMobileVolumeSlider] = useState(false);
+
+  const pageAudioReadyRef = useRef(false);
+  const willAutoPlayRef = useRef(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const prefetchAbortRef = useRef<AbortController | null>(null);
+  const currentBlobUrlRef = useRef<string | null>(null);
   const mobileVolumeSliderRef = useRef<HTMLDivElement>(null);
   const mobileVolumeButtonRef = useRef<HTMLButtonElement>(null);
+
   const currentTrackUrl = currentTrackIndex !== null ? playlist[currentTrackIndex] : null;
   const progressPercentage = duration > 0 ? (currentTime / duration) * 100 : 0;
   const volumePercentage = volume * 100;
+
+  const setAutoPlayIntent = (val: boolean) => {
+    willAutoPlayRef.current = val;
+    setWillAutoPlay(val);
+  };
+
+  useEffect(() => {
+    return () => {
+      abortControllerRef.current?.abort();
+      prefetchAbortRef.current?.abort();
+      if (currentBlobUrlRef.current) URL.revokeObjectURL(currentBlobUrlRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     const checkIsMobile = () => {
       setIsMobile(window.matchMedia('(max-width: 768px)').matches);
     };
-
     checkIsMobile();
     window.addEventListener('resize', checkIsMobile);
-
-    return () => {
-      window.removeEventListener('resize', checkIsMobile);
-    };
+    return () => window.removeEventListener('resize', checkIsMobile);
   }, []);
 
   useEffect(() => {
@@ -81,12 +102,8 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal }) =
         setShowMobileVolumeSlider(false);
       }
     };
-
     document.addEventListener('mousedown', handleClickOutside);
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showMobileVolumeSlider]);
 
   useEffect(() => {
@@ -140,7 +157,7 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal }) =
   };
 
   const handleEnded = () => {
-    if (sourceType === 'pdfPage') {
+    if (isLoaded) {
       if (currentPage < totalPages) {
         dispatch(goToNextPage());
       }
@@ -174,32 +191,103 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal }) =
     }
   };
 
+  const loadAudio = (blob: Blob) => {
+    if (currentBlobUrlRef.current) URL.revokeObjectURL(currentBlobUrlRef.current);
+    const url = URL.createObjectURL(blob);
+    currentBlobUrlRef.current = url;
+    pageAudioReadyRef.current = true;
+    audioRef.current!.src = url;
+    if (willAutoPlayRef.current) {
+      dispatch(play());
+      audioRef.current!.play();
+    } else {
+      audioRef.current!.load();
+    }
+  };
+
+  const prefetchNextPage = async (page: number, text: string) => {
+    if (!documentId) return;
+    const cached = await getCachedAudio(documentId, page, selectedVoice.value);
+    if (cached) return;
+
+    const controller = new AbortController();
+    prefetchAbortRef.current = controller;
+    try {
+      const blob = await textToSpeechService({ text, voice: selectedVoice.value }, controller.signal);
+      if (!controller.signal.aborted) {
+        setCachedAudio(documentId, page, selectedVoice.value, blob);
+      }
+    } catch (e) {
+      if (e instanceof Error && e.name === 'AbortError') return;
+      console.error('Prefetch error:', e);
+    }
+  };
+
+  const fetchAndPlay = async (text: string, autoPlay = true) => {
+    abortControllerRef.current?.abort();
+    prefetchAbortRef.current?.abort();
+
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    pageAudioReadyRef.current = false;
+    setAutoPlayIntent(autoPlay);
+    setIsFetching(true);
+    dispatch(stop());
+    audioRef.current?.pause();
+    if (audioRef.current) audioRef.current.currentTime = 0;
+    dispatch(setCurrentTime(0));
+    dispatch(setDuration(0));
+
+    try {
+      let blob: Blob | null = documentId
+        ? await getCachedAudio(documentId, currentPage, selectedVoice.value)
+        : null;
+
+      if (controller.signal.aborted) return;
+
+      if (!blob) {
+        blob = await textToSpeechService({ text, voice: selectedVoice.value }, controller.signal);
+        if (!controller.signal.aborted && documentId) {
+          setCachedAudio(documentId, currentPage, selectedVoice.value, blob);
+        }
+      }
+
+      if (!controller.signal.aborted) {
+        loadAudio(blob);
+        const nextText = pages[currentPage + 1];
+        if (nextText && currentPage < totalPages) {
+          prefetchNextPage(currentPage + 1, nextText);
+        }
+      }
+    } catch (e) {
+      if (e instanceof Error && e.name === 'AbortError') return;
+      console.error(e);
+    } finally {
+      if (!controller.signal.aborted) setIsFetching(false);
+    }
+  };
+
   const handleTogglePlayPause = () => {
+    if (isFetching) {
+      setAutoPlayIntent(!willAutoPlayRef.current);
+      return;
+    }
     if (isPlaying) {
-      window.speechSynthesis.pause();
       dispatch(pause());
       return;
-    };
-    window.speechSynthesis.resume();
+    }
+    if (selectedVoice.type === 'ai' && !pageAudioReadyRef.current) {
+      fetchAndPlay(currentPageText);
+      return;
+    }
     dispatch(play());
-    return;
   };
 
   const formatTime = (time: number) => {
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
     return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-  };
-
-  const handlePlay = (audioUrl: string) => {
-    dispatch(play());
-    audioRef.current!.src = audioUrl;
-    audioRef.current!.play();
-  };
-
-  const handleStop = () => {
-    dispatch(stop());
-    audioRef.current!.pause();
   };
 
   const handleTitle = () => {
@@ -214,21 +302,12 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal }) =
   const isNextDisabled = isLoaded ? currentPage === totalPages : currentTrackIndex === (playlist.length - 1);
 
   useEffect(() => {
-    const handleVoicesChanged = async () => {
-      if (selectedVoice.type === 'ai') {
-        handleStop();
-        if (currentPageText) {
-          const audioUrl = await textToSpeechService({ text: currentPageText, voice: selectedVoice.value });
-          dispatch(setCurrentTime(0));
-          dispatch(setDuration(0));
-          handlePlay(audioUrl);
-        }
-      }
-    };
-
-    handleVoicesChanged();
+    if (selectedVoice.type !== 'ai' || !currentPageText) return;
+    const shouldAutoPlay = isPlaying || autoPlayOnLoad;
+    if (autoPlayOnLoad) dispatch(setAutoPlayOnLoad(false));
+    fetchAndPlay(currentPageText, shouldAutoPlay);
     //eslint-disable-next-line
-  }, [dispatch, selectedVoice]);
+  }, [currentPageText]);
 
   return (
     <div className={s.outterContainer}>
@@ -259,7 +338,8 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal }) =
             progressPercentage={progressPercentage}
             handlePrevious={handlePrevious}
             handleNext={handleNext}
-            isPlaying={isPlaying}
+            isPlaying={isFetching ? willAutoPlay : isPlaying}
+            isFetching={isFetching}
             isPrevDisabled={isPrevDisabled}
             isNextDisabled={isNextDisabled}
             currentTrackIndex={currentTrackIndex}

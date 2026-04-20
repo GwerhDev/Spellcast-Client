@@ -5,6 +5,7 @@ import { useDispatch } from 'react-redux';
 import { useAppSelector } from '../../../store/hooks';
 import { getDocumentById, deleteDocumentFromDB } from '../../../db';
 import { setAutoPlayOnLoad, resetBrowserPlayer } from '../../../store/browserPlayerSlice';
+import { setAutoPlayOnLoad as setAudioAutoPlayOnLoad } from '../../../store/audioPlayerSlice';
 import { resetPdfReader } from '../../../store/pdfReaderSlice';
 import { Spinner } from '../Spinner';
 import { PrimaryButton } from '../Buttons/PrimaryButton';
@@ -42,6 +43,7 @@ export const DocumentDetail: React.FC = () => {
 
   const handlePlay = () => {
     dispatch(setAutoPlayOnLoad(true));
+    dispatch(setAudioAutoPlayOnLoad(true));
     navigate(`/document/${id}/reader`);
   };
 

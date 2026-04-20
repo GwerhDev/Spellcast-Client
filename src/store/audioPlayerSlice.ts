@@ -8,16 +8,18 @@ interface AudioPlayerState {
   currentTime: number;
   duration: number;
   sourceType: 'playlist' | 'pdfPage';
+  autoPlayOnLoad: boolean;
 }
 
 const initialState: AudioPlayerState = {
   playlist: [],
   currentTrackIndex: null,
   isPlaying: false,
-  volume: 1, // 0 to 1
+  volume: 1,
   currentTime: 0,
   duration: 0,
   sourceType: 'playlist',
+  autoPlayOnLoad: false,
 };
 
 const audioPlayerSlice = createSlice({
@@ -86,6 +88,9 @@ const audioPlayerSlice = createSlice({
     setDuration: (state, action: PayloadAction<number>) => {
       state.duration = action.payload;
     },
+    setAutoPlayOnLoad: (state, action: PayloadAction<boolean>) => {
+      state.autoPlayOnLoad = action.payload;
+    },
     resetAudioPlayer: (state) => {
       state.playlist = [];
       state.currentTrackIndex = null;
@@ -108,6 +113,7 @@ export const {
   setVolume,
   setCurrentTime,
   setDuration,
+  setAutoPlayOnLoad,
   resetAudioPlayer,
 } = audioPlayerSlice.actions;
 
