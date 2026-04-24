@@ -9,11 +9,13 @@
 }
 
 .pageInfoContainer {
-  padding: 0.75rem 1rem;
+  gap: 1rem;
+  width: 100%;
+  padding: 1rem;
+  min-height: 4rem;
+  padding-inline: 1rem;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid var(--color-dark-300);
 }
 
 .backButton {
@@ -91,7 +93,7 @@
   max-width: 650px;
 }
 
-.actions > * {
+.actions>* {
   flex: 1;
   min-width: 120px;
   max-width: none !important;
