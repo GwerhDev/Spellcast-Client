@@ -1,9 +1,9 @@
-import { API_BASE } from '../config/api';
+import { NHEXA_API } from '../config/api';
 import { fetchWithRefresh } from './fetchWithRefresh';
 
 export async function fetchAuth() {
   try {
-    const res = await fetchWithRefresh(`${API_BASE}/accounts/`);
+    const res = await fetchWithRefresh(`${NHEXA_API}/account/`);
     if (!res.ok) return { logged: false };
     return await res.json();
   } catch (error) {
@@ -14,7 +14,7 @@ export async function fetchAuth() {
 
 export async function fetchLogout() {
   try {
-    const res = await fetchWithRefresh(`${API_BASE}/logout/`);
+    const res = await fetchWithRefresh(`${NHEXA_API}/logout/`);
     if (!res.ok) {
       const errorData = await res.json();
       throw new Error(errorData.message || `HTTP error! status: ${res.status}`);
