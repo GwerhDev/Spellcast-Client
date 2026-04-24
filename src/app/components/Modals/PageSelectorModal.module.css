@@ -45,17 +45,30 @@
     text-align: center;
 }
 
-.jumpForm {
+.searchRow {
     display: flex;
+    align-items: center;
     gap: 0.5rem;
-    width: 100%;
+}
+
+.searchInput {
+    flex: 1;
+    min-width: 0;
+    width: auto;
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+    border: 1px solid var(--color-dark-300);
+    background-color: var(--color-dark-400);
+    color: var(--text-color);
+    font-size: 0.875rem;
 }
 
 .jumpButton {
     flex-shrink: 0;
-    padding: 0.5rem 1rem;
+    white-space: nowrap;
+    padding: 0.5rem 0.85rem;
     border-radius: 8px;
-    font-size: 0.875rem;
+    font-size: 0.8rem;
     font-weight: 600;
     background: var(--color-primary);
     color: var(--app-white);
@@ -68,16 +81,6 @@
     opacity: 0.85;
     color: var(--app-white);
     background: var(--color-primary);
-}
-
-.searchInput {
-    width: 100%;
-    padding: 0.5rem 0.75rem;
-    border-radius: 8px;
-    border: 1px solid var(--color-dark-300);
-    background-color: var(--color-dark-400);
-    color: var(--text-color);
-    font-size: 0.875rem;
 }
 
 .pageList {

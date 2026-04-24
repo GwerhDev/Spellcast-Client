@@ -5,11 +5,25 @@ import { RootState } from '../../../store';
 import { goToPage, setShowPageSelector } from '../../../store/pdfReaderSlice';
 import { CustomModal } from './CustomModal';
 
+const extractText = (raw: string): string => {
+  try {
+    const node = JSON.parse(raw);
+    const parts: string[] = [];
+    const walk = (n: any) => {
+      if (n?.type === 'text' && n.text) parts.push(n.text);
+      if (Array.isArray(n?.content)) n.content.forEach(walk);
+    };
+    walk(node);
+    return parts.join(' ');
+  } catch {
+    return raw;
+  }
+};
+
 export const PageSelectorModal: React.FC = () => {
   const dispatch = useDispatch();
   const { currentPage, totalPages, showPageSelector, pages } = useSelector((state: RootState) => state.pdfReader);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [jumpValue, setJumpValue] = useState('');
+  const [query, setQuery] = useState('');
 
   if (!showPageSelector) return null;
 
@@ -20,44 +34,45 @@ export const PageSelectorModal: React.FC = () => {
     dispatch(setShowPageSelector(false));
   };
 
-  const handleJump = (e: React.FormEvent) => {
-    e.preventDefault();
-    const n = parseInt(jumpValue, 10);
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key !== 'Enter') return;
+    const n = parseInt(query, 10);
     if (!isNaN(n) && n >= 1 && n <= totalPages) handlePageSelection(n);
   };
 
   const allPages = Array.from({ length: totalPages }, (_, i) => i + 1);
-  const filteredPages = searchTerm
-    ? allPages.filter(page => page.toString().includes(searchTerm))
+  const filteredPages = query
+    ? allPages.filter(page => page.toString().includes(query))
     : allPages;
 
-  const getSnippet = (page: number) => {
-    const text = pages[page];
-    if (!text) return null;
-    return text.replace(/\s+/g, ' ').trim().slice(0, 70) + '…';
+  const getSnippet = (page: number): string | null => {
+    const raw = pages[page];
+    if (!raw) return null;
+    const text = extractText(raw).replace(/\s+/g, ' ').trim();
+    return text ? text.slice(0, 72) + '…' : null;
   };
+
+  const jumpTarget = parseInt(query, 10);
+  const canJump = !isNaN(jumpTarget) && jumpTarget >= 1 && jumpTarget <= totalPages;
 
   return (
     <CustomModal title="Select a Page" show={showPageSelector} onClose={onClose}>
-      <form onSubmit={handleJump} className={s.jumpForm}>
+      <div className={s.searchRow}>
         <input
-          type="number"
-          min={1}
-          max={totalPages}
-          placeholder={`Jump to page (1–${totalPages})`}
+          type="text"
+          autoFocus
+          placeholder={`Search or jump to page (1–${totalPages})…`}
           className={s.searchInput}
-          value={jumpValue}
-          onChange={e => setJumpValue(e.target.value)}
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          onKeyDown={handleKeyDown}
         />
-        <button type="submit" className={s.jumpButton}>Go</button>
-      </form>
-      <input
-        type="text"
-        placeholder="Search by page number…"
-        className={s.searchInput}
-        value={searchTerm}
-        onChange={e => setSearchTerm(e.target.value)}
-      />
+        {canJump && (
+          <button className={s.jumpButton} onClick={() => handlePageSelection(jumpTarget)}>
+            Go to {jumpTarget}
+          </button>
+        )}
+      </div>
       <ul className={s.pageList}>
         {filteredPages.map((page) => {
           const snippet = getSnippet(page);
@@ -69,10 +84,9 @@ export const PageSelectorModal: React.FC = () => {
               onClick={() => handlePageSelection(page)}
             >
               <span className={s.pageNumber}>{page}</span>
-              {snippet
-                ? <span className={s.snippet}>{snippet}</span>
-                : <span className={s.noSnippet}>Page {page}</span>
-              }
+              <span className={s.snippet}>
+                {snippet ?? <span className={s.noSnippet}>—</span>}
+              </span>
               {isCurrent && <span className={s.currentBadge}>current</span>}
             </li>
           );
