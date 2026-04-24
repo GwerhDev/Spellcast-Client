@@ -20,7 +20,7 @@ export const DocumentDetail: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { userData, logged } = useAppSelector((state) => state.session);
-  const currentPlayingId = useAppSelector((state) => state.pdfReader.documentId);
+  const { documentId: currentPlayingId, currentPage: readerCurrentPage } = useAppSelector((state) => state.pdfReader);
   const [doc, setDoc] = useState<Awaited<ReturnType<typeof getDocumentById>> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -71,7 +71,9 @@ export const DocumentDetail: React.FC = () => {
   if (error || !doc) return <div>{error || 'Document not found.'}</div>;
 
   const pagesCount = doc.pagesContent ? JSON.parse(doc.pagesContent).length : null;
-  const currentPage = doc.progress?.currentPage ?? 0;
+  const currentPage = (currentPlayingId === id && readerCurrentPage > 0)
+    ? readerCurrentPage
+    : (doc.progress?.currentPage ?? 0);
   const progressPct = (pagesCount && currentPage > 0)
     ? Math.min(Math.round(currentPage / pagesCount * 100), 100)
     : null;
