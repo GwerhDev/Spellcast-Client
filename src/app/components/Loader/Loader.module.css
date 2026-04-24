@@ -30,4 +30,10 @@
   color: var(--color-light-300);
   letter-spacing: 0.04em;
   margin-top: -1rem;
+  animation: fadeMsg 2s ease-in-out infinite;
+}
+
+@keyframes fadeMsg {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
 }

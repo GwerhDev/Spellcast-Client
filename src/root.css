@@ -38,6 +38,8 @@
   --color-light-300: #adadad;
   --color-light-400: #7b7b7b;
 
+  --color-danger: rgb(160, 70, 70);
+  --color-danger-dark: rgb(130, 50, 50);
   --color-danger-100: rgb(157, 86, 86);
   --color-danger-200: rgb(157, 57, 57);
   --color-danger-300: rgb(147, 63, 63);

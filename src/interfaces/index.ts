@@ -95,6 +95,7 @@ export interface Document {
   createdAt: Date;
   userId: string | undefined;
   progress?: DocumentProgress;
+  pagesContent?: string;
 }
 
 export interface DocumentState {

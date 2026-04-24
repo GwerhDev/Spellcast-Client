@@ -1,7 +1,7 @@
 import s from './VoiceSelectorModal.module.css';
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { faBrain, faCircle, faDesktop } from '@fortawesome/free-solid-svg-icons';
+import { faBrain, faCircle, faDesktop, faVolumeHigh, faStop } from '@fortawesome/free-solid-svg-icons';
 import { faCircle as faRegCircle } from '@fortawesome/free-regular-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { CustomModal } from './CustomModal';
@@ -29,6 +29,8 @@ export const VoiceSelectorModal: React.FC<VoiceSelectorModalProps> = ({ onClose,
     setActiveTab(selectedVoice.type === 'ai' ? 'ai' : selectedVoice.type);
   }, [selectedVoice.type]);
 
+  const [previewingVoice, setPreviewingVoice] = useState<string | null>(null);
+
   const voices = window.speechSynthesis.getVoices();
 
   const aiVoices = credentials?.[0]?.voices?.map(v => ({ value: v.value, name: v.name, gender: v.gender })) || [];
@@ -36,6 +38,21 @@ export const VoiceSelectorModal: React.FC<VoiceSelectorModalProps> = ({ onClose,
 
   const voicesToShow = activeTab === 'browser' ? browserVoices : aiVoices;
   const icon = activeTab === 'browser' ? faDesktop : faBrain;
+
+  const handlePreview = (e: React.MouseEvent, voiceName: string) => {
+    e.stopPropagation();
+    window.speechSynthesis.cancel();
+    if (previewingVoice === voiceName) {
+      setPreviewingVoice(null);
+      return;
+    }
+    const utter = new SpeechSynthesisUtterance("This is a preview of this voice.");
+    const voice = window.speechSynthesis.getVoices().find(v => v.name === voiceName);
+    if (voice) utter.voice = voice;
+    utter.onend = () => setPreviewingVoice(null);
+    setPreviewingVoice(voiceName);
+    window.speechSynthesis.speak(utter);
+  };
 
   const handleVoiceSelection = async (selected: { value: string, name: string, gender: string, isBrowser?: boolean }) => {
     onClose();
@@ -108,6 +125,15 @@ export const VoiceSelectorModal: React.FC<VoiceSelectorModalProps> = ({ onClose,
               {voiceOption.name}
             </span>
             <FontAwesomeIcon icon={icon} className={s.genderIcon} />
+            {activeTab === 'browser' && (
+              <button
+                className={s.previewButton}
+                onClick={(e) => handlePreview(e, voiceOption.name)}
+                title="Preview voice"
+              >
+                <FontAwesomeIcon icon={previewingVoice === voiceOption.name ? faStop : faVolumeHigh} />
+              </button>
+            )}
           </li>
         ))}
       </ul>

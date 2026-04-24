@@ -1,12 +1,16 @@
-import { Routes, Route } from 'react-router-dom';
-import { RootState } from './store';
-import { useSelector, } from 'react-redux';
 import { useState } from 'react';
+import { RootState } from './store';
 import { userData } from './interfaces';
+import { useSelector } from 'react-redux';
+import { Routes, Route } from 'react-router-dom';
+
+import { ThemeProvider } from './context/ThemeContext';
 import { useInitSession } from './hooks/useInitSession';
+
 import { Toast } from './app/components/Toast';
 import { Loader } from './app/components/Loader';
 import { RootBackground } from './app/components/Backgrounds/RootBackground';
+
 import { Home } from './app/pages/Home';
 import { Audios } from './app/pages/Audios';
 import { Library } from './app/pages/Library';
@@ -18,13 +22,13 @@ import { Dashboard } from './app/pages/Dashboard';
 import { UserGroups } from './app/pages/UserGroups';
 import { Appearance } from './app/pages/Appearance';
 import { UserArchive } from './app/pages/UserArchive';
-import { ThemeProvider } from './context/ThemeContext';
 import { Unauthorized } from './app/pages/Unauthorized';
-import { DocumentCreate } from './app/pages/DocumentCreate';
 import { DocumentEdit } from './app/pages/DocumentEdit';
-import { DocumentDetailPage } from './app/pages/DocumentDetail';
+import { DocumentCreate } from './app/pages/DocumentCreate';
 import { UserCredentials } from './app/pages/UserCredentials';
+import { DocumentDetailPage } from './app/pages/DocumentDetail';
 import { LocalDocumentReader } from './app/pages/LocalDocumentReader';
+
 import DefaultLayout from './app/layouts/DefaultLayout';
 
 function App() {

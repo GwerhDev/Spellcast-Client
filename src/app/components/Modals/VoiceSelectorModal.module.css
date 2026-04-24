@@ -40,10 +40,8 @@
 }
 
 .tabButton.activeTab {
-    /* Gradient on the background of the active tab */
-    background: linear-gradient(45deg, var(--color-primary), var(--color-secondary));
+    background: var(--color-primary);
     color: var(--app-white);
-    /* Solid text color for active tab */
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
@@ -68,12 +66,8 @@
     text-decoration: underline;
 }
 
-/* Gradient text effect on hover for non-active tabs */
-.tabButton:not(.activeTab):hover span {
-    background: linear-gradient(45deg, var(--color-primary), var(--color-secondary));
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+.tabButton:not(.activeTab):hover {
+    color: var(--color-primary);
 }
 
 .voiceList {
@@ -114,6 +108,25 @@
     color: var(--text-color-accent);
     font-weight: bold;
     border-color: var(--color-primary);
+}
+
+.previewButton {
+    flex-shrink: 0;
+    background: transparent;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    padding: 0.25rem 0.4rem;
+    border-radius: 4px;
+    opacity: 0.6;
+    transition: opacity 0.15s, background 0.15s;
+    font-size: 0.8rem;
+}
+
+.previewButton:hover {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.1);
+    color: inherit;
 }
 
 @media (max-width: 768px) {

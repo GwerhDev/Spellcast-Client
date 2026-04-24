@@ -9,6 +9,8 @@ import { setAutoPlayOnLoad as setAudioAutoPlayOnLoad } from '../../../store/audi
 import { resetPdfReader } from '../../../store/pdfReaderSlice';
 import { Spinner } from '../Spinner';
 import { PrimaryButton } from '../Buttons/PrimaryButton';
+import { SecondaryButton } from '../Buttons/SecondaryButton';
+import { TertiaryButton } from '../Buttons/TertiaryButton';
 import { IconButton } from '../Buttons/IconButton';
 import { DeleteConfirmModal } from '../Modals/DeleteConfirmModal';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -70,7 +72,10 @@ export const DocumentDetail: React.FC = () => {
   if (error || !doc) return <div>{error || 'Document not found.'}</div>;
 
   const pagesCount = doc.pagesContent ? JSON.parse(doc.pagesContent).length : null;
-  const currentPage = doc.progress?.currentPage;
+  const currentPage = doc.progress?.currentPage ?? 0;
+  const progressPct = (pagesCount && currentPage > 0)
+    ? Math.min(Math.round(currentPage / pagesCount * 100), 100)
+    : null;
 
   return (
     <div className={s.container}>
@@ -84,14 +89,23 @@ export const DocumentDetail: React.FC = () => {
             <h1 className={s.title}>{doc.title}</h1>
             <p className={s.meta}>Created {new Date(doc.createdAt).toLocaleDateString()}</p>
             {pagesCount && <p className={s.meta}>{pagesCount} {pagesCount === 1 ? 'page' : 'pages'}</p>}
-            {currentPage != null && currentPage > 0 && <p className={s.meta}>Last read: page {currentPage}</p>}
+            {progressPct !== null && (
+              <div className={s.progressBarContainer}>
+                <div className={s.progressBarFill} style={{ width: `${progressPct}%` }} />
+              </div>
+            )}
+            {currentPage > 0 && (
+              <p className={s.meta}>
+                Page {currentPage}{pagesCount ? ` of ${pagesCount}` : ''} — {progressPct}% complete
+              </p>
+            )}
           </div>
         </div>
         <div className={s.actions}>
           <PrimaryButton icon={faPlay} onClick={handlePlay}>Play</PrimaryButton>
-          <PrimaryButton icon={faBookOpen} onClick={handleContinueReading}>Continue Reading</PrimaryButton>
-          <PrimaryButton icon={faPen} onClick={handleEdit}>Edit Document</PrimaryButton>
-          <PrimaryButton icon={faTrash} onClick={() => setShowDeleteModal(true)}>Delete Document</PrimaryButton>
+          <SecondaryButton icon={faBookOpen} onClick={handleContinueReading}>Continue Reading</SecondaryButton>
+          <TertiaryButton icon={faPen} onClick={handleEdit}>Edit Document</TertiaryButton>
+          <PrimaryButton variant="danger" icon={faTrash} onClick={() => setShowDeleteModal(true)}>Delete</PrimaryButton>
         </div>
       </div>
       <DeleteConfirmModal

@@ -33,7 +33,7 @@
     border-radius: 12px;
     display: flex;
     flex-direction: column;
-    max-width: 450px;
+    max-width: 480px;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
     outline: solid .5px var(--color-dark-300);
     outline-offset: .5rem;
@@ -45,45 +45,102 @@
     text-align: center;
 }
 
+.jumpForm {
+    display: flex;
+    gap: 0.5rem;
+    width: 100%;
+}
+
+.jumpButton {
+    flex-shrink: 0;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    background: var(--color-primary);
+    color: var(--app-white);
+    border: none;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.jumpButton:hover {
+    opacity: 0.85;
+    color: var(--app-white);
+    background: var(--color-primary);
+}
+
 .searchInput {
     width: 100%;
-    padding: 0.5rem;
+    padding: 0.5rem 0.75rem;
     border-radius: 8px;
     border: 1px solid var(--color-dark-300);
     background-color: var(--color-dark-400);
     color: var(--text-color);
+    font-size: 0.875rem;
 }
 
 .pageList {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
-    gap: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
     max-height: 50vh;
     overflow-y: auto;
 }
 
 .pageOption {
-    padding: 1rem;
+    padding: 0.6rem 0.75rem;
     border-radius: 8px;
     cursor: pointer;
     display: flex;
     align-items: center;
-    justify-content: center;
-    text-align: center;
+    gap: 0.75rem;
     border: 1px solid transparent;
-    transition: all 0.2s ease-in-out;
+    transition: background 0.15s ease;
     color: var(--text-color);
     background-color: var(--color-options-background);
 }
 
 .pageOption:hover {
-    color: var(--app-white);
-    background: var(--color-primary);
+    background: var(--color-dark-300);
 }
 
 .activePage {
-    font-weight: bold;
-    color: var(--app-white);
-    background: var(--color-primary);
     border-color: var(--color-primary);
+    background: transparent;
+}
+
+.pageNumber {
+    font-weight: 700;
+    font-size: 0.9rem;
+    min-width: 2rem;
+    color: var(--color-primary);
+    flex-shrink: 0;
+}
+
+.snippet {
+    font-size: 0.78rem;
+    color: var(--color-light-300);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+}
+
+.noSnippet {
+    font-size: 0.78rem;
+    color: var(--color-light-400);
+    flex: 1;
+}
+
+.currentBadge {
+    flex-shrink: 0;
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    background: var(--color-primary);
+    color: var(--app-white);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
 }

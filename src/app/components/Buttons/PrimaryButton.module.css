@@ -21,3 +21,14 @@
 .container:disabled:hover {
   background-color: var(--color-light-300);
 }
+
+.danger {
+  background: transparent;
+  border: solid 2px var(--color-danger);
+  color: var(--color-danger);
+}
+
+.danger:hover {
+  background: var(--color-danger);
+  color: var(--text-color-accent);
+}
