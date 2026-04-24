@@ -49,16 +49,20 @@
 
 .documentDetails {
   width: 100%;
-  max-width: 120px;
+  max-width: 180px;
   overflow: hidden;
   font-size: small;
-  text-wrap: nowrap;
-  text-overflow: ellipsis;
 }
 
-.documentDetails p:hover {
-  text-decoration: underline;
+.documentDetails p {
+  white-space: nowrap;
+  display: inline-block;
   cursor: pointer;
+}
+
+.documentDetails:hover p {
+  animation: marqueeScroll 6s linear infinite;
+  text-decoration: underline;
 }
 
 .documentDetails small {
@@ -68,6 +72,11 @@
 
 .documentDetails small:hover {
   color: var(--color-primary);
+}
+
+@keyframes marqueeScroll {
+  0%,  20% { transform: translateX(0); }
+  80%, 100% { transform: translateX(calc(-100% + 180px)); }
 }
 
 .pdfControls {
