@@ -1,6 +1,7 @@
 export const VITE_ENV = import.meta.env.VITE_ENV;
 export const APP_ID = import.meta.env.VITE_APP_ID;
 export const API_BASE = import.meta.env.VITE_API_URL;
+export const NHEXA_API = import.meta.env.VITE_NHEXA_API_URL;
 export const CLIENT_BASE = import.meta.env.VITE_CLIENT_URL;
 export const CLIENT_NAME = import.meta.env.VITE_CLIENT_NAME;
 export const ACCOUNT_BASE = import.meta.env.VITE_ACCOUNT_URL;

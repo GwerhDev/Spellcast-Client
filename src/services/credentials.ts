@@ -1,11 +1,11 @@
 import { API_BASE } from '../config/api';
 import { TTS_Credential, Voice } from '../interfaces';
+import { fetchWithRefresh } from './fetchWithRefresh';
 
 export async function createCredential(data: { azure_key: string; region: string }) {
   try {
-    const res = await fetch(`${API_BASE}/user/credentials`, {
+    const res = await fetchWithRefresh(`${API_BASE}/user/credentials`, {
       method: 'POST',
-      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
       },
@@ -24,9 +24,7 @@ export async function createCredential(data: { azure_key: string; region: string
 
 export async function getCredentials(): Promise<TTS_Credential[]> {
   try {
-    const res = await fetch(`${API_BASE}/user/credentials`, {
-      credentials: 'include',
-    });
+    const res = await fetchWithRefresh(`${API_BASE}/user/credentials`);
     if (!res.ok) return [];
     return await res.json();
   } catch (error) {
@@ -37,9 +35,7 @@ export async function getCredentials(): Promise<TTS_Credential[]> {
 
 export async function getCredential(credentialId: string) {
   try {
-    const res = await fetch(`${API_BASE}/user/credentials/${credentialId}`, {
-      credentials: 'include',
-    });
+    const res = await fetchWithRefresh(`${API_BASE}/user/credentials/${credentialId}`);
     if (!res.ok) return null;
     return await res.json();
   } catch (error) {
@@ -50,9 +46,8 @@ export async function getCredential(credentialId: string) {
 
 export async function updateCredential(credentialId: string | undefined, data: { azure_key?: string; region?: string; voices?: Voice[] }) {
   try {
-    const res = await fetch(`${API_BASE}/user/credentials/${credentialId}`, {
+    const res = await fetchWithRefresh(`${API_BASE}/user/credentials/${credentialId}`, {
       method: 'PATCH',
-      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
       },
@@ -71,9 +66,8 @@ export async function updateCredential(credentialId: string | undefined, data: {
 
 export async function deleteCredential(credentialId: string | undefined) {
   try {
-    const res = await fetch(`${API_BASE}/user/credentials/${credentialId}`, {
+    const res = await fetchWithRefresh(`${API_BASE}/user/credentials/${credentialId}`, {
       method: 'DELETE',
-      credentials: 'include',
     });
     if (!res.ok) {
       const errorData = await res.json();
