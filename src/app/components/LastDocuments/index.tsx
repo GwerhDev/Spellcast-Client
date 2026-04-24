@@ -9,6 +9,7 @@ import { DocumentCard } from '../Cards/DocumentCard';
 
 export const LastDocuments: React.FC = () => {
   const { userData } = useAppSelector((state) => state.session);
+  const { documentId: activeDocId, currentPage: activeCurrentPage } = useAppSelector((state) => state.pdfReader);
   const [documents, setDocuments] = useState<Document[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -31,6 +32,15 @@ export const LastDocuments: React.FC = () => {
     fetchDocuments();
     //eslint-disable-next-line
   }, [userData.id]);
+
+  useEffect(() => {
+    if (!activeDocId || !activeCurrentPage) return;
+    setDocuments(prev => prev.map(doc =>
+      doc.id === activeDocId
+        ? { ...doc, progress: { currentPage: activeCurrentPage, pagesProgress: doc.progress?.pagesProgress ?? [], lastReadSentenceIndex: doc.progress?.lastReadSentenceIndex ?? 0 } }
+        : doc
+    ));
+  }, [activeCurrentPage, activeDocId]);
 
   const openDeleteModal = (id: string, title: string, e: React.MouseEvent) => {
     e.stopPropagation();
