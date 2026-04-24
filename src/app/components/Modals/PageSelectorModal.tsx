@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import s from './PageSelectorModal.module.css';
+import { faCheck } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../../store';
 import { goToPage, setShowPageSelector } from '../../../store/pdfReaderSlice';
@@ -77,10 +79,11 @@ export const PageSelectorModal: React.FC = () => {
         {filteredPages.map((page) => {
           const snippet = getSnippet(page);
           const isCurrent = currentPage === page;
+          const isRead = page < currentPage;
           return (
             <li
               key={page}
-              className={`${s.pageOption} ${isCurrent ? s.activePage : ''}`}
+              className={`${s.pageOption} ${isCurrent ? s.activePage : ''} ${isRead ? s.readPage : ''}`}
               onClick={() => handlePageSelection(page)}
             >
               <span className={s.pageNumber}>{page}</span>
@@ -88,6 +91,7 @@ export const PageSelectorModal: React.FC = () => {
                 {snippet ?? <span className={s.noSnippet}>—</span>}
               </span>
               {isCurrent && <span className={s.currentBadge}>current</span>}
+              {isRead && <FontAwesomeIcon icon={faCheck} className={s.readIcon} />}
             </li>
           );
         })}

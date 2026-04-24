@@ -10,7 +10,6 @@ import { resetPdfReader } from '../../../store/pdfReaderSlice';
 import { Spinner } from '../Spinner';
 import { PrimaryButton } from '../Buttons/PrimaryButton';
 import { SecondaryButton } from '../Buttons/SecondaryButton';
-import { TertiaryButton } from '../Buttons/TertiaryButton';
 import { IconButton } from '../Buttons/IconButton';
 import { DeleteConfirmModal } from '../Modals/DeleteConfirmModal';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -103,8 +102,8 @@ export const DocumentDetail: React.FC = () => {
         </div>
         <div className={s.actions}>
           <PrimaryButton icon={faPlay} onClick={handlePlay}>Play</PrimaryButton>
-          <SecondaryButton icon={faBookOpen} onClick={handleContinueReading}>Continue Reading</SecondaryButton>
-          <TertiaryButton icon={faPen} onClick={handleEdit}>Edit Document</TertiaryButton>
+          <SecondaryButton className={s.solid} icon={faBookOpen} onClick={handleContinueReading}>Continue Reading</SecondaryButton>
+          <SecondaryButton className={s.solid} icon={faPen} onClick={handleEdit}>Edit Document</SecondaryButton>
           <PrimaryButton variant="danger" icon={faTrash} onClick={() => setShowDeleteModal(true)}>Delete</PrimaryButton>
         </div>
       </div>

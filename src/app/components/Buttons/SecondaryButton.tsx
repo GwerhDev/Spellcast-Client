@@ -9,17 +9,18 @@ interface SecondaryButtonProps {
   type?: 'button' | 'submit' | 'reset';
   disabled?: boolean;
   children?: React.ReactNode;
+  className?: string;
 }
 
 export const SecondaryButton = (props: SecondaryButtonProps) => {
-  const { text, icon, onClick, type, disabled, children } = props || {};
+  const { text, icon, onClick, type, disabled, children, className } = props || {};
 
   const handleOnClick = () => {
     return onClick && onClick();
   };
 
   return (
-    <button className={s.container} onClick={handleOnClick} disabled={disabled} type={type || "button"} >
+    <button className={`${s.container} ${className ?? ''}`} onClick={handleOnClick} disabled={disabled} type={type || "button"} >
       {icon && <FontAwesomeIcon icon={icon} />}
       {text || children}
     </button>

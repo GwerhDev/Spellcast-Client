@@ -99,13 +99,22 @@
     align-items: center;
     gap: 0.75rem;
     border: 1px solid transparent;
-    transition: background 0.15s ease;
+    transition: background 0.15s ease, color 0.15s ease;
     color: var(--text-color);
     background-color: var(--color-options-background);
 }
 
 .pageOption:hover {
-    background: var(--color-dark-300);
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: var(--app-white);
+}
+
+.pageOption:hover .pageNumber,
+.pageOption:hover .snippet,
+.pageOption:hover .noSnippet,
+.pageOption:hover .readIcon {
+    color: var(--app-white);
 }
 
 .activePage {
@@ -146,4 +155,25 @@
     color: var(--app-white);
     text-transform: uppercase;
     letter-spacing: 0.04em;
+}
+
+.readPage {
+    opacity: 0.55;
+}
+
+.readPage .pageNumber {
+    color: var(--color-light-400);
+}
+
+.readPage:hover {
+    opacity: 1;
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: var(--app-white);
+}
+
+.readIcon {
+    flex-shrink: 0;
+    font-size: 0.65rem;
+    color: var(--color-light-400);
 }

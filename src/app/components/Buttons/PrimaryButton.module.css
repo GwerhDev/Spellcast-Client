@@ -24,11 +24,12 @@
 
 .danger {
   background: transparent;
-  border: solid 2px var(--color-danger);
-  color: var(--color-danger);
+  border: solid 2px var(--color-light-200);
+  color: var(--color-light-200);
 }
 
 .danger:hover {
   background: var(--color-danger);
-  color: var(--text-color-accent);
+  border-color: var(--color-danger);
+  color: var(--app-white);
 }
