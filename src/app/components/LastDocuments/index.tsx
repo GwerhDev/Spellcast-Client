@@ -6,6 +6,9 @@ import { DeleteConfirmModal } from '../Modals/DeleteConfirmModal';
 import { useAppSelector } from 'store/hooks';
 import { Document } from 'src/interfaces';
 import { DocumentCard } from '../Cards/DocumentCard';
+import { useDispatch } from 'react-redux';
+import { setAutoPlayOnLoad } from '../../../store/browserPlayerSlice';
+import { setAutoPlayOnLoad as setAudioAutoPlayOnLoad } from '../../../store/audioPlayerSlice';
 
 export const LastDocuments: React.FC = () => {
   const { userData } = useAppSelector((state) => state.session);
@@ -15,6 +18,13 @@ export const LastDocuments: React.FC = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState<{ id: string, title: string } | null>(null);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+
+  const handlePlay = (id: string) => {
+    dispatch(setAutoPlayOnLoad(true));
+    dispatch(setAudioAutoPlayOnLoad(true));
+    navigate(`/document/${id}/reader`);
+  };
 
   const fetchDocuments = async () => {
     try {
@@ -89,7 +99,7 @@ export const LastDocuments: React.FC = () => {
               onClick={() => navigate(`/document/${doc.id}`)}
               onEdit={(e) => { e.stopPropagation(); navigate(`/document/${doc.id}/edit`); }}
               onDelete={(e) => openDeleteModal(doc.id, doc.title, e)}
-              onPlay={() => navigate(`/document/${doc.id}/reader`, { state: { autoPlay: true } })}
+              onPlay={() => handlePlay(doc.id)}
             />
           ))}
         </div>

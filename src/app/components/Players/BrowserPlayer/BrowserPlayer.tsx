@@ -52,8 +52,6 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal })
   const [showMobileVolumeSlider, setShowMobileVolumeSlider] = useState(false);
   const mobileVolumeSliderRef = useRef<HTMLDivElement>(null);
   const mobileVolumeButtonRef = useRef<HTMLButtonElement>(null);
-  const isPlayingRef = useRef(isPlaying);
-  useEffect(() => { isPlayingRef.current = isPlaying; }, [isPlaying]);
   const activeUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
   // Prevent advancing on stale empty sentences before PdfProcessor loads the new page
@@ -166,17 +164,16 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal })
 
     if (isLoaded && currentSentenceIndex > -1) {
       if (sentences.length === 0 || currentSentenceIndex >= sentences.length) {
-        if (isPlayingRef.current && !waitingForSentencesRef.current) {
+        if (isPlaying && !waitingForSentencesRef.current) {
           if (currentPage < totalPages) return handleNext();
           return handleStop();
         }
         return;
       }
 
-      if (!isPlayingRef.current) {
+      if (!isPlaying) {
         if (autoPlayOnLoad) {
           dispatch(setAutoPlayOnLoad(false));
-          isPlayingRef.current = true;
           dispatch(play());
         } else {
           return;
@@ -199,7 +196,6 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal })
       return;
     }
     if (sentences.length === 0) {
-      isPlayingRef.current = true;
       dispatch(play());
       if (currentPage < totalPages) handleNext();
       else handleStop();
@@ -214,7 +210,6 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal })
       () => dispatch(setCurrentSentenceIndex(currentSentenceIndex + 1)),
       () => handlePlay(),
     );
-    isPlayingRef.current = true;
     dispatch(play());
   };
 

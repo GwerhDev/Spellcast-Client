@@ -7,14 +7,24 @@ import { useAppSelector } from '../../../store/hooks';
 import { Document } from 'src/interfaces';
 import { Spinner } from '../Spinner';
 import { DocumentCard } from '../Cards/DocumentCard';
+import { useDispatch } from 'react-redux';
+import { setAutoPlayOnLoad } from '../../../store/browserPlayerSlice';
+import { setAutoPlayOnLoad as setAudioAutoPlayOnLoad } from '../../../store/audioPlayerSlice';
 
 export const DocumentList: React.FC = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const { userData, logged } = useAppSelector(state => state.session);
   const [documents, setDocuments] = useState<Document[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState<{ id: string, title: string } | null>(null);
+
+  const handlePlay = (id: string) => {
+    dispatch(setAutoPlayOnLoad(true));
+    dispatch(setAudioAutoPlayOnLoad(true));
+    navigate(`/document/${id}/reader`);
+  };
 
   const fetchDocuments = async () => {
     if (!logged) { setIsLoading(false); return; }
@@ -73,7 +83,7 @@ export const DocumentList: React.FC = () => {
               onClick={() => navigate(`/document/${doc.id}`)}
               onEdit={(e) => { e.stopPropagation(); navigate(`/document/${doc.id}/edit`); }}
               onDelete={(e) => openDeleteModal(doc.id, doc.title, e)}
-              onPlay={() => navigate(`/document/${doc.id}/reader`, { state: { autoPlay: true } })}
+              onPlay={() => handlePlay(doc.id)}
             />
           ))}
         </div>
