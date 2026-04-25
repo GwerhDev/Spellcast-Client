@@ -1,6 +1,6 @@
 import { API_BASE } from '../config/api';
 import { Voice } from '../interfaces';
-import { fetchWithRefresh } from './fetchWithRefresh';
+
 
 interface TiptapMark {
   type: string;
@@ -60,11 +60,11 @@ const injectDefaultVoice = (node: TiptapNode, voice: string): TiptapNode => {
 
 export async function getVoicesByCredential(credentialId: string): Promise<Voice[]> {
   try {
-    const response = await fetchWithRefresh(`${API_BASE}/user/voices/${credentialId}`, {
+    const response = await fetch(`${API_BASE}/user/voices/${credentialId}`, {
       credentials: 'include',
     });
     if (!response.ok) {
-      console.error(`Failed to fetchWithRefresh voices for credential ${credentialId}. Status: ${response.status}`);
+      console.error(`Failed to fetch voices for credential ${credentialId}. Status: ${response.status}`);
       return [];
     }
     return await response.json();
@@ -88,7 +88,7 @@ export async function textToSpeechService(
 
     const body = injectDefaultVoice(flattenToSingleParagraph(doc), data.voice);
 
-    const response = await fetchWithRefresh(`${API_BASE}/tts/`, {
+    const response = await fetch(`${API_BASE}/tts/`, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },

@@ -1,10 +1,10 @@
 import { API_BASE } from '../config/api';
 import { Group } from '../interfaces';
-import { fetchWithRefresh } from './fetchWithRefresh';
+
 
 export async function createGroup(data: { name: string }) {
   try {
-    const res = await fetchWithRefresh(`${API_BASE}/user/groups`, {
+    const res = await fetch(`${API_BASE}/user/groups`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -24,7 +24,7 @@ export async function createGroup(data: { name: string }) {
 
 export async function getGroups(): Promise<Group[]> {
   try {
-    const res = await fetchWithRefresh(`${API_BASE}/user/groups`);
+    const res = await fetch(`${API_BASE}/user/groups`);
     if (!res.ok) return [];
     return await res.json();
   } catch (error) {
@@ -35,7 +35,7 @@ export async function getGroups(): Promise<Group[]> {
 
 export async function getGroup(groupId: string) {
   try {
-    const res = await fetchWithRefresh(`${API_BASE}/user/groups/${groupId}`);
+    const res = await fetch(`${API_BASE}/user/groups/${groupId}`);
     if (!res.ok) return null;
     return await res.json();
   } catch (error) {
@@ -46,7 +46,7 @@ export async function getGroup(groupId: string) {
 
 export async function updateGroup(groupId: string, data: { name: string }) {
   try {
-    const res = await fetchWithRefresh(`${API_BASE}/user/groups/${groupId}`, {
+    const res = await fetch(`${API_BASE}/user/groups/${groupId}`, {
       method: 'PATCH',
       credentials: 'include',
       headers: {
@@ -67,7 +67,7 @@ export async function updateGroup(groupId: string, data: { name: string }) {
 
 export async function deleteGroup(groupId: string | undefined) {
   try {
-    const res = await fetchWithRefresh(`${API_BASE}/user/groups/${groupId}`, {
+    const res = await fetch(`${API_BASE}/user/groups/${groupId}`, {
       method: 'DELETE',
       credentials: 'include',
     });
