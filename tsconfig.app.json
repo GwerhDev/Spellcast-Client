@@ -17,6 +17,7 @@
 
     /* Path Aliases */
     "paths": {
+      "src/*": ["./src/*"],
       "store/*": ["./src/store/*"],
       "store": ["./src/store/index.tsx"],
       "services/*": ["./src/services/*"],
