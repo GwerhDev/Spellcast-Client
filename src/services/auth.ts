@@ -1,6 +1,5 @@
 import { NHEXA_API } from '../config/api';
 
-
 export async function fetchAuth() {
   try {
     const res = await fetch(`${NHEXA_API}/account`, {
