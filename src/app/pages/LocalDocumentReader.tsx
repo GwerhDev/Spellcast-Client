@@ -1,21 +1,13 @@
-import * as pdfjsLib from 'pdfjs-dist';
 import React, { useEffect, useState } from 'react';
-import { JSONContent } from '@tiptap/core';
 import { useParams, useLocation } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { getDocumentById } from '../../db';
 import { useAppSelector } from '../../store/hooks';
 import { resetAudioPlayer, setAutoPlayOnLoad as setAudioAutoPlayOnLoad } from '../../store/audioPlayerSlice';
 import { resetBrowserPlayer, stop, setAutoPlayOnLoad } from '../../store/browserPlayerSlice';
-import { setPdfFile, setPdfDocumentInfo, resetPdfReader, setPdfLoaded, setHasInitialPageSet, setPagesCache } from '../../store/pdfReaderSlice';
+import { setPdfFile, setPdfDocumentInfo, resetPdfReader, setPdfLoaded, setHasInitialPageSet } from '../../store/pdfReaderSlice';
 import { Spinner } from '../components/Spinner';
 import { DocumentReader } from '../components/DocumentReader';
-
-// The workerSrc import is important for pdfjs-dist to work
-import workerSrc from 'pdfjs-dist/build/pdf.worker?url';
-pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
-
-
 
 export const LocalDocumentReader: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -29,17 +21,8 @@ export const LocalDocumentReader: React.FC = () => {
 
   useEffect(() => {
     const loadDocument = async () => {
-      if (!id) {
-        setError('No document ID provided.');
-        setIsLoading(false);
-        return;
-      }
-
-      if (!logged) {
-        setError('You must be logged in to view this document.');
-        setIsLoading(false);
-        return;
-      }
+      if (!id) { setError('No document ID provided.'); setIsLoading(false); return; }
+      if (!logged) { setError('You must be logged in to view this document.'); setIsLoading(false); return; }
 
       if (id === documentId) {
         setIsLoading(false);
@@ -50,44 +33,30 @@ export const LocalDocumentReader: React.FC = () => {
         return;
       }
 
+      setIsLoading(true);
+      setError(null);
+
       try {
-        dispatch(stop()); // Stop browser TTS playback
+        dispatch(stop());
         dispatch(resetPdfReader());
-        dispatch(resetAudioPlayer()); // Stop audio playback
+        dispatch(resetAudioPlayer());
         dispatch(resetBrowserPlayer());
         if (location.state?.autoPlay) {
           dispatch(setAutoPlayOnLoad(true));
           dispatch(setAudioAutoPlayOnLoad(true));
         }
-        dispatch(setPdfLoaded(false)); // Set isLoaded to false at the start of loading
+        dispatch(setPdfLoaded(false));
+
         const doc = await getDocumentById(id, userData.id);
-        if (!doc) {
-          setError('Document not found.');
-          setIsLoading(false);
-          return;
-        }
-        
+        if (!doc) { setError('Document not found.'); setIsLoading(false); return; }
+
+        const totalPages = doc.pagesContent
+          ? (JSON.parse(doc.pagesContent) as unknown[]).length
+          : 1;
+
         dispatch(setPdfFile({ id, title: doc.title, progress: doc.progress }));
-
-        if (doc.pagesContent) {
-          try {
-            const pages: JSONContent[] = JSON.parse(doc.pagesContent);
-            const pagesCache: { [pageNumber: number]: string } = {};
-            pages.forEach((page, index) => {
-              pagesCache[index + 1] = JSON.stringify(page);
-            });
-            dispatch(setPagesCache(pagesCache));
-          } catch {
-            // ignore parse errors, PdfProcessor will extract from PDF
-          }
-        }
-
-        const pdfData = await doc.pdf.arrayBuffer();
-        const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
-
-        dispatch(setPdfDocumentInfo({ totalPages: pdf.numPages }));
-
-        dispatch(setHasInitialPageSet(true)); // Set flag after initial page is determined
+        dispatch(setPdfDocumentInfo({ totalPages }));
+        dispatch(setHasInitialPageSet(true));
         setIsLoading(false);
       } catch (err) {
         console.error('Failed to load local document:', err);
@@ -100,18 +69,8 @@ export const LocalDocumentReader: React.FC = () => {
     //eslint-disable-next-line
   }, [id, dispatch, documentId, logged, userData.id]);
 
-  if (isLoading) {
-    return <Spinner isLoading message="Loading local document..." />;
-  }
-
-  if (error) {
-    return (
-      <div>
-        <h2>Error</h2>
-        <p>{error}</p>
-      </div>
-    );
-  }
+  if (isLoading) return <Spinner isLoading message="Loading local document..." />;
+  if (error) return <div><h2>Error</h2><p>{error}</p></div>;
 
   return <DocumentReader />;
 };

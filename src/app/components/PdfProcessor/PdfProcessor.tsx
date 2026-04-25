@@ -1,7 +1,5 @@
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import * as pdfjsLib from 'pdfjs-dist';
-import type { PDFDocumentProxy, TextItem, TextMarkedContent } from 'pdfjs-dist/types/src/display/api';
 import { JSONContent } from '@tiptap/core';
 import { RootState } from '../../../store';
 import { setPageText, setPdfLoaded, setSentences } from '../../../store/pdfReaderSlice';
@@ -24,8 +22,7 @@ const extractSentencesFromJSON = (text: string): string[] => {
         .join('')
         .trim();
       if (!nodeText) continue;
-      const nodeSentences = nodeText.split(/(?<=[.!?])\s*/).filter(Boolean);
-      sentences.push(...nodeSentences);
+      sentences.push(...nodeText.split(/(?<=[.!?])\s*/).filter(Boolean));
     }
     return sentences;
   } catch {
@@ -36,89 +33,43 @@ const extractSentencesFromJSON = (text: string): string[] => {
 export const PdfProcessor = () => {
   const dispatch = useDispatch();
   const { userData } = useAppSelector((state) => state.session);
-  const { currentPage, pages, documentId, isLoaded, currentSentenceIndex } = useSelector((state: RootState) => state.pdfReader);
-  const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
+  const { currentPage, documentId, isLoaded, currentSentenceIndex, contentVersion } = useSelector((state: RootState) => state.pdfReader);
 
-  // Effect to create pdfDoc from fileContent
+  const [pages, setPages] = useState<string[]>([]);
+  const [docLoaded, setDocLoaded] = useState(false);
+
   useEffect(() => {
-    const loadDocument = async () => {
-      try {
-        const fileContent = await getDocumentById(documentId || "", userData.id);
-
-        if (fileContent) {
-          const arrayBuffer = await fileContent.pdf.arrayBuffer();
-          setPdfDoc(null);
-          pdfjsLib.getDocument({ data: arrayBuffer }).promise.then(doc => {
-            setPdfDoc(doc);
-          });
-        } else {
-          setPdfDoc(null);
-        }
-      } catch (error) {
-        console.error("Failed to load document from IndexedDB:", error);
-        setPdfDoc(null); // Ensure pdfDoc is null on error
+    if (!documentId) return;
+    setDocLoaded(false);
+    setPages([]);
+    getDocumentById(documentId, userData.id).then((doc) => {
+      if (doc?.pagesContent) {
+        const parsed = JSON.parse(doc.pagesContent) as unknown[];
+        setPages(parsed.map((p) => JSON.stringify(p)));
+      } else {
+        setPages([]);
       }
+      setDocLoaded(true);
+    });
+  }, [documentId, userData.id, contentVersion]);
+
+  useEffect(() => {
+    if (!docLoaded) return;
+    const text = pages[currentPage - 1] ?? '';
+    dispatch(setPageText({ text }));
+    dispatch(setSentences({ sentences: extractSentencesFromJSON(text) }));
+    dispatch(setPdfLoaded(true));
+  }, [currentPage, docLoaded, pages, dispatch]);
+
+  useEffect(() => {
+    if (!isLoaded || currentSentenceIndex < 0) return;
+    const progress: DocumentProgress = {
+      currentPage,
+      pagesProgress: [],
+      lastReadSentenceIndex: currentSentenceIndex < 0 ? 0 : currentSentenceIndex,
     };
-
-    loadDocument();
-  }, [dispatch, documentId, userData.id]);
-
-  // Effect to process page when currentPage changes
-  useEffect(() => {
-    if (pdfDoc && !isProcessing) {
-      const processPage = async () => {
-        setIsProcessing(true);
-
-        try {
-          let text = pages[currentPage];
-          if (!text) {
-            const page = await pdfDoc.getPage(currentPage);
-            const content = await page.getTextContent();
-            text = content.items.map((item: TextItem | TextMarkedContent) => ('str' in item ? item.str : '')).join(' ');
-            text = text.replace(/\s+/g, ' ').trim();
-          }
-
-          dispatch(setPageText({ text: text || '' }));
-          if (text && text.trim() !== '') {
-            const sentences = text.trimStart().startsWith('{')
-              ? extractSentencesFromJSON(text)
-              : text.split(/(?<=[.!?])/).filter(Boolean);
-            dispatch(setSentences({ sentences }));
-          } else {
-            dispatch(setSentences({ sentences: [] }));
-          }
-        } catch (error) {
-          console.error(`Failed to process page ${currentPage}:`, error);
-        } finally {
-          setIsProcessing(false);
-          dispatch(setPdfLoaded(true)); // Set isLoaded to true after all pages are processed
-        }
-      };
-      processPage();
-    }
-    //eslint-disable-next-line
-  }, [pdfDoc, currentPage, dispatch]);
-
-  useEffect(() => {
-    if (isLoaded && currentSentenceIndex > -1) {
-      const progress: DocumentProgress = {
-        currentPage: currentPage,
-        pagesProgress: [],
-        lastReadSentenceIndex: currentSentenceIndex,
-      };
-      updateDocumentProgress(documentId || "", userData.id || "", progress);
-    }
-
-    if (isLoaded && currentSentenceIndex === -1) {
-      const progress: DocumentProgress = {
-        currentPage: currentPage,
-        pagesProgress: [],
-        lastReadSentenceIndex: 0,
-      };
-      updateDocumentProgress(documentId || "", userData.id || "", progress);
-    }
+    updateDocumentProgress(documentId || '', userData.id || '', progress);
   }, [currentPage, documentId, isLoaded, currentSentenceIndex, userData.id]);
 
-  return null; // Headless component
+  return null;
 };

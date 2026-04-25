@@ -9,7 +9,6 @@ import {
   playNext,
   playPrevious,
   play,
-  stop,
   pause,
   setAutoPlayOnLoad,
 } from '../../../../store/audioPlayerSlice';
@@ -19,7 +18,9 @@ import { VolumeControls } from './VolumeControls/VolumeControls';
 import { VoiceSelectorButton } from './VoiceSelectorButton/VoiceSelectorButton';
 import { textToSpeechService } from 'services/tts';
 import { getCachedAudio, setCachedAudio } from 'db/audioCache';
+import { getDocumentById } from '../../../../db';
 import { useNavigate } from 'react-router-dom';
+import { useAppSelector } from '../../../../store/hooks';
 
 interface PlayerProps {
   showVoiceSelectorModal: React.Dispatch<SetStateAction<boolean>>;
@@ -46,18 +47,16 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal }) =
     currentPage,
     documentTitle,
     currentPageText,
-    pages,
   } = useSelector((state: RootState) => state.pdfReader);
   const { selectedVoice } = useSelector((state: RootState) => state.voice);
+  const { userData } = useAppSelector((state) => state.session);
 
   const [lastVolume, setLastVolume] = useState(volume);
   const [isMobile, setIsMobile] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
-  const [willAutoPlay, setWillAutoPlay] = useState(false);
   const [showMobileVolumeSlider, setShowMobileVolumeSlider] = useState(false);
 
   const pageAudioReadyRef = useRef(false);
-  const willAutoPlayRef = useRef(false);
   const abortControllerRef = useRef<AbortController | null>(null);
   const prefetchAbortRef = useRef<AbortController | null>(null);
   const currentBlobUrlRef = useRef<string | null>(null);
@@ -68,16 +67,14 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal }) =
   const progressPercentage = duration > 0 ? (currentTime / duration) * 100 : 0;
   const volumePercentage = volume * 100;
 
-  const setAutoPlayIntent = (val: boolean) => {
-    willAutoPlayRef.current = val;
-    setWillAutoPlay(val);
-  };
-
   useEffect(() => {
+    const abortMain = abortControllerRef;
+    const abortPrefetch = prefetchAbortRef;
+    const blobUrl = currentBlobUrlRef;
     return () => {
-      abortControllerRef.current?.abort();
-      prefetchAbortRef.current?.abort();
-      if (currentBlobUrlRef.current) URL.revokeObjectURL(currentBlobUrlRef.current);
+      abortMain.current?.abort();
+      abortPrefetch.current?.abort();
+      if (blobUrl.current) URL.revokeObjectURL(blobUrl.current);
     };
   }, []);
 
@@ -111,7 +108,7 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal }) =
       if (currentTrackUrl) {
         audioRef.current.src = currentTrackUrl;
         audioRef.current.load();
-        if (isPlaying) {
+        if (isPlaying && pageAudioReadyRef.current) {
           audioRef.current.play().catch(e => console.error("Error playing audio:", e));
         }
       } else {
@@ -123,12 +120,11 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal }) =
   }, [currentTrackUrl]);
 
   useEffect(() => {
-    if (audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.play().catch(e => console.error("Error playing audio:", e));
-      } else {
-        audioRef.current.pause();
-      }
+    if (!audioRef.current || !pageAudioReadyRef.current) return;
+    if (isPlaying) {
+      audioRef.current.play().catch(e => console.error("Error playing audio:", e));
+    } else {
+      audioRef.current.pause();
     }
   }, [isPlaying]);
 
@@ -195,27 +191,30 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal }) =
     if (currentBlobUrlRef.current) URL.revokeObjectURL(currentBlobUrlRef.current);
     const url = URL.createObjectURL(blob);
     currentBlobUrlRef.current = url;
-    pageAudioReadyRef.current = true;
     audioRef.current!.src = url;
-    if (willAutoPlayRef.current) {
-      dispatch(play());
-      audioRef.current!.play();
-    } else {
-      audioRef.current!.load();
-    }
+    audioRef.current!.load();
+    pageAudioReadyRef.current = true;
   };
 
-  const prefetchNextPage = async (page: number, text: string) => {
-    if (!documentId) return;
-    const cached = await getCachedAudio(documentId, page, selectedVoice.value);
+  const prefetchNextPage = async (nextPage: number) => {
+    if (!documentId || !userData?.id) return;
+    const cached = await getCachedAudio(documentId, nextPage, selectedVoice.value);
     if (cached) return;
 
     const controller = new AbortController();
     prefetchAbortRef.current = controller;
     try {
-      const blob = await textToSpeechService({ text, voice: selectedVoice.value }, controller.signal);
+      const doc = await getDocumentById(documentId, userData.id);
+      if (controller.signal.aborted || !doc?.pagesContent) return;
+      const pages = JSON.parse(doc.pagesContent) as unknown[];
+      const pageText = pages[nextPage - 1];
+      if (!pageText) return;
+      const blob = await textToSpeechService(
+        { text: JSON.stringify(pageText), voice: selectedVoice.value },
+        controller.signal
+      );
       if (!controller.signal.aborted) {
-        setCachedAudio(documentId, page, selectedVoice.value, blob);
+        setCachedAudio(documentId, nextPage, selectedVoice.value, blob);
       }
     } catch (e) {
       if (e instanceof Error && e.name === 'AbortError') return;
@@ -223,7 +222,9 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal }) =
     }
   };
 
-  const fetchAndPlay = async (text: string, autoPlay = true) => {
+  const fetchAndPlay = async (text: string) => {
+    const shouldPlay = isPlaying || autoPlayOnLoad;
+
     abortControllerRef.current?.abort();
     prefetchAbortRef.current?.abort();
 
@@ -231,10 +232,7 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal }) =
     abortControllerRef.current = controller;
 
     pageAudioReadyRef.current = false;
-    setAutoPlayIntent(autoPlay);
     setIsFetching(true);
-    dispatch(stop());
-    audioRef.current?.pause();
     if (audioRef.current) audioRef.current.currentTime = 0;
     dispatch(setCurrentTime(0));
     dispatch(setDuration(0));
@@ -255,10 +253,11 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal }) =
 
       if (!controller.signal.aborted) {
         loadAudio(blob);
-        const nextText = pages[currentPage + 1];
-        if (nextText && currentPage < totalPages) {
-          prefetchNextPage(currentPage + 1, nextText);
+        if (shouldPlay) {
+          dispatch(play());
+          audioRef.current!.play().catch(e => console.error("Error playing audio:", e));
         }
+        if (currentPage < totalPages) prefetchNextPage(currentPage + 1);
       }
     } catch (e) {
       if (e instanceof Error && e.name === 'AbortError') return;
@@ -269,10 +268,7 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal }) =
   };
 
   const handleTogglePlayPause = () => {
-    if (isFetching) {
-      setAutoPlayIntent(!willAutoPlayRef.current);
-      return;
-    }
+    if (isFetching) return;
     if (isPlaying) {
       dispatch(pause());
       return;
@@ -303,9 +299,8 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal }) =
 
   useEffect(() => {
     if (selectedVoice.type !== 'ai' || !currentPageText) return;
-    const shouldAutoPlay = isPlaying || autoPlayOnLoad;
     if (autoPlayOnLoad) dispatch(setAutoPlayOnLoad(false));
-    fetchAndPlay(currentPageText, shouldAutoPlay);
+    fetchAndPlay(currentPageText);
     //eslint-disable-next-line
   }, [currentPageText]);
 
@@ -338,7 +333,7 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal }) =
             progressPercentage={progressPercentage}
             handlePrevious={handlePrevious}
             handleNext={handleNext}
-            isPlaying={isFetching ? willAutoPlay : isPlaying}
+            isPlaying={isPlaying}
             isFetching={isFetching}
             isPrevDisabled={isPrevDisabled}
             isNextDisabled={isNextDisabled}

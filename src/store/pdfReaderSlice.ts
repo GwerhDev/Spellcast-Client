@@ -7,8 +7,7 @@ interface PdfReaderState {
   totalPages: number;
   currentPage: number;
   isLoaded: boolean;
-  pages: { [pageNumber: number]: string };
-  hasInitialPageSet: boolean; // New flag
+  hasInitialPageSet: boolean;
   isContinuousPlayActive: boolean;
   showPageSelector: boolean;
   currentPageText: string;
@@ -17,6 +16,7 @@ interface PdfReaderState {
   sentences: string[];
   showReaderSettings: boolean;
   fitToWidth: boolean;
+  contentVersion: number;
 }
 
 const initialState: PdfReaderState = {
@@ -25,7 +25,6 @@ const initialState: PdfReaderState = {
   totalPages: 1,
   currentPage: 1,
   isLoaded: false,
-  pages: {},
   sentences: [],
   currentSentenceIndex: -1, // Use -1 to indicate nothing is highlighted initially
   currentPageText: "",
@@ -34,6 +33,7 @@ const initialState: PdfReaderState = {
   showPageSelector: false,
   showReaderSettings: false,
   fitToWidth: localStorage.getItem('reader:fitToWidth') !== 'false',
+  contentVersion: 0,
   progress: {
     currentPage: 1,
     pagesProgress: [],
@@ -92,9 +92,6 @@ const pdfReaderSlice = createSlice({
     setPageText(state, action: PayloadAction<{ text: string }>) {
       state.currentPageText = action.payload.text;
     },
-    setPagesCache(state, action: PayloadAction<{ [pageNumber: number]: string }>) {
-      state.pages = { ...state.pages, ...action.payload };
-    },
     setHasInitialPageSet(state, action: PayloadAction<boolean>) { // New action
       state.hasInitialPageSet = action.payload;
     },
@@ -107,6 +104,9 @@ const pdfReaderSlice = createSlice({
     setFitToWidth(state, action: PayloadAction<boolean>) {
       state.fitToWidth = action.payload;
     },
+    invalidateContent(state) {
+      state.contentVersion += 1;
+    },
   },
 });
 
@@ -118,7 +118,6 @@ export const {
   goToPage,
   resetPdfReader,
   setPageText,
-  setPagesCache,
   setPdfLoaded,
   setHasInitialPageSet,
   setContinuousPlay,
@@ -127,6 +126,7 @@ export const {
   setCurrentSentenceIndex,
   setShowReaderSettings,
   setFitToWidth,
+  invalidateContent,
 } = pdfReaderSlice.actions;
 
 export default pdfReaderSlice.reducer;

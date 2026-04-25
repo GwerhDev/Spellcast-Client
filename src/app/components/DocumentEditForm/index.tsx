@@ -6,6 +6,7 @@ import { useDispatch } from 'react-redux';
 import { useAppSelector } from '../../../store/hooks';
 import { getDocumentById, updateDocumentContent } from '../../../db';
 import { setShowEditorSettings } from '../../../store/editorSlice';
+import { invalidateContent } from '../../../store/pdfReaderSlice';
 import { Spinner } from '../Spinner';
 import { PageList } from '../DocumentCreateForm/PageList';
 import { DocumentEditor } from '../Editors/DocumentEditor';
@@ -73,6 +74,7 @@ export const DocumentEditForm: React.FC = () => {
         });
         setHasChanges(false);
         setSaveStatus('saved');
+        dispatch(invalidateContent());
         setTimeout(() => setSaveStatus('idle'), 2000);
       } catch (err) {
         console.error('Auto-save failed:', err);
@@ -114,6 +116,7 @@ export const DocumentEditForm: React.FC = () => {
       });
       setHasChanges(false);
       setSaveStatus('saved');
+      dispatch(invalidateContent());
       setTimeout(() => setSaveStatus('idle'), 2000);
     } catch (err) {
       console.error('Failed to save document:', err);
