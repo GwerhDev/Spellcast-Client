@@ -12,11 +12,13 @@ import spellcastIcon from '../../assets/spellcast-logo.svg';
 import { PageSelectorModal } from '../components/Modals/PageSelectorModal';
 import { VoiceSelectorModal } from '../components/Modals/VoiceSelectorModal';
 import { ReaderSettingsPanel } from '../components/DocumentReader/ReaderSettingsPanel';
+import { EditorSettingsPanel } from '../components/EditorSettingsPanel';
 
 export default function DefaultLayout() {
   const shouldHideMenu = location.pathname.startsWith(`/user`);
   const { selectedVoice } = useSelector((state: RootState) => state.voice);
   const { showReaderSettings } = useSelector((state: RootState) => state.pdfReader);
+  const { showEditorSettings } = useSelector((state: RootState) => state.editor);
   const [showMenu, setShowMenu] = useState(shouldHideMenu);
   const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
   const navRef = useRef<HTMLElement>(null);
@@ -59,6 +61,7 @@ export default function DefaultLayout() {
           <Outlet />
         </div>
         {showReaderSettings && <ReaderSettingsPanel />}
+        {showEditorSettings && <EditorSettingsPanel />}
       </div>
       <div className="audioplayer-container">
         {selectedVoice.type === 'browser'

@@ -86,3 +86,9 @@
   padding: 2rem;
   color: var(--color-danger-100);
 }
+
+.saveStatus {
+  font-size: 0.75rem;
+  color: var(--color-light-400);
+  white-space: nowrap;
+}

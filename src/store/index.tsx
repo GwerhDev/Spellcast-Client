@@ -8,11 +8,13 @@ import documentReducer from './documentSlice';
 import voiceReducer from './voiceSlice';
 import credentialsReducer from './credentialsSlice';
 import groupsReducer from './groupsSlice';
+import editorReducer from './editorSlice';
 
 export const store = configureStore({
   reducer: {
     voice: voiceReducer,
     groups: groupsReducer,
+    editor: editorReducer,
     session: sessionReducer,
     document: documentReducer,
     pdfReader: pdfReaderReducer,
