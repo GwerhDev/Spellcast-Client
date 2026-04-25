@@ -16,7 +16,6 @@
     "jsx": "react-jsx",
 
     /* Path Aliases */
-    "baseUrl": "./",
     "paths": {
       "store/*": ["./src/store/*"],
       "store": ["./src/store/index.tsx"],
