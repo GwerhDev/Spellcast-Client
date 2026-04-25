@@ -10,7 +10,7 @@ export const UnauthorizedForm = () => {
 
   const handleDevTokenSubmit = () => {
     if (!devToken.trim()) return;
-    document.cookie = `userToken=${devToken}; path=/`;
+    document.cookie = `accessToken=${devToken}; path=/`;
     window.location.reload();
   };
 
