@@ -6,6 +6,7 @@ export async function createGroup(data: { name: string }) {
   try {
     const res = await fetch(`${API_BASE}/user/groups`, {
       method: 'POST',
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
       },

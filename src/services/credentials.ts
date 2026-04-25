@@ -9,6 +9,7 @@ export async function createCredential(data: { azure_key: string; region: string
       headers: {
         'Content-Type': 'application/json',
       },
+      credentials: 'include',
       body: JSON.stringify(data),
     });
     if (!res.ok) {
@@ -24,7 +25,9 @@ export async function createCredential(data: { azure_key: string; region: string
 
 export async function getCredentials(): Promise<TTS_Credential[]> {
   try {
-    const res = await fetch(`${API_BASE}/user/credentials`);
+    const res = await fetch(`${API_BASE}/user/credentials`, {
+      credentials: 'include',
+    });
     if (!res.ok) return [];
     return await res.json();
   } catch (error) {
@@ -35,7 +38,9 @@ export async function getCredentials(): Promise<TTS_Credential[]> {
 
 export async function getCredential(credentialId: string) {
   try {
-    const res = await fetch(`${API_BASE}/user/credentials/${credentialId}`);
+    const res = await fetch(`${API_BASE}/user/credentials/${credentialId}`, {
+      credentials: 'include',
+    });
     if (!res.ok) return null;
     return await res.json();
   } catch (error) {
@@ -48,6 +53,7 @@ export async function updateCredential(credentialId: string | undefined, data: {
   try {
     const res = await fetch(`${API_BASE}/user/credentials/${credentialId}`, {
       method: 'PATCH',
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
       },
@@ -68,6 +74,7 @@ export async function deleteCredential(credentialId: string | undefined) {
   try {
     const res = await fetch(`${API_BASE}/user/credentials/${credentialId}`, {
       method: 'DELETE',
+      credentials: 'include',
     });
     if (!res.ok) {
       const errorData = await res.json();
