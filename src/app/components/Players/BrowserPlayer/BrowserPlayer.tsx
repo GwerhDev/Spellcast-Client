@@ -147,14 +147,9 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal })
 
   // Chrome bug workaround: speechSynthesis freezes silently after ~14s without this
   useEffect(() => {
-    if (!isPlaying) return;
-    const id = setInterval(() => {
-      if (window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
-        window.speechSynthesis.pause();
-        window.speechSynthesis.resume();
-      }
-    }, 10000);
-    return () => clearInterval(id);
+    if (!isPlaying) return window.speechSynthesis.pause();
+    window.speechSynthesis.resume();
+
   }, [isPlaying]);
 
   useEffect(() => {
