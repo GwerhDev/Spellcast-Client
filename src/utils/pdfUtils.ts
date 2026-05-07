@@ -17,7 +17,7 @@ export const renderPageToCover = async (pdf: pdfjsLib.PDFDocumentProxy): Promise
     canvas.width = scaled.width;
     canvas.height = scaled.height;
     const ctx = canvas.getContext('2d')!;
-    await page.render({ canvasContext: ctx as CanvasRenderingContext2D, viewport: scaled }).promise;
+    await page.render({ canvasContext: ctx as CanvasRenderingContext2D, viewport: scaled, canvas }).promise;
     return new Promise((resolve) => canvas.toBlob((b) => resolve(b), 'image/jpeg', 0.75));
   } catch {
     return null;
@@ -186,7 +186,7 @@ export const extractPdfPages = async (pdf: pdfjsLib.PDFDocumentProxy): Promise<J
         canvas.width = scaled.width;
         canvas.height = scaled.height;
         const ctx = canvas.getContext('2d')!;
-        await page.render({ canvasContext: ctx as CanvasRenderingContext2D, viewport: scaled }).promise;
+        await page.render({ canvasContext: ctx as CanvasRenderingContext2D, viewport: scaled, canvas }).promise;
         const coverDataUrl = canvas.toDataURL('image/jpeg', 0.8);
         pageContent.content!.unshift({ type: 'image', attrs: { src: coverDataUrl, alt: null, title: null } });
       } catch {
