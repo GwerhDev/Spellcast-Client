@@ -129,7 +129,7 @@ export const DocumentEditForm: React.FC = () => {
   return (
     <div className={s.container}>
       <div className={s.pageInfoContainer}>
-        <IconButton icon={faArrowLeft} className={s.backButton} variant='transparent' onClick={() => navigate(-1)} />
+        <IconButton icon={faArrowLeft} className={s.backButton} variant='transparent' onClick={() => navigate('/editor/select')} />
         <span className={s.titleContainer}>
           <input
             className={s.documentTitle}

@@ -28,6 +28,7 @@ import { DocumentCreate } from './app/pages/DocumentCreate';
 import { UserCredentials } from './app/pages/UserCredentials';
 import { DocumentDetailPage } from './app/pages/DocumentDetail';
 import { Editor } from './app/pages/Editor';
+import { EditorSelect } from './app/pages/EditorSelect';
 import { LocalDocumentReader } from './app/pages/LocalDocumentReader';
 
 import DefaultLayout from './app/layouts/DefaultLayout';
@@ -51,6 +52,7 @@ function App() {
             <Route element={<DefaultLayout />}>
               <Route path="/" element={<Home />} />
               <Route path="/editor" element={<Editor />} />
+              <Route path="/editor/select" element={<EditorSelect />} />
               <Route path="/editor/create" element={<DocumentCreate />} />
               <Route path="/editor/:id" element={<DocumentEdit />} />
               <Route path="/editor/:id/:page" element={<DocumentEdit />} />
