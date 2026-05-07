@@ -92,3 +92,22 @@
   color: var(--color-light-400);
   white-space: nowrap;
 }
+
+.importModalBody {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.importModalBody p {
+  color: var(--color-light-300);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.importModalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}

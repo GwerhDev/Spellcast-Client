@@ -4,16 +4,23 @@ import { useParams, useNavigate } from 'react-router-dom';
 import type { JSONContent } from '../../../magictext';
 import { useDispatch } from 'react-redux';
 import { useAppSelector } from '../../../store/hooks';
-import { getDocumentById, updateDocumentContent } from '../../../db';
+import { getDocumentById, updateDocumentContent, updateDocumentFull } from '../../../db';
 import { setShowEditorSettings } from '../../../store/editorSlice';
 import { invalidateContent } from '../../../store/pdfReaderSlice';
 import { textToSpeechService } from '../../../services/tts';
 import { Spinner } from '../Spinner';
 import { PageList } from '../DocumentCreateForm/PageList';
 import { DocumentEditor } from '../Editors/DocumentEditor';
-import { faArrowLeft, faCloudUpload, faGear, faSave } from '@fortawesome/free-solid-svg-icons';
+import { faArrowLeft, faCloudUpload, faFileImport, faGear, faSave } from '@fortawesome/free-solid-svg-icons';
 import { IconButton } from '../Buttons/IconButton';
+import { CustomModal } from '../Modals/CustomModal';
+import { PrimaryButton } from '../Buttons/PrimaryButton';
+import { SecondaryButton } from '../Buttons/SecondaryButton';
 import type { TTSPlayPayload } from '../../../magictext/types';
+import * as pdfjsLib from 'pdfjs-dist';
+import workerSrc from 'pdfjs-dist/build/pdf.worker?url';
+import { renderPageToCover, extractPdfPages } from '../../../utils/pdfUtils';
+pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
 const emptyContent: JSONContent = {
   type: 'doc',
@@ -41,6 +48,10 @@ export const DocumentEditForm: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const [hasChanges, setHasChanges] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [isProcessingPdf, setIsProcessingPdf] = useState(false);
+  const pdfInputRef = useRef<HTMLInputElement>(null);
   const [ttsPlaying, setTtsPlaying] = useState(false);
   const ttsAudioRef = useRef<HTMLAudioElement | null>(null);
   const ttsSpeechRef = useRef<SpeechSynthesisUtterance | null>(null);
@@ -133,6 +144,46 @@ export const DocumentEditForm: React.FC = () => {
     };
   }, [pagesContent, documentTitle, autoSave]);
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPendingFile(file);
+    setShowImportModal(true);
+    e.target.value = '';
+  };
+
+  const handleImportConfirm = async () => {
+    if (!pendingFile || !id || !userData.id) return;
+    setShowImportModal(false);
+    setIsProcessingPdf(true);
+    try {
+      const reader = new FileReader();
+      const fileContent: string = await new Promise((resolve, reject) => {
+        reader.onload = (e) => resolve(e.target?.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(pendingFile);
+      });
+      const pdfData = atob(fileContent.substring(fileContent.indexOf(',') + 1));
+      const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
+      const [coverBlob, pages] = await Promise.all([renderPageToCover(pdf), extractPdfPages(pdf)]);
+      await updateDocumentFull(id, userData.id, {
+        title: documentTitle,
+        pagesContent: JSON.stringify(pages),
+        pdf: pendingFile,
+        cover: coverBlob ?? undefined,
+      });
+      setPagesContent(pages);
+      setEditingPageIndex(0);
+      setHasChanges(false);
+      dispatch(invalidateContent());
+    } catch (err) {
+      console.error('Failed to import PDF:', err);
+    } finally {
+      setIsProcessingPdf(false);
+      setPendingFile(null);
+    }
+  };
+
   const handlePageClick = (index: number) => setEditingPageIndex(index);
 
   const handlePageDelete = (index: number) => {
@@ -186,10 +237,13 @@ export const DocumentEditForm: React.FC = () => {
           />
         </span>
 
-        {saveStatus === 'saving' && <span className={s.saveStatus}>Guardando...</span>}
-        {saveStatus === 'saved' && <span className={s.saveStatus}>Guardado</span>}
+        {isProcessingPdf && <span className={s.saveStatus}>Processing PDF...</span>}
+        {!isProcessingPdf && saveStatus === 'saving' && <span className={s.saveStatus}>Saving...</span>}
+        {!isProcessingPdf && saveStatus === 'saved' && <span className={s.saveStatus}>Saved</span>}
 
-        <IconButton icon={faSave} variant='transparent' disabled={!hasChanges} onClick={handleSave} />
+        <IconButton icon={faFileImport} variant='transparent' disabled={isProcessingPdf} onClick={() => pdfInputRef.current?.click()} />
+        <input ref={pdfInputRef} type="file" accept=".pdf" style={{ display: 'none' }} onChange={handleFileSelect} />
+        <IconButton icon={faSave} variant='transparent' disabled={!hasChanges || isProcessingPdf} onClick={handleSave} />
         <IconButton icon={faCloudUpload} disabled variant='transparent' onClick={() => {}} />
         <IconButton icon={faGear} variant='transparent' onClick={() => dispatch(setShowEditorSettings(true))} />
       </div>
@@ -214,6 +268,16 @@ export const DocumentEditForm: React.FC = () => {
           />
         </div>
       </div>
+
+      <CustomModal show={showImportModal} onClose={() => { setShowImportModal(false); setPendingFile(null); }} title="Replace content">
+        <div className={s.importModalBody}>
+          <p>All pages and the cover will be replaced with the content from the new PDF. This action cannot be undone.</p>
+          <div className={s.importModalActions}>
+            <SecondaryButton onClick={() => { setShowImportModal(false); setPendingFile(null); }}>Cancel</SecondaryButton>
+            <PrimaryButton onClick={handleImportConfirm}>Replace</PrimaryButton>
+          </div>
+        </div>
+      </CustomModal>
     </div>
   );
 };
