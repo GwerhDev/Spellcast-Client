@@ -92,6 +92,7 @@ export interface Document {
   id: string;
   title: string;
   pdf: Blob;
+  cover?: Blob;
   createdAt: Date;
   userId: string | undefined;
   progress?: DocumentProgress;

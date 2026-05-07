@@ -21,6 +21,86 @@ import { resetPdfReader } from 'store/pdfReaderSlice';
 import { textToSpeechService } from '../../../services/tts';
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
+const renderPageToCover = async (pdf: pdfjsLib.PDFDocumentProxy): Promise<Blob | null> => {
+  try {
+    const page = await pdf.getPage(1);
+    const viewport = page.getViewport({ scale: 1 });
+    const scale = Math.min(1, 400 / viewport.width);
+    const scaled = page.getViewport({ scale });
+    const canvas = document.createElement('canvas');
+    canvas.width = scaled.width;
+    canvas.height = scaled.height;
+    const ctx = canvas.getContext('2d')!;
+    await page.render({ canvasContext: ctx as CanvasRenderingContext2D, viewport: scaled }).promise;
+    return new Promise((resolve) => canvas.toBlob((b) => resolve(b), 'image/jpeg', 0.75));
+  } catch {
+    return null;
+  }
+};
+
+const extractPageImages = async (page: pdfjsLib.PDFPageProxy): Promise<string[]> => {
+  const dataUrls: string[] = [];
+  try {
+    const opList = await page.getOperatorList();
+    console.log(`[extractPageImages] page ${page.pageNumber} — opList length: ${opList.fnArray.length}`);
+
+    const paintOps: number[] = [];
+    let formXObjCount = 0;
+    let inlineImageCount = 0;
+    for (let i = 0; i < opList.fnArray.length; i++) {
+      const fn = opList.fnArray[i];
+      if (fn === pdfjsLib.OPS.paintImageXObject) paintOps.push(i);
+      if (fn === pdfjsLib.OPS.paintFormXObjectBegin) formXObjCount++;
+      if (fn === pdfjsLib.OPS.paintInlineImageXObject) inlineImageCount++;
+    }
+    console.log(`[extractPageImages] page ${page.pageNumber} — paintImageXObject: ${paintOps.length}, paintFormXObjectBegin: ${formXObjCount}, paintInlineImageXObject: ${inlineImageCount}`, paintOps.map(i => opList.argsArray[i][0]));
+
+    const seen = new Set<string>();
+    for (const opIdx of paintOps) {
+      const key = opList.argsArray[opIdx][0] as string;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      try {
+        const imgData = await new Promise<{ width: number; height: number; [k: string]: unknown } | null>((resolve) => {
+          let resolved = false;
+          const done = (data: unknown) => { if (!resolved) { resolved = true; resolve(data as { width: number; height: number; [k: string]: unknown } | null); } };
+          page.objs.get(key, done);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (page as any).commonObjs?.get?.(key, done);
+          setTimeout(() => { if (!resolved) { resolved = true; resolve(null); } }, 2000);
+        });
+        if (!imgData) { console.warn(`[extractPageImages] page ${page.pageNumber} key="${key}" → null/timeout`); continue; }
+        console.log(`[extractPageImages] page ${page.pageNumber} key="${key}" → constructor=${Object.getPrototypeOf(imgData)?.constructor?.name} keys=${Object.keys(imgData).join(',')} width=${imgData.width} height=${imgData.height} isBitmap=${imgData instanceof ImageBitmap}`);
+        if (imgData.width < 16 || imgData.height < 16) continue;
+        const canvas = document.createElement('canvas');
+        canvas.width = imgData.width;
+        canvas.height = imgData.height;
+        const ctx = canvas.getContext('2d')!;
+        const typed = imgData as { bitmap?: ImageBitmap; data?: Uint8ClampedArray; width: number; height: number };
+        if (typed.bitmap instanceof ImageBitmap) {
+          ctx.drawImage(typed.bitmap, 0, 0);
+        } else if (imgData instanceof ImageBitmap) {
+          ctx.drawImage(imgData, 0, 0);
+        } else if (typed.data) {
+          const iData = ctx.createImageData(imgData.width, imgData.height);
+          iData.data.set(typed.data);
+          ctx.putImageData(iData, 0, 0);
+        } else {
+          console.warn(`[extractPageImages] page ${page.pageNumber} key="${key}" → no renderable data, skipping`);
+          continue;
+        }
+        dataUrls.push(canvas.toDataURL('image/png'));
+      } catch (err) {
+        console.warn(`[extractPageImages] page ${page.pageNumber} key="${key}" error:`, err);
+      }
+    }
+  } catch (err) {
+    console.warn(`[extractPageImages] page ${page.pageNumber} — getOperatorList failed:`, err);
+  }
+  console.log(`[extractPageImages] page ${page.pageNumber} — extracted ${dataUrls.length} image(s)`);
+  return dataUrls;
+};
+
 const emptyContent: JSONContent = {
   type: 'doc',
   content: [{
@@ -35,6 +115,7 @@ export const DocumentCreateForm: React.FC = () => {
   const dispatch = useDispatch();
   const [documentTitle, setDocumentTitle] = useState(document.title || '');
   const [pagesContent, setPagesContent] = useState<JSONContent[]>([]);
+  const [cover, setCover] = useState<Blob | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [editingPageIndex, setEditingPageIndex] = useState<number>(0);
@@ -119,6 +200,10 @@ export const DocumentCreateForm: React.FC = () => {
         const pdfData = atob(document.fileContent.substring(document.fileContent.indexOf(',') + 1));
         const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
         const numPages = pdf.numPages;
+
+        const coverBlob = await renderPageToCover(pdf);
+        console.log('[PDF import] cover blob:', coverBlob ? `${coverBlob.size} bytes, type=${coverBlob.type}` : 'null');
+        setCover(coverBlob);
 
         const allPagesContent: JSONContent[] = [];
 
@@ -264,6 +349,12 @@ export const DocumentCreateForm: React.FC = () => {
             });
           }
 
+          const pageImages = await extractPageImages(page);
+          console.log(`[PDF import] page ${pageNum} — ${pageImages.length} image(s) to inject`);
+          for (const src of pageImages) {
+            pageContent.content!.push({ type: 'image', attrs: { src, alt: null, title: null } });
+          }
+
           if (pageContent.content!.length > 0) {
             allPagesContent.push(pageContent);
           } else {
@@ -349,6 +440,7 @@ export const DocumentCreateForm: React.FC = () => {
       const newId = await saveDocumentToDB({
         title: documentTitle,
         pdf: pdfBlob,
+        cover: cover ?? undefined,
         userId: userData.id,
         pagesContent: JSON.stringify(pagesContent),
       });

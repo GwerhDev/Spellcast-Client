@@ -47,6 +47,15 @@
   flex-shrink: 0;
 }
 
+.cover {
+  width: 80px;
+  height: 110px;
+  object-fit: cover;
+  object-position: top;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
 .info {
   display: flex;
   flex-direction: column;

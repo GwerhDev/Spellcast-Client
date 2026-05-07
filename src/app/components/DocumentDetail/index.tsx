@@ -25,6 +25,7 @@ export const DocumentDetail: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [coverUrl, setCoverUrl] = useState<string | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -41,6 +42,13 @@ export const DocumentDetail: React.FC = () => {
     };
     load();
   }, [id, logged, userData.id]);
+
+  useEffect(() => {
+    if (!doc?.cover) return;
+    const url = URL.createObjectURL(doc.cover);
+    setCoverUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [doc?.cover]);
 
   const handlePlay = () => {
     dispatch(setAutoPlayOnLoad(true));
@@ -85,7 +93,10 @@ export const DocumentDetail: React.FC = () => {
       </div>
       <div className={s.detailsContainer}>
         <div className={s.header}>
-          <FontAwesomeIcon icon={faFilePdf} size="4x" className={s.icon} />
+          {coverUrl
+            ? <img src={coverUrl} alt={doc.title} className={s.cover} />
+            : <FontAwesomeIcon icon={faFilePdf} size="4x" className={s.icon} />
+          }
           <div className={s.info}>
             <h1 className={s.title}>{doc.title}</h1>
             <p className={s.meta}>Created {new Date(doc.createdAt).toLocaleDateString()}</p>
