@@ -62,13 +62,13 @@ export const PdfProcessor = () => {
   }, [currentPage, docLoaded, pages, dispatch]);
 
   useEffect(() => {
-    if (!isLoaded || currentSentenceIndex < 0) return;
+    if (!isLoaded || currentSentenceIndex < 0 || !documentId) return;
     const progress: DocumentProgress = {
       currentPage,
       pagesProgress: [],
       lastReadSentenceIndex: currentSentenceIndex < 0 ? 0 : currentSentenceIndex,
     };
-    updateDocumentProgress(documentId || '', userData.id || '', progress);
+    updateDocumentProgress(documentId, userData.id || '', progress);
   }, [currentPage, documentId, isLoaded, currentSentenceIndex, userData.id]);
 
   return null;

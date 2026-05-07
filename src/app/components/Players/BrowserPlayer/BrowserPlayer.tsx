@@ -211,6 +211,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal })
   const handleStop = () => {
     activeUtteranceRef.current = null;
     dispatch(stop());
+    dispatch(setCurrentSentenceIndex(0));
     window.speechSynthesis.cancel();
   };
 
@@ -276,8 +277,8 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal })
             {
               isLoaded &&
               <div className={s.documentDetails}>
-                <p title={documentTitle || ""} onClick={handleTitle}>{documentTitle}</p>
-                <small onClick={handlePageSelector}>Page {currentPage} of {totalPages}</small>
+                <p title={documentTitle || ""} onClick={documentId ? handleTitle : undefined} style={documentId ? undefined : { cursor: 'default' }}>{documentTitle}</p>
+                {documentId && <small onClick={handlePageSelector}>Page {currentPage} of {totalPages}</small>}
               </div>
             }
           </section>

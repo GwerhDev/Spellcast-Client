@@ -107,6 +107,9 @@ const pdfReaderSlice = createSlice({
     invalidateContent(state) {
       state.contentVersion += 1;
     },
+    setReaderTitle(state, action: PayloadAction<string>) {
+      state.documentTitle = action.payload;
+    },
   },
 });
 
@@ -127,6 +130,7 @@ export const {
   setShowReaderSettings,
   setFitToWidth,
   invalidateContent,
+  setReaderTitle,
 } = pdfReaderSlice.actions;
 
 export default pdfReaderSlice.reducer;

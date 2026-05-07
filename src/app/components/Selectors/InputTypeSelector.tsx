@@ -13,25 +13,25 @@ export const InputTypeSelector: React.FC<InputTypeSelectorProps> = ({ inputType,
     <div className={s.container}>
       <span className={s.buttonsContainer}>
         <button
-          className={`${s.tabButton} ${s.left} ${inputType === 'upload' ? s.active : ''}`}
+          className={`${s.tabButton} ${s.left} ${inputType === 'text' ? s.active : ''}`}
+          onClick={() => setInputType('text')}
+        >
+          <FontAwesomeIcon icon={faPen} />
+          <span className={s.title}>Text</span>
+        </button>
+        <button
+          className={`${s.tabButton} ${s.middle} ${inputType === 'upload' ? s.active : ''}`}
           onClick={() => setInputType('upload')}
         >
           <FontAwesomeIcon icon={faUpload} />
           <span className={s.title}>Upload</span>
         </button>
         <button
-          className={`${s.tabButton} ${s.middle} ${inputType === 'create' ? s.active : ''}`}
+          className={`${s.tabButton} ${s.right} ${inputType === 'create' ? s.active : ''}`}
           onClick={() => setInputType('create')}
         >
           <FontAwesomeIcon icon={faFileCirclePlus} />
           <span className={s.title}>Create</span>
-        </button>
-        <button
-          className={`${s.tabButton} ${s.right} ${inputType === 'text' ? s.active : ''}`}
-          onClick={() => setInputType('text')}
-        >
-          <FontAwesomeIcon icon={faPen} />
-          <span className={s.title}>Text</span>
         </button>
       </span>
     </div>

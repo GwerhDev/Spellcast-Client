@@ -8,7 +8,7 @@ import { useDispatch } from 'react-redux';
 import { resetDocumentState } from 'store/documentSlice';
 
 export const Start = () => {
-  const [inputType, setInputType] = useState('upload');
+  const [inputType, setInputType] = useState('text');
   const dispatch = useDispatch();
 
   const handeInputTypeChange = (type: string) => {

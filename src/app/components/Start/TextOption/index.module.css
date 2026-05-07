@@ -1,0 +1,126 @@
+.form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.textareaWrapper {
+  position: relative;
+  width: 100%;
+}
+
+.textarea {
+  width: 100%;
+  min-height: 160px;
+  padding: 1rem;
+  padding-bottom: 3rem;
+  border-radius: 8px;
+  border: 2px solid var(--color-dark-300);
+  background: var(--component-background);
+  color: var(--color-light-100);
+  font-size: 0.95rem;
+  font-family: inherit;
+  resize: vertical;
+  box-sizing: border-box;
+  transition: border-color 0.3s ease;
+  outline: none;
+}
+
+.textarea::placeholder {
+  color: var(--color-light-300);
+}
+
+.textarea:focus {
+  border-color: var(--color-primary);
+}
+
+.textarea:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.voiceRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.voiceTabs {
+  display: flex;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--color-dark-300);
+}
+
+.voiceTab {
+  padding: 0.35rem 0.75rem;
+  background: transparent;
+  border: none;
+  color: var(--color-light-300);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.voiceTab:hover {
+  background: var(--color-dark-300);
+  color: var(--color-light-100);
+}
+
+.activeTab {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.activeTab:hover {
+  background: var(--color-primary);
+}
+
+.voiceSelect {
+  flex: 1;
+  padding: 0.35rem 0.5rem;
+  border-radius: 6px;
+  border: 1px solid var(--color-dark-300);
+  background: var(--component-background);
+  color: var(--color-light-100);
+  font-size: 0.8rem;
+  cursor: pointer;
+  outline: none;
+  min-width: 0;
+}
+
+.voiceSelect:focus {
+  border-color: var(--color-primary);
+}
+
+.noVoices {
+  font-size: 0.8rem;
+  color: var(--color-light-300);
+}
+
+.submitButton {
+  position: absolute;
+  bottom: 0.65rem;
+  right: 0.75rem;
+  background: transparent;
+  border: none;
+  color: var(--color-light-300);
+  cursor: pointer;
+  padding: 0.25rem;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+}
+
+.submitButton:not(:disabled):hover {
+  color: var(--color-primary);
+}
+
+.submitButton:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+}

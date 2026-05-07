@@ -149,6 +149,10 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal }) =
   const handleLoadedMetadata = () => {
     if (audioRef.current) {
       dispatch(setDuration(audioRef.current.duration));
+      pageAudioReadyRef.current = true;
+      if (isPlaying) {
+        audioRef.current.play().catch(e => console.error('Error playing audio:', e));
+      }
     }
   };
 
@@ -319,8 +323,8 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal }) =
             {
               isLoaded &&
               <div className={s.documentDetails}>
-                <p title={documentTitle || ""} onClick={handleTitle}>{documentTitle}</p>
-                <small onClick={handlePageSelector}>Page {currentPage} of {totalPages}</small>
+                <p title={documentTitle || ""} onClick={documentId ? handleTitle : undefined} style={documentId ? undefined : { cursor: 'default' }}>{documentTitle}</p>
+                {documentId && <small onClick={handlePageSelector}>Page {currentPage} of {totalPages}</small>}
               </div>
             }
           </section>
