@@ -177,6 +177,23 @@ export const extractPdfPages = async (pdf: pdfjsLib.PDFDocumentProxy): Promise<J
       pageContent.content!.push({ type: 'image', attrs: { src, alt: null, title: null } });
     }
 
+    if (pageNum === 1) {
+      try {
+        const viewport = page.getViewport({ scale: 1 });
+        const scale = Math.min(1, 800 / viewport.width);
+        const scaled = page.getViewport({ scale });
+        const canvas = document.createElement('canvas');
+        canvas.width = scaled.width;
+        canvas.height = scaled.height;
+        const ctx = canvas.getContext('2d')!;
+        await page.render({ canvasContext: ctx as CanvasRenderingContext2D, viewport: scaled }).promise;
+        const coverDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+        pageContent.content!.unshift({ type: 'image', attrs: { src: coverDataUrl, alt: null, title: null } });
+      } catch {
+        // skip if render fails
+      }
+    }
+
     allPagesContent.push(pageContent.content!.length > 0 ? pageContent : emptyPageContent);
   }
 
