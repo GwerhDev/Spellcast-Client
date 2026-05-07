@@ -1,0 +1,841 @@
+/* ─── CSS Custom Properties ──────────────────────────────────────────────────── */
+/*
+  All visual tokens default on :root so consumers can override them from anywhere
+  (root.css, a theme file, or a scoped selector) without fighting specificity.
+*/
+/*
+  Variables referencing the consuming app's design tokens with sensible
+  standalone fallbacks. When used inside Spellcast, the var() values resolve
+  from root.css automatically — no separate override block needed anywhere.
+*/
+:root {
+  --mte-radius: 0;
+  --mte-bg: transparent;
+  --mte-border-color: transparent;
+  --mte-color: var(--color-light-100, #111827);
+
+  --mte-toolbar-bg: transparent;
+  --mte-toolbar-border: var(--color-dark-300, #d1d5db);
+
+  --mte-btn-color: var(--color-light-300, #6b7280);
+  --mte-btn-hover-bg: var(--color-dark-300, #f3f4f6);
+  --mte-btn-hover-color: var(--color-light-100, #111827);
+  --mte-btn-active-bg: var(--color-dark-200, #e5e7eb);
+  --mte-btn-active-color: var(--color-light-100, #111827);
+  --mte-icon-color: var(--mte-btn-color);
+
+  --mte-divider-color: var(--color-dark-300, #e5e7eb);
+
+  --mte-caret-color: var(--color-primary, #3b82f6);
+  --mte-placeholder-color: var(--color-light-400, #9ca3af);
+
+  --mte-var-chip-bg: var(--color-dark-400, #f3f4f6);
+  --mte-var-chip-color: var(--color-light-200, #374151);
+  --mte-var-chip-border: var(--color-dark-100, #9ca3af);
+  --mte-var-chip-hover-bg: var(--color-dark-300, #e5e7eb);
+  --mte-var-filled-bg: #f0fdf4;
+  --mte-var-filled-color: #166534;
+  --mte-var-filled-border: #86efac;
+  --mte-var-filled-hover-bg: #dcfce7;
+
+  --mte-dropdown-bg: var(--background-color-dark, #ffffff);
+  --mte-dropdown-border: var(--color-dark-300, #e5e7eb);
+  --mte-dropdown-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --mte-dropdown-btn-hover-bg: var(--background-color-light, #f9fafb);
+  --mte-dropdown-add-btn-bg: var(--color-primary, #3b82f6);
+  --mte-dropdown-add-btn-hover-bg: var(--color-secondary, #2563eb);
+
+  --mte-danger-color: var(--color-danger, #dc2626);
+  --mte-danger-hover-bg: var(--color-danger-500, rgba(220, 38, 38, 0.12));
+  --mte-danger-border: var(--color-danger-100, #fca5a5);
+}
+
+/*
+  All rules below use BEM class selectors (specificity 0,1,0+).
+  This guarantees library styles win over any global element rule (e.g. button {})
+  in the consuming app, without needing !important.
+*/
+
+/* ─── Root ───────────────────────────────────────────────────────────────────── */
+.magic-text-editor {
+  background: var(--mte-bg);
+  font-family: inherit;
+  color: var(--mte-color);
+  position: relative;
+}
+
+/* ─── Toolbar ────────────────────────────────────────────────────────────────── */
+.magic-text-editor__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--mte-toolbar-border);
+  background: var(--mte-toolbar-bg);
+  border-radius: var(--mte-radius) var(--mte-radius) 0 0;
+}
+
+/* ─── Toolbar button ─────────────────────────────────────────────────────────── */
+.magic-text-editor__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  height: 30px;
+  padding: 0 6px;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  cursor: pointer;
+  color: var(--mte-icon-color);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  line-height: 1;
+  transition: background 0.1s ease, color 0.1s ease;
+}
+
+.magic-text-editor__btn:hover:not(:disabled) {
+  background: var(--mte-btn-hover-bg);
+  color: var(--mte-btn-hover-color);
+}
+
+.magic-text-editor__btn--active {
+  background: var(--mte-btn-active-bg);
+  color: var(--mte-btn-active-color);
+}
+
+.magic-text-editor__btn--active:hover:not(:disabled) {
+  background: var(--mte-btn-hover-bg);
+  color: var(--mte-btn-active-color);
+}
+
+.magic-text-editor__btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* ─── Toolbar divider ────────────────────────────────────────────────────────── */
+.magic-text-editor__divider {
+  width: 1px;
+  height: 22px;
+  background: var(--mte-divider-color);
+  margin: 0 4px;
+  flex-shrink: 0;
+}
+
+/* ─── Content area ───────────────────────────────────────────────────────────── */
+.magic-text-editor__content {
+  padding: 16px 20px;
+  min-height: 160px;
+}
+
+/* ─── ProseMirror ────────────────────────────────────────────────────────────── */
+.magic-text-editor .ProseMirror {
+  outline: none;
+  min-height: inherit;
+  caret-color: var(--mte-caret-color);
+}
+
+/* ─── Placeholder ────────────────────────────────────────────────────────────── */
+.magic-text-editor .ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: var(--mte-placeholder-color);
+  pointer-events: none;
+  float: left;
+  height: 0;
+}
+
+
+/* ─── Variable picker (toolbar dropdown) ─────────────────────────────────────── */
+.magic-text-editor__var-wrap {
+  position: relative;
+}
+
+.magic-text-editor__var-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 100;
+  min-width: 220px;
+  background: var(--mte-dropdown-bg);
+  border: 1px solid var(--mte-dropdown-border);
+  border-radius: 8px;
+  box-shadow: var(--mte-dropdown-shadow);
+  overflow: hidden;
+}
+
+.magic-text-editor__var-list {
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+}
+
+.magic-text-editor__var-btn {
+  display: block;
+  width: 100%;
+  padding: 6px 8px;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  text-align: left;
+  color: var(--mte-color);
+  white-space: nowrap;
+}
+
+.magic-text-editor__var-btn:hover {
+  background: var(--mte-dropdown-btn-hover-bg);
+}
+
+.magic-text-editor__var-btn--new {
+  color: var(--mte-dropdown-add-btn-bg);
+  font-weight: 600;
+  border-top: 1px solid var(--mte-dropdown-border);
+  border-radius: 0 0 5px 5px;
+  margin-top: 2px;
+}
+
+.magic-text-editor__var-btn--new:hover {
+  background: var(--mte-dropdown-btn-hover-bg);
+  color: var(--mte-dropdown-add-btn-hover-bg);
+}
+
+.magic-text-editor__var-new {
+  display: flex;
+  flex-direction: column;
+}
+
+.magic-text-editor__var-new-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--mte-dropdown-border);
+}
+
+.magic-text-editor__var-back-btn {
+  height: 24px;
+  padding: 0 6px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--mte-btn-color);
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.magic-text-editor__var-back-btn:hover {
+  background: var(--mte-btn-hover-bg);
+  color: var(--mte-btn-hover-color);
+}
+
+.magic-text-editor__var-new-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--mte-color);
+}
+
+.magic-text-editor__var-new-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+}
+
+.magic-text-editor__var-type-select {
+  height: 28px;
+  padding: 0 7px;
+  border: 1px solid var(--mte-dropdown-border);
+  border-radius: 5px;
+  font-size: 12px;
+  font-family: inherit;
+  color: var(--mte-color);
+  background: var(--mte-dropdown-bg);
+  outline: none;
+  cursor: pointer;
+}
+
+.magic-text-editor__var-type-select:focus {
+  border-color: var(--mte-var-chip-border);
+  background: var(--mte-dropdown-bg);
+}
+
+.magic-text-editor__var-options {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border: 1px solid var(--mte-dropdown-border);
+  border-radius: 5px;
+  padding: 4px;
+  background: var(--mte-dropdown-bg);
+}
+
+.magic-text-editor__var-options-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.magic-text-editor__var-option-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--mte-color);
+}
+
+.magic-text-editor__var-option-item:hover {
+  background: var(--mte-dropdown-btn-hover-bg);
+}
+
+.magic-text-editor__var-option-remove {
+  border: none;
+  background: transparent;
+  color: var(--mte-btn-color);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0 2px;
+  border-radius: 3px;
+}
+
+.magic-text-editor__var-option-remove:hover {
+  background: var(--mte-btn-hover-bg);
+  color: var(--mte-btn-hover-color);
+}
+
+.magic-text-editor__var-option-add {
+  display: flex;
+  gap: 4px;
+}
+
+.magic-text-editor__var-add {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+}
+
+.magic-text-editor__var-input {
+  flex: 1;
+  min-width: 0;
+  padding: .4rem;
+  border: 1px solid var(--mte-dropdown-border);
+  border-radius: 5px;
+  font-size: 12px;
+  font-family: inherit;
+  color: var(--mte-color);
+  background: var(--mte-dropdown-bg);
+  outline: none;
+}
+
+.magic-text-editor__var-input:focus {
+  border-color: var(--mte-var-chip-border);
+  background: var(--mte-dropdown-bg);
+}
+
+.magic-text-editor__var-add-btn {
+  height: 28px;
+  padding: 0 10px;
+  border: none;
+  border-radius: 5px;
+  background: var(--mte-dropdown-add-btn-bg);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.magic-text-editor__var-add-btn:hover {
+  background: var(--mte-dropdown-add-btn-hover-bg);
+}
+
+/* ─── Link popover ───────────────────────────────────────────────────────────── */
+.magic-text-editor__link-float {
+  position: fixed;
+  transform: translateX(-50%) translateY(calc(-100% - 8px));
+  z-index: 1000;
+  min-width: 280px;
+  background: var(--mte-dropdown-bg);
+  border: 1px solid var(--mte-dropdown-border);
+  border-radius: 8px;
+  box-shadow: var(--mte-dropdown-shadow);
+  overflow: hidden;
+}
+
+.magic-text-editor__link-float::after {
+  content: '';
+  position: absolute;
+  bottom: -5px;
+  left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+  width: 8px;
+  height: 8px;
+  background: var(--mte-dropdown-bg);
+  border-right: 1px solid var(--mte-dropdown-border);
+  border-bottom: 1px solid var(--mte-dropdown-border);
+}
+
+.magic-text-editor__link-float--side-top::after,
+.magic-text-editor__link-float--side-bottom::after {
+  bottom: auto;
+  left: -5px;
+  transform: rotate(45deg);
+  border-right: none;
+  border-bottom: none;
+  border-left: 1px solid var(--mte-dropdown-border);
+  border-top: 1px solid var(--mte-dropdown-border);
+}
+
+.magic-text-editor__link-float--side-top::after {
+  top: 10px;
+}
+
+.magic-text-editor__link-float--side-bottom::after {
+  bottom: 10px;
+  top: auto;
+}
+
+.magic-text-editor__link-body {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  padding: 8px;
+}
+
+.magic-text-editor__link-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1;
+  min-width: 0;
+}
+
+.magic-text-editor__link-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.magic-text-editor__link-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--mte-placeholder-color);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.magic-text-editor__link-remove-btn {
+  display: block;
+  width: 100%;
+  padding: 5px 8px;
+  border: none;
+  border-top: 1px solid var(--mte-dropdown-border);
+  background: transparent;
+  color: var(--mte-danger-color);
+  font-size: 12px;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.magic-text-editor__link-remove-btn:hover {
+  background: var(--mte-danger-hover-bg);
+}
+
+/* ─── Image popover ──────────────────────────────────────────────────────────── */
+.magic-text-editor__image-popover {
+  min-width: 260px;
+}
+
+.magic-text-editor__image-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--mte-dropdown-border);
+}
+
+.magic-text-editor__image-tab {
+  flex: 1;
+  padding: 6px 0;
+  border: none;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--mte-btn-color);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.1s ease;
+}
+
+.magic-text-editor__image-tab:hover {
+  color: var(--mte-btn-hover-color);
+}
+
+.magic-text-editor__image-tab--active {
+  color: var(--mte-dropdown-add-btn-bg);
+  border-bottom-color: var(--mte-dropdown-add-btn-bg);
+}
+
+.magic-text-editor__image-upload-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+}
+
+.magic-text-editor__image-dropzone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100px;
+  border: 2px dashed var(--mte-dropdown-border);
+  border-radius: 6px;
+  cursor: pointer;
+  overflow: hidden;
+  transition: border-color 0.1s ease, background 0.1s ease;
+}
+
+.magic-text-editor__image-dropzone:hover {
+  border-color: var(--mte-dropdown-add-btn-bg);
+  background: var(--mte-dropdown-bg);
+}
+
+.magic-text-editor__image-dropzone-hint {
+  font-size: 12px;
+  color: var(--mte-placeholder-color);
+  text-align: center;
+  padding: 8px;
+}
+
+.magic-text-editor__image-preview {
+  width: 100%;
+  height: 100%;
+  max-height: 140px;
+  object-fit: contain;
+}
+
+.magic-text-editor__image-file-input {
+  display: none;
+}
+
+.magic-text-editor__image-filename {
+  font-size: 11px;
+  color: var(--mte-placeholder-color);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ─── TTS marks (inline marks in editor) ────────────────────────────────────── */
+.magic-text-editor .ProseMirror .magic-text-editor__tts {
+  border-bottom: 2px solid var(--tts-color, #8b5cf6);
+  cursor: pointer;
+  padding-bottom: 1px;
+}
+
+.magic-text-editor .ProseMirror .magic-text-editor__tts:hover {
+  border-bottom-width: 3px;
+}
+
+
+/* ─── TTS hover icon (floats above selection, click to open popover) ─────────── */
+.magic-text-editor__tts-hover-icon {
+  position: fixed;
+  transform: translateX(-50%) translateY(calc(-100% - 6px));
+  z-index: 999;
+  background: var(--mte-dropdown-bg);
+  border: 1px solid var(--mte-dropdown-border);
+  border-radius: 6px;
+  box-shadow: var(--mte-dropdown-shadow);
+  padding: 2px;
+  display: flex;
+  align-items: center;
+}
+
+/* ─── TTS popover ────────────────────────────────────────────────────────────── */
+.magic-text-editor__tts-popover {
+  width: 300px;
+}
+
+.magic-text-editor__tts-popover .magic-text-editor__link-body {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  padding: 10px;
+}
+
+/* Field label with leading icon */
+.magic-text-editor__tts-field-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.magic-text-editor__tts-field-label svg {
+  opacity: 0.6;
+  flex-shrink: 0;
+}
+
+/* Actions row */
+.magic-text-editor__tts-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.magic-text-editor__tts-apply-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.magic-text-editor__tts-play-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--mte-dropdown-border);
+  border-radius: 5px;
+  background: transparent;
+  color: var(--mte-color);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background 0.1s ease, border-color 0.1s ease;
+}
+
+.magic-text-editor__tts-play-btn:hover:not(:disabled) {
+  background: var(--mte-btn-hover-bg);
+  border-color: var(--mte-var-chip-border);
+}
+
+.magic-text-editor__tts-play-btn--playing {
+  color: var(--mte-danger-color);
+  border-color: var(--mte-danger-border);
+}
+
+.magic-text-editor__tts-play-btn--playing:hover {
+  background: var(--mte-danger-hover-bg);
+  border-color: var(--mte-danger-color);
+}
+
+.magic-text-editor__tts-play-btn:disabled,
+.magic-text-editor__tts-apply-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* Remove button with icon */
+.magic-text-editor__tts-remove-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ─── TTS saved marks list ───────────────────────────────────────────────────── */
+.magic-text-editor__tts-marks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px;
+}
+
+.magic-text-editor__tts-mark-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px 4px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--mte-dropdown-border);
+  background: var(--mte-dropdown-btn-hover-bg);
+  color: var(--mte-color);
+  font-size: 12px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.1s ease, border-color 0.1s ease;
+  white-space: nowrap;
+}
+
+.magic-text-editor__tts-mark-btn:hover {
+  background: var(--mte-btn-hover-bg);
+  border-color: var(--mte-var-chip-border);
+}
+
+/* ─── TTS mark row (name input + color picker inline) ────────────────────────── */
+.magic-text-editor__tts-mark-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.magic-text-editor__tts-mark-row .magic-text-editor__var-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.magic-text-editor__tts-color-custom {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--mte-dropdown-border);
+  border-radius: 50%;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: block;
+  overflow: hidden;
+}
+
+.magic-text-editor__tts-color-input-hidden {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ─── TTS panels (grid stacking for stable height) ───────────────────────────── */
+.magic-text-editor__tts-panels {
+  display: grid;
+}
+
+.magic-text-editor__tts-panel {
+  grid-area: 1 / 1;
+}
+
+.magic-text-editor__tts-panel--hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ─── Variable chips (inline nodes in editor) ────────────────────────────────── */
+.magic-text-editor__variable {
+  display: inline;
+}
+
+.magic-text-editor__variable-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0px 2px;
+  border-radius: 4px;
+  color: var(--mte-var-chip-color);
+  font-size: 0.875em;
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.1s ease;
+}
+
+.magic-text-editor__variable-chip:hover {
+  background: var(--mte-var-chip-hover-bg);
+}
+
+.magic-text-editor__variable-chip--filled {
+  border-color: var(--mte-var-filled-border);
+}
+
+.magic-text-editor__variable-chip--filled:hover {
+  background: var(--mte-var-chip-hover-bg);
+}
+
+.magic-text-editor__variable-edit {
+  display: inline;
+  border: 1px solid var(--mte-var-chip-border);
+  border-radius: 4px;
+  background: var(--mte-var-chip-bg);
+  color: var(--mte-var-chip-color);
+  font-size: 0.875em;
+  font-family: inherit;
+  outline: none;
+}
+
+.magic-text-editor__variable-edit--textarea {
+  display: inline-block;
+  vertical-align: middle;
+  resize: vertical;
+  padding: 4px 6px;
+  line-height: 1.4;
+  min-width: 160px;
+}
+
+.magic-text-editor__variable-chip--readonly {
+  cursor: default;
+  pointer-events: none;
+}
+
+.magic-text-editor__variable-daterange {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 4px;
+  border: 1px solid var(--mte-var-chip-border);
+  border-radius: 4px;
+  background: var(--mte-var-chip-bg);
+  vertical-align: middle;
+}
+
+.magic-text-editor__variable-daterange-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8em;
+  color: var(--mte-var-chip-color);
+}
+
+.magic-text-editor__variable-daterange-field span {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.magic-text-editor__variable-daterange .magic-text-editor__variable-edit {
+  width: auto;
+  height: 22px;
+  font-size: 0.8em;
+  padding: 0 4px;
+}
+
+.magic-text-editor__variable-daterange-confirm,
+.magic-text-editor__variable-daterange-cancel {
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  padding: 2px 5px;
+}
+
+.magic-text-editor__variable-daterange-confirm {
+  background: var(--mte-dropdown-add-btn-bg);
+  color: #fff;
+}
+
+.magic-text-editor__variable-daterange-confirm:hover {
+  background: var(--mte-dropdown-add-btn-hover-bg);
+}
+
+.magic-text-editor__variable-daterange-cancel {
+  background: transparent;
+  color: var(--mte-btn-color);
+}
+
+.magic-text-editor__variable-daterange-cancel:hover {
+  background: var(--mte-btn-hover-bg);
+}

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { JSONContent } from '@tiptap/core';
+import type { JSONContent } from '../../../magictext';
 import { RootState } from '../../../store';
 import { setPageText, setPdfLoaded, setSentences } from '../../../store/pdfReaderSlice';
 import { getDocumentById, updateDocumentProgress } from '../../../db';

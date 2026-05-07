@@ -10,7 +10,7 @@ import { goToPage, setCurrentSentenceIndex, setShowReaderSettings } from '../../
 import { Spinner } from '../Spinner';
 import { IconButton } from '../Buttons/IconButton';
 import { PageSelector } from './PageSelector/PageSelector';
-import { JSONContent } from '@tiptap/core';
+import type { JSONContent } from '../../../magictext';
 
 const emptyContent: JSONContent = {
   type: 'doc',

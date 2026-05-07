@@ -1,17 +1,19 @@
 import s from './index.module.css';
 import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { JSONContent } from '@tiptap/core';
+import type { JSONContent } from '../../../magictext';
 import { useDispatch } from 'react-redux';
 import { useAppSelector } from '../../../store/hooks';
 import { getDocumentById, updateDocumentContent } from '../../../db';
 import { setShowEditorSettings } from '../../../store/editorSlice';
 import { invalidateContent } from '../../../store/pdfReaderSlice';
+import { textToSpeechService } from '../../../services/tts';
 import { Spinner } from '../Spinner';
 import { PageList } from '../DocumentCreateForm/PageList';
 import { DocumentEditor } from '../Editors/DocumentEditor';
 import { faArrowLeft, faCloudUpload, faGear, faSave } from '@fortawesome/free-solid-svg-icons';
 import { IconButton } from '../Buttons/IconButton';
+import type { TTSPlayPayload } from '../../../magictext/types';
 
 const emptyContent: JSONContent = {
   type: 'doc',
@@ -26,6 +28,10 @@ export const DocumentEditForm: React.FC = () => {
   const dispatch = useDispatch();
   const { userData, logged } = useAppSelector((state) => state.session);
   const autoSave = useAppSelector((state) => state.editor.autoSave);
+  const credentials = useAppSelector((state) => state.credentials.credentials);
+  const aiVoices = credentials[0]?.voices ?? [];
+
+  const ttsMarks = aiVoices.map((v) => ({ id: v.value, name: v.name, voices: [v.value] }));
 
   const [documentTitle, setDocumentTitle] = useState('');
   const [pagesContent, setPagesContent] = useState<JSONContent[]>([]);
@@ -35,6 +41,46 @@ export const DocumentEditForm: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const [hasChanges, setHasChanges] = useState(false);
+  const [ttsPlaying, setTtsPlaying] = useState(false);
+  const ttsAudioRef = useRef<HTMLAudioElement | null>(null);
+  const ttsSpeechRef = useRef<SpeechSynthesisUtterance | null>(null);
+
+  const stopTTSPreview = () => {
+    if (ttsAudioRef.current) { ttsAudioRef.current.pause(); ttsAudioRef.current = null; }
+    if (ttsSpeechRef.current) { window.speechSynthesis.cancel(); ttsSpeechRef.current = null; }
+    setTtsPlaying(false);
+  };
+
+  const handleTTSPlay = (payload: TTSPlayPayload) => {
+    stopTTSPreview();
+    const isAIVoice = payload.voice ? aiVoices.some((v) => v.value === payload.voice) : false;
+    if (isAIVoice && payload.voice) {
+      setTtsPlaying(true);
+      textToSpeechService({ text: payload.text, voice: payload.voice })
+        .then((blob) => {
+          const url = URL.createObjectURL(blob);
+          const audio = new Audio(url);
+          ttsAudioRef.current = audio;
+          audio.onended = () => { ttsAudioRef.current = null; setTtsPlaying(false); URL.revokeObjectURL(url); };
+          audio.onerror = () => { ttsAudioRef.current = null; setTtsPlaying(false); URL.revokeObjectURL(url); };
+          audio.play();
+        })
+        .catch(() => setTtsPlaying(false));
+    } else {
+      const utt = new SpeechSynthesisUtterance(payload.text);
+      if (payload.voice) {
+        const match = window.speechSynthesis.getVoices().find(
+          (v) => v.name === payload.voice || v.voiceURI === payload.voice
+        );
+        if (match) utt.voice = match;
+      }
+      utt.onend = () => { ttsSpeechRef.current = null; setTtsPlaying(false); };
+      utt.onerror = () => { ttsSpeechRef.current = null; setTtsPlaying(false); };
+      ttsSpeechRef.current = utt;
+      setTtsPlaying(true);
+      window.speechSynthesis.speak(utt);
+    }
+  };
 
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasLoaded = useRef(false);
@@ -153,6 +199,10 @@ export const DocumentEditForm: React.FC = () => {
           pageNumber={Number(editingPageIndex) + 1}
           pageContent={pagesContent[Number(editingPageIndex)]}
           onPageContentChange={handlePageContentChange}
+          ttsMarks={ttsMarks}
+          onTTSPlay={handleTTSPlay}
+          onTTSStop={stopTTSPreview}
+          ttsPlaying={ttsPlaying}
         />
         <div className={s.pagesContainer}>
           <PageList

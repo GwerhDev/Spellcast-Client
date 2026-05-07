@@ -1,5 +1,6 @@
 import { useEffect, useRef, type ReactNode } from "react"
 import { EditorContent, EditorContext, JSONContent, useEditor } from "@tiptap/react"
+import type { Editor } from "@tiptap/react"
 
 // --- Tiptap Core Extensions ---
 import { StarterKit } from "@tiptap/starter-kit"
@@ -42,6 +43,11 @@ import { UndoRedoButton } from "../../tiptap-ui/undo-redo-button"
 // --- Lib ---
 import { handleImageUpload, MAX_FILE_SIZE } from "../../../lib/tiptap-utils"
 
+// --- MagicText ---
+import { TTSMarkExtension } from "../../../../../../magictext/extensions/TTSMarkExtension"
+import { TTSPopover } from "../../../../../../magictext/components/Toolbar"
+import type { TTSMark, TTSPlayPayload } from "../../../../../../magictext/types"
+
 // --- Styles ---
 import s from "./simple-editor.module.css"
 import "../../tiptap-node/code-block-node/code-block-node.module.css"
@@ -51,7 +57,16 @@ import "../../tiptap-node/image-node/image-node.module.css"
 import "../../tiptap-node/heading-node/heading-node.module.css"
 import "../../tiptap-node/paragraph-node/paragraph-node.module.css"
 
-const MainToolbarContent = () => {
+interface ToolbarTTSProps {
+  editor: Editor | null
+  ttsCharacters?: TTSMark[]
+  ttsInflections?: string[]
+  onTTSPlay?: (payload: TTSPlayPayload) => void
+  onTTSStop?: () => void
+  ttsPlaying?: boolean
+}
+
+const MainToolbarContent = ({ editor, ttsCharacters, ttsInflections, onTTSPlay, onTTSStop, ttsPlaying }: ToolbarTTSProps) => {
   return (
     <>
       <ToolbarGroup>
@@ -77,13 +92,35 @@ const MainToolbarContent = () => {
         <TextAlignButton align="right" />
         <TextAlignButton align="justify" />
         <ImageUploadButton text="Add" />
+        {editor && ttsCharacters !== undefined && (
+          <TTSPopover
+            editor={editor}
+            characters={ttsCharacters}
+            inflections={ttsInflections}
+            onPlay={onTTSPlay}
+            onStop={onTTSStop}
+            playing={ttsPlaying}
+          />
+        )}
       </ToolbarGroup>
 
     </>
   )
 }
 
-export function SimpleEditor({ content, onContentChange, isEditable, wrapContent }: { content: JSONContent, onContentChange: (content: JSONContent) => void, isEditable?: boolean, wrapContent?: (content: ReactNode) => ReactNode }) {
+interface SimpleEditorProps {
+  content: JSONContent
+  onContentChange: (content: JSONContent) => void
+  isEditable?: boolean
+  wrapContent?: (content: ReactNode) => ReactNode
+  ttsCharacters?: TTSMark[]
+  ttsInflections?: string[]
+  onTTSPlay?: (payload: TTSPlayPayload) => void
+  onTTSStop?: () => void
+  ttsPlaying?: boolean
+}
+
+export function SimpleEditor({ content, onContentChange, isEditable, wrapContent, ttsCharacters, ttsInflections, onTTSPlay, onTTSStop, ttsPlaying }: SimpleEditorProps) {
   const toolbarRef = useRef<HTMLDivElement>(null);
 
   const editor = useEditor({
@@ -99,6 +136,7 @@ export function SimpleEditor({ content, onContentChange, isEditable, wrapContent
       },
     },
     extensions: [
+      TTSMarkExtension,
       // --- Tiptap Core Extensions ---
       StarterKit.configure({
         horizontalRule: false,
@@ -163,7 +201,14 @@ export function SimpleEditor({ content, onContentChange, isEditable, wrapContent
     <div className={s["simple-editor-wrapper"]}>
       <EditorContext.Provider value={{ editor }}>
         <Toolbar ref={toolbarRef} >
-          <MainToolbarContent />
+          <MainToolbarContent
+            editor={editor}
+            ttsCharacters={ttsCharacters}
+            ttsInflections={ttsInflections}
+            onTTSPlay={onTTSPlay}
+            onTTSStop={onTTSStop}
+            ttsPlaying={ttsPlaying}
+          />
         </Toolbar>
         {wrapContent ? wrapContent(editorContent) : editorContent}
         {editor && (

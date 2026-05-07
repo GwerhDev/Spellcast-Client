@@ -1,0 +1,37 @@
+.block {
+  margin: 0 0 0.75em;
+  line-height: 1.7;
+}
+
+.block:last-child {
+  margin-bottom: 0;
+}
+
+.sentence {
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.sentence:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.highlight {
+  background: rgba(99, 102, 241, 0.22);
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+/* TTS-marked text gets a subtle colored underline */
+.ttsMarked {
+  border-bottom: 2px solid var(--tts-sentence-color, #6366f1);
+  padding-bottom: 1px;
+}
+
+.ttsMarkedHighlight {
+  background: color-mix(in srgb, var(--tts-sentence-color, #6366f1) 25%, transparent);
+  border-bottom: 2px solid var(--tts-sentence-color, #6366f1);
+  border-radius: 3px;
+  padding-bottom: 1px;
+}

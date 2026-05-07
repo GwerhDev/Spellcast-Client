@@ -4,7 +4,7 @@ import { faCheck } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { JSONContent } from '@tiptap/core';
+import type { JSONContent } from '../../../magictext';
 import { RootState } from '../../../store';
 import { goToPage, setShowPageSelector } from '../../../store/pdfReaderSlice';
 import { getDocumentById } from '../../../db';

@@ -11,12 +11,14 @@ import { DocumentEditor } from '../Editors/DocumentEditor';
 import jsPDF from 'jspdf';
 import { saveDocumentToDB } from '../../../db';
 import { useNavigate } from 'react-router-dom';
-import { JSONContent } from '@tiptap/core';
+import type { JSONContent } from '../../../magictext';
+import type { TTSPlayPayload } from '../../../magictext';
 import workerSrc from 'pdfjs-dist/build/pdf.worker?url';
 import { faArrowLeft, faCloudUpload, faPaperclip, faSave } from '@fortawesome/free-solid-svg-icons';
 import { IconButton } from '../Buttons/IconButton';
 import { resetDocumentState, setDocumentDetails, setDocumentTitle as setDocumentTitleAction } from 'store/documentSlice';
 import { resetPdfReader } from 'store/pdfReaderSlice';
+import { textToSpeechService } from '../../../services/tts';
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
 const emptyContent: JSONContent = {
@@ -37,6 +39,51 @@ export const DocumentCreateForm: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [editingPageIndex, setEditingPageIndex] = useState<number>(0);
   const pdfInputRef = useRef<HTMLInputElement>(null);
+
+  const credentials = useAppSelector((state) => state.credentials.credentials);
+  const aiVoices = credentials[0]?.voices ?? [];
+  const ttsMarks = aiVoices.map((v) => ({ id: v.value, name: v.name, voices: [v.value] }));
+
+  const [ttsPlaying, setTtsPlaying] = useState(false);
+  const ttsAudioRef = useRef<HTMLAudioElement | null>(null);
+  const ttsSpeechRef = useRef<SpeechSynthesisUtterance | null>(null);
+
+  const stopTTSPreview = () => {
+    if (ttsAudioRef.current) { ttsAudioRef.current.pause(); ttsAudioRef.current = null; }
+    if (ttsSpeechRef.current) { window.speechSynthesis.cancel(); ttsSpeechRef.current = null; }
+    setTtsPlaying(false);
+  };
+
+  const handleTTSPlay = (payload: TTSPlayPayload) => {
+    stopTTSPreview();
+    const isAIVoice = payload.voice ? aiVoices.some((v) => v.value === payload.voice) : false;
+    if (isAIVoice && payload.voice) {
+      setTtsPlaying(true);
+      textToSpeechService({ text: payload.text, voice: payload.voice })
+        .then((blob) => {
+          const url = URL.createObjectURL(blob);
+          const audio = new Audio(url);
+          ttsAudioRef.current = audio;
+          audio.onended = () => { ttsAudioRef.current = null; setTtsPlaying(false); URL.revokeObjectURL(url); };
+          audio.onerror = () => { ttsAudioRef.current = null; setTtsPlaying(false); URL.revokeObjectURL(url); };
+          audio.play();
+        })
+        .catch(() => setTtsPlaying(false));
+    } else {
+      const utt = new SpeechSynthesisUtterance(payload.text);
+      if (payload.voice) {
+        const match = window.speechSynthesis.getVoices().find(
+          (v) => v.name === payload.voice || v.voiceURI === payload.voice
+        );
+        if (match) utt.voice = match;
+      }
+      utt.onend = () => { ttsSpeechRef.current = null; setTtsPlaying(false); };
+      utt.onerror = () => { ttsSpeechRef.current = null; setTtsPlaying(false); };
+      ttsSpeechRef.current = utt;
+      setTtsPlaying(true);
+      window.speechSynthesis.speak(utt);
+    }
+  };
 
   const handlePdfImport = (file: File) => {
     const parts = file.type.split('/');
@@ -350,6 +397,10 @@ export const DocumentCreateForm: React.FC = () => {
           pageNumber={editingPageIndex + 1}
           pageContent={pagesContent[editingPageIndex]}
           onPageContentChange={handlePageContentChange}
+          ttsMarks={ttsMarks}
+          onTTSPlay={handleTTSPlay}
+          onTTSStop={stopTTSPreview}
+          ttsPlaying={ttsPlaying}
         />
         <div className={s.pagesContainer}>
           <PageList
