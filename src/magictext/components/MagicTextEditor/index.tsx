@@ -99,7 +99,7 @@ export function MagicTextEditor({
         openOnClick: false,
         HTMLAttributes: { rel: 'noopener noreferrer', target: '_blank' },
       }),
-      Image,
+      Image.configure({ allowBase64: true }),
       TextStyle,
       Color,
       Placeholder.configure({ placeholder }),

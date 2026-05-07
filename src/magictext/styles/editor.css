@@ -138,6 +138,13 @@
   caret-color: var(--mte-caret-color);
 }
 
+.magic-text-editor .ProseMirror img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 4px;
+}
+
 /* ─── Placeholder ────────────────────────────────────────────────────────────── */
 .magic-text-editor .ProseMirror p.is-editor-empty:first-child::before {
   content: attr(data-placeholder);

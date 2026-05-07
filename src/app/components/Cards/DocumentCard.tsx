@@ -48,7 +48,7 @@ export const DocumentCard = ({ doc, onClick, onDelete, onEdit, onPlay }: Documen
       )}
       {coverUrl
         ? <img src={coverUrl} alt={doc.title} className={s.cover} />
-        : <div className={s.iconWrapper}><FontAwesomeIcon icon={faFilePdf} size="3x" className={s.icon} /></div>
+        : <div className={s.iconWrapper}><FontAwesomeIcon icon={faFilePdf} className={s.icon} /></div>
       }
       <div className={s.footer}>
         <span className={s.title}>{doc.title}</span>
