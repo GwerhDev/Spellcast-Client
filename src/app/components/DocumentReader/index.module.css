@@ -169,6 +169,14 @@
   line-height: 1.6;
 }
 
+.readerImage {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 4px;
+  margin-bottom: 0.75rem;
+}
+
 .emptyBlock {
   display: block;
   height: 0.75rem;

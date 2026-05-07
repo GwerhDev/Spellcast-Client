@@ -115,6 +115,12 @@ export const DocumentReader = () => {
     if (!editedText?.content) return null;
 
     return editedText.content.map((node, nIdx) => {
+      if (node.type === 'image') {
+        const src = (node.attrs as { src?: string })?.src;
+        if (!src) return null;
+        return <img key={nIdx} src={src} alt="" className={s.readerImage} />;
+      }
+
       if (node.type !== 'paragraph' && node.type !== 'heading') return null;
 
       const nodeContent = node.content || [];
@@ -148,6 +154,12 @@ export const DocumentReader = () => {
     let sentIdx = 0;
 
     return editedText.content.map((node, nIdx) => {
+      if (node.type === 'image') {
+        const src = (node.attrs as { src?: string })?.src;
+        if (!src) return null;
+        return <img key={nIdx} src={src} alt="" className={s.readerImage} />;
+      }
+
       if (node.type !== 'paragraph' && node.type !== 'heading') return null;
 
       const nodeText = (node.content || [])
