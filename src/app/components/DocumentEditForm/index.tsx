@@ -143,9 +143,9 @@ export const DocumentEditForm: React.FC = () => {
         {saveStatus === 'saving' && <span className={s.saveStatus}>Guardando...</span>}
         {saveStatus === 'saved' && <span className={s.saveStatus}>Guardado</span>}
 
-        <IconButton icon={faGear} variant='transparent' onClick={() => dispatch(setShowEditorSettings(true))} />
         <IconButton icon={faSave} variant='transparent' disabled={!hasChanges} onClick={handleSave} />
         <IconButton icon={faCloudUpload} disabled variant='transparent' onClick={() => {}} />
+        <IconButton icon={faGear} variant='transparent' onClick={() => dispatch(setShowEditorSettings(true))} />
       </div>
 
       <div className={s.editorContainer}>

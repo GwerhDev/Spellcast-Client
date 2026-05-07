@@ -1,5 +1,5 @@
 import s from './index.module.css';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useAppSelector } from '../../../store/hooks';
 import { RootState } from 'store';
@@ -13,9 +13,9 @@ import { saveDocumentToDB } from '../../../db';
 import { useNavigate } from 'react-router-dom';
 import { JSONContent } from '@tiptap/core';
 import workerSrc from 'pdfjs-dist/build/pdf.worker?url';
-import { faCloudUpload, faSave } from '@fortawesome/free-solid-svg-icons';
-import { PrimaryButton } from '../Buttons/PrimaryButton';
-import { resetDocumentState, setDocumentTitle as setDocumentTitleAction } from 'store/documentSlice';
+import { faArrowLeft, faCloudUpload, faPaperclip, faSave } from '@fortawesome/free-solid-svg-icons';
+import { IconButton } from '../Buttons/IconButton';
+import { resetDocumentState, setDocumentDetails, setDocumentTitle as setDocumentTitleAction } from 'store/documentSlice';
 import { resetPdfReader } from 'store/pdfReaderSlice';
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
@@ -36,6 +36,22 @@ export const DocumentCreateForm: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [editingPageIndex, setEditingPageIndex] = useState<number>(0);
+  const pdfInputRef = useRef<HTMLInputElement>(null);
+
+  const handlePdfImport = (file: File) => {
+    const parts = file.type.split('/');
+    const fileType = parts[parts.length - 1];
+    const fileName = file.name.split('.').filter((e) => e !== fileType).join(' ');
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const fileContent = event.target?.result as string;
+      const pdfData = atob(fileContent.substring(fileContent.indexOf(',') + 1));
+      pdfjsLib.getDocument({ data: pdfData }).promise.then((doc) => {
+        dispatch(setDocumentDetails({ fileContent, size: file.size, type: fileType, title: fileName, totalPages: doc.numPages }));
+      });
+    };
+    reader.readAsDataURL(file);
+  };
 
   useEffect(() => {
     if (document.title) {
@@ -307,20 +323,27 @@ export const DocumentCreateForm: React.FC = () => {
 
   return (
     <div className={s.container}>
-      <div className={s.titleGroup}>
-        <h1 className={s.mainTitle}>Create Document</h1>
+      <div className={s.pageInfoContainer}>
+        <IconButton icon={faArrowLeft} className={s.backButton} variant='transparent' onClick={() => navigate(-1)} />
+        <span className={s.titleContainer}>
+          <input
+            className={s.documentTitle}
+            type="text"
+            placeholder="Document title..."
+            value={documentTitle}
+            onChange={(e) => {
+              setDocumentTitle(e.target.value);
+              dispatch(setDocumentTitleAction(e.target.value));
+            }}
+          />
+        </span>
+        {isSaving && <span className={s.saveStatus}>Guardando...</span>}
+        <IconButton icon={faPaperclip} variant='transparent' onClick={() => pdfInputRef.current?.click()} />
+        <input ref={pdfInputRef} type="file" accept=".pdf" style={{ display: 'none' }}
+          onChange={(e) => { if (e.target.files?.[0]) handlePdfImport(e.target.files[0]); }} />
+        <IconButton icon={faSave} variant='transparent' disabled={isSaving || !documentTitle} onClick={handleSaveLocal} />
+        <IconButton icon={faCloudUpload} disabled variant='transparent' onClick={() => {}} />
       </div>
-
-      <input
-        className={s.documentTitle}
-        type="text"
-        placeholder="Document title..."
-        value={documentTitle}
-        onChange={(e) => {
-          setDocumentTitle(e.target.value);
-          dispatch(setDocumentTitleAction(e.target.value));
-        }}
-      />
 
       <div className={s.editorContainer}>
         <DocumentEditor
@@ -328,24 +351,15 @@ export const DocumentCreateForm: React.FC = () => {
           pageContent={pagesContent[editingPageIndex]}
           onPageContentChange={handlePageContentChange}
         />
-
         <div className={s.pagesContainer}>
           <PageList
-            pages={pagesContent.map(() => '')} // PageList still expects string[], so we map to empty strings
+            pages={pagesContent.map(() => '')}
             currentPage={editingPageIndex}
             onPageClick={handlePageClick}
             onPageDelete={handlePageDelete}
             onAddPage={handleAddPage}
           />
         </div>
-      </div>
-      <div className={s.actions}>
-        <PrimaryButton type="button" icon={faSave} className={s.saveButtonCloud} onClick={handleSaveLocal} disabled={isSaving}>
-          {isSaving ? 'Saving...' : 'Save Local'}
-        </PrimaryButton>
-        <PrimaryButton type="button" icon={faCloudUpload} className={s.saveButtonCloud} disabled>
-          Save Cloud
-        </PrimaryButton>
       </div>
     </div>
   );

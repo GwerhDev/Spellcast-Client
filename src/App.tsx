@@ -27,6 +27,7 @@ import { DocumentEdit } from './app/pages/DocumentEdit';
 import { DocumentCreate } from './app/pages/DocumentCreate';
 import { UserCredentials } from './app/pages/UserCredentials';
 import { DocumentDetailPage } from './app/pages/DocumentDetail';
+import { Editor } from './app/pages/Editor';
 import { LocalDocumentReader } from './app/pages/LocalDocumentReader';
 
 import DefaultLayout from './app/layouts/DefaultLayout';
@@ -49,11 +50,12 @@ function App() {
             <Route path="/unauthorized" element={<Unauthorized />} />
             <Route element={<DefaultLayout />}>
               <Route path="/" element={<Home />} />
-              <Route path="/document/create" element={<DocumentCreate />} />
+              <Route path="/editor" element={<Editor />} />
+              <Route path="/editor/create" element={<DocumentCreate />} />
+              <Route path="/editor/:id" element={<DocumentEdit />} />
+              <Route path="/editor/:id/:page" element={<DocumentEdit />} />
               <Route path="/document/:id" element={<DocumentDetailPage />} />
               <Route path="/document/:id/reader" element={<LocalDocumentReader />} />
-              <Route path="/document/:id/edit" element={<DocumentEdit />} />
-              <Route path="/document/:id/edit/:page" element={<DocumentEdit />} />
               <Route path="/user/archive" element={<UserArchive />} />
 
               <Route path="/user/dashboard" element={<Dashboard />} />

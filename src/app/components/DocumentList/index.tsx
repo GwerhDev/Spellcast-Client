@@ -81,7 +81,7 @@ export const DocumentList: React.FC = () => {
               key={doc.id}
               doc={doc}
               onClick={() => navigate(`/document/${doc.id}`)}
-              onEdit={(e) => { e.stopPropagation(); navigate(`/document/${doc.id}/edit`); }}
+              onEdit={(e) => { e.stopPropagation(); navigate(`/editor/${doc.id}`); }}
               onDelete={(e) => openDeleteModal(doc.id, doc.title, e)}
               onPlay={() => handlePlay(doc.id)}
             />

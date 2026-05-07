@@ -1,27 +1,30 @@
 .container {
   width: 100%;
+  flex-grow: 1;
+  overflow: auto;
   display: flex;
   flex-direction: column;
-  color: var(--text-primary);
-  flex-grow: initial;
-  overflow: auto;
-  padding: 1rem;
-  gap: .5rem;
-  flex-grow: 1;
+  border-radius: 10px;
+  border: solid 1px var(--color-dark-300);
+  position: relative;
 }
 
-.editorContainer {
+.pageInfoContainer {
   gap: 1rem;
   width: 100%;
-  flex-grow: 1;
+  padding: 1rem;
+  min-height: 4rem;
+  padding-inline: 1rem;
   display: flex;
-  overflow-y: auto;
+  align-items: center;
 }
 
-.mainTitle {
-  font-size: 2rem;
-  font-weight: bold;
-  text-align: center;
+.backButton {
+  width: auto;
+}
+
+.titleContainer {
+  width: 100%;
 }
 
 .documentTitle {
@@ -30,10 +33,11 @@
   font-weight: bold;
   background: transparent;
   border: none;
-  border-bottom: 1px solid var(--color-dark-300);
+  border: 1px solid transparent;
   color: var(--color-light-100);
-  padding: 0.4rem 0.25rem;
   outline: none;
+  border-radius: 0;
+  padding: 0;
 }
 
 .documentTitle::placeholder {
@@ -45,15 +49,13 @@
   border-bottom-color: var(--color-primary);
 }
 
-.form {
+.editorContainer {
+  gap: 1rem;
+  width: 100%;
+  flex-grow: 1;
+  padding-inline: 1rem;
   display: flex;
-  flex-direction: column;
-  gap: 2rem;
-}
-
-.titleGroup {
-  display: flex;
-  flex-direction: column;
+  overflow-y: auto;
 }
 
 .pagesContainer {
@@ -62,56 +64,18 @@
   flex-grow: 1;
 }
 
-.pagesActions {
-  display: flex;
-  gap: 1rem;
+.saveStatus {
+  font-size: 0.75rem;
+  color: var(--color-light-400);
+  white-space: nowrap;
 }
 
-.pageEditor {
-  display: flex;
-  flex-direction: column;
-}
+@media (max-width: 768px) {
+  .editorContainer {
+    flex-direction: column;
+  }
 
-.pageLabel {
-  font-size: 1rem;
-  font-weight: bold;
-  margin-bottom: 0.5rem;
-}
-
-.pageTextarea {
-  padding: 0.8rem;
-  font-size: 1rem;
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
-  background-color: var(--background-secondary);
-  color: var(--text-primary);
-  min-height: 200px;
-  resize: vertical;
-  font-family: inherit;
-}
-
-.actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-  margin-top: 2rem;
-}
-
-.saveButton {
-  background-color: var(--primary-color);
-  color: white;
-}
-
-.saveButton:hover {
-  background-color: var(--primary-color-dark);
-}
-
-.saveButtonCloud {
-  background-color: var(--background-tertiary);
-  color: var(--text-secondary);
-}
-
-.saveButtonCloud:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
+  .pagesContainer {
+    flex-direction: row;
+  }
 }

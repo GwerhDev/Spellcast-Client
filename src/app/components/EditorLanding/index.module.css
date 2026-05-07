@@ -1,0 +1,106 @@
+/* ── Select step (mirrors Start component pattern) ── */
+.selectContainer {
+  width: 100%;
+  padding: 2rem;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.selectInner {
+  gap: 1rem;
+  width: 100%;
+  max-width: 800px;
+  padding-bottom: 1rem;
+  display: flex;
+  text-align: center;
+  align-items: center;
+  flex-direction: column;
+}
+
+.cards {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 0.5rem;
+}
+
+.card {
+  width: 180px;
+  height: 180px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  border-radius: 12px;
+  border: 1px solid var(--color-dark-300);
+  background: var(--component-background);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.card:hover {
+  border-color: var(--color-primary);
+  background: var(--color-dark-300);
+}
+
+.cardIcon {
+  font-size: 2.5rem;
+  color: var(--color-primary);
+}
+
+.cardTitle {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-light-100);
+  text-align: center;
+  margin: 0;
+  padding: 0 0.75rem;
+}
+
+/* ── Edit-list step (mirrors DocumentDetail panel pattern) ── */
+.panel {
+  width: 100%;
+  flex-grow: 1;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  border-radius: 10px;
+  border: solid 1px var(--color-dark-300);
+}
+
+.panelHeader {
+  gap: 1rem;
+  width: 100%;
+  padding: 1rem;
+  min-height: 4rem;
+  display: flex;
+  align-items: center;
+}
+
+.panelTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-light-100);
+  margin: 0;
+}
+
+.panelBody {
+  padding: 1rem;
+  flex-grow: 1;
+  overflow-y: auto;
+}
+
+.docGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.empty {
+  color: var(--color-light-400);
+  font-size: 0.9rem;
+}

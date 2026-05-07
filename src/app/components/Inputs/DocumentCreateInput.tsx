@@ -56,7 +56,7 @@ export const DocumentCreateInput = (props: DocumentCreateInputProps) => {
       <button
         onMouseEnter={() => setButtonHovered(true)}
         onMouseLeave={() => setButtonHovered(false)}
-        onClick={() => navigate("/document/create")}
+        onClick={() => navigate("/editor/create")}
         className={s.continueButton}
       >
         {buttonHovered && <p>Continue</p>}

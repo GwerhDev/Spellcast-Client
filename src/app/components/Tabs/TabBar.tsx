@@ -1,5 +1,5 @@
 import s from './TabBar.module.css';
-import { faBookOpen, faCompass, faHome } from '@fortawesome/free-solid-svg-icons';
+import { faBookOpen, faCompass, faFeatherPointed, faHome } from '@fortawesome/free-solid-svg-icons';
 import { Tab } from '../../../interfaces';
 import { TabButton } from '../Buttons/TabButton';
 
@@ -16,6 +16,11 @@ export const TabBar = (props: TabBarProps) => {
       title: 'Home',
       route: '/',
       icon: faHome,
+      showMenu: false,
+    }, {
+      title: 'Editor',
+      route: '/editor',
+      icon: faFeatherPointed,
       showMenu: false,
     }, {
       title: 'Menu',

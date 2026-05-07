@@ -49,7 +49,7 @@ export const DocumentDetail: React.FC = () => {
   };
 
   const handleContinueReading = () => navigate(`/document/${id}/reader`);
-  const handleEdit = () => navigate(`/document/${id}/edit`);
+  const handleEdit = () => navigate(`/editor/${id}`);
 
   const handleDeleteConfirm = async () => {
     if (!id || !userData?.id) return;

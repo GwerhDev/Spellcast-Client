@@ -103,7 +103,7 @@ export const DocumentReader = () => {
   }, [currentPage, selectedVoice.type]);
 
   const handleEdit = () => {
-    navigate(`/document/${documentId}/edit/${currentPage}`);
+    navigate(`/editor/${documentId}/${currentPage}`);
   };
 
   const handleSentenceClick = (clickedIndex: number) => {
