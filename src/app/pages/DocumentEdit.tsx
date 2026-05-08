@@ -1,10 +1,9 @@
 import React from 'react';
+import { PageTransition } from '../components/PageTransition';
 import { DocumentEditForm } from '../components/DocumentEditForm';
 
-export const DocumentEdit: React.FC = () => {
-  return (
-    <div className="dashboard-sections">
-      <DocumentEditForm />
-    </div>
-  );
-};
+export const DocumentEdit: React.FC = () => (
+  <PageTransition className="dashboard-sections">
+    <DocumentEditForm />
+  </PageTransition>
+);

@@ -1,9 +1,8 @@
+import { PageTransition } from '../components/PageTransition';
 import { Groups } from "../components/Groups/Groups";
 
-export const UserGroups = () => {
-  return (
-    <div className="dashboard-sections">
-      <Groups />
-    </div>
-  );
-};
+export const UserGroups = () => (
+  <PageTransition className="dashboard-sections">
+    <Groups />
+  </PageTransition>
+);

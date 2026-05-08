@@ -1,9 +1,8 @@
+import { PageTransition } from '../components/PageTransition';
 import { Credentials } from "../components/Credentials/Credentials";
 
-export const UserCredentials = () => {
-  return (
-    <div className="dashboard-sections">
-      <Credentials />
-    </div>
-  )
-}
+export const UserCredentials = () => (
+  <PageTransition className="dashboard-sections">
+    <Credentials />
+  </PageTransition>
+);

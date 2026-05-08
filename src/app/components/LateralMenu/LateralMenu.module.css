@@ -10,7 +10,9 @@
   min-width: 250px;
   border-radius: 10px;
   overflow: hidden;
-  background: var(--component-background);
+  background: var(--paper-bg);
+  backdrop-filter: blur(14px);
+  border: 0.5px solid rgba(115, 165, 204, 0.1);
 }
 
 .projectActionsContainer {

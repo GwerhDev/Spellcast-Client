@@ -1,9 +1,8 @@
+import { PageTransition } from '../components/PageTransition';
 import { DocumentList } from "../components/DocumentList";
 
-export const Library = () => {
-  return (
-    <div className="dashboard-sections">
-      <DocumentList />
-    </div>
-  )
-}
+export const Library = () => (
+  <PageTransition className="dashboard-sections">
+    <DocumentList />
+  </PageTransition>
+);

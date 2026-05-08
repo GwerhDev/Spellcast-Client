@@ -1,7 +1,7 @@
-export const Audios = () => {
-  return (
-    <div className="dashboard-sections">
-      Audios
-    </div>
-  )
-}
+import { PageTransition } from '../components/PageTransition';
+
+export const Audios = () => (
+  <PageTransition className="dashboard-sections">
+    Audios
+  </PageTransition>
+);

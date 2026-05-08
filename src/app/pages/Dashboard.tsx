@@ -1,9 +1,8 @@
-import { DirectoryList } from "../components/Dashboard/DirectoryList"
+import { PageTransition } from '../components/PageTransition';
+import { DirectoryList } from "../components/Dashboard/DirectoryList";
 
-export const Dashboard = () => {
-  return (
-    <div className="dashboard-sections">
-      <DirectoryList />
-    </div>
-  )
-}
+export const Dashboard = () => (
+  <PageTransition className="dashboard-sections">
+    <DirectoryList />
+  </PageTransition>
+);
