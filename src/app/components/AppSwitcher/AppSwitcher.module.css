@@ -73,14 +73,6 @@
   color: inherit;
 }
 
-.itemActive {
-  background: rgba(115, 165, 204, 0.12);
-}
-
-.itemActive:hover {
-  background: rgba(115, 165, 204, 0.12);
-}
-
 .appIcon {
   width: 14px;
   height: 14px;
@@ -97,12 +89,6 @@
   letter-spacing: 0.12em;
   color: var(--text-color);
   text-align: left;
-}
-
-.activeMark {
-  font-size: 7px;
-  color: var(--color-primary);
-  flex-shrink: 0;
 }
 
 .empty {
