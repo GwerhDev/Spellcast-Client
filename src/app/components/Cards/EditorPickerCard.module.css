@@ -2,18 +2,19 @@
   position: relative;
   width: 160px;
   flex-shrink: 0;
-  border-radius: 1rem;
+  border-radius: 8px;
   border: 0.5px solid transparent;
   background: var(--component-background);
   display: flex;
   flex-direction: column;
   cursor: pointer;
   overflow: hidden;
-  transition: border-color 0.2s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .card:hover {
   border-color: var(--color-primary);
+  box-shadow: 0 0 16px rgba(115, 165, 204, 0.15);
 }
 
 .cover {

@@ -6,13 +6,14 @@ import { Document } from 'src/interfaces';
 
 interface DocumentCardProps {
   doc: Document;
+  isActive?: boolean;
   onClick: () => void;
   onDelete: (e: React.MouseEvent) => void;
   onEdit: (e: React.MouseEvent) => void;
   onPlay?: (e: React.MouseEvent) => void;
 }
 
-export const DocumentCard = ({ doc, onClick, onDelete, onEdit, onPlay }: DocumentCardProps) => {
+export const DocumentCard = ({ doc, isActive, onClick, onDelete, onEdit, onPlay }: DocumentCardProps) => {
   const totalPages = useMemo(() => {
     if (!doc.pagesContent) return null;
     try { return JSON.parse(doc.pagesContent).length; } catch { return null; }
@@ -32,7 +33,7 @@ export const DocumentCard = ({ doc, onClick, onDelete, onEdit, onPlay }: Documen
     : null;
 
   return (
-    <div className={s.card} onClick={onClick}>
+    <div className={`${s.card} ${isActive ? s.cardActive : ''}`} onClick={onClick}>
       <div className={s.actions}>
         <button className={s.actionButton} onClick={onEdit}>
           <FontAwesomeIcon icon={faPen} />
@@ -41,6 +42,7 @@ export const DocumentCard = ({ doc, onClick, onDelete, onEdit, onPlay }: Documen
           <FontAwesomeIcon icon={faTrash} />
         </button>
       </div>
+      {isActive && <span className={s.readingTag}>READING</span>}
       {onPlay && (
         <button className={s.playAction} onClick={(e) => { e.stopPropagation(); onPlay(e); }}>
           <FontAwesomeIcon icon={faPlay} />
