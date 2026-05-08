@@ -13,6 +13,8 @@ import { setAutoPlayOnLoad as setAudioAutoPlayOnLoad } from '../../../store/audi
 export const LastDocuments: React.FC = () => {
   const { userData } = useAppSelector((state) => state.session);
   const { documentId: activeDocId, currentPage: activeCurrentPage, isLoaded: readerLoaded } = useAppSelector((state) => state.pdfReader);
+  const audioPlaying = useAppSelector((state) => state.audioPlayer.isPlaying);
+  const browserPlaying = useAppSelector((state) => state.browserPlayer.isPlaying);
   const [documents, setDocuments] = useState<Document[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -96,7 +98,7 @@ export const LastDocuments: React.FC = () => {
             <DocumentCard
               key={doc.id}
               doc={doc}
-              isActive={readerLoaded && activeDocId === doc.id}
+              isActive={activeDocId === doc.id && (readerLoaded || audioPlaying || browserPlaying)}
               onClick={() => navigate(`/document/${doc.id}`)}
               onEdit={(e) => { e.stopPropagation(); navigate(`/editor/${doc.id}`); }}
               onDelete={(e) => openDeleteModal(doc.id, doc.title, e)}

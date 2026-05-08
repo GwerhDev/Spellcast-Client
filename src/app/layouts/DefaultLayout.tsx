@@ -8,11 +8,12 @@ import { PdfProcessor } from '../components/PdfProcessor/PdfProcessor';
 import { BrowserPlayer } from '../components/Players/BrowserPlayer/BrowserPlayer';
 import { RootState } from 'store/index';
 import { useSelector } from 'react-redux';
-import spellcastIcon from '../../assets/spellcast-logo.svg';
 import { PageSelectorModal } from '../components/Modals/PageSelectorModal';
 import { VoiceSelectorModal } from '../components/Modals/VoiceSelectorModal';
 import { ReaderSettingsPanel } from '../components/DocumentReader/ReaderSettingsPanel';
 import { EditorSettingsPanel } from '../components/EditorSettingsPanel';
+import { AccountMenu } from '../components/AccountMenu/AccountMenu';
+import { AppSwitcher } from '../components/AppSwitcher/AppSwitcher';
 
 export default function DefaultLayout() {
   const shouldHideMenu = location.pathname.startsWith(`/user`);
@@ -43,10 +44,8 @@ export default function DefaultLayout() {
         onClose={() => setIsVoiceModalOpen(false)}
       />
       <div className="header-app">
-        <span className="title-container">
-          <img src={spellcastIcon} alt="Spellcast Icon" />
-          <small className="font-bold nowrap">{"Spellcast"}</small>
-        </span>
+        <AppSwitcher />
+        <AccountMenu />
       </div>
       <div className="dashboard-container">
         <nav className="nav-container" ref={navRef}>
