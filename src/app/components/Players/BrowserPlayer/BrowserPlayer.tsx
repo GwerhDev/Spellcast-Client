@@ -22,6 +22,9 @@ import { VolumeControls } from './VolumeControls/VolumeControls';
 import { VoiceSelectorButton } from './VoiceSelectorButton/VoiceSelectorButton';
 import { useNavigate } from 'react-router-dom';
 import { setSelectedVoice } from 'store/voiceSlice';
+import { getDocumentById } from '../../../../db';
+import { useAppSelector } from '../../../../store/hooks';
+import defaultCover from '../../../../assets/default-img.png';
 
 interface PlayerProps {
   showVoiceSelectorModal: React.Dispatch<SetStateAction<boolean>>;
@@ -47,12 +50,12 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal })
   } = useSelector((state: RootState) => state.pdfReader);
   const { selectedVoice } = useSelector((state: RootState) => state.voice);
 
-  const [lastVolume, setLastVolume] = useState(volume);
-  const [isMobile, setIsMobile] = useState<boolean>(false);
-  const [showMobileVolumeSlider, setShowMobileVolumeSlider] = useState(false);
-  const mobileVolumeSliderRef = useRef<HTMLDivElement>(null);
-  const mobileVolumeButtonRef = useRef<HTMLButtonElement>(null);
+  const [showVolumeSlider, setShowVolumeSlider] = useState(false);
+  const [coverUrl, setCoverUrl] = useState<string | null>(null);
+  const volumeSliderRef = useRef<HTMLDivElement>(null);
+  const volumeButtonRef = useRef<HTMLButtonElement>(null);
   const activeUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const { userData } = useAppSelector((state) => state.session);
 
   // Prevent advancing on stale empty sentences before PdfProcessor loads the new page
   const waitingForSentencesRef = useRef(false);
@@ -69,29 +72,37 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal })
   };
 
   useEffect(() => {
-    const checkIsMobile = () => {
-      setIsMobile(window.matchMedia('(max-width: 768px)').matches);
-    };
-    checkIsMobile();
-    window.addEventListener('resize', checkIsMobile);
-    return () => window.removeEventListener('resize', checkIsMobile);
-  }, []);
-
-  useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
-        showMobileVolumeSlider &&
-        mobileVolumeSliderRef.current &&
-        !mobileVolumeSliderRef.current.contains(event.target as Node) &&
-        mobileVolumeButtonRef.current &&
-        !mobileVolumeButtonRef.current.contains(event.target as Node)
+        showVolumeSlider &&
+        volumeSliderRef.current &&
+        !volumeSliderRef.current.contains(event.target as Node) &&
+        volumeButtonRef.current &&
+        !volumeButtonRef.current.contains(event.target as Node)
       ) {
-        setShowMobileVolumeSlider(false);
+        setShowVolumeSlider(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [showMobileVolumeSlider]);
+  }, [showVolumeSlider]);
+
+  useEffect(() => {
+    let url: string | null = null;
+    if (documentId && userData?.id) {
+      getDocumentById(documentId, userData.id).then(doc => {
+        if (doc?.cover) {
+          url = URL.createObjectURL(doc.cover);
+          setCoverUrl(url);
+        } else {
+          setCoverUrl(null);
+        }
+      });
+    } else {
+      setCoverUrl(null);
+    }
+    return () => { if (url) URL.revokeObjectURL(url); };
+  }, [documentId, userData?.id]);
 
   const speakSentence = (text: string, onEnd: () => void, onStart?: () => void, isRetry = false) => {
     const utterance = new SpeechSynthesisUtterance(text);
@@ -232,14 +243,6 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal })
     }
   };
 
-  const handleVolumeToggle = () => {
-    if (volume === 0) {
-      dispatch(setVolume(lastVolume === 0 ? 1 : lastVolume));
-    } else {
-      setLastVolume(volume);
-      dispatch(setVolume(0));
-    }
-  };
 
   const isPrevDisabled = isLoaded ? currentPage === 1 : true;
   const isNextDisabled = isLoaded ? currentPage === totalPages : true;
@@ -273,14 +276,18 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal })
       <div className={s.container}>
         <div className={s.audioPlayerContainer}>
           <section className={s.leftSection}>
-            <VoiceSelectorButton onClick={() => showVoiceSelectorModal(true)} />
-            {
-              isLoaded &&
+            <img
+              src={coverUrl ?? defaultCover}
+              alt=""
+              className={s.cover}
+              onError={(e) => { (e.target as HTMLImageElement).src = defaultCover; }}
+            />
+            {isLoaded && (
               <div className={s.documentDetails}>
                 <p title={documentTitle || ""} onClick={documentId ? handleTitle : undefined} style={documentId ? undefined : { cursor: 'default' }}>{documentTitle}</p>
                 {documentId && <small onClick={handlePageSelector}>Page {currentPage} of {totalPages}</small>}
               </div>
-            }
+            )}
           </section>
 
           <PlaybackControls
@@ -292,17 +299,18 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal })
             handleTogglePlayPause={handleTogglePlayPause}
           />
 
-          <VolumeControls
-            volume={volume}
-            handleVolumeToggle={handleVolumeToggle}
-            volumePercentage={volumePercentage}
-            isMobile={isMobile}
-            showMobileVolumeSlider={showMobileVolumeSlider}
-            setShowMobileVolumeSlider={setShowMobileVolumeSlider}
-            mobileVolumeSliderRef={mobileVolumeSliderRef}
-            mobileVolumeButtonRef={mobileVolumeButtonRef}
-            setVolume={(vol) => dispatch(setVolume(vol))}
-          />
+          <div className={s.rightSection}>
+            <VoiceSelectorButton onClick={() => showVoiceSelectorModal(true)} />
+            <VolumeControls
+              volume={volume}
+              volumePercentage={volumePercentage}
+              showVolumeSlider={showVolumeSlider}
+              setShowVolumeSlider={setShowVolumeSlider}
+              volumeSliderRef={volumeSliderRef}
+              volumeButtonRef={volumeButtonRef}
+              setVolume={(vol) => dispatch(setVolume(vol))}
+            />
+          </div>
         </div>
       </div>
     </div>

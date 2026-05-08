@@ -9,19 +9,18 @@ import { BrowserPlayer } from '../components/Players/BrowserPlayer/BrowserPlayer
 import { RootState } from 'store/index';
 import { useSelector } from 'react-redux';
 import { PageSelectorModal } from '../components/Modals/PageSelectorModal';
-import { VoiceSelectorModal } from '../components/Modals/VoiceSelectorModal';
-import { ReaderSettingsPanel } from '../components/DocumentReader/ReaderSettingsPanel';
-import { EditorSettingsPanel } from '../components/EditorSettingsPanel';
+import { PlayerSettings } from '../components/Modals/PlayerSettings';
+import { ReaderSettings } from '../components/DocumentReader/ReaderSettings';
+import { EditorSettings } from '../components/EditorSettingsPanel/EditorSettings';
 import { AccountMenu } from '../components/AccountMenu/AccountMenu';
 import { AppSwitcher } from '../components/AppSwitcher/AppSwitcher';
 
 export default function DefaultLayout() {
   const shouldHideMenu = location.pathname.startsWith(`/user`);
   const { selectedVoice } = useSelector((state: RootState) => state.voice);
-  const { showReaderSettings } = useSelector((state: RootState) => state.pdfReader);
-  const { showEditorSettings } = useSelector((state: RootState) => state.editor);
+  const { isLoaded: documentLoaded } = useSelector((state: RootState) => state.pdfReader);
   const [showMenu, setShowMenu] = useState(shouldHideMenu);
-  const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
+  const [isPlayerSettingsOpen, setIsPlayerSettingsOpen] = useState(false);
   const navRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -39,9 +38,9 @@ export default function DefaultLayout() {
     <main>
       <PdfProcessor />
       <PageSelectorModal />
-      <VoiceSelectorModal
-        show={isVoiceModalOpen}
-        onClose={() => setIsVoiceModalOpen(false)}
+      <PlayerSettings
+        show={isPlayerSettingsOpen}
+        onClose={() => setIsPlayerSettingsOpen(false)}
       />
       <div className="header-app">
         <AppSwitcher />
@@ -59,14 +58,16 @@ export default function DefaultLayout() {
         <div className="app-viewer">
           <Outlet />
         </div>
-        {showReaderSettings && <ReaderSettingsPanel />}
-        {showEditorSettings && <EditorSettingsPanel />}
+        <ReaderSettings />
+        <EditorSettings />
       </div>
-      <div className="audioplayer-container">
-        {selectedVoice.type === 'browser'
-          ? <BrowserPlayer showVoiceSelectorModal={setIsVoiceModalOpen} />
-          : <AudioPlayer showVoiceSelectorModal={setIsVoiceModalOpen} />}
-      </div>
+      {documentLoaded && (
+        <div className="audioplayer-container">
+          {selectedVoice.type === 'browser'
+            ? <BrowserPlayer showVoiceSelectorModal={setIsPlayerSettingsOpen} />
+            : <AudioPlayer showVoiceSelectorModal={setIsPlayerSettingsOpen} />}
+        </div>
+      )}
       <LogoutModal />
     </main>
   );

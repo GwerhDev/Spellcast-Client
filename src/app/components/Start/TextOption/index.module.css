@@ -14,14 +14,14 @@
   width: 100%;
   min-height: 160px;
   padding: 1rem;
-  padding-bottom: 3rem;
+  padding-bottom: 3.2rem;
   border-radius: 8px;
   border: 2px solid var(--color-dark-300);
   background: var(--component-background);
   color: var(--color-light-100);
   font-size: 0.95rem;
   font-family: inherit;
-  resize: vertical;
+  resize: none;
   box-sizing: border-box;
   transition: border-color 0.3s ease;
   outline: none;
@@ -40,80 +40,148 @@
   cursor: not-allowed;
 }
 
-.voiceRow {
+.toolbar {
+  position: absolute;
+  bottom: 2px;
+  left: 2px;
+  right: 2px;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.voiceTabs {
-  display: flex;
-  border-radius: 6px;
-  overflow: hidden;
-  border: 1px solid var(--color-dark-300);
-}
-
-.voiceTab {
-  padding: 0.35rem 0.75rem;
-  background: transparent;
-  border: none;
-  color: var(--color-light-300);
-  font-size: 0.8rem;
-  cursor: pointer;
-  transition: background 0.2s, color 0.2s;
-}
-
-.voiceTab:hover {
-  background: var(--color-dark-300);
-  color: var(--color-light-100);
-}
-
-.activeTab {
-  background: var(--color-primary);
-  color: #fff;
-}
-
-.activeTab:hover {
-  background: var(--color-primary);
-}
-
-.voiceSelect {
-  flex: 1;
+  gap: 0.4rem;
   padding: 0.35rem 0.5rem;
-  border-radius: 6px;
-  border: 1px solid var(--color-dark-300);
+  border-bottom-left-radius: 6px;
+  border-bottom-right-radius: 6px;
   background: var(--component-background);
-  color: var(--color-light-100);
-  font-size: 0.8rem;
-  cursor: pointer;
-  outline: none;
+}
+
+.voiceInfo {
+  flex: 1;
   min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  overflow: hidden;
 }
 
-.voiceSelect:focus {
-  border-color: var(--color-primary);
-}
-
-.noVoices {
-  font-size: 0.8rem;
+.voiceInfoIcon {
+  font-size: 0.7rem;
   color: var(--color-light-300);
+  flex-shrink: 0;
 }
 
-.submitButton {
-  position: absolute;
-  bottom: 0.65rem;
-  right: 0.75rem;
+.voiceInfoName {
+  font-size: 0.75rem;
+  color: var(--color-light-300);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.toolbarButtons {
+  display: flex;
+  align-items: center;
+  gap: 0.1rem;
+  flex-shrink: 0;
+}
+
+.toolbarBtn {
   background: transparent;
   border: none;
   color: var(--color-light-300);
   cursor: pointer;
-  padding: 0.25rem;
+  padding: 0.25rem 0.3rem;
   font-size: 1rem;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: color 0.2s;
+  flex-shrink: 0;
+}
+
+.toolbarBtn:hover {
+  color: var(--color-primary);
+  background: transparent;
+}
+
+.volumeContainer {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.volumePopup {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 150px;
+  background-color: var(--color-dark-800);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 0;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  z-index: 100;
+}
+
+.verticalSlider {
+  width: 100px;
+  height: 4px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  outline: none;
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+}
+
+.verticalSlider::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 8px;
+  background: linear-gradient(to right, var(--color-primary) var(--volume-value), var(--color-dark-500) var(--volume-value));
+  border-radius: 5px;
+}
+
+.verticalSlider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: var(--color-primary);
+  border-radius: 50%;
+  cursor: pointer;
+  margin-top: -4px;
+}
+
+.verticalSlider::-moz-range-track {
+  width: 100%;
+  height: 8px;
+  background: linear-gradient(to right, var(--color-primary) var(--volume-value), var(--color-dark-500) var(--volume-value));
+  border-radius: 5px;
+}
+
+.verticalSlider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: var(--color-primary);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.submitButton {
+  background: transparent;
+  border: none;
+  color: var(--color-light-300);
+  cursor: pointer;
+  padding: 0.25rem 0.3rem;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+  flex-shrink: 0;
 }
 
 .submitButton:not(:disabled):hover {

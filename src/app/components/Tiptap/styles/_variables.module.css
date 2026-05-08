@@ -114,7 +114,7 @@
   --tt-color-red-dec-5: hsla(1, 100%, 9%, 1);
 
   /* Basic colors */
-  --white: rgba(255, 255, 255, 1);
+  --white: #e0e0e0;
   --black: rgba(14, 14, 17, 1);
   --transparent: rgba(255, 255, 255, 0);
 

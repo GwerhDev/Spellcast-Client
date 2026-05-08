@@ -12,7 +12,8 @@
 :root {
   --font-sans: 'Geist', -apple-system, system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
-  --app-white: #e0e0e0;
+  --app-white: #d0cece;
+  --white: #d0cece;
 
 
   --color-primary: #73a5cc;
@@ -24,7 +25,7 @@
 
   --color-highlight: #84b4d8;
 
-  --text-color: #e0e0e0;
+  --text-color: #d0cece;
   --text-color-accent: rgb(238, 238, 238);
   --color-options-background: #3a3d48;
   --component-background: linear-gradient(to right top, var(--color-primary-darker), var(--color-secondary-darker));

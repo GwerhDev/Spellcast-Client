@@ -98,7 +98,7 @@
   justify-content: center;
   font-weight: 900;
   font-size: 5rem;
-  color: white;
+  color: var(--white);
   text-transform: uppercase;
 }
 

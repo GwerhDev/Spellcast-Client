@@ -1,17 +1,6 @@
-import s from './VoiceSelectorModal.module.css';
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { faBrain, faCircle, faDesktop, faVolumeHigh, faStop } from '@fortawesome/free-solid-svg-icons';
-import { faCircle as faRegCircle } from '@fortawesome/free-regular-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import React from 'react';
 import { CustomModal } from './CustomModal';
-import { useDispatch, useSelector } from 'react-redux';
-import { RootState } from 'store/index';
-import { setSelectedVoice } from 'store/voiceSlice';
-import { stop as stopAudio } from 'store/audioPlayerSlice';
-import { stop as stopBrowser } from 'store/browserPlayerSlice';
-import { saveVoicePreference } from '../../../db/preferences';
-
+import { VoiceSelectorContent } from './VoiceSelectorContent';
 
 interface VoiceSelectorModalProps {
   onClose: () => void;
@@ -19,124 +8,10 @@ interface VoiceSelectorModalProps {
 }
 
 export const VoiceSelectorModal: React.FC<VoiceSelectorModalProps> = ({ onClose, show }) => {
-  const dispatch = useDispatch();
-  const { credentials } = useSelector((state: RootState) => state.credentials);
-  const { selectedVoice } = useSelector((state: RootState) => state.voice);
-  const userId = useSelector((state: RootState) => state.session.userData?.id);
-  const [activeTab, setActiveTab] = useState<'browser' | 'ai'>(selectedVoice.type === 'ai' ? 'ai' : selectedVoice.type);
-
-  useEffect(() => {
-    setActiveTab(selectedVoice.type === 'ai' ? 'ai' : selectedVoice.type);
-  }, [selectedVoice.type]);
-
-  const [previewingVoice, setPreviewingVoice] = useState<string | null>(null);
-
-  const voices = window.speechSynthesis.getVoices();
-
-  const aiVoices = credentials?.[0]?.voices?.map(v => ({ value: v.value, name: v.name, gender: v.gender })) || [];
-  const browserVoices = voices.map(v => ({ value: v.name, name: v.name, gender: 'Unknown', isBrowser: true }));
-
-  const voicesToShow = activeTab === 'browser' ? browserVoices : aiVoices;
-  const icon = activeTab === 'browser' ? faDesktop : faBrain;
-
-  const handlePreview = (e: React.MouseEvent, voiceName: string) => {
-    e.stopPropagation();
-    window.speechSynthesis.cancel();
-    if (previewingVoice === voiceName) {
-      setPreviewingVoice(null);
-      return;
-    }
-    const utter = new SpeechSynthesisUtterance("This is a preview of this voice.");
-    const voice = window.speechSynthesis.getVoices().find(v => v.name === voiceName);
-    if (voice) utter.voice = voice;
-    utter.onend = () => setPreviewingVoice(null);
-    setPreviewingVoice(voiceName);
-    window.speechSynthesis.speak(utter);
-  };
-
-  const handleVoiceSelection = async (selected: { value: string, name: string, gender: string, isBrowser?: boolean }) => {
-    onClose();
-    const newVoice = { value: selected.value, type: selected.isBrowser ? 'browser' : 'ai' } as const;
-    const typeChanged = newVoice.type !== selectedVoice.type;
-
-    if (typeChanged) {
-      window.speechSynthesis.cancel();
-      dispatch(stopBrowser());
-      dispatch(stopAudio());
-    }
-
-    dispatch(setSelectedVoice(newVoice));
-
-    if (userId) {
-      await saveVoicePreference(userId, newVoice);
-    }
-  };
-
-  if (!show) {
-    return null;
-  }
-
+  if (!show) return null;
   return (
     <CustomModal title="Select a Voice" show={show} onClose={onClose}>
-      <div className={s.tabContainer}>
-        <button
-          className={`${s.tabButton} ${s.left} ${activeTab === 'browser' ? s.activeTab : ''}`}
-          onClick={() => setActiveTab('browser')}
-        >
-          <FontAwesomeIcon icon={faDesktop} />
-          <span className={s.title}>Browser Voices</span>
-        </button>
-        <button
-          className={`${s.tabButton}  ${s.right} ${activeTab === 'ai' ? s.activeTab : ''}`}
-          onClick={() => setActiveTab('ai')}
-        >
-          <FontAwesomeIcon icon={faBrain} />
-          <span className={s.title}>AI Voices</span>
-        </button>
-      </div>
-
-      <div className={s.descriptionContainer}>
-        {activeTab === 'browser' ? (
-          <p className={s.description}>
-            These voices are provided by your browser. {" "}
-            <a href="https://developer.mozilla.org/en-US/docs/Web/API/SpeechSynthesis/getVoices" target="_blank" rel="noopener noreferrer">
-              Check out the available voices in your browser.
-            </a>
-          </p>
-        ) : (
-          <p className={s.description}>
-            These voices are provided by AI services. Configure your credentials in{' '}
-            <Link onClick={onClose} to="/user/settings/credentials">
-              your credentials settings.
-            </Link>
-          </p>
-        )}
-      </div>
-
-      <ul className={s.voiceList}>
-        {voicesToShow.map((voiceOption, index) => (
-          <li
-            key={index}
-            className={`${s.voiceOption} ${selectedVoice.value === voiceOption.value && (selectedVoice.type === 'ai' ? 'ai' : selectedVoice.type) === activeTab ? s.activeVoice : ''}`}
-            onClick={() => handleVoiceSelection(voiceOption)}
-          >
-            <FontAwesomeIcon icon={selectedVoice.value === voiceOption.value && (selectedVoice.type === 'ai' ? 'ai' : selectedVoice.type) === activeTab ? faCircle : faRegCircle} />
-            <span>
-              {voiceOption.name}
-            </span>
-            <FontAwesomeIcon icon={icon} className={s.genderIcon} />
-            {activeTab === 'browser' && (
-              <button
-                className={s.previewButton}
-                onClick={(e) => handlePreview(e, voiceOption.name)}
-                title="Preview voice"
-              >
-                <FontAwesomeIcon icon={previewingVoice === voiceOption.name ? faStop : faVolumeHigh} />
-              </button>
-            )}
-          </li>
-        ))}
-      </ul>
+      <VoiceSelectorContent onClose={onClose} />
     </CustomModal>
   );
 };
