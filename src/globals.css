@@ -135,6 +135,13 @@ input[type="file"] {
   background: var(--component-background);
 }
 
+input[type="range"],
+input[type="range"]:active,
+input[type="range"]:focus,
+input[type="range"]:hover {
+  border: none;
+}
+
 input:hover,
 input:active,
 input:focus,

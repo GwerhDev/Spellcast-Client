@@ -14,10 +14,10 @@
 .progressBar {
   width: 100%;
   height: 4px;
-  background: var(--color-dark-500);
+  background: transparent;
   outline: none;
   border: none;
-  border-radius: 5px;
+  border-radius: 999px;
   -webkit-appearance: none;
   appearance: none;
   cursor: pointer;
@@ -25,15 +25,15 @@
 
 .fetchingTrack {
   width: 100%;
-  height: 8px;
-  border-radius: 5px;
+  height: 4px;
+  border-radius: 999px;
   background: var(--color-dark-500);
   overflow: hidden;
 }
 
 .fetchingBar {
   height: 100%;
-  border-radius: 5px;
+  border-radius: 999px;
   background: linear-gradient(
     90deg,
     var(--color-dark-500) 0%,
@@ -46,33 +46,45 @@
 
 .progressBar::-webkit-slider-runnable-track {
   width: 100%;
-  height: 8px;
+  height: 4px;
   background: linear-gradient(to right, var(--color-primary) var(--progress-value), var(--color-dark-500) var(--progress-value));
   border: none;
-  border-radius: 5px;
+  border-radius: 999px;
 }
 
 .progressBar::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 0;
-  height: 0;
-  background: transparent;
-  border: none;
+  width: 12px;
+  height: 12px;
+  background: var(--color-primary);
+  border-radius: 50%;
+  cursor: pointer;
+  margin-top: -4px;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 22%, transparent);
+  transition: box-shadow 0.15s ease;
+}
+
+.progressBar:hover::-webkit-slider-thumb,
+.progressBar:active::-webkit-slider-thumb {
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-primary) 30%, transparent);
 }
 
 .progressBar::-moz-range-track {
   width: 100%;
-  height: 8px;
+  height: 4px;
   background: linear-gradient(to right, var(--color-primary) var(--progress-value), var(--color-dark-500) var(--progress-value));
-  border-radius: 5px;
+  border-radius: 999px;
 }
 
 .progressBar::-moz-range-thumb {
-  width: 0;
-  height: 0;
-  background: transparent;
+  width: 12px;
+  height: 12px;
+  background: var(--color-primary);
+  border-radius: 50%;
+  cursor: pointer;
   border: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 22%, transparent);
 }
 
 .timeDisplay {
