@@ -43,7 +43,7 @@ export const Themes = () => {
 
   return (
     <div className={s.container}>
-      <h1 className={s.title}>Appearance</h1>
+      <h1 className="featured">Appearance</h1>
       <p className={s.subtitle}>Select a theme for the application.</p>
       <div className={s.themesContainer}>
         <div className={s.themeGrid}>

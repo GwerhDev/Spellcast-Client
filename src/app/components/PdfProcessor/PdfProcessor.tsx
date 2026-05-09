@@ -6,12 +6,18 @@ import { setPageText, setPdfLoaded, setSentences } from '../../../store/pdfReade
 import { getDocumentById, updateDocumentProgress } from '../../../db';
 import { useAppSelector } from 'store/hooks';
 import { DocumentProgress } from '../../../interfaces/index';
+import { injectCoverIntoPages } from '../../../utils/pdfUtils';
 
 const extractSentencesFromJSON = (text: string): string[] => {
   try {
     const json = JSON.parse(text) as JSONContent;
     const sentences: string[] = [];
     for (const node of (json.content || [])) {
+      if (node.type === 'image') {
+        const alt = (node.attrs as { alt?: string })?.alt;
+        if (alt) sentences.push(...alt.split(/(?<=[.!?])\s*/).filter(Boolean));
+        continue;
+      }
       if (node.type !== 'paragraph' && node.type !== 'heading') continue;
       const nodeText = (node.content || [])
         .map((c: JSONContent) => {
@@ -42,10 +48,11 @@ export const PdfProcessor = () => {
     if (!documentId) return;
     setDocLoaded(false);
     setPages([]);
-    getDocumentById(documentId, userData.id).then((doc) => {
+    getDocumentById(documentId, userData.id).then(async (doc) => {
       if (doc?.pagesContent) {
-        const parsed = JSON.parse(doc.pagesContent) as unknown[];
-        setPages(parsed.map((p) => JSON.stringify(p)));
+        const parsed = JSON.parse(doc.pagesContent) as JSONContent[];
+        const withCover = await injectCoverIntoPages(parsed, doc.cover ?? null);
+        setPages(withCover.map((p) => JSON.stringify(p)));
       } else {
         setPages([]);
       }

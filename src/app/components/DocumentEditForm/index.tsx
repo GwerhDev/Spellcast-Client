@@ -19,7 +19,7 @@ import { SecondaryButton } from '../Buttons/SecondaryButton';
 import type { TTSPlayPayload } from '../../../magictext/types';
 import * as pdfjsLib from 'pdfjs-dist';
 import workerSrc from 'pdfjs-dist/build/pdf.worker?url';
-import { renderPageToCover, extractPdfPages } from '../../../utils/pdfUtils';
+import { renderPageToCover, extractPdfPages, injectCoverIntoPages } from '../../../utils/pdfUtils';
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
 const emptyContent: JSONContent = {
@@ -165,7 +165,8 @@ export const DocumentEditForm: React.FC = () => {
       });
       const pdfData = atob(fileContent.substring(fileContent.indexOf(',') + 1));
       const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
-      const [coverBlob, pages] = await Promise.all([renderPageToCover(pdf), extractPdfPages(pdf)]);
+      const [coverBlob, rawPages] = await Promise.all([renderPageToCover(pdf), extractPdfPages(pdf)]);
+      const pages = await injectCoverIntoPages(rawPages, coverBlob);
       await updateDocumentFull(id, userData.id, {
         title: documentTitle,
         pagesContent: JSON.stringify(pages),

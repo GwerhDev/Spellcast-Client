@@ -17,16 +17,22 @@ export const EditorLanding = () => {
   return (
     <div className={s.selectContainer}>
       <div className={s.selectInner}>
-        <h1>Shape your words</h1>
+        <h1 className="featured">Shape your words</h1>
         <p>Start from scratch or pick up where you left off</p>
         <div className={s.cards}>
           <div className={s.card} onClick={handleCreateNew}>
             <FontAwesomeIcon icon={faFile} className={s.cardIcon} />
-            <h3 className={s.cardTitle}>Create new document</h3>
+            <span>
+              <h3 className={s.cardTitle}>Create</h3>
+              <small className={s.description}>Write a new document</small>
+            </span>
           </div>
           <div className={s.card} onClick={() => navigate('/editor/select')}>
             <FontAwesomeIcon icon={faPenToSquare} className={s.cardIcon} />
-            <h3 className={s.cardTitle}>Edit a document</h3>
+            <span>
+              <h3 className={s.cardTitle}>Edit</h3>
+              <small className={s.description}>Modify existing document</small>
+            </span>
           </div>
         </div>
       </div>

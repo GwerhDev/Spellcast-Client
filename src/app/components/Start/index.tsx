@@ -32,7 +32,7 @@ export const Start = () => {
   return (
     <div className={s.container}>
       <div className={s.createContainer}>
-        <h1>Cast a spell</h1>
+        <h1 className="featured">Cast a spell</h1>
         <p>{getSubtitle()}</p>
 
         <InputTypeSelector inputType={inputType} setInputType={handeInputTypeChange} />

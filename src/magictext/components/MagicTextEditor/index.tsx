@@ -16,6 +16,7 @@ import type { PartialTranslations } from '../../i18n/types'
 import { Toolbar } from '../Toolbar/Toolbar'
 import { VariableExtension } from '../../extensions/VariableExtension'
 import { TTSMarkExtension } from '../../extensions/TTSMarkExtension'
+import { PdfPositionExtension } from '../../extensions/PdfPositionExtension'
 import { TranslationsContext, resolveTranslations } from '../../i18n'
 import '../../styles/editor.css'
 
@@ -100,6 +101,7 @@ export function MagicTextEditor({
         HTMLAttributes: { rel: 'noopener noreferrer', target: '_blank' },
       }),
       Image.configure({ allowBase64: true }),
+      PdfPositionExtension,
       TextStyle,
       Color,
       Placeholder.configure({ placeholder }),

@@ -30,6 +30,11 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
     setContent(pageContent);
   }, [pageContent, pageNumber]);
 
+  const attrs = pageContent?.attrs as { pageWidth?: number; pageHeight?: number } | undefined;
+  const paperMinHeight = attrs?.pageWidth && attrs?.pageHeight
+    ? Math.round((attrs.pageHeight / attrs.pageWidth) * 800)
+    : 1131;
+
   return (
     <div className={s.root}>
       <MagicTextEditor
@@ -49,7 +54,7 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
         ttsPlaying={ttsPlaying}
         wrapContent={(editorContent) => (
           <div className={s.paperBackground}>
-            <div className={s.paperSheet}>
+            <div className={s.paperSheet} style={{ minHeight: `${paperMinHeight}px` }}>
               {editorContent}
             </div>
           </div>

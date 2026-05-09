@@ -51,6 +51,9 @@ ul {
 
 h1 {
   font-size: var(--size-12);
+}
+
+.featured {
   background: linear-gradient(to bottom, var(--color-primary), var(--color-secondary));
   -webkit-background-clip: text;
   background-clip: text;
@@ -396,7 +399,7 @@ a:hover {
 
   .aside-inner-container {
     flex-direction: column;
-    
+
   }
 
   .audioplayer-container {

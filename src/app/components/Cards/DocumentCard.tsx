@@ -48,10 +48,12 @@ export const DocumentCard = ({ doc, isActive, onClick, onDelete, onEdit, onPlay 
           <FontAwesomeIcon icon={faPlay} />
         </button>
       )}
-      {coverUrl
-        ? <img src={coverUrl} alt={doc.title} className={s.cover} />
-        : <div className={s.iconWrapper}><FontAwesomeIcon icon={faFilePdf} className={s.icon} /></div>
-      }
+      <div className={s.coverWrapper}>
+        {coverUrl
+          ? <img src={coverUrl} alt={doc.title} className={s.cover} />
+          : <div className={s.iconWrapper}><FontAwesomeIcon icon={faFilePdf} className={s.icon} /></div>
+        }
+      </div>
       <div className={s.footer}>
         <span className={s.title}>{doc.title}</span>
         {progressPct !== null ? (

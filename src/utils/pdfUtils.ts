@@ -7,6 +7,34 @@ export const emptyPageContent: JSONContent = {
   content: [{ type: 'paragraph' }],
 };
 
+export const blobToDataUrl = (blob: Blob): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+
+export const injectCoverIntoPages = async (pages: JSONContent[], coverBlob: Blob | null): Promise<JSONContent[]> => {
+  if (!coverBlob || pages.length === 0) return pages;
+  const firstNode = pages[0]?.content?.[0];
+  if (firstNode?.type === 'image') return pages; // already has cover
+  try {
+    const coverDataUrl = await blobToDataUrl(coverBlob);
+    const updated = [...pages];
+    updated[0] = {
+      ...pages[0],
+      content: [
+        { type: 'image', attrs: { src: coverDataUrl, alt: null, title: null } },
+        ...(pages[0].content || []),
+      ],
+    };
+    return updated;
+  } catch {
+    return pages;
+  }
+};
+
 export const renderPageToCover = async (pdf: pdfjsLib.PDFDocumentProxy): Promise<Blob | null> => {
   try {
     const page = await pdf.getPage(1);
@@ -79,10 +107,14 @@ export const extractPdfPages = async (pdf: pdfjsLib.PDFDocumentProxy): Promise<J
 
   for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
     const page = await pdf.getPage(pageNum);
+    const pageViewport = page.getViewport({ scale: 1 });
+    const xScale = 800 / pageViewport.width;
     const content = await page.getTextContent();
 
+    const pageDims = { pageWidth: Math.round(pageViewport.width), pageHeight: Math.round(pageViewport.height) };
+
     if (content.items.length === 0) {
-      allPagesContent.push(emptyPageContent);
+      allPagesContent.push({ ...emptyPageContent, attrs: pageDims });
       continue;
     }
 
@@ -134,21 +166,26 @@ export const extractPdfPages = async (pdf: pdfjsLib.PDFDocumentProxy): Promise<J
       paragraphs.push({ lines: currentParagraph });
     }
 
-    const pageContent: JSONContent = { type: 'doc', content: [] };
+    const leftmostX = lines.length > 0 ? Math.min(...lines.map(l => l.x)) : 0;
+    const pageContent: JSONContent = { type: 'doc', attrs: pageDims, content: [] };
 
     for (const p of paragraphs) {
       if (p.lines.length === 0) {
         pageContent.content!.push({ type: 'paragraph' });
         continue;
       }
+      const paragraphX = p.lines[0]?.x ?? leftmostX;
+      const marginLeft = Math.max(0, Math.round((paragraphX - leftmostX) * xScale));
       const contentNodes: object[] = [];
       for (let i = 0; i < p.lines.length; i++) {
         const line = p.lines[i];
-        if (i > 0) contentNodes.push({ type: 'hardBreak' });
-        const indentation = line.x - (lines[0].x);
-        if (indentation > 5) {
-          const numSpaces = Math.round(indentation / 4);
-          if (numSpaces > 0) contentNodes.push({ type: 'text', text: ' '.repeat(numSpaces) });
+        if (i > 0) {
+          contentNodes.push({ type: 'hardBreak' });
+          const relativeIndent = line.x - paragraphX;
+          if (relativeIndent > 5) {
+            const numSpaces = Math.round(relativeIndent * xScale / 7);
+            if (numSpaces > 0) contentNodes.push({ type: 'text', text: ' '.repeat(numSpaces) });
+          }
         }
         for (const item of line.items) {
           if (item.str.length === 0) continue;
@@ -164,10 +201,11 @@ export const extractPdfPages = async (pdf: pdfjsLib.PDFDocumentProxy): Promise<J
 
       const firstLineHeight = p.lines[0]?.height || 0;
       let nodeType = 'paragraph';
-      let attrs = {};
+      let attrs: Record<string, unknown> = {};
       if (firstLineHeight > avgLineHeight * 1.8) { nodeType = 'heading'; attrs = { level: 1 }; }
       else if (firstLineHeight > avgLineHeight * 1.5) { nodeType = 'heading'; attrs = { level: 2 }; }
       else if (firstLineHeight > avgLineHeight * 1.2) { nodeType = 'heading'; attrs = { level: 3 }; }
+      if (marginLeft > 0) attrs = { ...attrs, marginLeft };
 
       pageContent.content!.push({ type: nodeType, attrs, content: contentNodes });
     }
@@ -175,23 +213,6 @@ export const extractPdfPages = async (pdf: pdfjsLib.PDFDocumentProxy): Promise<J
     const pageImages = await extractPageImages(page);
     for (const src of pageImages) {
       pageContent.content!.push({ type: 'image', attrs: { src, alt: null, title: null } });
-    }
-
-    if (pageNum === 1) {
-      try {
-        const viewport = page.getViewport({ scale: 1 });
-        const scale = Math.min(1, 800 / viewport.width);
-        const scaled = page.getViewport({ scale });
-        const canvas = document.createElement('canvas');
-        canvas.width = scaled.width;
-        canvas.height = scaled.height;
-        const ctx = canvas.getContext('2d')!;
-        await page.render({ canvasContext: ctx as CanvasRenderingContext2D, viewport: scaled, canvas }).promise;
-        const coverDataUrl = canvas.toDataURL('image/jpeg', 0.8);
-        pageContent.content!.unshift({ type: 'image', attrs: { src: coverDataUrl, alt: null, title: null } });
-      } catch {
-        // skip if render fails
-      }
     }
 
     allPagesContent.push(pageContent.content!.length > 0 ? pageContent : emptyPageContent);

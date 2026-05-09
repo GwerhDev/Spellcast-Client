@@ -128,6 +128,8 @@ export const DocumentReader = () => {
 
       const level = node.type === 'heading' ? ((node.attrs as { level?: number })?.level ?? 1) : 0;
       const Tag = (node.type === 'heading' ? `h${level}` : 'p') as keyof JSX.IntrinsicElements;
+      const marginLeft = (node.attrs as { marginLeft?: number })?.marginLeft;
+      const blockStyle = marginLeft ? { marginLeft: `${marginLeft}px` } : undefined;
 
       const inlineContent = nodeContent.map((child, cIdx) => {
         if (child.type === 'hardBreak') return fit ? <span key={cIdx}> </span> : <br key={cIdx} />;
@@ -144,7 +146,7 @@ export const DocumentReader = () => {
         return <span key={cIdx}>{text}</span>;
       });
 
-      return <Tag key={nIdx} className={s.readerBlock}>{inlineContent}</Tag>;
+      return <Tag key={nIdx} className={s.readerBlock} style={blockStyle}>{inlineContent}</Tag>;
     });
   };
 
@@ -176,6 +178,8 @@ export const DocumentReader = () => {
       const nodeSentences = nodeText.split(fit ? /(?<=[.!?])\s*/ : /(?<=[.!?])/).filter(Boolean);
       const level = node.type === 'heading' ? ((node.attrs as { level?: number })?.level ?? 1) : 0;
       const Tag = (node.type === 'heading' ? `h${level}` : 'p') as keyof JSX.IntrinsicElements;
+      const marginLeftSent = (node.attrs as { marginLeft?: number })?.marginLeft;
+      const sentBlockStyle = marginLeftSent ? { marginLeft: `${marginLeftSent}px` } : undefined;
 
       const spans = nodeSentences.map((sentence) => {
         const idx = sentIdx++;
@@ -190,7 +194,7 @@ export const DocumentReader = () => {
         );
       });
 
-      return <Tag key={nIdx} className={s.readerBlock}>{spans}</Tag>;
+      return <Tag key={nIdx} className={s.readerBlock} style={sentBlockStyle}>{spans}</Tag>;
     });
   };
 
@@ -199,11 +203,17 @@ export const DocumentReader = () => {
       return <div className={s.container}><Spinner isLoading message="Loading..." /></div>;
     }
 
+    const pageAttrs = editedText?.attrs as { pageWidth?: number; pageHeight?: number } | undefined;
+    const paperMinHeight = pageAttrs?.pageWidth && pageAttrs?.pageHeight
+      ? Math.round((pageAttrs.pageHeight / pageAttrs.pageWidth) * 800)
+      : 1131;
+    const paperStyle = { minHeight: `${paperMinHeight}px` };
+
     if (selectedVoice.type === 'browser') {
       if (!fitToWidth) {
         return (
           <div ref={scrollContainerRef} className={s.paperBackground}>
-            <div className={`${s.paperSheet} ${s.readerContent} ${s.pdfMode}`}>
+            <div className={`${s.paperSheet} ${s.readerContent} ${s.pdfMode}`} style={paperStyle}>
               {renderFormattedSentences(false)}
             </div>
           </div>
@@ -219,7 +229,7 @@ export const DocumentReader = () => {
     if (!fitToWidth) {
       return (
         <div ref={scrollContainerRef} className={s.paperBackground}>
-          <div className={`${s.paperSheet} ${s.readerContent} ${s.pdfMode}`}>
+          <div className={`${s.paperSheet} ${s.readerContent} ${s.pdfMode}`} style={paperStyle}>
             {renderFormattedContent(false)}
           </div>
         </div>

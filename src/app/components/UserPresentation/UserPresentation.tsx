@@ -28,7 +28,7 @@ export const UserPresentation = () => {
         </ul>
         <ul className={s.details}>
           <li className={`${s.title} ${loader ? skeleton.skeleton : ''}`}>
-            {!loader && <h1>{username}</h1>}
+            {!loader && <h1 className="featured">{username}</h1>}
           </li>
 
           <li className={`${loader ? skeleton.skeleton : ''}`}>

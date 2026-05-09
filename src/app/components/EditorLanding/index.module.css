@@ -55,10 +55,17 @@
 .cardTitle {
   font-size: 0.9rem;
   font-weight: 600;
-  color: var(--color-light-100);
+  color: var(--color-text);
   text-align: center;
   margin: 0;
-  padding: 0 0.75rem;
+  padding: 0;
+}
+
+.description {
+  color: var(--color-light-400);
+  text-align: center;
+  margin: 0;
+  padding: 0;
 }
 
 /* ── Edit-list step (mirrors DocumentDetail panel pattern) ── */

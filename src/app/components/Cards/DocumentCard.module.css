@@ -46,13 +46,16 @@
   display: flex;
   position: absolute;
   align-items: center;
-  pointer-events: none;
   justify-content: center;
   background: transparent;
-  z-index: 1;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 2;
+  transition: opacity 0.2s ease, background 0.2s ease, color 0.2s ease;
 }
 
 .card:hover .playAction {
+  opacity: 1;
   pointer-events: all;
   color: var(--app-white);
   background: var(--color-primary);
@@ -64,13 +67,21 @@
   right: 0.5rem;
   display: flex;
   gap: 0.25rem;
-  z-index: 1;
+  z-index: 2;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.card:hover .actions {
+  opacity: 1;
+  pointer-events: all;
 }
 
 .actionButton {
   background: none;
   border: none;
-  color: var(--color-light-400);
+  color: var(--color-light-100);
   cursor: pointer;
   padding: 0.25rem;
   line-height: 1;
@@ -81,11 +92,30 @@
 
 .actionButton:hover {
   background: none;
-  color: var(--color-light-100);
+  color: var(--app-white);
 }
 
 .deleteButton:hover {
   color: var(--color-danger-100) !important;
+}
+
+.coverWrapper {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.coverWrapper::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+.card:hover .coverWrapper::after {
+  opacity: 1;
 }
 
 .cover {
@@ -93,6 +123,7 @@
   height: 100px;
   object-fit: cover;
   object-position: top;
+  display: block;
   flex-shrink: 0;
 }
 

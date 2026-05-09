@@ -18,7 +18,7 @@ import { IconButton } from '../Buttons/IconButton';
 import { resetDocumentState, setDocumentDetails, setDocumentTitle as setDocumentTitleAction } from 'store/documentSlice';
 import { resetPdfReader } from 'store/pdfReaderSlice';
 import { textToSpeechService } from '../../../services/tts';
-import { renderPageToCover, extractPdfPages, emptyPageContent } from '../../../utils/pdfUtils';
+import { renderPageToCover, extractPdfPages, injectCoverIntoPages, emptyPageContent } from '../../../utils/pdfUtils';
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
 const emptyContent: JSONContent = emptyPageContent;
@@ -115,10 +115,11 @@ export const DocumentCreateForm: React.FC = () => {
         const pdfData = atob(document.fileContent.substring(document.fileContent.indexOf(',') + 1));
         const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
 
-        const [coverBlob, allPagesContent] = await Promise.all([
+        const [coverBlob, rawPages] = await Promise.all([
           renderPageToCover(pdf),
           extractPdfPages(pdf),
         ]);
+        const allPagesContent = await injectCoverIntoPages(rawPages, coverBlob);
         setCover(coverBlob);
         setPagesContent(allPagesContent);
       } catch (error) {

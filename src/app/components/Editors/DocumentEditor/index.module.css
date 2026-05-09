@@ -43,4 +43,16 @@
   padding: 3rem 4rem;
   box-shadow: var(--paper-shadow);
   color: var(--color-light-100);
+  overflow: hidden;
+}
+
+.paperSheet :global(.ProseMirror > img:first-child) {
+  width: calc(100% + 8rem);
+  max-width: none;
+  margin-left: -4rem;
+  margin-top: -3rem;
+  margin-bottom: -6rem;
+  display: block;
+  height: auto;
+  border-radius: 0;
 }
