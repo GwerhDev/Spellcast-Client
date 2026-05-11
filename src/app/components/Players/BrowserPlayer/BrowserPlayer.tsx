@@ -303,7 +303,6 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
 
           <div className={s.rightSection}>
             <VoiceSelectorButton onClick={() => showVoiceSelectorModal(true)} />
-            <PlayerConfigButton onClick={() => showPlayerConfigModal(true)} />
             <VolumeControls
               volume={volume}
               volumePercentage={volumePercentage}
@@ -313,6 +312,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
               volumeButtonRef={volumeButtonRef}
               setVolume={(vol) => dispatch(setVolume(vol))}
             />
+            <PlayerConfigButton onClick={() => showPlayerConfigModal(true)} />
           </div>
         </div>
       </div>
