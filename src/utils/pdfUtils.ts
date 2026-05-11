@@ -19,6 +19,10 @@ export const injectCoverIntoPages = async (pages: JSONContent[], coverBlob: Blob
   if (!coverBlob || pages.length === 0) return pages;
   const firstNode = pages[0]?.content?.[0];
   if (firstNode?.type === 'image') return pages; // already has cover
+  const firstPageHasText = pages[0]?.content?.some(node =>
+    node.content?.some(child => child.type === 'text' && (child.text ?? '').trim().length > 0)
+  );
+  if (firstPageHasText) return pages;
   try {
     const coverDataUrl = await blobToDataUrl(coverBlob);
     const updated = [...pages];

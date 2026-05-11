@@ -8,6 +8,11 @@ import { resetDocumentState, setDocumentTitle } from "store/documentSlice";
 import { DocumentState } from "src/interfaces";
 import { saveDocumentToDB } from "src/db";
 import { useAppSelector } from "store/hooks";
+import * as pdfjsLib from 'pdfjs-dist';
+import workerSrc from 'pdfjs-dist/build/pdf.worker?url';
+import { renderPageToCover, extractPdfPages, injectCoverIntoPages } from 'src/utils/pdfUtils';
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
 interface DocumentCreateInputProps {
   document: DocumentState;
@@ -39,23 +44,32 @@ export const DocumentCreateInput = (props: DocumentCreateInputProps) => {
     }
   };
 
-  const base64ToBlob = (dataUrl: string): Blob => {
-    const [header, data] = dataUrl.split(',');
-    const mimeType = header.match(/:(.*?);/)?.[1] || 'application/pdf';
-    const byteString = atob(data);
-    const byteArray = new Uint8Array(byteString.length);
-    for (let i = 0; i < byteString.length; i++) {
-      byteArray[i] = byteString.charCodeAt(i);
-    }
-    return new Blob([byteArray], { type: mimeType });
-  };
-
   const handleCreate = async () => {
-    if (!document.fileContent || !document.title) return;
+    if (!document.fileContent) return;
     setIsCreating(true);
     try {
-      const pdf = base64ToBlob(document.fileContent);
-      const id = await saveDocumentToDB({ title: document.title, pdf, userId: userData?.id });
+      const pdfData = atob(document.fileContent.substring(document.fileContent.indexOf(',') + 1));
+      const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
+
+      const [coverBlob, rawPages] = await Promise.all([
+        renderPageToCover(pdf),
+        extractPdfPages(pdf),
+      ]);
+      const pagesContent = await injectCoverIntoPages(rawPages, coverBlob);
+
+      const byteString = atob(document.fileContent.split(',')[1]);
+      const byteArray = new Uint8Array(byteString.length);
+      for (let i = 0; i < byteString.length; i++) byteArray[i] = byteString.charCodeAt(i);
+      const pdfBlob = new Blob([byteArray], { type: 'application/pdf' });
+
+      const id = await saveDocumentToDB({
+        title: document.title,
+        pdf: pdfBlob,
+        cover: coverBlob ?? undefined,
+        userId: userData?.id,
+        pagesContent: JSON.stringify(pagesContent),
+      });
+
       dispatch(resetDocumentState());
       navigate(`/document/${id}`);
     } catch (err) {
