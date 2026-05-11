@@ -16,6 +16,7 @@ import { goToNextPage, goToPreviousPage, setShowPageSelector } from '../../../..
 import { PlaybackControls } from './PlaybackControls/PlaybackControls';
 import { VolumeControls } from './VolumeControls/VolumeControls';
 import { VoiceSelectorButton } from './VoiceSelectorButton/VoiceSelectorButton';
+import { PlayerConfigButton } from './PlayerConfigButton/PlayerConfigButton';
 import { textToSpeechService } from 'services/tts';
 import { getCachedAudio, setCachedAudio } from 'db/audioCache';
 import { getDocumentById } from '../../../../db';
@@ -25,9 +26,10 @@ import defaultCover from '../../../../assets/default-img.png';
 
 interface PlayerProps {
   showVoiceSelectorModal: React.Dispatch<SetStateAction<boolean>>;
+  showPlayerConfigModal: React.Dispatch<SetStateAction<boolean>>;
 }
 
-export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal }) => {
+export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, showPlayerConfigModal }) => {
   const audioRef = useRef<HTMLAudioElement>(null);
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -353,6 +355,7 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal }) =
 
           <div className={s.rightSection}>
             <VoiceSelectorButton onClick={() => showVoiceSelectorModal(true)} />
+            <PlayerConfigButton onClick={() => showPlayerConfigModal(true)} />
             <VolumeControls
               volume={volume}
               volumePercentage={volumePercentage}

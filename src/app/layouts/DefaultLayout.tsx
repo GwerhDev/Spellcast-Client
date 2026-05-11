@@ -14,6 +14,7 @@ import { ReaderSettings } from '../components/DocumentReader/ReaderSettings';
 import { EditorSettings } from '../components/EditorSettingsPanel/EditorSettings';
 import { AccountMenu } from '../components/AccountMenu/AccountMenu';
 import { AppSwitcher } from '../components/AppSwitcher/AppSwitcher';
+import { VoiceSelectorModal } from '../components/Modals/VoiceSelectorModal';
 
 export default function DefaultLayout() {
   const shouldHideMenu = location.pathname.startsWith(`/user`);
@@ -21,6 +22,7 @@ export default function DefaultLayout() {
   const { isLoaded: documentLoaded } = useSelector((state: RootState) => state.pdfReader);
   const [showMenu, setShowMenu] = useState(shouldHideMenu);
   const [isPlayerSettingsOpen, setIsPlayerSettingsOpen] = useState(false);
+  const [isVoiceSelectorOpen, setIsVoiceSelectorOpen] = useState(false);
   const navRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -38,6 +40,10 @@ export default function DefaultLayout() {
     <main>
       <PdfProcessor />
       <PageSelectorModal />
+      <VoiceSelectorModal
+        show={isVoiceSelectorOpen}
+        onClose={() => setIsVoiceSelectorOpen(false)}
+      />
       <PlayerSettings
         show={isPlayerSettingsOpen}
         onClose={() => setIsPlayerSettingsOpen(false)}
@@ -64,8 +70,8 @@ export default function DefaultLayout() {
       {documentLoaded && (
         <div className="audioplayer-container">
           {selectedVoice.type === 'browser'
-            ? <BrowserPlayer showVoiceSelectorModal={setIsPlayerSettingsOpen} />
-            : <AudioPlayer showVoiceSelectorModal={setIsPlayerSettingsOpen} />}
+            ? <BrowserPlayer showVoiceSelectorModal={setIsVoiceSelectorOpen} showPlayerConfigModal={setIsPlayerSettingsOpen} />
+            : <AudioPlayer showVoiceSelectorModal={setIsVoiceSelectorOpen} showPlayerConfigModal={setIsPlayerSettingsOpen} />}
         </div>
       )}
       <LogoutModal />

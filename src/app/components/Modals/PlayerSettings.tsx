@@ -1,8 +1,7 @@
 import React from 'react';
 import { TabModal } from './TabModal';
-import { VoiceSelectorContent } from './VoiceSelectorContent';
 import { PlayerPreferences } from './PlayerPreferences';
-import { faCommentDots, faWrench } from '@fortawesome/free-solid-svg-icons';
+import { faWrench } from '@fortawesome/free-solid-svg-icons';
 
 interface PlayerSettingsProps {
   show: boolean;
@@ -16,11 +15,6 @@ export const PlayerSettings: React.FC<PlayerSettingsProps> = ({ show, onClose })
       onClose={onClose}
       title="Player Settings"
       tabs={[
-        {
-          icon: faCommentDots,
-          label: 'Voice',
-          content: <VoiceSelectorContent onClose={onClose} />,
-        },
         {
           icon: faWrench,
           label: 'Preferences',

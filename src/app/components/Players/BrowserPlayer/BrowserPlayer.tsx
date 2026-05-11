@@ -20,6 +20,7 @@ import {
 import { PlaybackControls } from './PlaybackControls/PlaybackControls';
 import { VolumeControls } from './VolumeControls/VolumeControls';
 import { VoiceSelectorButton } from './VoiceSelectorButton/VoiceSelectorButton';
+import { PlayerConfigButton } from './PlayerConfigButton/PlayerConfigButton';
 import { useNavigate } from 'react-router-dom';
 import { setSelectedVoice } from 'store/voiceSlice';
 import { getDocumentById } from '../../../../db';
@@ -28,9 +29,10 @@ import defaultCover from '../../../../assets/default-img.png';
 
 interface PlayerProps {
   showVoiceSelectorModal: React.Dispatch<SetStateAction<boolean>>;
+  showPlayerConfigModal: React.Dispatch<SetStateAction<boolean>>;
 }
 
-export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal }) => {
+export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, showPlayerConfigModal }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const {
@@ -301,6 +303,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal })
 
           <div className={s.rightSection}>
             <VoiceSelectorButton onClick={() => showVoiceSelectorModal(true)} />
+            <PlayerConfigButton onClick={() => showPlayerConfigModal(true)} />
             <VolumeControls
               volume={volume}
               volumePercentage={volumePercentage}
