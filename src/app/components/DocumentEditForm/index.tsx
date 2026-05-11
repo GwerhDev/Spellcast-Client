@@ -11,7 +11,7 @@ import { textToSpeechService } from '../../../services/tts';
 import { Spinner } from '../Spinner';
 import { PageList } from '../DocumentCreateForm/PageList';
 import { DocumentEditor } from '../Editors/DocumentEditor';
-import { faArrowLeft, faCloudUpload, faFileImport, faGear, faSave } from '@fortawesome/free-solid-svg-icons';
+import { faArrowLeft, faCloudUpload, faPaperclip, faGear, faSave } from '@fortawesome/free-solid-svg-icons';
 import { IconButton } from '../Buttons/IconButton';
 import { CustomModal } from '../Modals/CustomModal';
 import { PrimaryButton } from '../Buttons/PrimaryButton';
@@ -242,7 +242,7 @@ export const DocumentEditForm: React.FC = () => {
         {!isProcessingPdf && saveStatus === 'saving' && <span className={s.saveStatus}>Saving...</span>}
         {!isProcessingPdf && saveStatus === 'saved' && <span className={s.saveStatus}>Saved</span>}
 
-        <IconButton icon={faFileImport} variant='transparent' disabled={isProcessingPdf} onClick={() => pdfInputRef.current?.click()} />
+        <IconButton icon={faPaperclip} variant='transparent' disabled={isProcessingPdf} onClick={() => pdfInputRef.current?.click()} />
         <input ref={pdfInputRef} type="file" accept=".pdf" style={{ display: 'none' }} onChange={handleFileSelect} />
         <IconButton icon={faSave} variant='transparent' disabled={!hasChanges || isProcessingPdf} onClick={handleSave} />
         <IconButton icon={faCloudUpload} disabled variant='transparent' onClick={() => {}} />

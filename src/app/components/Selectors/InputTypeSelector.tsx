@@ -1,7 +1,7 @@
 import s from './InputTypeSelector.module.css';
 import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faFileCirclePlus, faPen, faUpload } from '@fortawesome/free-solid-svg-icons';
+import { faPen, faPaperclip } from '@fortawesome/free-solid-svg-icons';
 
 interface InputTypeSelectorProps {
   inputType: string;
@@ -20,18 +20,11 @@ export const InputTypeSelector: React.FC<InputTypeSelectorProps> = ({ inputType,
           <span className={s.title}>Text</span>
         </button>
         <button
-          className={`${s.tabButton} ${s.middle} ${inputType === 'upload' ? s.active : ''}`}
+          className={`${s.tabButton} ${s.right} ${inputType === 'upload' ? s.active : ''}`}
           onClick={() => setInputType('upload')}
         >
-          <FontAwesomeIcon icon={faUpload} />
-          <span className={s.title}>Upload</span>
-        </button>
-        <button
-          className={`${s.tabButton} ${s.right} ${inputType === 'create' ? s.active : ''}`}
-          onClick={() => setInputType('create')}
-        >
-          <FontAwesomeIcon icon={faFileCirclePlus} />
-          <span className={s.title}>Create</span>
+          <FontAwesomeIcon icon={faPaperclip} />
+          <span className={s.title}>Import</span>
         </button>
       </span>
     </div>

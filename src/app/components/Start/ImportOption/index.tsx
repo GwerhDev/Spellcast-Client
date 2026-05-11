@@ -1,6 +1,6 @@
 import s from './index.module.css';
 import React, { useCallback, useState } from 'react';
-import { faUpload } from '@fortawesome/free-solid-svg-icons';
+import { faPaperclip } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from 'store/index';
@@ -11,11 +11,11 @@ import { DocumentCreateInput } from '../../Inputs/DocumentCreateInput';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
-interface UploadOptionProps {
+interface ImportOptionProps {
   isLoading?: boolean;
 }
 
-export const UploadOption: React.FC<UploadOptionProps> = () => {
+export const ImportOption: React.FC<ImportOptionProps> = () => {
   const document = useSelector((state: RootState) => state.document);
   const [isDragging, setIsDragging] = useState(false);
   const dispatch = useDispatch();
@@ -74,7 +74,7 @@ export const UploadOption: React.FC<UploadOptionProps> = () => {
       <>
         <DocumentCreateInput document={document} />
         <p onClick={() => dispatch(resetDocumentState())} className={s.resetPdf}>
-          Or upload a new one
+          Or import a new one
         </p>
       </>
     ) : (
@@ -92,7 +92,7 @@ export const UploadOption: React.FC<UploadOptionProps> = () => {
           id="file-input"
         />
         <label htmlFor='file-input' className={s.fileInputLabel}>
-          <FontAwesomeIcon icon={faUpload} size="3x" />
+          <FontAwesomeIcon icon={faPaperclip} size="3x" />
           {'Drag and drop a PDF file here, or click to select a file'}
         </label>
       </div>
