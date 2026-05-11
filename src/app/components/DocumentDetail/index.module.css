@@ -117,6 +117,5 @@
 
 .solid:hover {
   background: var(--color-light-200) !important;
-  border-color: var(--color-light-200) !important;
-  color: var(--color-dark-900) !important;
+  color: var(--color-dark-100) !important;
 }
