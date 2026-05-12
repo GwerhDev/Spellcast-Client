@@ -347,6 +347,13 @@ a:hover {
   flex-direction: column;
   justify-content: center;
   background: var(--background-gradient-color);
+  z-index: 9999;
+  transition: opacity 0.5s ease;
+}
+
+.loader-exiting {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .dashboard-sections {

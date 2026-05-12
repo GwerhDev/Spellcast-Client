@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { RootState } from './store';
 import { userData } from './interfaces';
 import { useSelector } from 'react-redux';
@@ -38,16 +38,21 @@ function App() {
   const { loader } = userData || {};
   const [loaderProgress, setLoaderProgress] = useState(0);
   const [loaderMessage, setLoaderMessage] = useState('');
+  const [showLoader, setShowLoader] = useState(true);
+  const [loaderExiting, setLoaderExiting] = useState(false);
   useInitSession(setLoaderProgress, setLoaderMessage);
+
+  useEffect(() => {
+    if (!loader && showLoader && !loaderExiting) {
+      setLoaderExiting(true);
+      const timer = setTimeout(() => setShowLoader(false), 500);
+      return () => clearTimeout(timer);
+    }
+  }, [loader]);
 
   return (
     <ThemeProvider>
-      {
-        loader
-          ?
-          <Loader progress={loaderProgress} message={loaderMessage} />
-          :
-          <Routes>
+      <Routes>
             <Route path="/unauthorized" element={<Unauthorized />} />
             <Route element={<DefaultLayout />}>
               <Route path="/" element={<Home />} />
@@ -82,7 +87,7 @@ function App() {
             <Route path="/user/*" element={<NotFound />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
-      }
+      {showLoader && <Loader progress={loaderProgress} message={loaderMessage} exiting={loaderExiting} />}
       <Toast />
     </ThemeProvider>
   );

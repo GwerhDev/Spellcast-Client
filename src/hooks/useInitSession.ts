@@ -32,8 +32,7 @@ export function useInitSession(
         navigate('/unauthorized');
       } else {
         dispatch(addApiResponse({ message: 'Authentication successful.', type: 'success' }));
-        onMessage?.('Loading credentials...');
-        await dispatch(getCredentials());
+        dispatch(getCredentials());
       }
       onProgress?.(100);
       onMessage?.('');

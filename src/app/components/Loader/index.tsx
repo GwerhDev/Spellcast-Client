@@ -14,9 +14,10 @@ const MESSAGES = [
 interface LoaderProps {
   progress?: number;
   message?: string;
+  exiting?: boolean;
 }
 
-export const Loader = ({ progress = 0, message }: LoaderProps) => {
+export const Loader = ({ progress = 0, message, exiting = false }: LoaderProps) => {
   const [msgIndex, setMsgIndex] = useState(0);
 
   useEffect(() => {
@@ -26,7 +27,7 @@ export const Loader = ({ progress = 0, message }: LoaderProps) => {
   }, [message]);
 
   return (
-    <div className="loader">
+    <div className={`loader${exiting ? ' loader-exiting' : ''}`}>
       <div className={s.wrapper}>
         <img className={s.logo} src={spellcastIcon} />
         <div className={s.barTrack}>

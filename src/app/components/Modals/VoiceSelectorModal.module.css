@@ -129,6 +129,15 @@
     color: inherit;
 }
 
+.loaderContainer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem;
+    color: var(--color-light-300);
+    font-size: 1.5rem;
+}
+
 @media (max-width: 768px) {
     .tabButton {
         width: 100%;

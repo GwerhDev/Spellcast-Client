@@ -1,7 +1,7 @@
 import s from './VoiceSelectorModal.module.css';
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { faBrain, faCircle, faDesktop, faVolumeHigh, faStop } from '@fortawesome/free-solid-svg-icons';
+import { faBrain, faCircle, faDesktop, faVolumeHigh, faStop, faSpinner } from '@fortawesome/free-solid-svg-icons';
 import { faCircle as faRegCircle } from '@fortawesome/free-regular-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useDispatch, useSelector } from 'react-redux';
@@ -31,7 +31,7 @@ interface VoiceSelectorContentProps {
 export const VoiceSelectorContent: React.FC<VoiceSelectorContentProps> = ({ onClose }) => {
   const browserVoiceDocs = getBrowserVoiceDocs();
   const dispatch = useDispatch();
-  const { credentials } = useSelector((state: RootState) => state.credentials);
+  const { credentials, loading: credentialsLoading } = useSelector((state: RootState) => state.credentials);
   const { selectedVoice } = useSelector((state: RootState) => state.voice);
   const userId = useSelector((state: RootState) => state.session.userData?.id);
   const [activeTab, setActiveTab] = useState<'browser' | 'ai'>(selectedVoice.type === 'ai' ? 'ai' : selectedVoice.type);
@@ -109,8 +109,14 @@ export const VoiceSelectorContent: React.FC<VoiceSelectorContentProps> = ({ onCl
         )}
       </div>
 
+      {activeTab === 'ai' && credentialsLoading ? (
+        <div className={s.loaderContainer}>
+          <FontAwesomeIcon icon={faSpinner} spin />
+        </div>
+      ) : null}
+
       <ul className={s.voiceList}>
-        {voicesToShow.map((voiceOption, index) => (
+        {(!credentialsLoading || activeTab === 'browser') && voicesToShow.map((voiceOption, index) => (
           <li
             key={index}
             className={`${s.voiceOption} ${
