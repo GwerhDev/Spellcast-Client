@@ -60,9 +60,12 @@
   --background-color-dark: #1a1a1c;
   --background-color-light: #2f2f2f;
   --background-color-dark-transparency: #1e1e1ead;
-  --background-gradient-color: linear-gradient(to right top, var(--background-color-dark), var(--background-color-light));
+  --background-gradient-color:
+    radial-gradient(ellipse 80% 60% at 70% 40%, color-mix(in oklch, var(--color-primary) 12%, transparent), transparent 70%),
+    radial-gradient(ellipse 60% 40% at 20% 80%, color-mix(in oklch, var(--color-primary) 8%, transparent), transparent 70%),
+    linear-gradient(to right top, var(--background-color-dark), var(--background-color-light));
 
-  --paper-bg: #25283096;
+  --paper-bg: #252830;
   --paper-shadow: 0 4px 28px rgba(0, 0, 0, 0.55);
 
   --size-1: 4px;
@@ -114,7 +117,10 @@ html.light {
   --background-color-dark: #f5f5f5;
   --background-color-light: #eeeeee;
   --background-color-dark-transparency: #fafafae4;
-  --background-gradient-color: linear-gradient(to right top, var(--background-color-dark), var(--background-color-light));
+  --background-gradient-color:
+    radial-gradient(ellipse 80% 60% at 70% 40%, color-mix(in oklch, var(--color-primary) 30%, transparent), transparent 70%),
+    radial-gradient(ellipse 60% 40% at 20% 80%, color-mix(in oklch, var(--color-primary) 20%, transparent), transparent 70%),
+    linear-gradient(to right top, var(--background-color-dark), var(--background-color-light));
 
   --paper-bg: #ffffff;
   --paper-shadow: 0 4px 28px rgba(0, 0, 0, 0.2);
