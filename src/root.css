@@ -118,8 +118,8 @@ html.light {
   --background-color-light: #eeeeee;
   --background-color-dark-transparency: #fafafae4;
   --background-gradient-color:
-    radial-gradient(ellipse 80% 60% at 70% 40%, color-mix(in oklch, var(--color-primary) 30%, transparent), transparent 70%),
-    radial-gradient(ellipse 60% 40% at 20% 80%, color-mix(in oklch, var(--color-primary) 20%, transparent), transparent 70%),
+    radial-gradient(ellipse 80% 60% at 70% 40%, color-mix(in oklch, var(--color-primary) 18%, transparent), transparent 70%),
+    radial-gradient(ellipse 60% 40% at 20% 80%, color-mix(in oklch, var(--color-primary) 12%, transparent), transparent 70%),
     linear-gradient(to right top, var(--background-color-dark), var(--background-color-light));
 
   --paper-bg: #ffffff;

@@ -34,8 +34,10 @@ export const Start = () => {
 
         <InputTypeSelector inputType={inputType} setInputType={handeInputTypeChange} />
 
-        {inputType === 'upload' && <ImportOption />}
-{inputType === 'text' && <TextOption />}
+        <div className={s.optionContainer}>
+          {inputType === 'upload' && <ImportOption />}
+          {inputType === 'text' && <TextOption />}
+        </div>
 
       </div >
     </div >

@@ -4,6 +4,7 @@
 
 .dropzone {
   width: 100%;
+  flex: 1;
   border-radius: 8px;
   color: var(--color-light-300);
   cursor: pointer;

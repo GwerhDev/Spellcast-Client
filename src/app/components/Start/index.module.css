@@ -18,6 +18,13 @@
   flex-direction: column;
 }
 
+.optionContainer {
+  width: 100%;
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+}
+
 @media (max-width: 768px) {
   .container {
     padding-inline: 0;
