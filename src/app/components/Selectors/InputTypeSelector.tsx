@@ -20,7 +20,7 @@ export const InputTypeSelector: React.FC<InputTypeSelectorProps> = ({ inputType,
           <span className={s.title}>Text</span>
         </button>
         <button
-          className={`${s.tabButton} ${s.right} ${inputType === 'upload' ? s.active : ''}`}
+          className={`${s.tabButton} ${s.right} ${inputType === 'import' ? s.active : ''}`}
           onClick={() => setInputType('import')}
         >
           <FontAwesomeIcon icon={faUpload} />
