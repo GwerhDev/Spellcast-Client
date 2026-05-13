@@ -17,7 +17,7 @@ export const Start = () => {
 
   const getSubtitle = () => {
     switch (inputType) {
-      case 'upload':
+      case 'import':
         return "Get started by importing a new Document";
       case 'text':
         return "Write some magic words";
@@ -35,7 +35,7 @@ export const Start = () => {
         <InputTypeSelector inputType={inputType} setInputType={handeInputTypeChange} />
 
         <div className={s.optionContainer}>
-          {inputType === 'upload' && <ImportOption />}
+          {inputType === 'import' && <ImportOption />}
           {inputType === 'text' && <TextOption />}
         </div>
 
