@@ -1,9 +1,7 @@
 import { useRef, useState, useEffect } from 'react';
 import spellcastIcon from '../../../assets/spellcast-logo.svg';
-import { NHEXA_API } from '../../../config/api';
 import s from './AppSwitcher.module.css';
-
-type App = { label: string; url: string; icon: string };
+import { App, getAppList } from '../../../services/apps';
 
 const isCurrent = (url: string) => {
   try { return new URL(url).origin === window.location.origin; } catch { return false; }
@@ -15,10 +13,7 @@ export const AppSwitcher = () => {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    fetch(`${NHEXA_API}/app-list`, { credentials: 'include' })
-      .then(r => r.json())
-      .then(data => setApps(data.user ?? []))
-      .catch(() => {});
+    getAppList().then(setApps).catch(() => {});
   }, []);
 
   useEffect(() => {
