@@ -88,16 +88,20 @@
   border: none;
   color: var(--color-light-100);
   cursor: pointer;
-  padding: 0.2rem 0.4rem;
   line-height: 1;
+  padding: 0;
+  padding-inline: .6rem;
+  aspect-ratio: 1;
   border-radius: 4px;
   font-size: 0.75rem;
+  border-radius: 100%;
   transition: color 0.2s ease, background 0.2s ease;
 }
 
 .menuButton:hover {
   color: var(--app-white);
-  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(2px);
+  background: rgba(255, 255, 255, 0.356);
 }
 
 .contextMenu {
