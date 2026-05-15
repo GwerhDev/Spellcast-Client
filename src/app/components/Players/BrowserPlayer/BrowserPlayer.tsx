@@ -57,6 +57,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
   const volumeSliderRef = useRef<HTMLDivElement>(null);
   const volumeButtonRef = useRef<HTMLButtonElement>(null);
   const activeUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const isSpeechPausedRef = useRef(false);
   const { userData } = useAppSelector((state) => state.session);
 
   // Prevent advancing on stale empty sentences before PdfProcessor loads the new page
@@ -108,31 +109,17 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
 
   const speakSentence = (text: string, onEnd: () => void, onStart?: () => void, isRetry = false) => {
     const utterance = new SpeechSynthesisUtterance(text);
-    if (!isRetry) activeUtteranceRef.current = utterance;
+    if (!isRetry) {
+      activeUtteranceRef.current = utterance;
+      isSpeechPausedRef.current = false;
+    }
     if (voice) utterance.voice = voice;
     utterance.volume = volume;
 
-    let lastBoundaryIndex = 0;
-    utterance.onboundary = (e) => {
-      if (e.name === 'word') lastBoundaryIndex = e.charIndex;
-    };
-
     if (!isRetry && onStart) utterance.onstart = onStart;
-
-    const tryResume = () => {
-      if (lastBoundaryIndex > 0 && lastBoundaryIndex < text.length * 0.85) {
-        const remaining = text.slice(lastBoundaryIndex).trimStart();
-        if (remaining.length > 5) {
-          speakSentence(remaining, onEnd, undefined, true);
-          return true;
-        }
-      }
-      return false;
-    };
 
     utterance.onend = () => {
       if (!isRetry && activeUtteranceRef.current !== utterance) return;
-      if (text.length > 100 && tryResume()) return;
       onEnd();
     };
 
@@ -152,7 +139,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
         }, undefined, true);
         return;
       }
-      if (!tryResume()) onEnd();
+      onEnd();
     };
 
     window.speechSynthesis.speak(utterance);
@@ -199,6 +186,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
 
   const handleTogglePlayPause = () => {
     if (isPlaying) {
+      isSpeechPausedRef.current = true;
       window.speechSynthesis.pause();
       dispatch(pause());
       return;
@@ -209,7 +197,8 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
       else handleStop();
       return;
     }
-    if (window.speechSynthesis.paused) {
+    if (isSpeechPausedRef.current) {
+      isSpeechPausedRef.current = false;
       handlePlay();
       return;
     }
