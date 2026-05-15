@@ -7,15 +7,14 @@
 }
 
 .trigger {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 0.4rem;
   padding: 0;
   background: transparent;
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  transition: background 0.15s ease;
   color: var(--color-primary);
   font-family: var(--font-sans);
   font-size: 9px;
@@ -24,8 +23,35 @@
   text-transform: uppercase;
 }
 
-.trigger:hover {
-  color: var(--color-primary-accent);
+.brandSpellcast,
+.brandNhexa {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.brandNhexa {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.trigger:hover .brandSpellcast {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+
+.trigger:hover .brandNhexa {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.brandNhexa .name {
+  font-family: 'Game-Of-Squids', sans-serif;
+  color: #e5e5e5;
 }
 
 .triggerIcon {
