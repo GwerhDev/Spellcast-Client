@@ -11,6 +11,8 @@ interface VolumeControlsProps {
   volumeSliderRef: React.RefObject<HTMLDivElement | null>;
   volumeButtonRef: React.RefObject<HTMLButtonElement | null>;
   setVolume: (volume: number) => void;
+  onSliderPointerDown?: () => void;
+  onSliderPointerUp?: () => void;
 }
 
 export const VolumeControls: React.FC<VolumeControlsProps> = ({
@@ -21,6 +23,8 @@ export const VolumeControls: React.FC<VolumeControlsProps> = ({
   volumeSliderRef,
   volumeButtonRef,
   setVolume,
+  onSliderPointerDown,
+  onSliderPointerUp,
 }) => {
   return (
     <div className={s.container}>
@@ -44,6 +48,8 @@ export const VolumeControls: React.FC<VolumeControlsProps> = ({
             step="0.01"
             value={volume}
             onChange={(e) => setVolume(parseFloat(e.target.value))}
+            onPointerDown={onSliderPointerDown}
+            onPointerUp={onSliderPointerUp}
             className={s.verticalSlider}
           />
         </div>

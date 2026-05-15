@@ -58,6 +58,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
   const volumeButtonRef = useRef<HTMLButtonElement>(null);
   const activeUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const isSpeechPausedRef = useRef(false);
+  const volumeDragPausedRef = useRef(false);
   const { userData } = useAppSelector((state) => state.session);
 
   // Prevent advancing on stale empty sentences before PdfProcessor loads the new page
@@ -145,12 +146,10 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
     window.speechSynthesis.speak(utterance);
   };
 
-  // Chrome bug workaround: speechSynthesis freezes silently after ~14s without this
   useEffect(() => {
-    if (!isPlaying) return window.speechSynthesis.pause();
-    window.speechSynthesis.resume();
-
+    if (!isPlaying) window.speechSynthesis.pause();
   }, [isPlaying]);
+
 
   useEffect(() => {
     // This effect triggers the start of sentence-based playback once sentences are set
@@ -199,7 +198,8 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
     }
     if (isSpeechPausedRef.current) {
       isSpeechPausedRef.current = false;
-      handlePlay();
+      window.speechSynthesis.resume();
+      dispatch(play());
       return;
     }
     speakSentence(
@@ -219,7 +219,25 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
 
   const handlePlay = () => {
     dispatch(play());
-    window.speechSynthesis.resume();
+  };
+
+  const handleVolumePointerDown = () => {
+    if (activeUtteranceRef.current && !isSpeechPausedRef.current && window.speechSynthesis.speaking) {
+      window.speechSynthesis.pause();
+      volumeDragPausedRef.current = true;
+    }
+  };
+
+  const handleVolumePointerUp = () => {
+    if (!volumeDragPausedRef.current) return;
+    volumeDragPausedRef.current = false;
+    if (!activeUtteranceRef.current) return;
+    window.speechSynthesis.cancel();
+    speakSentence(
+      sentences[currentSentenceIndex],
+      () => dispatch(setCurrentSentenceIndex(currentSentenceIndex + 1)),
+      () => handlePlay(),
+    );
   };
 
   const handlePrevious = () => {
@@ -300,6 +318,8 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
               volumeSliderRef={volumeSliderRef}
               volumeButtonRef={volumeButtonRef}
               setVolume={(vol) => dispatch(setVolume(vol))}
+              onSliderPointerDown={handleVolumePointerDown}
+              onSliderPointerUp={handleVolumePointerUp}
             />
             <PlayerConfigButton onClick={() => showPlayerConfigModal(true)} />
           </div>
