@@ -43,8 +43,9 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
         content={content}
         onChange={(newContent) => {
           const json = newContent as JSONContent;
-          setContent(json);
-          onPageContentChange(json);
+          const preserved: JSONContent = attrs ? { ...json, attrs } : json;
+          setContent(preserved);
+          onPageContentChange(preserved);
         }}
         editable
         ttsMarks={ttsMarks}
@@ -54,7 +55,7 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
         ttsPlaying={ttsPlaying}
         wrapContent={(editorContent) => (
           <div className={s.paperBackground}>
-            <div className={s.paperSheet} style={{ minHeight: `${paperMinHeight}px` }}>
+            <div className={s.paperSheet} style={{ height: `${paperMinHeight}px` }}>
               {editorContent}
             </div>
           </div>

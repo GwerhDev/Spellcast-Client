@@ -195,7 +195,8 @@
 /* Paper mode — the sheet itself */
 .paperSheet {
   width: 800px;
-  min-height: 1131px;
+  height: 1131px;
+  flex-shrink: 0;
   background: var(--paper-bg);
   border-radius: 2px;
   padding: 3rem 4rem;

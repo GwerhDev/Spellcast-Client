@@ -207,7 +207,7 @@ export const DocumentReader = () => {
     const paperMinHeight = pageAttrs?.pageWidth && pageAttrs?.pageHeight
       ? Math.round((pageAttrs.pageHeight / pageAttrs.pageWidth) * 800)
       : 1131;
-    const paperStyle = { minHeight: `${paperMinHeight}px` };
+    const paperStyle = { height: `${paperMinHeight}px` };
 
     if (selectedVoice.type === 'browser') {
       if (!fitToWidth) {
