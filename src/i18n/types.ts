@@ -1,3 +1,5 @@
 export type Language = 'en' | 'es';
 
-export type Translations = typeof import('./locales/en').en;
+type Stringify<T> = T extends string ? string : { [K in keyof T]: Stringify<T[K]> };
+
+export type Translations = Stringify<typeof import('./locales/en').en>;
