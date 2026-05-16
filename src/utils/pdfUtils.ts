@@ -122,6 +122,7 @@ export const extractPdfPages = async (pdf: pdfjsLib.PDFDocumentProxy): Promise<J
       continue;
     }
 
+    console.log(`[PDF page ${pageNum} raw]`, content.items);
     const items = content.items as TextItem[];
     items.sort((a, b) => {
       if (a.transform[5] > b.transform[5]) return -1;
@@ -178,6 +179,7 @@ export const extractPdfPages = async (pdf: pdfjsLib.PDFDocumentProxy): Promise<J
         pageContent.content!.push({ type: 'paragraph' });
         continue;
       }
+
       const paragraphX = p.lines[0]?.x ?? leftmostX;
       const marginLeft = Math.max(0, Math.round((paragraphX - leftmostX) * xScale));
       const contentNodes: object[] = [];

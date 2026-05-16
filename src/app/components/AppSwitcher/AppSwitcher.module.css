@@ -49,9 +49,19 @@
   transform: translateX(-50%) translateY(0);
 }
 
-.brandNhexa .name {
+.nhexaIcon {
+  display: inline-block;
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  background-color: var(--text-color);
+  -webkit-mask: url('../../../assets/nhexa-logo.svg') no-repeat center / contain;
+  mask: url('../../../assets/nhexa-logo.svg') no-repeat center / contain;
+}
+
+.nhexaName {
   font-family: 'Game-Of-Squids', sans-serif;
-  color: #e5e5e5;
+  color: var(--text-color);
 }
 
 .triggerIcon {
@@ -103,6 +113,7 @@
   border-radius: 3px;
   object-fit: contain;
   flex-shrink: 0;
+  filter: var(--icon-filter);
 }
 
 .label {

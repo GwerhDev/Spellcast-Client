@@ -1,6 +1,5 @@
 import { useRef, useState, useEffect } from 'react';
 import spellcastIcon from '../../../assets/spellcast-logo.svg';
-import nhexaIcon from '../../../assets/nhexa-logo.svg';
 import s from './AppSwitcher.module.css';
 import { App, getAppList } from '../../../services/apps';
 
@@ -33,8 +32,8 @@ export const AppSwitcher = () => {
           <span className={s.name}>SPELLCAST</span>
         </span>
         <span className={s.brandNhexa}>
-          <img src={nhexaIcon} alt="" className={s.triggerIcon} />
-          <span className={s.name}>NHEXA</span>
+          <span className={s.nhexaIcon} />
+          <span className={s.nhexaName}>NHEXA</span>
         </span>
       </button>
 

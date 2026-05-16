@@ -27,6 +27,7 @@
 
   --text-color: #cbcbcb;
   --text-color-accent: #e4e4e4;
+  --icon-filter: brightness(0.8);
   --color-options-background: #3a3d48;
   --component-background: linear-gradient(to right top, var(--color-primary-darker), var(--color-secondary-darker));
   --component-background-transparency: #66656511;
@@ -94,6 +95,7 @@ html.light {
   --color-highlight: #b7d7f0;
 
   --text-color: #616161;
+  --icon-filter: brightness(0.38);
   --color-sentence-hover: #cacaca;
   --color-options-background: #ddd6e8;
   --component-background: linear-gradient(to right top, var(--color-primary-lighter), var(--color-secondary-lighter));
