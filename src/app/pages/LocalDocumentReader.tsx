@@ -8,12 +8,14 @@ import { resetBrowserPlayer, stop, setAutoPlayOnLoad } from '../../store/browser
 import { setPdfFile, setPdfDocumentInfo, resetPdfReader, setPdfLoaded, setHasInitialPageSet } from '../../store/pdfReaderSlice';
 import { Spinner } from '../components/Spinner';
 import { DocumentReader } from '../components/DocumentReader';
+import { useLanguage } from '../../i18n';
 
 export const LocalDocumentReader: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const location = useLocation();
   const dispatch = useDispatch();
   const [isLoading, setIsLoading] = useState(true);
+  const { t } = useLanguage();
   const [error, setError] = useState<string | null>(null);
 
   const { userData, logged } = useAppSelector((state) => state.session);
@@ -69,8 +71,8 @@ export const LocalDocumentReader: React.FC = () => {
     //eslint-disable-next-line
   }, [id, dispatch, documentId, logged, userData.id]);
 
-  if (isLoading) return <Spinner isLoading message="Loading local document..." />;
-  if (error) return <div><h2>Error</h2><p>{error}</p></div>;
+  if (isLoading) return <Spinner isLoading message={t.errors.loadingDocument} />;
+  if (error) return <div><h2>{t.errors.error}</h2><p>{error}</p></div>;
 
   return <DocumentReader />;
 };

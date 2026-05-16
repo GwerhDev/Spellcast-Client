@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFilePdf, faTrash, faPen, faPlay, faEllipsisVertical } from '@fortawesome/free-solid-svg-icons';
 import { Document } from 'src/interfaces';
+import { useLanguage } from '../../../i18n';
 
 interface DocumentCardProps {
   doc: Document;
@@ -15,6 +16,7 @@ interface DocumentCardProps {
 }
 
 export const DocumentCard = ({ doc, isActive, onClick, onDelete, onEdit, onPlay }: DocumentCardProps) => {
+  const { t } = useLanguage();
   const totalPages = useMemo(() => {
     if (!doc.pagesContent) return null;
     try { return JSON.parse(doc.pagesContent).length; } catch { return null; }
@@ -75,16 +77,16 @@ export const DocumentCard = ({ doc, isActive, onClick, onDelete, onEdit, onPlay 
         >
           <button className={s.menuItem} onClick={(e) => { e.stopPropagation(); setMenuOpen(false); onEdit(e); }}>
             <FontAwesomeIcon icon={faPen} />
-            Editar
+            {t.common.edit}
           </button>
           <button className={`${s.menuItem} ${s.menuItemDanger}`} onClick={(e) => { e.stopPropagation(); setMenuOpen(false); onDelete(e); }}>
             <FontAwesomeIcon icon={faTrash} />
-            Eliminar
+            {t.common.delete}
           </button>
         </div>,
         document.body
       )}
-      {isActive && <span className={s.readingTag}>READING</span>}
+      {isActive && <span className={s.readingTag}>{t.document.reading}</span>}
       {onPlay && (
         <button className={s.playAction} onClick={(e) => { e.stopPropagation(); onPlay(e); }}>
           <FontAwesomeIcon icon={faPlay} />

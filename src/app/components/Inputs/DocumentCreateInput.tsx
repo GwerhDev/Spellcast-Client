@@ -11,6 +11,7 @@ import { useAppSelector } from "store/hooks";
 import * as pdfjsLib from 'pdfjs-dist';
 import workerSrc from 'pdfjs-dist/build/pdf.worker?url';
 import { renderPageToCover, extractPdfPages, injectCoverIntoPages } from 'src/utils/pdfUtils';
+import { useLanguage } from '../../../i18n';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
@@ -21,6 +22,7 @@ interface DocumentCreateInputProps {
 export const DocumentCreateInput = (props: DocumentCreateInputProps) => {
   const { document } = props;
   const [editTitle, setEditTitle] = useState(false);
+  const { t } = useLanguage();
   const [isCreating, setIsCreating] = useState(false);
   const [buttonHovered, setButtonHovered] = useState(false);
   const navigate = useNavigate();
@@ -83,7 +85,7 @@ export const DocumentCreateInput = (props: DocumentCreateInputProps) => {
       <FontAwesomeIcon size="2x" icon={getFileTypeIcon(document.type)} />
       <div className={s.metadata} onMouseLeave={() => setEditTitle(false)}>
         <input
-          placeholder="Please, provide a Title for your Document"
+          placeholder={t.document.titleInputPlaceholder}
           readOnly={document.title.length > 0 && !editTitle}
           className={s.title}
           onClick={() => setEditTitle(true)}
@@ -100,7 +102,7 @@ export const DocumentCreateInput = (props: DocumentCreateInputProps) => {
         className={s.continueButton}
         disabled={isCreating}
       >
-        {buttonHovered && <p>{isCreating ? 'Creating...' : 'Create'}</p>}
+        {buttonHovered && <p>{isCreating ? t.document.creating : t.editor.create}</p>}
         <FontAwesomeIcon size="3x" icon={faArrowAltCircleRight} />
       </button>
     </div>

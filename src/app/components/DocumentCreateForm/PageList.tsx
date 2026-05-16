@@ -2,6 +2,7 @@ import React from 'react';
 import s from './PageList.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faNewspaper, faTrash, faPlus } from '@fortawesome/free-solid-svg-icons';
+import { useLanguage } from '../../../i18n';
 
 interface PageListProps {
   pages: string[];
@@ -12,6 +13,7 @@ interface PageListProps {
 }
 
 export const PageList: React.FC<PageListProps> = ({ pages, currentPage, onPageClick, onPageDelete, onAddPage }) => {
+  const { t } = useLanguage();
 
   const handleDelete = (e: React.MouseEvent, index: number) => {
     e.stopPropagation();
@@ -30,10 +32,10 @@ export const PageList: React.FC<PageListProps> = ({ pages, currentPage, onPageCl
             <FontAwesomeIcon icon={faTrash} size='xs' />
           </button>
           <FontAwesomeIcon icon={faNewspaper} />
-          <small className={s.pageNumber}>Page {index + 1}</small>
+          <small className={s.pageNumber}>{t.document.page} {index + 1}</small>
         </div>
       ))}
-      <div title={"Add Page"} className={s.addPageItem} onClick={onAddPage}>
+      <div title={t.document.addPage} className={s.addPageItem} onClick={onAddPage}>
         <FontAwesomeIcon icon={faPlus} />
       </div>
     </div>

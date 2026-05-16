@@ -5,10 +5,12 @@ import { InputTypeSelector } from '../Selectors/InputTypeSelector';
 import { ImportOption } from './ImportOption';
 import { useDispatch } from 'react-redux';
 import { resetDocumentState } from 'store/documentSlice';
+import { useLanguage } from '../../../i18n';
 
 export const Start = () => {
   const [inputType, setInputType] = useState('text');
   const dispatch = useDispatch();
+  const { t } = useLanguage();
 
   const handeInputTypeChange = (type: string) => {
     setInputType(type);
@@ -18,9 +20,9 @@ export const Start = () => {
   const getSubtitle = () => {
     switch (inputType) {
       case 'import':
-        return "Get started by importing a new Document";
+        return t.start.importSubtitle;
       case 'text':
-        return "Write some magic words";
+        return t.start.textSubtitle;
 
       default: return;
     }
@@ -29,7 +31,7 @@ export const Start = () => {
   return (
     <div className={s.container}>
       <div className={s.createContainer}>
-        <h1 className="featured">Cast a spell</h1>
+        <h1 className="featured">{t.start.castSpell}</h1>
         <p>{getSubtitle()}</p>
 
         <InputTypeSelector inputType={inputType} setInputType={handeInputTypeChange} />

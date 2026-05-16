@@ -10,9 +10,11 @@ import { DocumentCard } from '../Cards/DocumentCard';
 import { useDispatch } from 'react-redux';
 import { setAutoPlayOnLoad } from '../../../store/browserPlayerSlice';
 import { setAutoPlayOnLoad as setAudioAutoPlayOnLoad } from '../../../store/audioPlayerSlice';
+import { useLanguage } from '../../../i18n';
 
 export const DocumentList: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const dispatch = useDispatch();
   const { userData, logged } = useAppSelector(state => state.session);
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -69,12 +71,12 @@ export const DocumentList: React.FC = () => {
   };
 
   if (isLoading) return <Spinner isLoading />;
-  if (documents.length === 0) return <p>No documents found.</p>;
+  if (documents.length === 0) return <p>{t.document.noDocuments}</p>;
 
   return (
     <>
       <div className={s.container}>
-        <h2 className={s.title}>All Documents</h2>
+        <h2 className={s.title}>{t.document.allDocuments}</h2>
         <div className={s.slider}>
           {documents.map((doc) => (
             <DocumentCard
@@ -93,8 +95,8 @@ export const DocumentList: React.FC = () => {
           show={showDeleteModal}
           onClose={closeDeleteModal}
           onConfirm={handleDeleteConfirm}
-          title="Delete Document"
-          message={`Are you sure you want to delete "${selectedDoc.title}"? This action cannot be undone.`}
+          title={t.document.deleteTitle}
+          message={t.document.deleteConfirm.replace('{title}', selectedDoc.title)}
         />
       )}
     </>

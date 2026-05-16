@@ -8,6 +8,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from 'store/index';
 import { resetDocumentState, setDocumentDetails } from 'store/documentSlice';
 import { DocumentCreateInput } from '../../Inputs/DocumentCreateInput';
+import { useLanguage } from '../../../../i18n';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
@@ -19,6 +20,7 @@ export const ImportOption: React.FC<ImportOptionProps> = () => {
   const document = useSelector((state: RootState) => state.document);
   const [isDragging, setIsDragging] = useState(false);
   const dispatch = useDispatch();
+  const { t } = useLanguage();
 
   const handleFile = useCallback((file: File) => {
     const fileType = file.type.split("/")?.at(-1);
@@ -74,7 +76,7 @@ export const ImportOption: React.FC<ImportOptionProps> = () => {
       <>
         <DocumentCreateInput document={document} />
         <p onClick={() => dispatch(resetDocumentState())} className={s.resetPdf}>
-          Or import a new one
+          {t.start.orImportNew}
         </p>
       </>
     ) : (
@@ -93,7 +95,7 @@ export const ImportOption: React.FC<ImportOptionProps> = () => {
         />
         <label htmlFor='file-input' className={s.fileInputLabel}>
           <FontAwesomeIcon icon={faUpload} size="3x" />
-          {'Drag and drop a PDF file here, or click to select a file'}
+          {t.start.dragDrop}
         </label>
       </div>
     )

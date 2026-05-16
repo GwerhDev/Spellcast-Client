@@ -1,5 +1,6 @@
 import s from './PlayerPreferences.module.css';
 import React, { useState } from 'react';
+import { useLanguage } from '../../../i18n';
 
 interface ToggleRowProps {
   label: string;
@@ -76,21 +77,22 @@ export const PlayerPreferences: React.FC = () => {
   const [skipBlankPages, setSkipBlankPages] = useState(false);
   const [loopDocument, setLoopDocument] = useState(false);
   const [speed, setSpeed] = useState(1);
+  const { t } = useLanguage();
 
   return (
     <div className={s.container}>
       <div className={s.section}>
-        <p className={s.sectionTitle}>Playback</p>
-        <ToggleRow soon label="Autoplay" description="Start playing automatically when a document is loaded." value={autoplay} onChange={setAutoplay} />
-        <ToggleRow soon label="Continue on page turn" description="Keep playing when navigating to the next or previous page." value={continueOnPageTurn} onChange={setContinueOnPageTurn} />
-        <ToggleRow soon label="Loop document" description="Restart from the beginning when the last page finishes." value={loopDocument} onChange={setLoopDocument} />
-        <SliderRow soon label="Reading speed" description="Adjust the playback speed of the voice." value={speed} min={0.5} max={2} step={0.25} format={(v) => `${v}×`} onChange={setSpeed} />
+        <p className={s.sectionTitle}>{t.player.playback}</p>
+        <ToggleRow soon label={t.player.autoplay} description={t.player.autoplayDesc} value={autoplay} onChange={setAutoplay} />
+        <ToggleRow soon label={t.player.continueOnPageTurn} description={t.player.continueOnPageTurnDesc} value={continueOnPageTurn} onChange={setContinueOnPageTurn} />
+        <ToggleRow soon label={t.player.loopDocument} description={t.player.loopDocumentDesc} value={loopDocument} onChange={setLoopDocument} />
+        <SliderRow soon label={t.player.readingSpeed} description={t.player.readingSpeedDesc} value={speed} min={0.5} max={2} step={0.25} format={(v) => `${v}×`} onChange={setSpeed} />
       </div>
 
       <div className={s.section}>
-        <p className={s.sectionTitle}>Document</p>
-        <ToggleRow soon label="Remember position" description="Resume from where you left off when reopening a document." value={rememberPosition} onChange={setRememberPosition} />
-        <ToggleRow soon label="Skip blank pages" description="Automatically skip pages with no readable content." value={skipBlankPages} onChange={setSkipBlankPages} />
+        <p className={s.sectionTitle}>{t.player.document}</p>
+        <ToggleRow soon label={t.player.rememberPosition} description={t.player.rememberPositionDesc} value={rememberPosition} onChange={setRememberPosition} />
+        <ToggleRow soon label={t.player.skipBlankPages} description={t.player.skipBlankPagesDesc} value={skipBlankPages} onChange={setSkipBlankPages} />
       </div>
     </div>
   );

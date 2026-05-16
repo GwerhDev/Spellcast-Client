@@ -4,10 +4,12 @@ import { faFloppyDisk, faPenToSquare, faXmark } from '@fortawesome/free-solid-sv
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../../store';
 import { setAutoSave, setShowEditorSettings } from '../../../store/editorSlice';
+import { useLanguage } from '../../../i18n';
 
 export const EditorSettingsPanel = () => {
   const dispatch = useDispatch();
   const { autoSave } = useSelector((state: RootState) => state.editor);
+  const { t } = useLanguage();
 
   const handleAutoSave = (value: boolean) => {
     dispatch(setAutoSave(value));
@@ -19,7 +21,7 @@ export const EditorSettingsPanel = () => {
       <div className={s.container}>
         <div className={s.menuContainer}>
           <div className={s.header}>
-            <span className={s.title}>Editor</span>
+            <span className={s.title}>{t.editorSettings.title}</span>
             <FontAwesomeIcon icon={faXmark} className={s.closeButton} onClick={() => dispatch(setShowEditorSettings(false))} />
           </div>
           <ul className={s.optionList}>
@@ -28,14 +30,14 @@ export const EditorSettingsPanel = () => {
               onClick={() => handleAutoSave(true)}
             >
               <FontAwesomeIcon icon={faFloppyDisk} />
-              Auto save
+              {t.editorSettings.autoSave}
             </li>
             <li
               className={!autoSave ? s.optionActive : s.option}
               onClick={() => handleAutoSave(false)}
             >
               <FontAwesomeIcon icon={faPenToSquare} />
-              Manual save
+              {t.editorSettings.manualSave}
             </li>
           </ul>
         </div>

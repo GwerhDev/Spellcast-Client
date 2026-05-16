@@ -10,6 +10,7 @@ import { setSelectedVoice } from 'store/voiceSlice';
 import { stop as stopAudio } from 'store/audioPlayerSlice';
 import { stop as stopBrowser } from 'store/browserPlayerSlice';
 import { saveVoicePreference } from '../../../db/preferences';
+import { useLanguage } from '../../../i18n';
 
 function getBrowserVoiceDocs(): { label: string; url: string } {
   const ua = navigator.userAgent;
@@ -34,6 +35,7 @@ export const VoiceSelectorContent: React.FC<VoiceSelectorContentProps> = ({ onCl
   const { credentials, loading: credentialsLoading } = useSelector((state: RootState) => state.credentials);
   const { selectedVoice } = useSelector((state: RootState) => state.voice);
   const userId = useSelector((state: RootState) => state.session.userData?.id);
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<'browser' | 'ai'>(selectedVoice.type === 'ai' ? 'ai' : selectedVoice.type);
   const [previewingVoice, setPreviewingVoice] = useState<string | null>(null);
 
@@ -82,29 +84,29 @@ export const VoiceSelectorContent: React.FC<VoiceSelectorContentProps> = ({ onCl
           onClick={() => setActiveTab('browser')}
         >
           <FontAwesomeIcon icon={faDesktop} />
-          <span className={s.title}>Browser Voices</span>
+          <span className={s.title}>{t.player.browserVoices}</span>
         </button>
         <button
           className={`${s.tabButton} ${s.right} ${activeTab === 'ai' ? s.activeTab : ''}`}
           onClick={() => setActiveTab('ai')}
         >
           <FontAwesomeIcon icon={faBrain} />
-          <span className={s.title}>AI Voices</span>
+          <span className={s.title}>{t.player.aiVoices}</span>
         </button>
       </div>
 
       <div className={s.descriptionContainer}>
         {activeTab === 'browser' ? (
           <p className={s.description}>
-            These voices are provided by your browser.{' '}
+            {t.player.browserVoicesDesc}{' '}
             <a href={browserVoiceDocs.url} target="_blank" rel="noopener noreferrer">
-              Check out the available voices in {browserVoiceDocs.label}.
+              {t.player.checkBrowserVoices.replace('{browser}', browserVoiceDocs.label)}
             </a>
           </p>
         ) : (
           <p className={s.description}>
-            These voices are provided by AI services. Configure your credentials in{' '}
-            <Link onClick={onClose} to="/user/settings/credentials">your credentials settings.</Link>
+            {t.player.aiVoicesDesc}{' '}
+            <Link onClick={onClose} to="/user/settings/credentials">{t.player.credentialsSettings}</Link>
           </p>
         )}
       </div>
@@ -139,7 +141,7 @@ export const VoiceSelectorContent: React.FC<VoiceSelectorContentProps> = ({ onCl
               <button
                 className={s.previewButton}
                 onClick={(e) => handlePreview(e, voiceOption.name)}
-                title="Preview voice"
+                title={t.player.previewVoice}
               >
                 <FontAwesomeIcon icon={previewingVoice === voiceOption.name ? faStop : faVolumeHigh} />
               </button>

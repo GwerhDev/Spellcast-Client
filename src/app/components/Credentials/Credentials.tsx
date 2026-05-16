@@ -8,11 +8,13 @@ import { Spinner } from "../Spinner";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState, AppDispatch } from "store";
 import { getCredentials } from "store/credentialsSlice";
+import { useLanguage } from '../../../i18n';
 
 export const Credentials = () => {
   const dispatch: AppDispatch = useDispatch();
   const { credentials, loading } = useSelector((state: RootState) => state.credentials);
   const [isAddingNewCredential, setIsAddingNewCredential] = useState(false);
+  const { t } = useLanguage();
 
   const handleAdd = () => {
     setIsAddingNewCredential(true);
@@ -29,7 +31,7 @@ export const Credentials = () => {
 
   return (
     <div className={s.container}>
-      <h1 className="featured">Credentials</h1>
+      <h1 className="featured">{t.nav.credentials}</h1>
       <ul className={s.list}>
         {credentials.map((credential: TTS_Credential) => (
           <CredentialCard fetchCredentials={() => dispatch(getCredentials())} credential={credential} key={credential.id || `existing-${credential.region}-${credential.azure_key}`} />
@@ -48,7 +50,7 @@ export const Credentials = () => {
                 !loading &&
                 <li className={s.emptyItem} onClick={handleAdd}>
                   <FontAwesomeIcon icon={faPlus} />
-                  Create new credential
+                  {t.credentials.createNew}
                 </li>
               }
             </>

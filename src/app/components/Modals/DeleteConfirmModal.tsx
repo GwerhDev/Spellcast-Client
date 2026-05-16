@@ -3,6 +3,7 @@ import React from 'react';
 import { CustomModal } from './CustomModal';
 import { PrimaryButton } from '../Buttons/PrimaryButton';
 import { SecondaryButton } from '../Buttons/SecondaryButton';
+import { useLanguage } from '../../../i18n';
 
 interface DeleteConfirmModalProps {
   show: boolean;
@@ -13,6 +14,7 @@ interface DeleteConfirmModalProps {
 }
 
 export const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({ show, onClose, onConfirm, title, message }) => {
+  const { t } = useLanguage();
   if (!show) {
     return null;
   }
@@ -22,8 +24,8 @@ export const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({ show, on
       <div className={s.container}>
         <p>{message}</p>
         <div className={s.buttons}>
-          <SecondaryButton onClick={onClose}>Cancel</SecondaryButton>
-          <PrimaryButton onClick={onConfirm} className={s.deleteButton}>Delete</PrimaryButton>
+          <SecondaryButton onClick={onClose}>{t.common.cancel}</SecondaryButton>
+          <PrimaryButton onClick={onConfirm} className={s.deleteButton}>{t.common.delete}</PrimaryButton>
         </div>
       </div>
     </CustomModal>

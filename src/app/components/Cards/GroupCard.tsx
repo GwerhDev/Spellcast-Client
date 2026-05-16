@@ -5,6 +5,7 @@ import { Group } from "src/interfaces";
 import { LabeledInput } from "../Inputs/LabeledInput";
 import { deleteGroup, createGroup, updateGroup } from "services/groups";
 import { useState, useEffect } from "react";
+import { useLanguage } from '../../../i18n';
 
 interface GroupCardProps {
   group: Group;
@@ -17,6 +18,7 @@ export const GroupCard = (props: GroupCardProps) => {
   const { group, fetchGroups, onSaveNew, onCancelNew } = props;
   const [editionActive, setEditionActive] = useState(group.isNew ? true : false);
   const [name, setName] = useState(group.name || "");
+  const { t } = useLanguage();
 
   useEffect(() => {
     setName(group.name || "");
@@ -58,7 +60,7 @@ export const GroupCard = (props: GroupCardProps) => {
 
   return (
     <li key={group.id} className={s.container}>
-      <LabeledInput disabled={!editionActive} label={"name"} value={name} type="text" placeholder="Name for your Group" name="name" id="name" htmlFor="name" onChange={(e) => setName(e.target.value)} />
+      <LabeledInput disabled={!editionActive} label={t.groups.labelName} value={name} type="text" placeholder={t.groups.namePlaceholder} name="name" id="name" htmlFor="name" onChange={(e) => setName(e.target.value)} />
       <div className={s.actions}>
         {
           editionActive ?

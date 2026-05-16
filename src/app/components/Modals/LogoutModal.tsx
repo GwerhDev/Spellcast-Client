@@ -4,16 +4,18 @@ import { useDispatch } from 'react-redux';
 import { clearSession } from '../../../store/sessionSlice';
 import { LogoutForm } from '../Forms/LogoutForm';
 import { addApiResponse } from '../../../store/apiResponsesSlice';
+import { useLanguage } from '../../../i18n';
 
 export const LogoutModal = () => {
   const dispatch = useDispatch();
+  const { t } = useLanguage();
 
   const handleLogout = async () => {
     try {
       await fetchLogout();
-      dispatch(addApiResponse({ message: 'Logged out successfully.', type: 'success' }));
+      dispatch(addApiResponse({ message: t.auth.loggedOut, type: 'success' }));
     } catch (error: unknown) {
-      let message = 'Failed to log out.';
+      let message = t.auth.logoutFailed;
       if (error instanceof Error) {
         message = error.message;
       }

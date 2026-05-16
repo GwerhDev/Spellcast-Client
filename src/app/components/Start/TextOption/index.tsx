@@ -13,11 +13,13 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { faCircle as faRegCircle } from '@fortawesome/free-regular-svg-icons';
 import { CustomModal } from '../../Modals/CustomModal';
+import { useLanguage } from '../../../../i18n';
 
 export const TextOption: React.FC = () => {
   const [text, setText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const { t } = useLanguage();
 
   const [voiceType, setVoiceType] = useState<'browser' | 'ai'>('browser');
   const [selectedVoiceValue, setSelectedVoiceValue] = useState('');
@@ -235,7 +237,7 @@ export const TextOption: React.FC = () => {
         <div className={s.textareaWrapper}>
           <textarea
             className={s.textarea}
-            placeholder="Enter text to convert to speech..."
+            placeholder={t.player.enterText}
             value={text}
             onChange={(e) => setText(e.target.value)}
             disabled={isLoading}
@@ -259,7 +261,7 @@ export const TextOption: React.FC = () => {
                 type="button"
                 className={s.toolbarBtn}
                 onClick={() => setShowVoiceModal(true)}
-                title="Select voice"
+                title={t.player.selectVoice}
               >
                 <FontAwesomeIcon icon={faCommentDots} />
               </button>
@@ -269,7 +271,7 @@ export const TextOption: React.FC = () => {
                   className={s.toolbarBtn}
                   ref={volumeButtonRef}
                   onClick={() => setShowVolumeSlider(!showVolumeSlider)}
-                  title="Volume"
+                  title={t.player.volume}
                 >
                   <FontAwesomeIcon icon={volume === 0 ? faVolumeMute : faVolumeUp} />
                 </button>
@@ -307,21 +309,21 @@ export const TextOption: React.FC = () => {
         </div>
       </form>
 
-      <CustomModal title="Select a Voice" show={showVoiceModal} onClose={() => setShowVoiceModal(false)}>
+      <CustomModal title={t.player.selectVoice} show={showVoiceModal} onClose={() => setShowVoiceModal(false)}>
         <div className={mVoice.tabContainer}>
           <button
             className={`${mVoice.tabButton} ${mVoice.left} ${modalTab === 'browser' ? mVoice.activeTab : ''}`}
             onClick={() => setModalTab('browser')}
           >
             <FontAwesomeIcon icon={faDesktop} />
-            <span className={mVoice.title}>Browser Voices</span>
+            <span className={mVoice.title}>{t.player.browserVoices}</span>
           </button>
           <button
             className={`${mVoice.tabButton} ${mVoice.right} ${modalTab === 'ai' ? mVoice.activeTab : ''}`}
             onClick={() => setModalTab('ai')}
           >
             <FontAwesomeIcon icon={faBrain} />
-            <span className={mVoice.title}>AI Voices</span>
+            <span className={mVoice.title}>{t.player.aiVoices}</span>
           </button>
         </div>
         <ul className={mVoice.voiceList}>
@@ -338,7 +340,7 @@ export const TextOption: React.FC = () => {
                 <button
                   className={mVoice.previewButton}
                   onClick={(e) => handleModalPreview(e, v.name)}
-                  title="Preview voice"
+                  title={t.player.previewVoice}
                 >
                   <FontAwesomeIcon icon={previewingVoice === v.name ? faStop : faVolumeHigh} />
                 </button>

@@ -10,6 +10,7 @@ import { goToPage, setShowPageSelector } from '../../../store/pdfReaderSlice';
 import { getDocumentById } from '../../../db';
 import { useAppSelector } from '../../../store/hooks';
 import { CustomModal } from './CustomModal';
+import { useLanguage } from '../../../i18n';
 
 const extractSnippet = (raw: string): string => {
   try {
@@ -34,6 +35,7 @@ export const PageSelectorModal: React.FC = () => {
   const { userData } = useAppSelector((state) => state.session);
   const [query, setQuery] = useState('');
   const [snippets, setSnippets] = useState<string[]>([]);
+  const { t } = useLanguage();
 
   useEffect(() => {
     if (!showPageSelector || !documentId) return;
@@ -72,12 +74,12 @@ export const PageSelectorModal: React.FC = () => {
   const canJump = !isNaN(jumpTarget) && jumpTarget >= 1 && jumpTarget <= totalPages;
 
   return (
-    <CustomModal title="Select a Page" show={showPageSelector} onClose={onClose}>
+    <CustomModal title={t.reader.selectPage} show={showPageSelector} onClose={onClose}>
       <div className={s.searchRow}>
         <input
           type="text"
           autoFocus
-          placeholder={`Search or jump to page (1–${totalPages})…`}
+          placeholder={t.reader.searchOrJump.replace('{max}', String(totalPages))}
           className={s.searchInput}
           value={query}
           onChange={e => setQuery(e.target.value)}
@@ -85,7 +87,7 @@ export const PageSelectorModal: React.FC = () => {
         />
         {canJump && (
           <button className={s.jumpButton} onClick={() => handlePageSelection(jumpTarget)}>
-            Go to {jumpTarget}
+            {t.reader.goTo} {jumpTarget}
           </button>
         )}
       </div>
@@ -104,7 +106,7 @@ export const PageSelectorModal: React.FC = () => {
               <span className={s.snippet}>
                 {snippet || <span className={s.noSnippet}>—</span>}
               </span>
-              {isCurrent && <span className={s.currentBadge}>current</span>}
+              {isCurrent && <span className={s.currentBadge}>{t.reader.current}</span>}
               {isRead && <FontAwesomeIcon icon={faCheck} className={s.readIcon} />}
             </li>
           );

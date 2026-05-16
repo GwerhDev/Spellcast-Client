@@ -20,6 +20,7 @@ import type { TTSPlayPayload } from '../../../magictext/types';
 import * as pdfjsLib from 'pdfjs-dist';
 import workerSrc from 'pdfjs-dist/build/pdf.worker?url';
 import { renderPageToCover, extractPdfPages, injectCoverIntoPages } from '../../../utils/pdfUtils';
+import { useLanguage } from '../../../i18n';
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
 const emptyContent: JSONContent = {
@@ -34,6 +35,7 @@ export const DocumentEditForm: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { userData, logged } = useAppSelector((state) => state.session);
+  const { t } = useLanguage();
   const autoSave = useAppSelector((state) => state.editor.autoSave);
   const credentials = useAppSelector((state) => state.credentials.credentials);
   const aiVoices = credentials[0]?.voices ?? [];
@@ -232,15 +234,15 @@ export const DocumentEditForm: React.FC = () => {
           <input
             className={s.documentTitle}
             type="text"
-            placeholder="Document title..."
+            placeholder={t.document.titlePlaceholder}
             value={documentTitle}
             onChange={(e) => setDocumentTitle(e.target.value)}
           />
         </span>
 
-        {isProcessingPdf && <span className={s.saveStatus}>Processing PDF...</span>}
-        {!isProcessingPdf && saveStatus === 'saving' && <span className={s.saveStatus}>Saving...</span>}
-        {!isProcessingPdf && saveStatus === 'saved' && <span className={s.saveStatus}>Saved</span>}
+        {isProcessingPdf && <span className={s.saveStatus}>{t.document.processingPdf}</span>}
+        {!isProcessingPdf && saveStatus === 'saving' && <span className={s.saveStatus}>{t.common.saving}</span>}
+        {!isProcessingPdf && saveStatus === 'saved' && <span className={s.saveStatus}>{t.common.saved}</span>}
 
         <IconButton icon={faPaperclip} variant='transparent' disabled={isProcessingPdf} onClick={() => pdfInputRef.current?.click()} />
         <input ref={pdfInputRef} type="file" accept=".pdf" style={{ display: 'none' }} onChange={handleFileSelect} />
@@ -270,12 +272,12 @@ export const DocumentEditForm: React.FC = () => {
         </div>
       </div>
 
-      <CustomModal show={showImportModal} onClose={() => { setShowImportModal(false); setPendingFile(null); }} title="Replace content">
+      <CustomModal show={showImportModal} onClose={() => { setShowImportModal(false); setPendingFile(null); }} title={t.document.replaceContent}>
         <div className={s.importModalBody}>
-          <p>All pages and the cover will be replaced with the content from the new PDF. This action cannot be undone.</p>
+          <p>{t.document.replaceContentDesc}</p>
           <div className={s.importModalActions}>
-            <SecondaryButton onClick={() => { setShowImportModal(false); setPendingFile(null); }}>Cancel</SecondaryButton>
-            <PrimaryButton onClick={handleImportConfirm}>Replace</PrimaryButton>
+            <SecondaryButton onClick={() => { setShowImportModal(false); setPendingFile(null); }}>{t.common.cancel}</SecondaryButton>
+            <PrimaryButton onClick={handleImportConfirm}>{t.common.replace}</PrimaryButton>
           </div>
         </div>
       </CustomModal>

@@ -5,6 +5,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faGear, faHome, faRightFromBracket, faUser } from "@fortawesome/free-solid-svg-icons";
 import { userData } from "../../../interfaces";
 import { ProfileCanvas } from "../Canvas/ProfileCanvas";
+import { useLanguage } from '../../../i18n';
 
 export const ProfileButton = (props: { userData: userData }) => {
   const { userData } = props || {};
@@ -12,6 +13,7 @@ export const ProfileButton = (props: { userData: userData }) => {
   const [showCanvas, setShowCanvas] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const handleProfileButton = () => {
     setShowCanvas((prev) => !prev);
@@ -55,16 +57,16 @@ export const ProfileButton = (props: { userData: userData }) => {
         <div className={s.profileButtonContainer}>
           {showCanvas && (
             <ul className={s.accountActionsContainer}>
-              <button title="Home" onClick={handleGoHome}>
+              <button title={t.nav.home} onClick={handleGoHome}>
                 <FontAwesomeIcon icon={faHome} />
               </button>
-              <button title="Account" onClick={handleAccount}>
+              <button title={t.nav.account} onClick={handleAccount}>
                 <FontAwesomeIcon icon={faUser} />
               </button>
-              <button title="Settings">
+              <button title={t.common.settings}>
                 <FontAwesomeIcon icon={faGear} />
               </button>
-              <button title="Logout" onClick={handleLogoutModal}>
+              <button title={t.auth.logout} onClick={handleLogoutModal}>
                 <FontAwesomeIcon icon={faRightFromBracket} />
               </button>
             </ul>

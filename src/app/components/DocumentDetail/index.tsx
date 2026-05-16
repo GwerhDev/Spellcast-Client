@@ -14,12 +14,14 @@ import { IconButton } from '../Buttons/IconButton';
 import { DeleteConfirmModal } from '../Modals/DeleteConfirmModal';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFilePdf, faPlay, faBookOpen, faPen, faArrowLeft, faTrash } from '@fortawesome/free-solid-svg-icons';
+import { useLanguage } from '../../../i18n';
 
 export const DocumentDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { userData, logged } = useAppSelector((state) => state.session);
+  const { t } = useLanguage();
   const { documentId: currentPlayingId, currentPage: readerCurrentPage } = useAppSelector((state) => state.pdfReader);
   const [doc, setDoc] = useState<Awaited<ReturnType<typeof getDocumentById>> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -75,8 +77,8 @@ export const DocumentDetail: React.FC = () => {
     }
   };
 
-  if (isLoading) return <div className={s.container}><Spinner isLoading message="Loading..." /></div>;
-  if (error || !doc) return <div>{error || 'Document not found.'}</div>;
+  if (isLoading) return <div className={s.container}><Spinner isLoading message={t.common.loading} /></div>;
+  if (error || !doc) return <div>{error || t.document.notFound}</div>;
 
   const pagesCount = doc.pagesContent ? JSON.parse(doc.pagesContent).length : null;
   const currentPage = (currentPlayingId === id && readerCurrentPage > 0)
@@ -99,8 +101,8 @@ export const DocumentDetail: React.FC = () => {
           }
           <div className={s.info}>
             <h1 className={s.title}>{doc.title}</h1>
-            <p className={s.meta}>Created {new Date(doc.createdAt).toLocaleDateString()}</p>
-            {pagesCount && <p className={s.meta}>{pagesCount} {pagesCount === 1 ? 'page' : 'pages'}</p>}
+            <p className={s.meta}>{t.document.created} {new Date(doc.createdAt).toLocaleDateString()}</p>
+            {pagesCount && <p className={s.meta}>{pagesCount} {pagesCount === 1 ? t.document.pageSingular : t.document.pagePlural}</p>}
             {progressPct !== null && (
               <div className={s.progressBarContainer}>
                 <div className={s.progressBarFill} style={{ width: `${progressPct}%` }} />
@@ -108,24 +110,24 @@ export const DocumentDetail: React.FC = () => {
             )}
             {currentPage > 0 && (
               <p className={s.meta}>
-                Page {currentPage}{pagesCount ? ` of ${pagesCount}` : ''} — {progressPct}% complete
+                {t.document.page} {currentPage}{pagesCount ? ` ${t.document.of} ${pagesCount}` : ''} — {progressPct}% {t.document.complete}
               </p>
             )}
           </div>
         </div>
         <div className={s.actions}>
-          <PrimaryButton icon={faPlay} onClick={handlePlay}>Play</PrimaryButton>
-          <SecondaryButton className={s.solid} icon={faBookOpen} onClick={handleContinueReading}>Continue Reading</SecondaryButton>
-          <SecondaryButton className={s.solid} icon={faPen} onClick={handleEdit}>Edit Document</SecondaryButton>
-          <PrimaryButton variant="danger" icon={faTrash} onClick={() => setShowDeleteModal(true)}>Delete</PrimaryButton>
+          <PrimaryButton icon={faPlay} onClick={handlePlay}>{t.player.play}</PrimaryButton>
+          <SecondaryButton className={s.solid} icon={faBookOpen} onClick={handleContinueReading}>{t.document.continueReading}</SecondaryButton>
+          <SecondaryButton className={s.solid} icon={faPen} onClick={handleEdit}>{t.document.editDocument}</SecondaryButton>
+          <PrimaryButton variant="danger" icon={faTrash} onClick={() => setShowDeleteModal(true)}>{t.common.delete}</PrimaryButton>
         </div>
       </div>
       <DeleteConfirmModal
         show={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
         onConfirm={handleDeleteConfirm}
-        title="Delete Document"
-        message={`Are you sure you want to delete "${doc.title}"? This action cannot be undone.`}
+        title={t.document.deleteTitle}
+        message={t.document.deleteConfirm.replace('{title}', doc.title)}
       />
     </div>
   );

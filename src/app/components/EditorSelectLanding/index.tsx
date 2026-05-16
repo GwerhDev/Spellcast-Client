@@ -8,10 +8,12 @@ import { Document } from 'src/interfaces';
 import { EditorPickerCard } from '../Cards/EditorPickerCard';
 import { IconButton } from '../Buttons/IconButton';
 import { Spinner } from '../Spinner';
+import { useLanguage } from '../../../i18n';
 
 export const EditorSelectLanding = () => {
   const navigate = useNavigate();
   const { userData } = useAppSelector((state) => state.session);
+  const { t } = useLanguage();
 
   const [documents, setDocuments] = useState<Document[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -29,13 +31,13 @@ export const EditorSelectLanding = () => {
     <div className={s.panel}>
       <div className={s.panelHeader}>
         <IconButton icon={faArrowLeft} variant='transparent' onClick={() => navigate('/editor')} />
-        <h2 className={s.panelTitle}>Select a document</h2>
+        <h2 className={s.panelTitle}>{t.editor.selectDocument}</h2>
       </div>
       <div className={s.panelBody}>
         {isLoading ? (
           <Spinner isLoading />
         ) : documents.length === 0 ? (
-          <p className={s.empty}>No local documents found.</p>
+          <p className={s.empty}>{t.document.noLocalDocuments}</p>
         ) : (
           <div className={s.docGrid}>
             {documents.map((doc) => (

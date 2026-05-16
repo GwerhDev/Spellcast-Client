@@ -2,6 +2,7 @@ import { useRef, useState, useEffect } from 'react';
 import spellcastIcon from '../../../assets/spellcast-logo.svg';
 import s from './AppSwitcher.module.css';
 import { App, getAppList } from '../../../services/apps';
+import { useLanguage } from '../../../i18n';
 
 const isCurrent = (url: string) => {
   try { return new URL(url).origin === window.location.origin; } catch { return false; }
@@ -11,6 +12,7 @@ export const AppSwitcher = () => {
   const [open, setOpen] = useState(false);
   const [apps, setApps] = useState<App[]>([]);
   const ref = useRef<HTMLDivElement>(null);
+  const { t } = useLanguage();
 
   useEffect(() => {
     getAppList().then(setApps).catch(() => {});
@@ -40,7 +42,7 @@ export const AppSwitcher = () => {
       {open && (
         <div className={s.popover}>
           {apps.length === 0 && (
-            <span className={s.empty}>Loading…</span>
+            <span className={s.empty}>{t.common.loading}</span>
           )}
           {apps.filter(app => !isCurrent(app.url)).map(app => (
             <button

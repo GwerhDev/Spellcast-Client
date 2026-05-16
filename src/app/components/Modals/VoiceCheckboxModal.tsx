@@ -7,6 +7,7 @@ import { Spinner } from '../Spinner';
 import { useAppDispatch } from 'store/hooks';
 import { updateCredential } from 'store/credentialsSlice';
 import { CustomModal } from './CustomModal';
+import { useLanguage } from '../../../i18n';
 
 interface VoiceCheckboxModalProps {
   voices: Voice[];
@@ -30,6 +31,7 @@ export const VoiceCheckboxModal: React.FC<VoiceCheckboxModalProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const dispatch = useAppDispatch();
+  const { t } = useLanguage();
 
   const filteredVoices = (voices || []).filter(
     (voice: Voice) =>
@@ -82,7 +84,7 @@ export const VoiceCheckboxModal: React.FC<VoiceCheckboxModalProps> = ({
   }
 
   return (
-    <CustomModal title="Select Voices" show={show} onClose={onClose}>
+    <CustomModal title={t.player.selectVoices} show={show} onClose={onClose}>
       <div className={s.container}>
         {isLoading ? (
           <Spinner isLoading={isLoading} />
@@ -90,7 +92,7 @@ export const VoiceCheckboxModal: React.FC<VoiceCheckboxModalProps> = ({
           <>
             <input
               type="text"
-              placeholder="Search voices..."
+              placeholder={t.player.searchVoices}
               className={s.searchInput}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -102,7 +104,7 @@ export const VoiceCheckboxModal: React.FC<VoiceCheckboxModalProps> = ({
                 checked={allFilteredSelected}
                 onChange={handleSelectAllChange}
               />
-              <small>Select/Deselect All</small>
+              <small>{t.player.selectDeselectAll}</small>
             </span>
 
             <ul className={s.voiceList}>
@@ -126,7 +128,7 @@ export const VoiceCheckboxModal: React.FC<VoiceCheckboxModalProps> = ({
             </ul>
             <div className={s.buttonContainer}>
               <IconButton variant="primary" icon={faSave} onClick={handleSave} disabled={isSaving}>
-                {isSaving ? 'Saving...' : 'Save'}
+                {isSaving ? t.common.saving : t.common.save}
               </IconButton>
             </div>
           </>

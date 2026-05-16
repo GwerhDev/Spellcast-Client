@@ -8,11 +8,13 @@ import { Spinner } from "../Spinner";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState, AppDispatch } from "store";
 import { getGroups } from "store/groupsSlice";
+import { useLanguage } from '../../../i18n';
 
 export const Groups = () => {
   const dispatch: AppDispatch = useDispatch();
   const { groups, loading } = useSelector((state: RootState) => state.groups);
   const [isAddingNewGroup, setIsAddingNewGroup] = useState(false);
+  const { t } = useLanguage();
 
   const handleAdd = () => {
     setIsAddingNewGroup(true);
@@ -29,7 +31,7 @@ export const Groups = () => {
 
   return (
     <div className={s.container}>
-      <h1 className="featured">Groups</h1>
+      <h1 className="featured">{t.nav.groups}</h1>
       <ul className={s.list}>
         {groups.map((group: Group) => (
           <GroupCard fetchGroups={() => dispatch(getGroups())} group={group} key={group.id} />
@@ -48,7 +50,7 @@ export const Groups = () => {
                 !loading &&
                 <li className={s.emptyItem} onClick={handleAdd}>
                   <FontAwesomeIcon icon={faPlus} />
-                  Create new group
+                  {t.groups.createNew}
                 </li>
               }
             </>

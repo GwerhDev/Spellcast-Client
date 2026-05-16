@@ -9,6 +9,7 @@ import { getVoicesByCredential } from "services/tts";
 import { useState, useEffect } from "react";
 import { VoiceCheckboxModal } from "../Modals/VoiceCheckboxModal";
 import { useDispatch } from "react-redux";
+import { useLanguage } from '../../../i18n';
 
 interface CredentialCardProps {
   credential: TTS_Credential;
@@ -20,6 +21,7 @@ interface CredentialCardProps {
 export const CredentialCard = (props: CredentialCardProps) => {
   const dispatch = useDispatch();
   const { credential, fetchCredentials, onSaveNew, onCancelNew } = props;
+  const { t } = useLanguage();
   const [key, setKey] = useState(credential.azure_key || "");
   const [region, setRegion] = useState(credential.region || "");
   const [editionActive, setEditionActive] = useState(credential.isNew ? true : false);
@@ -107,8 +109,8 @@ export const CredentialCard = (props: CredentialCardProps) => {
 
   return (
     <li key={credential.id} className={s.container}>
-      <LabeledInput disabled={!editionActive} label={"key"} value={key} type="text" placeholder="Key" name="credential_key" id="credential_key" htmlFor="credential_key" onChange={(e) => setKey(e.target.value)} />
-      <LabeledInput disabled={!editionActive} label={"region"} value={region} type="text" placeholder="Region" name="credential_region" id="credential_region" htmlFor="credential_region" onChange={(e) => setRegion(e.target.value)} />
+      <LabeledInput disabled={!editionActive} label={t.credentials.labelKey} value={key} type="text" placeholder={t.credentials.keyPlaceholder} name="credential_key" id="credential_key" htmlFor="credential_key" onChange={(e) => setKey(e.target.value)} />
+      <LabeledInput disabled={!editionActive} label={t.credentials.labelRegion} value={region} type="text" placeholder={t.credentials.regionPlaceholder} name="credential_region" id="credential_region" htmlFor="credential_region" onChange={(e) => setRegion(e.target.value)} />
 
       <div className={s.actions}>
         <IconButton variant="transparent" icon={faCommentDots} onClick={handleOpenVoiceSelector} />

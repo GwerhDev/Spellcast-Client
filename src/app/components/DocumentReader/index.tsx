@@ -11,6 +11,7 @@ import { Spinner } from '../Spinner';
 import { IconButton } from '../Buttons/IconButton';
 import { PageSelector } from './PageSelector/PageSelector';
 import type { JSONContent } from '../../../magictext';
+import { useLanguage } from '../../../i18n';
 
 const emptyContent: JSONContent = {
   type: 'doc',
@@ -43,6 +44,7 @@ const safeParseJSON = (str: string): JSONContent => {
 export const DocumentReader = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const {
     currentPage,
     currentPageText,
@@ -200,7 +202,7 @@ export const DocumentReader = () => {
 
   const renderBody = () => {
     if (!isLoaded) {
-      return <div className={s.container}><Spinner isLoading message="Loading..." /></div>;
+      return <div className={s.container}><Spinner isLoading message={t.common.loading} /></div>;
     }
 
     const pageAttrs = editedText?.attrs as { pageWidth?: number; pageHeight?: number } | undefined;

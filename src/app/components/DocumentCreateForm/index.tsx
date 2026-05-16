@@ -19,6 +19,7 @@ import { resetDocumentState, setDocumentDetails, setDocumentTitle as setDocument
 import { resetPdfReader } from 'store/pdfReaderSlice';
 import { textToSpeechService } from '../../../services/tts';
 import { renderPageToCover, extractPdfPages, injectCoverIntoPages, emptyPageContent } from '../../../utils/pdfUtils';
+import { useLanguage } from '../../../i18n';
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
 const emptyContent: JSONContent = emptyPageContent;
@@ -27,6 +28,7 @@ export const DocumentCreateForm: React.FC = () => {
   const document = useSelector((state: RootState) => state.document);
   const { userData, logged } = useAppSelector((state: RootState) => state.session);
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const dispatch = useDispatch();
   const [documentTitle, setDocumentTitle] = useState(document.title || '');
   const [pagesContent, setPagesContent] = useState<JSONContent[]>([]);
@@ -228,7 +230,7 @@ export const DocumentCreateForm: React.FC = () => {
           <input
             className={s.documentTitle}
             type="text"
-            placeholder="Document title..."
+            placeholder={t.document.titlePlaceholder}
             value={documentTitle}
             onChange={(e) => {
               setDocumentTitle(e.target.value);
@@ -236,7 +238,7 @@ export const DocumentCreateForm: React.FC = () => {
             }}
           />
         </span>
-        {isSaving && <span className={s.saveStatus}>Saving...</span>}
+        {isSaving && <span className={s.saveStatus}>{t.common.saving}</span>}
         <IconButton icon={faPaperclip} variant='transparent' onClick={() => pdfInputRef.current?.click()} />
         <input ref={pdfInputRef} type="file" accept=".pdf" style={{ display: 'none' }}
           onChange={(e) => { if (e.target.files?.[0]) handlePdfImport(e.target.files[0]); }} />

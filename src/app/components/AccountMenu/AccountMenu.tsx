@@ -2,10 +2,12 @@ import { useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from 'store/hooks';
 import { fetchLogout } from 'src/services/auth';
+import { useLanguage } from 'src/i18n';
 import s from './AccountMenu.module.css';
 
 export const AccountMenu = () => {
   const userData = useAppSelector(state => state.session.userData);
+  const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
@@ -47,10 +49,10 @@ export const AccountMenu = () => {
           </div>
           <div className={s.divider}/>
           <button className={s.menuItem} onClick={() => { navigate('/user'); setOpen(false); }}>
-            Account
+            {t.nav.account}
           </button>
           <button className={`${s.menuItem} ${s.logout}`} onClick={handleLogout}>
-            Log out
+            {t.auth.logout}
           </button>
         </div>
       )}

@@ -5,6 +5,7 @@ import { faDesktop, faPalette } from '@fortawesome/free-solid-svg-icons';
 import { RootState } from '../../../store';
 import { setShowReaderSettings, setFitToWidth, setLightningMode } from '../../../store/pdfReaderSlice';
 import { TabModal } from '../Modals/TabModal';
+import { useLanguage } from '../../../i18n';
 
 /* ── shared primitives ──────────────────────────────────── */
 
@@ -46,6 +47,7 @@ const DisplayTab: React.FC = () => {
   const [smoothScroll, setSmoothScroll] = useState(true);
   const [doublePageView, setDoublePageView] = useState(false);
   const [showPageNumbers, setShowPageNumbers] = useState(true);
+  const { t } = useLanguage();
 
   const handleFitToWidth = (value: boolean) => {
     dispatch(setFitToWidth(value));
@@ -60,15 +62,15 @@ const DisplayTab: React.FC = () => {
   return (
     <div className={s.container}>
       <div className={s.section}>
-        <p className={s.sectionTitle}>Layout</p>
-        <ToggleRow label="Fit to width" description="Stretch pages to fill the full width of the viewer." value={fitToWidth} onChange={handleFitToWidth} />
-        <ToggleRow soon label="Double page view" description="Show two pages side by side on wide screens." value={doublePageView} onChange={setDoublePageView} />
+        <p className={s.sectionTitle}>{t.reader.layout}</p>
+        <ToggleRow label={t.reader.fitToWidth} description={t.reader.fitToWidthDesc} value={fitToWidth} onChange={handleFitToWidth} />
+        <ToggleRow soon label={t.reader.doublePageView} description={t.reader.doublePageViewDesc} value={doublePageView} onChange={setDoublePageView} />
       </div>
       <div className={s.section}>
-        <p className={s.sectionTitle}>Reading</p>
-        <ToggleRow label="Lightning mode" description="Highlight the sentence currently being read aloud." value={lightningMode} onChange={handleLightningMode} />
-        <ToggleRow soon label="Smooth scrolling" description="Animate transitions between pages." value={smoothScroll} onChange={setSmoothScroll} />
-        <ToggleRow soon label="Show page numbers" description="Display an overlay with the current page number." value={showPageNumbers} onChange={setShowPageNumbers} />
+        <p className={s.sectionTitle}>{t.reader.reading}</p>
+        <ToggleRow label={t.reader.lightningMode} description={t.reader.lightningModeDesc} value={lightningMode} onChange={handleLightningMode} />
+        <ToggleRow soon label={t.reader.smoothScrolling} description={t.reader.smoothScrollingDesc} value={smoothScroll} onChange={setSmoothScroll} />
+        <ToggleRow soon label={t.reader.showPageNumbers} description={t.reader.showPageNumbersDesc} value={showPageNumbers} onChange={setShowPageNumbers} />
       </div>
     </div>
   );
@@ -79,18 +81,19 @@ const AppearanceTab: React.FC = () => {
   const [sepiaMode, setSepiaMode] = useState(false);
   const [invertColors, setInvertColors] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
+  const { t } = useLanguage();
 
   return (
     <div className={s.container}>
       <div className={s.section}>
-        <p className={s.sectionTitle}>Filters</p>
-        <ToggleRow soon label="Sepia mode" description="Apply a warm sepia tint to the document." value={sepiaMode} onChange={setSepiaMode} />
-        <ToggleRow soon label="High contrast" description="Increase contrast for easier reading." value={highContrast} onChange={setHighContrast} />
-        <ToggleRow soon label="Invert colors" description="Invert document colors for dark background reading." value={invertColors} onChange={setInvertColors} />
+        <p className={s.sectionTitle}>{t.reader.filters}</p>
+        <ToggleRow soon label={t.reader.sepiaMode} description={t.reader.sepiaModeDesc} value={sepiaMode} onChange={setSepiaMode} />
+        <ToggleRow soon label={t.reader.highContrast} description={t.reader.highContrastDesc} value={highContrast} onChange={setHighContrast} />
+        <ToggleRow soon label={t.reader.invertColors} description={t.reader.invertColorsDesc} value={invertColors} onChange={setInvertColors} />
       </div>
       <div className={s.section}>
-        <p className={s.sectionTitle}>Motion</p>
-        <ToggleRow soon label="Reduce motion" description="Disable animations and transitions." value={reducedMotion} onChange={setReducedMotion} />
+        <p className={s.sectionTitle}>{t.reader.motion}</p>
+        <ToggleRow soon label={t.reader.reduceMotion} description={t.reader.reduceMotionDesc} value={reducedMotion} onChange={setReducedMotion} />
       </div>
     </div>
   );
@@ -101,15 +104,16 @@ const AppearanceTab: React.FC = () => {
 export const ReaderSettings: React.FC = () => {
   const dispatch = useDispatch();
   const { showReaderSettings } = useSelector((state: RootState) => state.pdfReader);
+  const { t } = useLanguage();
 
   return (
     <TabModal
       show={showReaderSettings}
       onClose={() => dispatch(setShowReaderSettings(false))}
-      title="Reader Settings"
+      title={t.reader.readerSettings}
       tabs={[
-        { icon: faDesktop, label: 'Display',    content: <DisplayTab /> },
-        { icon: faPalette, label: 'Appearance', content: <AppearanceTab /> },
+        { icon: faDesktop, label: t.reader.displayTab,    content: <DisplayTab /> },
+        { icon: faPalette, label: t.reader.appearanceTab, content: <AppearanceTab /> },
       ]}
     />
   );
