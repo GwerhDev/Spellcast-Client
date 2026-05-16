@@ -1,4 +1,5 @@
 import s from './LateralMenu.module.css';
+import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBox, faGear, faTableColumns } from '@fortawesome/free-solid-svg-icons';
@@ -13,6 +14,7 @@ interface LateralMenuProps {
 
 export const LateralMenu = ({ onNavigate }: LateralMenuProps) => {
   const { t } = useLanguage();
+  const isMobile = window.matchMedia('(max-width: 768px)').matches;
 
   const navName: Record<NavKey, string> = {
     overview: t.nav.overview,
@@ -30,8 +32,24 @@ export const LateralMenu = ({ onNavigate }: LateralMenuProps) => {
     return navName[key] ?? fallback;
   };
 
+  const wrapperAnim = isMobile
+    ? { initial: { height: 0 }, animate: { height: 'auto' }, exit: { height: 0 } }
+    : { initial: { width: 0 }, animate: { width: 'auto' }, exit: { width: 0 } };
+
   return (
-    <div className={s.container} onClick={onNavigate}>
+    <motion.div
+      className={s.wrapper}
+      {...wrapperAnim}
+      transition={{ duration: 0.22, ease: 'easeInOut' }}
+    >
+    <motion.div
+      className={s.container}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.22, ease: 'easeInOut' }}
+      onClick={onNavigate}
+    >
       <div className={s.outterMenuContainer}>
         <div className={s.menuContainer}>
           <div className={s.mainMenu}>
@@ -102,6 +120,7 @@ export const LateralMenu = ({ onNavigate }: LateralMenuProps) => {
           </ul>
         </div>
       </div>
-    </div>
+    </motion.div>
+    </motion.div>
   );
 };

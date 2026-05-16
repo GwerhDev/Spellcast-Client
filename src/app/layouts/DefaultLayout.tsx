@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { AnimatePresence } from 'framer-motion';
 import { Outlet } from 'react-router-dom';
 import { TabBar } from '../components/Tabs/TabBar';
 import { LogoutModal } from '../components/Modals/LogoutModal';
@@ -57,7 +58,9 @@ export default function DefaultLayout() {
           <aside className="aside-container">
             <div className="aside-inner-container">
               <TabBar showMenu={showMenu} setShowMenu={setShowMenu} />
-              {showMenu && <LateralMenu onNavigate={() => { if (window.matchMedia('(max-width: 768px)').matches) setShowMenu(false); }} />}
+              <AnimatePresence>
+                {showMenu && <LateralMenu onNavigate={() => { if (window.matchMedia('(max-width: 768px)').matches) setShowMenu(false); }} />}
+              </AnimatePresence>
             </div>
           </aside>
         </nav>
