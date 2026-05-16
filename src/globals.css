@@ -317,7 +317,7 @@ a:hover {
   padding-inline: .5rem;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .dashboard-container {
     flex-direction: column;
   }
@@ -396,7 +396,7 @@ a:hover {
   padding-bottom: .5rem;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .nav-container {
     width: 100%;
     height: auto;

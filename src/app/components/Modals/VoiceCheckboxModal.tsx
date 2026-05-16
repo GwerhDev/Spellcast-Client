@@ -40,7 +40,7 @@ export const VoiceCheckboxModal: React.FC<VoiceCheckboxModalProps> = ({
       voice.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  console.log(filteredVoices)
+
 
   const allFilteredSelected = useMemo(() =>
     filteredVoices.length > 0 &&

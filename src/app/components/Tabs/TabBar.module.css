@@ -11,7 +11,7 @@
   background: var(--component-background);
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .container {
     padding: 0;
     height: auto;
@@ -42,7 +42,7 @@
   margin-top: auto;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .iconContainer {
     width: auto;
   }

@@ -28,7 +28,7 @@ export default function DefaultLayout() {
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (!window.matchMedia('(max-width: 768px)').matches) return;
+      if (!window.matchMedia('(max-width: 1024px)').matches) return;
       if (navRef.current && !navRef.current.contains(e.target as Node)) {
         setShowMenu(false);
       }
@@ -59,7 +59,7 @@ export default function DefaultLayout() {
             <div className="aside-inner-container">
               <TabBar showMenu={showMenu} setShowMenu={setShowMenu} />
               <AnimatePresence>
-                {showMenu && <LateralMenu onNavigate={() => { if (window.matchMedia('(max-width: 768px)').matches) setShowMenu(false); }} />}
+                {showMenu && <LateralMenu onNavigate={() => { if (window.matchMedia('(max-width: 1024px)').matches) setShowMenu(false); }} />}
               </AnimatePresence>
             </div>
           </aside>

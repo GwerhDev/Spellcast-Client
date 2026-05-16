@@ -14,7 +14,7 @@ interface LateralMenuProps {
 
 export const LateralMenu = ({ onNavigate }: LateralMenuProps) => {
   const { t } = useLanguage();
-  const isMobile = window.matchMedia('(max-width: 768px)').matches;
+  const isMobile = window.matchMedia('(max-width: 1024px)').matches;
 
   const navName: Record<NavKey, string> = {
     overview: t.nav.overview,

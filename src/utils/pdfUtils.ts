@@ -122,7 +122,6 @@ export const extractPdfPages = async (pdf: pdfjsLib.PDFDocumentProxy): Promise<J
       continue;
     }
 
-    console.log(`[PDF page ${pageNum} raw]`, content.items);
     const items = content.items as TextItem[];
     items.sort((a, b) => {
       if (a.transform[5] > b.transform[5]) return -1;
