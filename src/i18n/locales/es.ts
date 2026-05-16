@@ -157,7 +157,7 @@ export const es: Translations = {
     light: 'Claro',
     dark: 'Oscuro',
     system: 'Sistema',
-    english: 'English',
+    english: 'Inglés',
     spanish: 'Español',
   },
   editorSettings: {
