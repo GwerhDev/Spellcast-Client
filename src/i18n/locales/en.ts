@@ -148,6 +148,7 @@ export const en = {
   },
   appearance: {
     title: 'Appearance',
+    themeTitle: 'Theme',
     themeSubtitle: 'Select a theme for the application.',
     languageTitle: 'Language',
     languageSubtitle: 'Select the display language.',

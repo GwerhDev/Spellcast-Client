@@ -150,6 +150,7 @@ export const es: Translations = {
   },
   appearance: {
     title: 'Apariencia',
+    themeTitle: 'Tema',
     themeSubtitle: 'Selecciona un tema para la aplicación.',
     languageTitle: 'Idioma',
     languageSubtitle: 'Selecciona el idioma de la interfaz.',
