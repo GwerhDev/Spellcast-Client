@@ -38,6 +38,10 @@
   flex-direction: column;
 }
 
+.menuButton {
+  margin-top: auto;
+}
+
 @media (max-width: 768px) {
   .iconContainer {
     width: auto;

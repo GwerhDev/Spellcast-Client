@@ -1,5 +1,5 @@
 import s from './TabBar.module.css';
-import { faBookOpen, faCompass, faFeatherPointed, faHome } from '@fortawesome/free-solid-svg-icons';
+import { faBars, faCompass, faFeatherPointed, faHome } from '@fortawesome/free-solid-svg-icons';
 import { Tab } from '../../../interfaces';
 import { TabButton } from '../Buttons/TabButton';
 
@@ -23,12 +23,6 @@ export const TabBar = (props: TabBarProps) => {
       icon: faFeatherPointed,
       showMenu: false,
     }, {
-      title: 'Menu',
-      route: null,
-      type: "menu",
-      icon: faBookOpen,
-      showMenu: !showMenu,
-    }, {
       title: 'Explore',
       route: '/explore',
       icon: faCompass,
@@ -36,17 +30,26 @@ export const TabBar = (props: TabBarProps) => {
     }
   ];
 
+  const menuTab: Tab = {
+    title: 'Menu',
+    route: null,
+    type: 'menu',
+    icon: faBars,
+    showMenu: !showMenu,
+  };
+
   return (
     <div className={s.container}>
       <ul className={s.tabs}>
-        {
-          tabList?.map((tab: Tab, index: number) => (
-            <li key={index}>
-              <TabButton setShowMenu={setShowMenu} tab={tab} loading={false} />
-            </li>
-          ))
-        }
+        {tabList.map((tab: Tab, index: number) => (
+          <li key={index}>
+            <TabButton setShowMenu={setShowMenu} tab={tab} loading={false} />
+          </li>
+        ))}
       </ul>
+      <div className={s.menuButton}>
+        <TabButton setShowMenu={setShowMenu} tab={menuTab} loading={false} />
+      </div>
     </div>
   );
 };
