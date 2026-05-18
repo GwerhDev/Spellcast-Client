@@ -14,7 +14,7 @@ import {
 import {
   goToNextPage,
   goToPreviousPage,
-  setShowPageSelector,
+  setShowSearcher,
   setCurrentSentenceIndex,
 } from '../../../../store/pdfReaderSlice';
 import { PlaybackControls } from './PlaybackControls/PlaybackControls';
@@ -72,7 +72,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
   };
 
   const handlePageSelector = () => {
-    dispatch(setShowPageSelector(true));
+    dispatch(setShowSearcher(true));
   };
 
   useEffect(() => {

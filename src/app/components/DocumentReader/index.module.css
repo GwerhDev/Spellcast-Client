@@ -103,14 +103,29 @@
   border-radius: 3px;
 }
 
-/* Body wrapper (content + settings panel side by side) */
+/* Body wrapper (content + page list side by side) */
 .bodyWrapper {
-  gap: 0.5rem;
+  gap: 1rem;
   flex-grow: 1;
   display: flex;
   overflow: auto;
-  flex-direction: column;
+  flex-direction: row;
   position: relative;
+  padding-inline: 1rem;
+}
+
+.contentArea {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.pagesContainer {
+  display: flex;
+  flex-shrink: 0;
+  overflow-y: auto;
 }
 
 /* Settings side panel */
@@ -227,6 +242,8 @@
 .paperSheet .readerImage:first-child ~ .emptyBlock {
   display: none;
 }
+
+
 
 @media (max-width: 768px) {
   .titleContainer {

@@ -11,7 +11,8 @@ import { RootState } from '../../../store';
 import { goToPage, setCurrentSentenceIndex, setShowReaderSettings } from '../../../store/pdfReaderSlice';
 import { Spinner } from '../Spinner';
 import { IconButton } from '../Buttons/IconButton';
-import { PageSelector } from './PageSelector/PageSelector';
+import { SearcherButton } from './PageSelector/SearcherButton';
+import { PageList } from '../DocumentCreateForm/PageList';
 import type { JSONContent } from '../../../magictext';
 import { useLanguage } from '../../../i18n';
 
@@ -49,6 +50,7 @@ export const DocumentReader = () => {
   const { t } = useLanguage();
   const {
     currentPage,
+    totalPages,
     currentPageText,
     documentTitle,
     documentId,
@@ -62,6 +64,7 @@ export const DocumentReader = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const paperBgRef = useRef<HTMLDivElement>(null);
+  const pagesContainerRef = useRef<HTMLDivElement>(null);
   const playerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { zoom, showIndicator, adjustZoom, resetZoom, ZOOM_STEP } = useZoom(paperBgRef);
 
@@ -129,6 +132,16 @@ export const DocumentReader = () => {
     const container = fitToWidth ? scrollContainerRef.current : paperBgRef.current;
     if (container) container.scrollTop = 0;
   }, [currentPage, selectedVoice.type, fitToWidth]);
+
+  useEffect(() => {
+    const container = pagesContainerRef.current;
+    if (!container) return;
+    const active = container.querySelector('[class*="activePage"]') as HTMLElement | null;
+    if (!active) return;
+    const containerRect = container.getBoundingClientRect();
+    const activeRect = active.getBoundingClientRect();
+    container.scrollTo({ top: activeRect.top - containerRect.top + container.scrollTop, behavior: 'smooth' });
+  }, [currentPage]);
 
   const handleEdit = () => {
     navigate(`/editor/${documentId}/${currentPage}`);
@@ -285,7 +298,7 @@ export const DocumentReader = () => {
       <div className={`${s.pageInfoContainer} reader-top-bar`}>
         <span className={s.headerControls}>
           <IconButton variant='transparent' icon={faArrowLeft} onClick={() => documentId ? navigate(`/document/${documentId}`) : navigate(-1)} />
-          {isLoaded && <PageSelector />}
+          {isLoaded && <SearcherButton />}
         </span>
         <div className={s.titleContainer}>
           <FontAwesomeIcon icon={faFilePdf} />
@@ -299,15 +312,26 @@ export const DocumentReader = () => {
         </div>
       </div>
       <div className={s.bodyWrapper}>
-        {renderBody()}
-        {!fitToWidth && (
-          <ZoomOverlay
-            zoom={zoom}
-            showIndicator={showIndicator}
-            onZoomIn={() => adjustZoom(ZOOM_STEP)}
-            onZoomOut={() => adjustZoom(-ZOOM_STEP)}
-            onReset={resetZoom}
-          />
+        <div className={s.contentArea}>
+          {renderBody()}
+          {!fitToWidth && (
+            <ZoomOverlay
+              zoom={zoom}
+              showIndicator={showIndicator}
+              onZoomIn={() => adjustZoom(ZOOM_STEP)}
+              onZoomOut={() => adjustZoom(-ZOOM_STEP)}
+              onReset={resetZoom}
+            />
+          )}
+        </div>
+        {isLoaded && (
+          <div ref={pagesContainerRef} className={s.pagesContainer}>
+            <PageList
+              pages={Array.from({ length: totalPages }, () => '')}
+              currentPage={currentPage - 1}
+              onPageClick={(idx) => dispatch(goToPage(idx + 1))}
+            />
+          </div>
         )}
       </div>
     </div>

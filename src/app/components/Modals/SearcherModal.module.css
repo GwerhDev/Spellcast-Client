@@ -1,0 +1,211 @@
+.tabContainer {
+  padding: .5rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  display: flex;
+  background: var(--component-background-transparency);
+  backdrop-filter: blur(10px);
+  border: solid .5px var(--color-dark-300);
+}
+
+.tabButton {
+  width: 100%;
+  gap: .5rem;
+  padding: 10px 20px;
+  font-size: 1rem;
+  font-weight: 900;
+  border-radius: 6px;
+  border: none;
+  display: flex;
+  cursor: pointer;
+  justify-content: center;
+  align-items: center;
+  transition: all 0.3s ease;
+  color: var(--color-light-300);
+  background: var(--component-background);
+}
+
+.tabButton:hover {
+  color: var(--color-primary);
+}
+
+.tabButton.left {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.tabButton.right {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.tabButton.activeTab {
+  background: var(--color-primary);
+  color: var(--app-white);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.tabButton:not(.activeTab):hover {
+  color: var(--color-primary);
+}
+
+.searchRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.searchInput {
+  flex: 1;
+  min-width: 0;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid var(--color-dark-300);
+  background-color: var(--color-dark-400);
+  color: var(--text-color);
+  font-size: 0.875rem;
+}
+
+.jumpButton {
+  flex-shrink: 0;
+  white-space: nowrap;
+  padding: 0.5rem 0.85rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: var(--color-primary);
+  color: var(--app-white);
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.jumpButton:hover {
+  opacity: 0.85;
+}
+
+.pageList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+.pageOption {
+  padding: 0.6rem 0.75rem;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border: 1px solid transparent;
+  transition: background 0.15s, color 0.15s;
+  color: var(--text-color);
+  background-color: var(--color-options-background);
+}
+
+.pageOption:hover {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--app-white);
+}
+
+.pageOption:hover .pageNumber,
+.pageOption:hover .snippet,
+.pageOption:hover .snippetWrap,
+.pageOption:hover .noSnippet,
+.pageOption:hover .readIcon {
+  color: var(--app-white);
+}
+
+.pageOption:hover .highlight {
+  background: rgba(255, 255, 255, 0.3);
+  color: var(--app-white);
+}
+
+.activePage {
+  border-color: var(--color-primary);
+  background: transparent;
+}
+
+.pageNumber {
+  font-weight: 700;
+  font-size: 0.9rem;
+  min-width: 2rem;
+  color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.snippet {
+  font-size: 0.78rem;
+  color: var(--color-light-300);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.snippetWrap {
+  font-size: 0.78rem;
+  color: var(--color-light-300);
+  flex: 1;
+  white-space: normal;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.highlight {
+  background: rgba(var(--color-primary-rgb, 99, 102, 241), 0.25);
+  color: var(--color-primary);
+  border-radius: 2px;
+  font-weight: 600;
+}
+
+.noSnippet {
+  font-size: 0.78rem;
+  color: var(--color-light-400);
+}
+
+.currentBadge {
+  flex-shrink: 0;
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  background: var(--color-primary);
+  color: var(--app-white);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.readPage {
+  opacity: 0.55;
+}
+
+.readPage .pageNumber {
+  color: var(--color-light-400);
+}
+
+.readPage:hover {
+  opacity: 1;
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--app-white);
+}
+
+.readIcon {
+  flex-shrink: 0;
+  font-size: 0.65rem;
+  color: var(--color-light-400);
+}
+
+.hint {
+  font-size: 0.82rem;
+  color: var(--color-light-400);
+  text-align: center;
+  padding: 1.5rem 0;
+}

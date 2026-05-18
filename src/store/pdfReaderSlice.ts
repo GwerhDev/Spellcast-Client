@@ -9,7 +9,7 @@ interface PdfReaderState {
   isLoaded: boolean;
   hasInitialPageSet: boolean;
   isContinuousPlayActive: boolean;
-  showPageSelector: boolean;
+  showSearcher: boolean;
   currentPageText: string;
   progress?: DocumentProgress; // Add progress to state
   currentSentenceIndex: number;
@@ -31,7 +31,7 @@ const initialState: PdfReaderState = {
   currentPageText: "",
   hasInitialPageSet: false, // Initialize new flag
   isContinuousPlayActive: false,
-  showPageSelector: false,
+  showSearcher: false,
   showReaderSettings: false,
   fitToWidth: localStorage.getItem('reader:fitToWidth') !== 'false',
   lightningMode: localStorage.getItem('reader:lightningMode') !== 'false',
@@ -68,8 +68,8 @@ const pdfReaderSlice = createSlice({
     setPdfDocumentInfo(state, action: PayloadAction<{ totalPages: number }>) {
       state.totalPages = action.payload.totalPages;
     },
-    setShowPageSelector(state, action: PayloadAction<boolean>) {
-      state.showPageSelector = action.payload;
+    setShowSearcher(state, action: PayloadAction<boolean>) {
+      state.showSearcher = action.payload;
     },
     goToNextPage(state) {
       if (state.currentPage < state.totalPages) {
@@ -129,7 +129,7 @@ export const {
   setPdfLoaded,
   setHasInitialPageSet,
   setContinuousPlay,
-  setShowPageSelector,
+  setShowSearcher,
   setSentences,
   setCurrentSentenceIndex,
   setShowReaderSettings,

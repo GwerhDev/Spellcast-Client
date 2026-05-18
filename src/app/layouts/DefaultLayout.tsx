@@ -9,7 +9,7 @@ import { PdfProcessor } from '../components/PdfProcessor/PdfProcessor';
 import { BrowserPlayer } from '../components/Players/BrowserPlayer/BrowserPlayer';
 import { RootState } from 'store/index';
 import { useSelector } from 'react-redux';
-import { PageSelectorModal } from '../components/Modals/PageSelectorModal';
+import { SearcherModal } from '../components/Modals/SearcherModal';
 import { PlayerSettings } from '../components/Modals/PlayerSettings';
 import { ReaderSettings } from '../components/DocumentReader/ReaderSettings';
 import { EditorSettings } from '../components/EditorSettingsPanel/EditorSettings';
@@ -40,7 +40,7 @@ export default function DefaultLayout() {
   return (
     <main>
       <PdfProcessor />
-      <PageSelectorModal />
+      <SearcherModal />
       <VoiceSelectorModal
         show={isVoiceSelectorOpen}
         onClose={() => setIsVoiceSelectorOpen(false)}

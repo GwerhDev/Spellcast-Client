@@ -8,8 +8,8 @@ interface PageListProps {
   pages: string[];
   currentPage: number;
   onPageClick: (pageIndex: number) => void;
-  onPageDelete: (pageIndex: number) => void;
-  onAddPage: () => void;
+  onPageDelete?: (pageIndex: number) => void;
+  onAddPage?: () => void;
 }
 
 export const PageList: React.FC<PageListProps> = ({ pages, currentPage, onPageClick, onPageDelete, onAddPage }) => {
@@ -28,16 +28,20 @@ export const PageList: React.FC<PageListProps> = ({ pages, currentPage, onPageCl
           className={`${s.pageItem} ${index === currentPage && s.activePage}`}
           onClick={() => onPageClick(index)}
         >
-          <button className={s.deleteButton} onClick={(e) => handleDelete(e, index)}>
-            <FontAwesomeIcon icon={faTrash} size='xs' />
-          </button>
+          {onPageDelete && (
+            <button className={s.deleteButton} onClick={(e) => handleDelete(e, index)}>
+              <FontAwesomeIcon icon={faTrash} size='xs' />
+            </button>
+          )}
           <FontAwesomeIcon icon={faNewspaper} />
           <small className={s.pageNumber}>{t.document.page} {index + 1}</small>
         </div>
       ))}
-      <div title={t.document.addPage} className={s.addPageItem} onClick={onAddPage}>
-        <FontAwesomeIcon icon={faPlus} />
-      </div>
+      {onAddPage && (
+        <div title={t.document.addPage} className={s.addPageItem} onClick={onAddPage}>
+          <FontAwesomeIcon icon={faPlus} />
+        </div>
+      )}
     </div>
   );
 };

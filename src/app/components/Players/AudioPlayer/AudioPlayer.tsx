@@ -12,7 +12,7 @@ import {
   pause,
   setAutoPlayOnLoad,
 } from '../../../../store/audioPlayerSlice';
-import { goToNextPage, goToPreviousPage, setShowPageSelector } from '../../../../store/pdfReaderSlice';
+import { goToNextPage, goToPreviousPage, setShowSearcher } from '../../../../store/pdfReaderSlice';
 import { PlaybackControls } from './PlaybackControls/PlaybackControls';
 import { VolumeControls } from './VolumeControls/VolumeControls';
 import { VoiceSelectorButton } from './VoiceSelectorButton/VoiceSelectorButton';
@@ -297,7 +297,7 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
   };
 
   const handlePageSelector = () => {
-    dispatch(setShowPageSelector(true));
+    dispatch(setShowSearcher(true));
   };
 
   const isPrevDisabled = isLoaded ? currentPage === 1 : currentTrackIndex === 0;
