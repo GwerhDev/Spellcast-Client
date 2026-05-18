@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import s from './SearcherModal.module.css';
 import { faCheck } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -49,6 +49,18 @@ export const SearcherModal: React.FC = () => {
   const [mode, setMode] = useState<SearchMode>('page');
   const [snippets, setSnippets] = useState<string[]>([]);
   const [fullTexts, setFullTexts] = useState<string[]>([]);
+  const pageListRef = useRef<HTMLUListElement>(null);
+
+  useEffect(() => {
+    if (!showSearcher || mode !== 'page') return;
+    requestAnimationFrame(() => {
+      const list = pageListRef.current;
+      if (!list) return;
+      const active = list.children[currentPage - 1] as HTMLElement | undefined;
+      if (!active) return;
+      list.scrollTo({ top: active.getBoundingClientRect().top - list.getBoundingClientRect().top + list.scrollTop, behavior: 'smooth' });
+    });
+  }, [showSearcher, mode]);
 
   useEffect(() => {
     if (!showSearcher || !documentId) return;
@@ -167,7 +179,7 @@ export const SearcherModal: React.FC = () => {
       </div>
 
       {mode === 'page' && (
-        <ul className={s.pageList}>
+        <ul ref={pageListRef} className={s.pageList}>
           {filteredPages.map((page) => {
             const isCurrent = currentPage === page;
             const isRead = page < currentPage;

@@ -296,7 +296,7 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
     navigate(`/document/${documentId}/reader`);
   };
 
-  const handlePageSelector = () => {
+  const handleSearcher = () => {
     dispatch(setShowSearcher(true));
   };
 
@@ -330,7 +330,7 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
             {isLoaded && (
               <div className={s.documentDetails}>
                 <p title={documentTitle || ""} onClick={documentId ? handleTitle : undefined} style={documentId ? undefined : { cursor: 'default' }}>{documentTitle}</p>
-                {documentId && <small onClick={handlePageSelector}>Page {currentPage} of {totalPages}</small>}
+                {documentId && <small onClick={handleSearcher}>Page {currentPage} of {totalPages}</small>}
               </div>
             )}
           </section>

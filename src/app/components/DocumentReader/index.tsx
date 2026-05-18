@@ -11,7 +11,7 @@ import { RootState } from '../../../store';
 import { goToPage, setCurrentSentenceIndex, setShowReaderSettings } from '../../../store/pdfReaderSlice';
 import { Spinner } from '../Spinner';
 import { IconButton } from '../Buttons/IconButton';
-import { SearcherButton } from './PageSelector/SearcherButton';
+import { SearcherButton } from './Searcher/SearcherButton';
 import { PageList } from '../DocumentCreateForm/PageList';
 import type { JSONContent } from '../../../magictext';
 import { useLanguage } from '../../../i18n';
@@ -64,7 +64,6 @@ export const DocumentReader = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const paperBgRef = useRef<HTMLDivElement>(null);
-  const pagesContainerRef = useRef<HTMLDivElement>(null);
   const playerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { zoom, showIndicator, adjustZoom, resetZoom, ZOOM_STEP } = useZoom(paperBgRef);
 
@@ -133,15 +132,7 @@ export const DocumentReader = () => {
     if (container) container.scrollTop = 0;
   }, [currentPage, selectedVoice.type, fitToWidth]);
 
-  useEffect(() => {
-    const container = pagesContainerRef.current;
-    if (!container) return;
-    const active = container.querySelector('[class*="activePage"]') as HTMLElement | null;
-    if (!active) return;
-    const containerRect = container.getBoundingClientRect();
-    const activeRect = active.getBoundingClientRect();
-    container.scrollTo({ top: activeRect.top - containerRect.top + container.scrollTop, behavior: 'smooth' });
-  }, [currentPage]);
+
 
   const handleEdit = () => {
     navigate(`/editor/${documentId}/${currentPage}`);
@@ -325,7 +316,7 @@ export const DocumentReader = () => {
           )}
         </div>
         {isLoaded && (
-          <div ref={pagesContainerRef} className={s.pagesContainer}>
+          <div className={s.pagesContainer}>
             <PageList
               pages={Array.from({ length: totalPages }, () => '')}
               currentPage={currentPage - 1}
