@@ -242,14 +242,22 @@ export const DocumentReader = () => {
         style={{
           minHeight: `${paperMinHeight}px`,
           transform: `scale(${zoom})`,
-          transformOrigin: 'top center',
+          transformOrigin: 'top left',
+          position: 'absolute',
+          top: 0,
+          left: 0,
         }}
       >
         {children}
       </div>
     );
 
-    const wrapperStyle = { width: `${800 * zoom}px`, minHeight: `${paperMinHeight * zoom}px` };
+    const wrapperStyle: React.CSSProperties = {
+      width: `${800 * zoom}px`,
+      minHeight: `${paperMinHeight * zoom}px`,
+      position: 'relative',
+      flexShrink: 0,
+    };
 
     if (selectedVoice.type === 'browser') {
       if (!fitToWidth) {
