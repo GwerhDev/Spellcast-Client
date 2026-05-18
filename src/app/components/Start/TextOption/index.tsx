@@ -260,6 +260,7 @@ export const TextOption: React.FC = () => {
             </div>
             <div className={s.toolbarButtons}>
               <div className={s.volumeContainer}>
+                <span className={s.iconFixed}>
                 <button
                   type="button"
                   className={s.toolbarBtn}
@@ -269,6 +270,7 @@ export const TextOption: React.FC = () => {
                 >
                   <FontAwesomeIcon icon={volume === 0 ? faVolumeMute : faVolumeUp} />
                 </button>
+                </span>
                 {showVolumeSlider && (
                   <div
                     className={s.volumePopup}
@@ -287,17 +289,19 @@ export const TextOption: React.FC = () => {
                   </div>
                 )}
               </div>
-              <button
-                type="button"
-                className={s.submitButton}
-                disabled={isLoading || !text.trim()}
-                onClick={handleClick}
-              >
-                <FontAwesomeIcon
-                  icon={isLoading ? faSpinner : isPlaying ? faPause : faPlay}
-                  spin={isLoading}
-                />
-              </button>
+              <span className={s.iconFixed}>
+                <button
+                  type="button"
+                  className={s.submitButton}
+                  disabled={isLoading || !text.trim()}
+                  onClick={handleClick}
+                >
+                  <FontAwesomeIcon
+                    icon={isLoading ? faSpinner : isPlaying ? faPause : faPlay}
+                    spin={isLoading}
+                  />
+                </button>
+              </span>
             </div>
           </div>
         </div>
