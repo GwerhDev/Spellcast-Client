@@ -1,6 +1,6 @@
 import s from './index.module.css';
 import React, { useEffect, useRef, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import type { JSONContent } from '../../../magictext';
 import { useDispatch } from 'react-redux';
 import { useAppSelector } from '../../../store/hooks';
@@ -33,6 +33,7 @@ type SaveStatus = 'idle' | 'saving' | 'saved';
 export const DocumentEditForm: React.FC = () => {
   const { id, page } = useParams<{ id: string, page?: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useDispatch();
   const { userData, logged } = useAppSelector((state) => state.session);
   const { t } = useLanguage();
@@ -229,7 +230,7 @@ export const DocumentEditForm: React.FC = () => {
   return (
     <div className={s.container}>
       <div className={s.pageInfoContainer}>
-        <IconButton icon={faArrowLeft} className={s.backButton} variant='transparent' onClick={() => navigate('/editor/select')} />
+        <IconButton icon={faArrowLeft} className={s.backButton} variant='transparent' onClick={() => navigate((location.state as { from?: string })?.from ?? `/document/${id}`)} />
         <span className={s.titleContainer}>
           <input
             className={s.documentTitle}

@@ -1,7 +1,7 @@
 import s from './index.module.css';
 import React, { useEffect, useState } from 'react';
 import { getDocumentsFromDB, deleteDocumentFromDB } from '../../../db';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { DeleteConfirmModal } from '../Modals/DeleteConfirmModal';
 import { useAppSelector } from '../../../store/hooks';
 import { Document } from 'src/interfaces';
@@ -14,6 +14,7 @@ import { useLanguage } from '../../../i18n';
 
 export const DocumentList: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useLanguage();
   const dispatch = useDispatch();
   const { userData, logged } = useAppSelector(state => state.session);
@@ -83,7 +84,7 @@ export const DocumentList: React.FC = () => {
               key={doc.id}
               doc={doc}
               onClick={() => navigate(`/document/${doc.id}`)}
-              onEdit={(e) => { e.stopPropagation(); navigate(`/editor/${doc.id}`); }}
+              onEdit={(e) => { e.stopPropagation(); navigate(`/editor/${doc.id}`, { state: { from: location.pathname } }); }}
               onDelete={(e) => openDeleteModal(doc.id, doc.title, e)}
               onPlay={() => handlePlay(doc.id)}
             />

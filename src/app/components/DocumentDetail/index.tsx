@@ -1,6 +1,6 @@
 import s from './index.module.css';
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { useAppSelector } from '../../../store/hooks';
 import { getDocumentById, deleteDocumentFromDB } from '../../../db';
@@ -19,6 +19,7 @@ import { useLanguage } from '../../../i18n';
 export const DocumentDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useDispatch();
   const { userData, logged } = useAppSelector((state) => state.session);
   const { t } = useLanguage();
@@ -59,7 +60,7 @@ export const DocumentDetail: React.FC = () => {
   };
 
   const handleContinueReading = () => navigate(`/document/${id}/reader`);
-  const handleEdit = () => navigate(`/editor/${id}`);
+  const handleEdit = () => navigate(`/editor/${id}`, { state: { from: location.pathname } });
 
   const handleDeleteConfirm = async () => {
     if (!id || !userData?.id) return;

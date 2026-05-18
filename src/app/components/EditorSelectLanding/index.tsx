@@ -1,6 +1,6 @@
 import s from './index.module.css';
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { faArrowLeft } from '@fortawesome/free-solid-svg-icons';
 import { getDocumentsFromDB } from '../../../db';
 import { useAppSelector } from '../../../store/hooks';
@@ -12,6 +12,7 @@ import { useLanguage } from '../../../i18n';
 
 export const EditorSelectLanding = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { userData } = useAppSelector((state) => state.session);
   const { t } = useLanguage();
 
@@ -44,7 +45,7 @@ export const EditorSelectLanding = () => {
               <EditorPickerCard
                 key={doc.id}
                 doc={doc}
-                onClick={() => navigate(`/editor/${doc.id}`)}
+                onClick={() => navigate(`/editor/${doc.id}`, { state: { from: location.pathname } })}
               />
             ))}
           </div>

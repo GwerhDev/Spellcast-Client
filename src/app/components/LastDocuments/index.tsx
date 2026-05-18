@@ -1,7 +1,7 @@
 import s from './index.module.css';
 import React, { useEffect, useState } from 'react';
 import { getDocumentsFromDB, deleteDocumentFromDB } from '../../../db';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { DeleteConfirmModal } from '../Modals/DeleteConfirmModal';
 import { useAppSelector } from 'store/hooks';
 import { Document } from 'src/interfaces';
@@ -22,6 +22,7 @@ export const LastDocuments: React.FC = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState<{ id: string, title: string } | null>(null);
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useDispatch();
 
   const handlePlay = (id: string) => {
@@ -102,7 +103,7 @@ export const LastDocuments: React.FC = () => {
               doc={doc}
               isActive={activeDocId === doc.id && (readerLoaded || audioPlaying || browserPlaying)}
               onClick={() => navigate(`/document/${doc.id}`)}
-              onEdit={(e) => { e.stopPropagation(); navigate(`/editor/${doc.id}`); }}
+              onEdit={(e) => { e.stopPropagation(); navigate(`/editor/${doc.id}`, { state: { from: location.pathname } }); }}
               onDelete={(e) => openDeleteModal(doc.id, doc.title, e)}
               onPlay={() => handlePlay(doc.id)}
             />

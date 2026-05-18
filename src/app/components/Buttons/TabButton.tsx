@@ -13,9 +13,10 @@ export const TabButton = (props: { tab: Tab, loading: boolean, setShowMenu: (e: 
     if (route) navigate(route);
   };
 
-  const isActive = location.pathname === route || location.pathname.startsWith(`${route}/`) || (type === "menu" && !showMenu);
+  const isRouteActive = !!route && (location.pathname === route || location.pathname.startsWith(`${route}/`));
+  const isMenuActive = type === "menu" && !showMenu;
 
-  const container = isActive ? `${s.container} ${s.selected}` : s.container;
+  const container = `${s.container}${isRouteActive ? ` ${s.selected}` : isMenuActive ? ` ${s.menuSelected}` : ''}`;
 
   return (
     <button title={title} onClick={handleOnClick} className={container}>
