@@ -126,6 +126,14 @@
   display: flex;
   flex-shrink: 0;
   overflow-y: auto;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+
+:global(body.fullscreen-reader) .pagesContainer {
+  opacity: 0;
+  visibility: hidden;
 }
 
 

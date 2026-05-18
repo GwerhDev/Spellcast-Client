@@ -1,6 +1,7 @@
 import s from './index.module.css';
 import { useNavigate } from 'react-router-dom';
 import React, { useState, useEffect, useRef } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import type { JSX } from 'react';
 import { useZoom } from '../../../hooks/useZoom';
 import { ZoomOverlay } from '../Zoom/ZoomOverlay';
@@ -315,15 +316,24 @@ export const DocumentReader = () => {
             />
           )}
         </div>
-        {isLoaded && (
-          <div className={s.pagesContainer}>
-            <PageList
-              pages={Array.from({ length: totalPages }, () => '')}
-              currentPage={currentPage - 1}
-              onPageClick={(idx) => dispatch(goToPage(idx + 1))}
-            />
-          </div>
-        )}
+        <AnimatePresence>
+          {isLoaded && !isFullscreen && (
+            <motion.div
+              className={s.pagesContainer}
+              initial={{ opacity: 0, width: 0 }}
+              animate={{ opacity: 1, width: 'auto' }}
+              exit={{ opacity: 0, width: 0 }}
+              transition={{ duration: 0.25 }}
+              style={{ overflow: 'hidden' }}
+            >
+              <PageList
+                pages={Array.from({ length: totalPages }, () => '')}
+                currentPage={currentPage - 1}
+                onPageClick={(idx) => dispatch(goToPage(idx + 1))}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   )
