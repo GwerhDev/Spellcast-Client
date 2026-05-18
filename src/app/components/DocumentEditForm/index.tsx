@@ -10,7 +10,7 @@ import { invalidateContent } from '../../../store/pdfReaderSlice';
 import { textToSpeechService } from '../../../services/tts';
 import { Spinner } from '../Spinner';
 import { PageList } from '../DocumentCreateForm/PageList';
-import { DocumentEditor, PageMargins, PAPER_WIDTH } from '../Editors/DocumentEditor';
+import { DocumentEditor, PageMargins } from '../Editors/DocumentEditor';
 import { faArrowLeft, faCloudUpload, faPaperclip, faGear, faSave } from '@fortawesome/free-solid-svg-icons';
 import { IconButton } from '../Buttons/IconButton';
 import { CustomModal } from '../Modals/CustomModal';

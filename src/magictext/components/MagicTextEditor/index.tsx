@@ -160,7 +160,7 @@ export function MagicTextEditor({
     ext.options.defaultMargins = ruler.margins
     ext.options.paperHeight = ruler.paperHeight ?? 1131
     ext.options.onMarginsChange = ruler.onMarginsChange
-    editor.storage.ruler.margins = ruler.margins
+    ;(editor.storage as Record<string, any>).ruler.margins = ruler.margins
   }, [editor, ruler?.margins, ruler?.paperHeight, ruler?.onMarginsChange]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const editorContent = (
@@ -173,7 +173,6 @@ export function MagicTextEditor({
   const contentNode = wrapContent ? wrapContent(editorContent) : editorContent
 
   const paperWidth = ruler?.paperWidth ?? 800
-  const paperHeight = ruler?.paperHeight ?? 1131
   const margins = ruler?.margins ?? DEFAULT_MARGINS
   const rulerZoom = ruler?.zoom ?? 1
 

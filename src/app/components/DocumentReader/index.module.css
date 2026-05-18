@@ -200,7 +200,6 @@
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  overflow: hidden;
 }
 
 
@@ -213,7 +212,6 @@
   padding: 3rem 4rem;
   box-shadow: var(--paper-shadow);
   color: var(--color-light-100);
-  overflow: hidden;
 }
 
 .paperSheet .readerImage:first-child {
@@ -223,6 +221,11 @@
   margin-top: -3rem;
   margin-bottom: -3rem;
   border-radius: 0;
+}
+
+/* Hide empty placeholder blocks that trail the cover image */
+.paperSheet .readerImage:first-child ~ .emptyBlock {
+  display: none;
 }
 
 @media (max-width: 768px) {

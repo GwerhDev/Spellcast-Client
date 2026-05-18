@@ -107,7 +107,7 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
                   <div
                     className={s.paperSheet}
                     style={{
-                      height: `${paperHeight}px`,
+                      minHeight: `${paperHeight}px`,
                       paddingTop: activeMargins.marginTop,
                       paddingRight: activeMargins.marginRight,
                       paddingBottom: activeMargins.marginBottom,

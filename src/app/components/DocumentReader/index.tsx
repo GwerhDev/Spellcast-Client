@@ -65,6 +65,11 @@ export const DocumentReader = () => {
   const playerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { zoom, showIndicator, adjustZoom, resetZoom, ZOOM_STEP } = useZoom(paperBgRef);
 
+  const pageAttrs = editedText?.attrs as { pageWidth?: number; pageHeight?: number } | undefined;
+  const paperMinHeight = pageAttrs?.pageWidth && pageAttrs?.pageHeight
+    ? Math.round((pageAttrs.pageHeight / pageAttrs.pageWidth) * 800)
+    : 1131;
+
   useEffect(() => {
     document.body.classList.toggle('fullscreen-reader', isFullscreen);
     return () => document.body.classList.remove('fullscreen-reader');
@@ -226,16 +231,11 @@ export const DocumentReader = () => {
       return <div className={s.container}><Spinner isLoading message={t.common.loading} /></div>;
     }
 
-    const pageAttrs = editedText?.attrs as { pageWidth?: number; pageHeight?: number } | undefined;
-    const paperMinHeight = pageAttrs?.pageWidth && pageAttrs?.pageHeight
-      ? Math.round((pageAttrs.pageHeight / pageAttrs.pageWidth) * 800)
-      : 1131;
-
     const paperSheet = (children: React.ReactNode) => (
       <div
         className={`${s.paperSheet} ${s.readerContent} ${s.pdfMode}`}
         style={{
-          height: `${paperMinHeight}px`,
+          minHeight: `${paperMinHeight}px`,
           transform: `scale(${zoom})`,
           transformOrigin: 'top center',
         }}
@@ -244,11 +244,13 @@ export const DocumentReader = () => {
       </div>
     );
 
+    const wrapperStyle = { width: `${800 * zoom}px`, minHeight: `${paperMinHeight * zoom}px` };
+
     if (selectedVoice.type === 'browser') {
       if (!fitToWidth) {
         return (
           <div ref={paperBgRef} className={s.paperBackground}>
-            <div className={s.zoomWrapper} style={{ width: `${800 * zoom}px`, height: `${paperMinHeight * zoom}px` }}>
+            <div className={s.zoomWrapper} style={wrapperStyle}>
               {paperSheet(renderFormattedSentences(false))}
             </div>
           </div>
@@ -264,7 +266,7 @@ export const DocumentReader = () => {
     if (!fitToWidth) {
       return (
         <div ref={paperBgRef} className={s.paperBackground}>
-          <div className={s.zoomWrapper} style={{ width: `${800 * zoom}px`, height: `${paperMinHeight * zoom}px` }}>
+          <div className={s.zoomWrapper} style={wrapperStyle}>
             {paperSheet(renderFormattedContent(false))}
           </div>
         </div>
