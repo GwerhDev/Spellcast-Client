@@ -10,7 +10,7 @@ import { invalidateContent } from '../../../store/pdfReaderSlice';
 import { textToSpeechService } from '../../../services/tts';
 import { Spinner } from '../Spinner';
 import { PageList } from '../DocumentCreateForm/PageList';
-import { DocumentEditor } from '../Editors/DocumentEditor';
+import { DocumentEditor, PageMargins, PAPER_WIDTH } from '../Editors/DocumentEditor';
 import { faArrowLeft, faCloudUpload, faPaperclip, faGear, faSave } from '@fortawesome/free-solid-svg-icons';
 import { IconButton } from '../Buttons/IconButton';
 import { CustomModal } from '../Modals/CustomModal';
@@ -51,6 +51,17 @@ export const DocumentEditForm: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const [hasChanges, setHasChanges] = useState(false);
+  const [currentMargins, setCurrentMargins] = useState<PageMargins>({ marginTop: 48, marginRight: 64, marginBottom: 48, marginLeft: 64 });
+
+  const getMarginsFromPage = (p: JSONContent): PageMargins => {
+    const a = p?.attrs as Record<string, number> | undefined;
+    return {
+      marginTop: a?.marginTop ?? 48,
+      marginRight: a?.marginRight ?? 64,
+      marginBottom: a?.marginBottom ?? 48,
+      marginLeft: a?.marginLeft ?? 64,
+    };
+  };
   const [showImportModal, setShowImportModal] = useState(false);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [isProcessingPdf, setIsProcessingPdf] = useState(false);
@@ -109,7 +120,10 @@ export const DocumentEditForm: React.FC = () => {
         const pages: JSONContent[] = doc.pagesContent
           ? JSON.parse(doc.pagesContent)
           : [emptyContent];
-        setPagesContent(pages.length > 0 ? pages : [emptyContent]);
+        const finalPages = pages.length > 0 ? pages : [emptyContent];
+        setPagesContent(finalPages);
+        const initIndex = Number(page) - 1 || 0;
+        setCurrentMargins(getMarginsFromPage(finalPages[initIndex] ?? finalPages[0]));
         hasLoaded.current = true;
       } catch {
         setError('Failed to load document.');
@@ -178,6 +192,7 @@ export const DocumentEditForm: React.FC = () => {
       });
       setPagesContent(pages);
       setEditingPageIndex(0);
+      setCurrentMargins(getMarginsFromPage(pages[0]));
       setHasChanges(false);
       dispatch(invalidateContent());
     } catch (err) {
@@ -188,7 +203,10 @@ export const DocumentEditForm: React.FC = () => {
     }
   };
 
-  const handlePageClick = (index: number) => setEditingPageIndex(index);
+  const handlePageClick = (index: number) => {
+    setEditingPageIndex(index);
+    setCurrentMargins(getMarginsFromPage(pagesContent[index]));
+  };
 
   const handlePageDelete = (index: number) => {
     const updated = pagesContent.filter((_, i) => i !== index);
@@ -257,6 +275,16 @@ export const DocumentEditForm: React.FC = () => {
           pageNumber={Number(editingPageIndex) + 1}
           pageContent={pagesContent[Number(editingPageIndex)]}
           onPageContentChange={handlePageContentChange}
+          margins={currentMargins}
+          onMarginsChange={(m) => {
+            setCurrentMargins(m);
+            const idx = Number(editingPageIndex);
+            const updated = [...pagesContent];
+            const page = updated[idx];
+            updated[idx] = { ...page, attrs: { ...(page?.attrs as object ?? {}), ...m } };
+            setPagesContent(updated);
+            setHasChanges(true);
+          }}
           ttsMarks={ttsMarks}
           onTTSPlay={handleTTSPlay}
           onTTSStop={stopTTSPreview}

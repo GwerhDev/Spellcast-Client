@@ -1,7 +1,9 @@
 import s from './index.module.css';
 import { useNavigate } from 'react-router-dom';
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import type { JSX } from 'react';
+import { useZoom } from '../../../hooks/useZoom';
+import { ZoomOverlay } from '../Zoom/ZoomOverlay';
 import { useDispatch, useSelector } from 'react-redux';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowLeft, faEdit, faFilePdf, faGear, faExpand, faCompress, faInfoCircle } from '@fortawesome/free-solid-svg-icons';
@@ -59,7 +61,9 @@ export const DocumentReader = () => {
   const [editedText, setEditedText] = useState<JSONContent>(emptyContent);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const paperBgRef = useRef<HTMLDivElement>(null);
   const playerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { zoom, showIndicator, adjustZoom, resetZoom, ZOOM_STEP } = useZoom(paperBgRef);
 
   useEffect(() => {
     document.body.classList.toggle('fullscreen-reader', isFullscreen);
@@ -95,14 +99,31 @@ export const DocumentReader = () => {
 
   useEffect(() => {
     if (selectedVoice.type !== 'browser' || currentSentenceIndex < 0) return;
-    const highlighted = scrollContainerRef.current?.querySelector(`.${s.highlight}`) as HTMLElement | null;
-    highlighted?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-  }, [currentSentenceIndex, isPlaying, selectedVoice.type]);
+    const container = fitToWidth ? scrollContainerRef.current : paperBgRef.current;
+    if (!container) return;
+    const highlighted = container.querySelector(`.${s.highlight}`) as HTMLElement | null;
+    if (!highlighted) return;
+
+    const TOP_MARGIN = 32;
+    const BOTTOM_MARGIN = 80;
+    const containerRect = container.getBoundingClientRect();
+    const elemRect = highlighted.getBoundingClientRect();
+    const elemTop = elemRect.top - containerRect.top + container.scrollTop;
+    const elemBottom = elemRect.bottom - containerRect.top + container.scrollTop;
+    const visibleBottom = container.scrollTop + container.clientHeight;
+
+    if (elemBottom + BOTTOM_MARGIN > visibleBottom) {
+      container.scrollTo({ top: elemBottom + BOTTOM_MARGIN - container.clientHeight, behavior: 'smooth' });
+    } else if (elemTop - TOP_MARGIN < container.scrollTop) {
+      container.scrollTo({ top: Math.max(0, elemTop - TOP_MARGIN), behavior: 'smooth' });
+    }
+  }, [currentSentenceIndex, isPlaying, selectedVoice.type, fitToWidth]);
 
   useEffect(() => {
     if (selectedVoice.type === 'browser') return;
-    if (scrollContainerRef.current) scrollContainerRef.current.scrollTop = 0;
-  }, [currentPage, selectedVoice.type]);
+    const container = fitToWidth ? scrollContainerRef.current : paperBgRef.current;
+    if (container) container.scrollTop = 0;
+  }, [currentPage, selectedVoice.type, fitToWidth]);
 
   const handleEdit = () => {
     navigate(`/editor/${documentId}/${currentPage}`);
@@ -209,14 +230,26 @@ export const DocumentReader = () => {
     const paperMinHeight = pageAttrs?.pageWidth && pageAttrs?.pageHeight
       ? Math.round((pageAttrs.pageHeight / pageAttrs.pageWidth) * 800)
       : 1131;
-    const paperStyle = { height: `${paperMinHeight}px` };
+
+    const paperSheet = (children: React.ReactNode) => (
+      <div
+        className={`${s.paperSheet} ${s.readerContent} ${s.pdfMode}`}
+        style={{
+          height: `${paperMinHeight}px`,
+          transform: `scale(${zoom})`,
+          transformOrigin: 'top center',
+        }}
+      >
+        {children}
+      </div>
+    );
 
     if (selectedVoice.type === 'browser') {
       if (!fitToWidth) {
         return (
-          <div ref={scrollContainerRef} className={s.paperBackground}>
-            <div className={`${s.paperSheet} ${s.readerContent} ${s.pdfMode}`} style={paperStyle}>
-              {renderFormattedSentences(false)}
+          <div ref={paperBgRef} className={s.paperBackground}>
+            <div className={s.zoomWrapper} style={{ width: `${800 * zoom}px`, height: `${paperMinHeight * zoom}px` }}>
+              {paperSheet(renderFormattedSentences(false))}
             </div>
           </div>
         );
@@ -230,9 +263,9 @@ export const DocumentReader = () => {
 
     if (!fitToWidth) {
       return (
-        <div ref={scrollContainerRef} className={s.paperBackground}>
-          <div className={`${s.paperSheet} ${s.readerContent} ${s.pdfMode}`} style={paperStyle}>
-            {renderFormattedContent(false)}
+        <div ref={paperBgRef} className={s.paperBackground}>
+          <div className={s.zoomWrapper} style={{ width: `${800 * zoom}px`, height: `${paperMinHeight * zoom}px` }}>
+            {paperSheet(renderFormattedContent(false))}
           </div>
         </div>
       );
@@ -265,6 +298,15 @@ export const DocumentReader = () => {
       </div>
       <div className={s.bodyWrapper}>
         {renderBody()}
+        {!fitToWidth && (
+          <ZoomOverlay
+            zoom={zoom}
+            showIndicator={showIndicator}
+            onZoomIn={() => adjustZoom(ZOOM_STEP)}
+            onZoomOut={() => adjustZoom(-ZOOM_STEP)}
+            onReset={resetZoom}
+          />
+        )}
       </div>
     </div>
   )

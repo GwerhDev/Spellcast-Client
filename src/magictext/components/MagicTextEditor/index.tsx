@@ -17,8 +17,20 @@ import { Toolbar } from '../Toolbar/Toolbar'
 import { VariableExtension } from '../../extensions/VariableExtension'
 import { TTSMarkExtension } from '../../extensions/TTSMarkExtension'
 import { PdfPositionExtension } from '../../extensions/PdfPositionExtension'
+import { RulerExtension, DEFAULT_MARGINS } from '../../extensions/RulerExtension'
+import type { PageMargins } from '../../extensions/RulerExtension'
+import { HorizontalRuler } from '../Ruler/HorizontalRuler'
 import { TranslationsContext, resolveTranslations } from '../../i18n'
 import '../../styles/editor.css'
+
+export interface RulerConfig {
+  enabled: boolean
+  margins: PageMargins
+  paperWidth?: number
+  paperHeight?: number
+  onMarginsChange?: (margins: PageMargins) => void
+  zoom?: number
+}
 
 export interface MagicTextEditorProps {
   content?: string | JSONContent
@@ -46,8 +58,9 @@ export interface MagicTextEditorProps {
   ttsPlaying?: boolean
   locale?: string
   translations?: PartialTranslations
+  ruler?: RulerConfig
   /**
-   * Optional wrapper for the content area only (not the toolbar).
+   * Optional wrapper for the content area only (not the toolbar or ruler).
    * Use this to apply paper/sheet styling around the editable area.
    */
   wrapContent?: (content: ReactNode) => ReactNode
@@ -76,6 +89,7 @@ export function MagicTextEditor({
   ttsPlaying,
   locale,
   translations: translationOverrides,
+  ruler,
   wrapContent,
 }: MagicTextEditorProps) {
   const t = useMemo(
@@ -89,7 +103,6 @@ export function MagicTextEditor({
 
   const editor = useEditor({
     extensions: [
-      // Tiptap v3 StarterKit already bundles Link and Underline — disable to avoid duplicates
       StarterKit.configure({ link: false, underline: false } as Record<string, unknown>),
       TTSMarkExtension,
       VariableExtension.configure({ translations: t.variableNode }),
@@ -105,6 +118,13 @@ export function MagicTextEditor({
       TextStyle,
       Color,
       Placeholder.configure({ placeholder }),
+      RulerExtension.configure({
+        enabled: ruler?.enabled ?? false,
+        defaultMargins: ruler?.margins ?? DEFAULT_MARGINS,
+        paperWidth: ruler?.paperWidth ?? 800,
+        paperHeight: ruler?.paperHeight ?? 1131,
+        onMarginsChange: ruler?.onMarginsChange,
+      }),
     ],
     content,
     editable,
@@ -132,12 +152,69 @@ export function MagicTextEditor({
     if (isDifferent) editor.commands.setContent(content as string)
   }, [content]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Sync ruler options when ruler config changes (margins, paperHeight, etc.)
+  useEffect(() => {
+    if (!editor || editor.isDestroyed || !ruler?.enabled) return
+    const ext = editor.extensionManager.extensions.find(e => e.name === 'ruler')
+    if (!ext) return
+    ext.options.defaultMargins = ruler.margins
+    ext.options.paperHeight = ruler.paperHeight ?? 1131
+    ext.options.onMarginsChange = ruler.onMarginsChange
+    editor.storage.ruler.margins = ruler.margins
+  }, [editor, ruler?.margins, ruler?.paperHeight, ruler?.onMarginsChange]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const editorContent = (
     <EditorContent
       editor={editor}
       className={`magic-text-editor__content${contentClassName ? ` ${contentClassName}` : ''}`}
     />
   )
+
+  const contentNode = wrapContent ? wrapContent(editorContent) : editorContent
+
+  const paperWidth = ruler?.paperWidth ?? 800
+  const paperHeight = ruler?.paperHeight ?? 1131
+  const margins = ruler?.margins ?? DEFAULT_MARGINS
+  const rulerZoom = ruler?.zoom ?? 1
+
+  const handleMarginsChange = (partial: Partial<PageMargins>) => {
+    const next = { ...margins, ...partial }
+    ruler?.onMarginsChange?.(next)
+  }
+
+  const inner = ruler?.enabled ? (
+    <div
+      className="magic-text-editor__ruler-grid"
+      style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}
+    >
+      {/* Top row: corner + horizontal ruler spanning full width */}
+      <div style={{
+        display: 'flex',
+        flexShrink: 0,
+        background: 'var(--magic-ruler-bg, #232323)',
+        borderBottom: '1px solid var(--magic-ruler-border, #3c3c3c)',
+      }}>
+        <div style={{
+          width: 20, height: 20, flexShrink: 0,
+          borderRight: '1px solid var(--magic-ruler-border, #3c3c3c)',
+        }} />
+        <div style={{ flex: 1, overflow: 'hidden' }}>
+          <HorizontalRuler
+            paperWidth={paperWidth}
+            marginLeft={margins.marginLeft}
+            marginRight={margins.marginRight}
+            onMarginLeftChange={v => handleMarginsChange({ marginLeft: v })}
+            onMarginRightChange={v => handleMarginsChange({ marginRight: v })}
+            zoom={rulerZoom}
+          />
+        </div>
+      </div>
+      {/* Bottom row: scrollable content (VerticalRuler lives inside wrapContent) */}
+      <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        {contentNode}
+      </div>
+    </div>
+  ) : contentNode
 
   return (
     <TranslationsContext.Provider value={t}>
@@ -155,7 +232,7 @@ export function MagicTextEditor({
             ttsPlaying={ttsPlaying}
           />
         )}
-        {wrapContent ? wrapContent(editorContent) : editorContent}
+        {inner}
       </div>
     </TranslationsContext.Provider>
   )

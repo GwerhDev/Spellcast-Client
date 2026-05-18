@@ -126,6 +126,11 @@ html.light {
 
   --paper-bg: #ffffff;
   --paper-shadow: 0 4px 28px rgba(0, 0, 0, 0.2);
+
+  --magic-ruler-bg: #eeeeee;
+  --magic-ruler-border: #d0d0d0;
+  --magic-ruler-color: #9e9e9e;
+  --magic-ruler-shade: rgba(115, 165, 204, 0.15);
 }
 
 #root {

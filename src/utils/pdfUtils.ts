@@ -171,7 +171,19 @@ export const extractPdfPages = async (pdf: pdfjsLib.PDFDocumentProxy): Promise<J
     }
 
     const leftmostX = lines.length > 0 ? Math.min(...lines.map(l => l.x)) : 0;
-    const pageContent: JSONContent = { type: 'doc', attrs: pageDims, content: [] };
+    const rightmostExtent = lines.length > 0
+      ? Math.max(...lines.flatMap(l => l.items.map(item => item.transform[4] + item.width)))
+      : pageViewport.width;
+    const topY = lines.length > 0 ? Math.max(...lines.map(l => l.y)) : pageViewport.height;
+    const bottomY = lines.length > 0 ? Math.min(...lines.map(l => l.y)) : 0;
+
+    const marginLeft = Math.max(0, Math.round(leftmostX * xScale));
+    const marginRight = Math.max(0, Math.round((pageViewport.width - rightmostExtent) * xScale));
+    const marginTop = Math.max(0, Math.round((pageViewport.height - topY) * xScale));
+    const marginBottom = Math.max(0, Math.round(bottomY * xScale));
+
+    const pageAttrs = { ...pageDims, marginLeft, marginRight, marginTop, marginBottom };
+    const pageContent: JSONContent = { type: 'doc', attrs: pageAttrs, content: [] };
 
     for (const p of paragraphs) {
       if (p.lines.length === 0) {
@@ -220,7 +232,7 @@ export const extractPdfPages = async (pdf: pdfjsLib.PDFDocumentProxy): Promise<J
       pageContent.content!.push({ type: 'image', attrs: { src, alt: null, title: null } });
     }
 
-    allPagesContent.push(pageContent.content!.length > 0 ? pageContent : emptyPageContent);
+    allPagesContent.push(pageContent.content!.length > 0 ? pageContent : { ...emptyPageContent, attrs: pageAttrs });
   }
 
   return allPagesContent;
