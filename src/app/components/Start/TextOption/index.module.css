@@ -64,19 +64,34 @@
   min-width: 0;
   display: flex;
   align-items: center;
-  gap: 0.35rem;
   overflow: hidden;
+}
+
+.voiceInfoTrigger {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 0.15rem 0.3rem;
+  color: var(--color-light-300);
+  transition: color 0.2s;
+  overflow: hidden;
+}
+
+.voiceInfoTrigger:hover {
+  color: var(--color-primary);
 }
 
 .voiceInfoIcon {
   font-size: 0.7rem;
-  color: var(--color-light-300);
+  color: inherit;
   flex-shrink: 0;
 }
 
 .voiceInfoName {
   font-size: 0.75rem;
-  color: var(--color-light-300);
+  color: inherit;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

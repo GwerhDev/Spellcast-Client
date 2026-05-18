@@ -8,7 +8,7 @@ import { pause as pauseGlobalBrowser } from '../../../../store/browserPlayerSlic
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faPlay, faPause, faSpinner,
-  faCommentDots, faVolumeUp, faVolumeMute, faVolumeHigh, faStop,
+  faVolumeUp, faVolumeMute, faVolumeHigh, faStop,
   faBrain, faDesktop, faCircle as faFilledCircle,
 } from '@fortawesome/free-solid-svg-icons';
 import { faCircle as faRegCircle } from '@fortawesome/free-regular-svg-icons';
@@ -245,26 +245,20 @@ export const TextOption: React.FC = () => {
           />
           <div className={s.toolbar}>
             <div className={s.voiceInfo}>
-              <FontAwesomeIcon
-                icon={voiceType === 'browser' ? faDesktop : faBrain}
-                className={s.voiceInfoIcon}
-              />
-              <span className={s.voiceInfoName}>
-                {voiceType === 'browser'
-                  ? (browserVoices.find(v => v.name === selectedVoiceValue)?.name ?? selectedVoiceValue)
-                  : (aiVoices.find(v => v.value === selectedVoiceValue)?.name ?? selectedVoiceValue)
-                }
+              <span className={s.voiceInfoTrigger} onClick={() => setShowVoiceModal(true)} role="button" tabIndex={0}>
+                <FontAwesomeIcon
+                  icon={voiceType === 'browser' ? faDesktop : faBrain}
+                  className={s.voiceInfoIcon}
+                />
+                <span className={s.voiceInfoName}>
+                  {voiceType === 'browser'
+                    ? (browserVoices.find(v => v.name === selectedVoiceValue)?.name ?? selectedVoiceValue)
+                    : (aiVoices.find(v => v.value === selectedVoiceValue)?.name ?? selectedVoiceValue)
+                  }
+                </span>
               </span>
             </div>
             <div className={s.toolbarButtons}>
-              <button
-                type="button"
-                className={s.toolbarBtn}
-                onClick={() => setShowVoiceModal(true)}
-                title={t.player.selectVoice}
-              >
-                <FontAwesomeIcon icon={faCommentDots} />
-              </button>
               <div className={s.volumeContainer}>
                 <button
                   type="button"
