@@ -15,6 +15,7 @@ import { IconButton } from '../Buttons/IconButton';
 import { SearcherButton } from './Searcher/SearcherButton';
 import { PageList } from '../DocumentCreateForm/PageList';
 import type { JSONContent } from '../../../magictext';
+import { MagicTextEditor } from '../../../magictext';
 import { useLanguage } from '../../../i18n';
 
 const emptyContent: JSONContent = {
@@ -68,10 +69,16 @@ export const DocumentReader = () => {
   const playerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { zoom, showIndicator, adjustZoom, resetZoom, ZOOM_STEP } = useZoom(paperBgRef);
 
-  const pageAttrs = editedText?.attrs as { pageWidth?: number; pageHeight?: number } | undefined;
+  const pageAttrs = editedText?.attrs as { pageWidth?: number; pageHeight?: number; marginTop?: number; marginRight?: number; marginBottom?: number; marginLeft?: number } | undefined;
   const paperMinHeight = pageAttrs?.pageWidth && pageAttrs?.pageHeight
     ? Math.round((pageAttrs.pageHeight / pageAttrs.pageWidth) * 800)
     : 1131;
+  const pageMargins = {
+    marginTop: pageAttrs?.marginTop ?? 48,
+    marginRight: pageAttrs?.marginRight ?? 64,
+    marginBottom: pageAttrs?.marginBottom ?? 48,
+    marginLeft: pageAttrs?.marginLeft ?? 64,
+  };
 
   useEffect(() => {
     document.body.classList.toggle('fullscreen-reader', isFullscreen);
@@ -144,45 +151,6 @@ export const DocumentReader = () => {
     dispatch(setCurrentSentenceIndex(clickedIndex));
   };
 
-  const renderFormattedContent = (fit: boolean) => {
-    if (!editedText?.content) return null;
-
-    return editedText.content.map((node, nIdx) => {
-      if (node.type === 'image') {
-        const src = (node.attrs as { src?: string })?.src;
-        if (!src) return null;
-        return <img key={nIdx} src={src} alt="" className={s.readerImage} />;
-      }
-
-      if (node.type !== 'paragraph' && node.type !== 'heading') return null;
-
-      const nodeContent = node.content || [];
-      if (!nodeContent.length) return <p key={nIdx} className={s.emptyBlock} />;
-
-      const level = node.type === 'heading' ? ((node.attrs as { level?: number })?.level ?? 1) : 0;
-      const Tag = (node.type === 'heading' ? `h${level}` : 'p') as keyof JSX.IntrinsicElements;
-      const marginLeft = (node.attrs as { marginLeft?: number })?.marginLeft;
-      const blockStyle = marginLeft ? { marginLeft: `${marginLeft}px` } : undefined;
-
-      const inlineContent = nodeContent.map((child, cIdx) => {
-        if (child.type === 'hardBreak') return fit ? <span key={cIdx}> </span> : <br key={cIdx} />;
-        if (child.type !== 'text') return null;
-
-        const text = (child as { type: string; text?: string; marks?: { type: string }[] }).text || '';
-        const marks = (child as { type: string; text?: string; marks?: { type: string }[] }).marks || [];
-        const isBold = marks.some(m => m.type === 'bold');
-        const isItalic = marks.some(m => m.type === 'italic');
-
-        if (isBold && isItalic) return <strong key={cIdx}><em>{text}</em></strong>;
-        if (isBold) return <strong key={cIdx}>{text}</strong>;
-        if (isItalic) return <em key={cIdx}>{text}</em>;
-        return <span key={cIdx}>{text}</span>;
-      });
-
-      return <Tag key={nIdx} className={s.readerBlock} style={blockStyle}>{inlineContent}</Tag>;
-    });
-  };
-
   const renderFormattedSentences = (fit: boolean) => {
     if (!editedText?.content) return null;
 
@@ -190,42 +158,61 @@ export const DocumentReader = () => {
 
     return editedText.content.map((node, nIdx) => {
       if (node.type === 'image') {
-        const src = (node.attrs as { src?: string })?.src;
-        if (!src) return null;
-        return <img key={nIdx} src={src} alt="" className={s.readerImage} />;
+        const attrs = node.attrs as { src?: string; alt?: string | null; title?: string | null };
+        if (!attrs.src) return null;
+        return <img key={nIdx} src={attrs.src} alt={attrs.alt ?? ''} title={attrs.title ?? undefined} className={s.readerImage} />;
+      }
+
+      if (node.type === 'horizontalRule') {
+        return <hr key={nIdx} className={s.horizontalRule} />;
       }
 
       if (node.type !== 'paragraph' && node.type !== 'heading') return null;
 
-      const nodeText = (node.content || [])
-        .map((c) => {
-          if (c.type === 'text') return (c as { type: string; text?: string }).text || '';
-          if (c.type === 'hardBreak') return fit ? ' ' : '\n';
-          return '';
-        })
-        .join('')
-        .trim();
+      const hasText = (node.content || []).some(c => c.type === 'text' && (c as { text?: string }).text?.trim());
+      if (!hasText) return <p key={nIdx} className={s.emptyBlock} />;
 
-      if (!nodeText) return <p key={nIdx} className={s.emptyBlock} />;
-
-      const nodeSentences = nodeText.split(fit ? /(?<=[.!?])\s*/ : /(?<=[.!?])/).filter(Boolean);
       const level = node.type === 'heading' ? ((node.attrs as { level?: number })?.level ?? 1) : 0;
       const Tag = (node.type === 'heading' ? `h${level}` : 'p') as keyof JSX.IntrinsicElements;
       const marginLeftSent = (node.attrs as { marginLeft?: number })?.marginLeft;
-      const sentBlockStyle = marginLeftSent ? { marginLeft: `${marginLeftSent}px` } : undefined;
+      const sentBlockStyle: React.CSSProperties = {
+        whiteSpace: 'pre-wrap',
+        ...(marginLeftSent ? { marginLeft: `${marginLeftSent}px` } : {}),
+      };
 
-      const spans = nodeSentences.map((sentence) => {
-        const idx = sentIdx++;
-        return (
-          <span
-            key={idx}
-            className={idx === currentSentenceIndex ? s.highlight : s.sentence}
-            onClick={() => handleSentenceClick(idx)}
-          >
-            {sentence}{' '}
-          </span>
-        );
-      });
+      const spans: React.ReactNode[] = [];
+      for (const c of (node.content || [])) {
+        if (c.type === 'hardBreak') {
+          spans.push(fit ? ' ' : <br key={`br-${sentIdx}`} />);
+          continue;
+        }
+        if (c.type !== 'text') continue;
+        const text = (c as { text?: string }).text || '';
+        if (!text) continue;
+
+        const marks = (c as { marks?: { type: string }[] }).marks || [];
+        const isBold = marks.some(m => m.type === 'bold');
+        const isItalic = marks.some(m => m.type === 'italic');
+
+        const parts = text.split(fit ? /(?<=[.!?])\s*/ : /(?<=[.!?])/).filter(Boolean);
+        for (let j = 0; j < parts.length; j++) {
+          const part = parts[j];
+          const idx = sentIdx++;
+          let inner: React.ReactNode = part;
+          if (isBold && isItalic) inner = <strong><em>{part}</em></strong>;
+          else if (isBold) inner = <strong>{part}</strong>;
+          else if (isItalic) inner = <em>{part}</em>;
+          spans.push(
+            <span
+              key={idx}
+              className={idx === currentSentenceIndex ? s.highlight : s.sentence}
+              onClick={() => handleSentenceClick(idx)}
+            >
+              {inner}{' '}
+            </span>
+          );
+        }
+      }
 
       return <Tag key={nIdx} className={s.readerBlock} style={sentBlockStyle}>{spans}</Tag>;
     });
@@ -238,15 +225,20 @@ export const DocumentReader = () => {
 
     const paperSheet = (children: React.ReactNode) => (
       <div
-        className={`${s.paperSheet} ${s.readerContent} ${s.pdfMode}`}
+        className={s.paperSheet}
         style={{
           minHeight: `${paperMinHeight}px`,
           transform: `scale(${zoom})`,
-          transformOrigin: 'top left',
-          position: 'absolute',
-          top: 0,
-          left: 0,
-        }}
+          transformOrigin: 'top center',
+          paddingTop: pageMargins.marginTop,
+          paddingRight: pageMargins.marginRight,
+          paddingBottom: pageMargins.marginBottom,
+          paddingLeft: pageMargins.marginLeft,
+          '--margin-top': `${pageMargins.marginTop}px`,
+          '--margin-right': `${pageMargins.marginRight}px`,
+          '--margin-bottom': `${pageMargins.marginBottom}px`,
+          '--margin-left': `${pageMargins.marginLeft}px`,
+        } as React.CSSProperties}
       >
         {children}
       </div>
@@ -254,9 +246,7 @@ export const DocumentReader = () => {
 
     const wrapperStyle: React.CSSProperties = {
       width: `${800 * zoom}px`,
-      minHeight: `${paperMinHeight * zoom}px`,
-      position: 'relative',
-      flexShrink: 0,
+      height: `${paperMinHeight * zoom}px`,
     };
 
     if (selectedVoice.type === 'browser') {
@@ -280,7 +270,15 @@ export const DocumentReader = () => {
       return (
         <div ref={paperBgRef} className={s.paperBackground}>
           <div className={s.zoomWrapper} style={wrapperStyle}>
-            {paperSheet(renderFormattedContent(false))}
+            {paperSheet(
+              <MagicTextEditor
+                key={currentPage}
+                editable={false}
+                content={editedText}
+                inputType="json"
+                contentClassName={s.editorContent}
+              />
+            )}
           </div>
         </div>
       );
@@ -288,7 +286,13 @@ export const DocumentReader = () => {
 
     return (
       <div ref={scrollContainerRef} className={`${s.textContainer} ${s.readerContent}`}>
-        {renderFormattedContent(true)}
+        <MagicTextEditor
+          key={currentPage}
+          editable={false}
+          content={editedText}
+          inputType="json"
+          contentClassName={s.editorContent}
+        />
       </div>
     );
   };

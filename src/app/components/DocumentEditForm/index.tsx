@@ -65,6 +65,7 @@ export const DocumentEditForm: React.FC = () => {
   const [showImportModal, setShowImportModal] = useState(false);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [isProcessingPdf, setIsProcessingPdf] = useState(false);
+  const [pdfProgress, setPdfProgress] = useState<{ current: number; total: number } | null>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
   const [ttsPlaying, setTtsPlaying] = useState(false);
   const ttsAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -132,6 +133,7 @@ export const DocumentEditForm: React.FC = () => {
       }
     };
     load();
+    //eslint-disable-next-line
   }, [id, logged, userData.id]);
 
   useEffect(() => {
@@ -159,6 +161,7 @@ export const DocumentEditForm: React.FC = () => {
     return () => {
       if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
     };
+    //eslint-disable-next-line
   }, [pagesContent, documentTitle, autoSave]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -173,6 +176,7 @@ export const DocumentEditForm: React.FC = () => {
     if (!pendingFile || !id || !userData.id) return;
     setShowImportModal(false);
     setIsProcessingPdf(true);
+    setPdfProgress(null);
     try {
       const reader = new FileReader();
       const fileContent: string = await new Promise((resolve, reject) => {
@@ -182,7 +186,10 @@ export const DocumentEditForm: React.FC = () => {
       });
       const pdfData = atob(fileContent.substring(fileContent.indexOf(',') + 1));
       const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
-      const [coverBlob, rawPages] = await Promise.all([renderPageToCover(pdf), extractPdfPages(pdf)]);
+      const [coverBlob, rawPages] = await Promise.all([
+        renderPageToCover(pdf),
+        extractPdfPages(pdf, (current, total) => setPdfProgress({ current, total })),
+      ]);
       const pages = await injectCoverIntoPages(rawPages, coverBlob);
       await updateDocumentFull(id, userData.id, {
         title: documentTitle,
@@ -190,15 +197,17 @@ export const DocumentEditForm: React.FC = () => {
         pdf: pendingFile,
         cover: coverBlob ?? undefined,
       });
+      const clampedIndex = Math.min(Number(editingPageIndex), pages.length - 1);
       setPagesContent(pages);
-      setEditingPageIndex(0);
-      setCurrentMargins(getMarginsFromPage(pages[0]));
+      setEditingPageIndex(clampedIndex);
+      setCurrentMargins(getMarginsFromPage(pages[clampedIndex]));
       setHasChanges(false);
       dispatch(invalidateContent());
     } catch (err) {
       console.error('Failed to import PDF:', err);
     } finally {
       setIsProcessingPdf(false);
+      setPdfProgress(null);
       setPendingFile(null);
     }
   };
@@ -271,25 +280,48 @@ export const DocumentEditForm: React.FC = () => {
       </div>
 
       <div className={s.editorContainer}>
-        <DocumentEditor
-          pageNumber={Number(editingPageIndex) + 1}
-          pageContent={pagesContent[Number(editingPageIndex)]}
-          onPageContentChange={handlePageContentChange}
-          margins={currentMargins}
-          onMarginsChange={(m) => {
-            setCurrentMargins(m);
-            const idx = Number(editingPageIndex);
-            const updated = [...pagesContent];
-            const page = updated[idx];
-            updated[idx] = { ...page, attrs: { ...(page?.attrs as object ?? {}), ...m } };
-            setPagesContent(updated);
-            setHasChanges(true);
-          }}
-          ttsMarks={ttsMarks}
-          onTTSPlay={handleTTSPlay}
-          onTTSStop={stopTTSPreview}
-          ttsPlaying={ttsPlaying}
-        />
+        <div className={s.editorWrapper}>
+          <DocumentEditor
+            pageNumber={Number(editingPageIndex) + 1}
+            pageContent={pagesContent[Number(editingPageIndex)]}
+            onPageContentChange={handlePageContentChange}
+            margins={currentMargins}
+            onMarginsChange={(m) => {
+              setCurrentMargins(m);
+              const idx = Number(editingPageIndex);
+              const updated = [...pagesContent];
+              const page = updated[idx];
+              updated[idx] = { ...page, attrs: { ...(page?.attrs as object ?? {}), ...m } };
+              setPagesContent(updated);
+              setHasChanges(true);
+            }}
+            ttsMarks={ttsMarks}
+            onTTSPlay={handleTTSPlay}
+            onTTSStop={stopTTSPreview}
+            ttsPlaying={ttsPlaying}
+          />
+          {isProcessingPdf && (
+            <div className={s.processingOverlay}>
+              <div className={s.processingCard}>
+                <span className={s.processingLabel}>
+                  {pdfProgress
+                    ? `${t.document.processingPdf} (${pdfProgress.current}/${pdfProgress.total})`
+                    : t.document.processingPdf}
+                </span>
+                <div className={s.progressTrack}>
+                  <div
+                    className={s.progressFill}
+                    style={{
+                      width: pdfProgress
+                        ? `${(pdfProgress.current / pdfProgress.total) * 100}%`
+                        : '0%',
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
         <div className={s.pagesContainer}>
           <PageList
             pages={pagesContent.map(() => '')}

@@ -70,7 +70,8 @@
   box-sizing: border-box;
 }
 
-.paperSheet :global(.ProseMirror > img:first-child) {
+/* Cover image (first page, not a pdf-graphic) — bleeds to edges */
+.paperSheet :global(.ProseMirror > img:first-child:not([title="pdf-graphic"])) {
   display: block;
   height: auto;
   border-radius: 0;
@@ -79,5 +80,13 @@
   margin-left: calc(-1 * var(--margin-left, 64px));
   margin-top: calc(-1 * var(--margin-top, 48px));
   margin-bottom: -6rem;
+}
+
+/* PDF graphic (decorative header, ornament) — normal inline image */
+.paperSheet :global(.ProseMirror img[title="pdf-graphic"]) {
+  display: block;
+  height: auto;
+  max-width: 100%;
+  margin: 0 auto;
 }
 

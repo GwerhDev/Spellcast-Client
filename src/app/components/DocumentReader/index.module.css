@@ -105,13 +105,11 @@
 
 /* Body wrapper (content + page list side by side) */
 .bodyWrapper {
-  gap: 1rem;
   flex-grow: 1;
   display: flex;
   overflow: auto;
   flex-direction: row;
   position: relative;
-  padding-inline: 1rem;
 }
 
 .contentArea {
@@ -190,8 +188,7 @@
 }
 
 .readerBlock {
-  margin-bottom: 0.75rem;
-  line-height: 1.6;
+  margin: 1em 0;
 }
 
 .readerImage {
@@ -205,6 +202,17 @@
 .emptyBlock {
   display: block;
   height: 0.75rem;
+}
+
+.horizontalRule {
+  border: none;
+  border-top: 1px solid var(--color-dark-300);
+  margin: 1em 0;
+}
+
+.editorContent {
+  padding: 0 !important;
+  min-height: 0 !important;
 }
 
 /* Paper mode — outer scroll area */
@@ -224,6 +232,7 @@
   display: flex;
   justify-content: center;
   align-items: flex-start;
+  overflow: hidden;
 }
 
 
@@ -233,22 +242,32 @@
   flex-shrink: 0;
   background: var(--paper-bg);
   border-radius: 2px;
-  padding: 3rem 4rem;
   box-shadow: var(--paper-shadow);
   color: var(--color-light-100);
+  box-sizing: border-box;
 }
 
-.paperSheet .readerImage:first-child {
-  width: calc(100% + 8rem);
-  max-width: none;
-  margin-left: -4rem;
-  margin-top: -3rem;
-  margin-bottom: -3rem;
+.paperSheet .readerImage:first-child:not([title="pdf-graphic"]) {
+  display: block;
+  height: auto;
   border-radius: 0;
+  width: calc(100% + var(--margin-left, 64px) + var(--margin-right, 64px));
+  max-width: none;
+  margin-left: calc(-1 * var(--margin-left, 64px));
+  margin-top: calc(-1 * var(--margin-top, 48px));
+  margin-bottom: -6rem;
+}
+
+/* PDF graphic (decorative header) — normal inline image, no bleed */
+.paperSheet img[title="pdf-graphic"] {
+  display: block;
+  height: auto;
+  max-width: 100%;
+  margin: 0 auto;
 }
 
 /* Hide empty placeholder blocks that trail the cover image */
-.paperSheet .readerImage:first-child ~ .emptyBlock {
+.paperSheet .readerImage:first-child:not([title="pdf-graphic"]) ~ .emptyBlock {
   display: none;
 }
 

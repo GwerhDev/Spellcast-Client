@@ -4,7 +4,6 @@
   gap: .5rem;
   overflow: auto;
   padding: .5rem;
-  padding-inline: 0;
 }
 
 @media (max-width: 768px) {
