@@ -45,8 +45,13 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
   const [content, setContent] = useState<JSONContent>(pageContent);
   const paperBgRef = useRef<HTMLDivElement>(null);
   const { zoom, showIndicator, adjustZoom, resetZoom, ZOOM_STEP } = useZoom(paperBgRef);
+  const fromEditorRef = useRef(false);
 
   useEffect(() => {
+    if (fromEditorRef.current) {
+      fromEditorRef.current = false;
+      return;
+    }
     setContent(pageContent);
   }, [pageContent, pageNumber]);
 
@@ -64,6 +69,7 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
         outputType="json"
         content={content}
         onChange={(newContent) => {
+          fromEditorRef.current = true;
           const json = newContent as JSONContent;
           const preserved: JSONContent = attrs ? { ...json, attrs } : json;
           setContent(preserved);

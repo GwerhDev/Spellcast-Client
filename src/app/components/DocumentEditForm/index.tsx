@@ -11,7 +11,8 @@ import { textToSpeechService } from '../../../services/tts';
 import { Spinner } from '../Spinner';
 import { PageList } from '../DocumentCreateForm/PageList';
 import { DocumentEditor, PageMargins } from '../Editors/DocumentEditor';
-import { faArrowLeft, faCloudUpload, faPaperclip, faGear, faSave } from '@fortawesome/free-solid-svg-icons';
+import { faArrowLeft, faCloudUpload, faPaperclip, faGear, faSave, faFile } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { IconButton } from '../Buttons/IconButton';
 import { CustomModal } from '../Modals/CustomModal';
 import { PrimaryButton } from '../Buttons/PrimaryButton';
@@ -19,7 +20,7 @@ import { SecondaryButton } from '../Buttons/SecondaryButton';
 import type { TTSPlayPayload } from '../../../magictext/types';
 import * as pdfjsLib from 'pdfjs-dist';
 import workerSrc from 'pdfjs-dist/build/pdf.worker?url';
-import { renderPageToCover, extractPdfPages, injectCoverIntoPages } from '../../../utils/pdfUtils';
+import { renderPageToCover, extractPdfPages, injectCoverIntoPages, blobToDataUrl } from '../../../utils/pdfUtils';
 import { useLanguage } from '../../../i18n';
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
@@ -66,6 +67,7 @@ export const DocumentEditForm: React.FC = () => {
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [isProcessingPdf, setIsProcessingPdf] = useState(false);
   const [pdfProgress, setPdfProgress] = useState<{ current: number; total: number } | null>(null);
+  const [coverUrl, setCoverUrl] = useState<string | null>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
   const [ttsPlaying, setTtsPlaying] = useState(false);
   const ttsAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -177,6 +179,7 @@ export const DocumentEditForm: React.FC = () => {
     setShowImportModal(false);
     setIsProcessingPdf(true);
     setPdfProgress(null);
+    setCoverUrl(null);
     try {
       const reader = new FileReader();
       const fileContent: string = await new Promise((resolve, reject) => {
@@ -186,10 +189,20 @@ export const DocumentEditForm: React.FC = () => {
       });
       const pdfData = atob(fileContent.substring(fileContent.indexOf(',') + 1));
       const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
-      const [coverBlob, rawPages] = await Promise.all([
-        renderPageToCover(pdf),
-        extractPdfPages(pdf, (current, total) => setPdfProgress({ current, total })),
-      ]);
+      const coverPromise = renderPageToCover(pdf).then(async blob => {
+        if (blob) setCoverUrl(await blobToDataUrl(blob));
+        return blob;
+      });
+      const rawPages = await extractPdfPages(
+        pdf,
+        (current, total) => setPdfProgress({ current, total }),
+        (pageNum, content) => setPagesContent(prev => {
+          const next = [...prev];
+          next[pageNum - 1] = content;
+          return next;
+        }),
+      );
+      const coverBlob = await coverPromise;
       const pages = await injectCoverIntoPages(rawPages, coverBlob);
       await updateDocumentFull(id, userData.id, {
         title: documentTitle,
@@ -268,7 +281,7 @@ export const DocumentEditForm: React.FC = () => {
           />
         </span>
 
-        {isProcessingPdf && <span className={s.saveStatus}>{t.document.processingPdf}</span>}
+        {isProcessingPdf && <span className={s.saveStatus}>{t.document.processingPdf}{pdfProgress ? ` (${pdfProgress.current}/${pdfProgress.total})` : ''}</span>}
         {!isProcessingPdf && saveStatus === 'saving' && <span className={s.saveStatus}>{t.common.saving}</span>}
         {!isProcessingPdf && saveStatus === 'saved' && <span className={s.saveStatus}>{t.common.saved}</span>}
 
@@ -278,6 +291,11 @@ export const DocumentEditForm: React.FC = () => {
         <IconButton icon={faCloudUpload} disabled variant='transparent' onClick={() => {}} />
         <IconButton icon={faGear} variant='transparent' onClick={() => dispatch(setShowEditorSettings(true))} />
       </div>
+      {isProcessingPdf && pdfProgress && (
+        <div className={s.pdfProgressBar}>
+          <div className={s.pdfProgressFill} style={{ width: `${(pdfProgress.current / pdfProgress.total) * 100}%` }} />
+        </div>
+      )}
 
       <div className={s.editorContainer}>
         <div className={s.editorWrapper}>
@@ -300,9 +318,14 @@ export const DocumentEditForm: React.FC = () => {
             onTTSStop={stopTTSPreview}
             ttsPlaying={ttsPlaying}
           />
-          {isProcessingPdf && (
+          {isProcessingPdf && Number(editingPageIndex) === 0 && (
             <div className={s.processingOverlay}>
               <div className={s.processingCard}>
+                {coverUrl
+                  ? <img src={coverUrl} alt="" className={s.coverPreview} />
+                  : <FontAwesomeIcon icon={faFile} className={s.coverFallback} />
+                }
+                {documentTitle && <span className={s.processingTitle}>{documentTitle}</span>}
                 <span className={s.processingLabel}>
                   {pdfProgress
                     ? `${t.document.processingPdf} (${pdfProgress.current}/${pdfProgress.total})`
@@ -329,6 +352,7 @@ export const DocumentEditForm: React.FC = () => {
             onPageClick={handlePageClick}
             onPageDelete={handlePageDelete}
             onAddPage={handleAddPage}
+            pdfProgress={pdfProgress}
           />
         </div>
       </div>

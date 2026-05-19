@@ -18,11 +18,8 @@ export const blobToDataUrl = (blob: Blob): Promise<string> =>
 export const injectCoverIntoPages = async (pages: JSONContent[], coverBlob: Blob | null): Promise<JSONContent[]> => {
   if (!coverBlob || pages.length === 0) return pages;
   const firstNode = pages[0]?.content?.[0];
-  if (firstNode?.type === 'image') return pages; // already has cover
-  const firstPageHasText = pages[0]?.content?.some(node =>
-    node.content?.some(child => child.type === 'text' && (child.text ?? '').trim().length > 0)
-  );
-  if (firstPageHasText) return pages;
+  // Skip if already has a non-graphic cover image
+  if (firstNode?.type === 'image' && (firstNode?.attrs as Record<string, unknown>)?.title !== 'pdf-graphic') return pages;
   try {
     const coverDataUrl = await blobToDataUrl(coverBlob);
     const updated = [...pages];
@@ -136,8 +133,6 @@ const analyzePdfPaths = (
   const saveOp = OPS.save;
   const restoreOp = OPS.restore;
   const transformOp = OPS.transform;
-  const DEBUG = pageNum === 12;
-
   if (!constructPathOp) return { curveRegions };
 
   // Track CTM to convert content-stream coordinates → PDF user space
@@ -163,9 +158,6 @@ const analyzePdfPaths = (
       if (flat && flat.length === 6) {
         const m = flat as CTMMatrix;
         ctm = concatCTM(m, ctm);
-        if (DEBUG) console.log(`[pdfUtils] p${pageNum} transform: [${m.map(v => Number(v).toFixed(3)).join(',')}] → ctm=[${ctm.map(v => v.toFixed(3)).join(',')}]`);
-      } else {
-        if (DEBUG) console.log(`[pdfUtils] p${pageNum} transform: SKIPPED (rawArgs.length=${rawArgs.length}, types=${rawArgs.map(a => typeof a).join(',')})`);
       }
       continue;
     }
@@ -192,11 +184,9 @@ const analyzePdfPaths = (
       const inner = rawArgs[1] as unknown[];
       const dataRaw = Array.isArray(inner) ? inner[0] : inner;
       if (!dataRaw || (!Array.isArray(dataRaw) && !ArrayBuffer.isView(dataRaw))) {
-        if (DEBUG) console.log(`[pdfUtils] p${pageNum} path#${pathCount} v5: BAD dataRaw type=${Object.prototype.toString.call(dataRaw)}`);
         continue;
       }
       const data = Array.from(dataRaw as Iterable<number>);
-      if (DEBUG) console.log(`[pdfUtils] p${pageNum} path#${pathCount} v5: ${data.length} elements, first8=[${data.slice(0,8).join(',')}]`);
       let idx = 0;
       while (idx < data.length) {
         const op = data[idx++];
@@ -211,7 +201,6 @@ const analyzePdfPaths = (
         } else if (op === 3) {
           // closePath — no coords
         } else {
-          if (DEBUG) console.log(`[pdfUtils] p${pageNum} path#${pathCount} v5: unknown op ${op} at idx ${idx-1}, stopping`);
           break;
         }
       }
@@ -239,19 +228,12 @@ const analyzePdfPaths = (
     const w = xMax - xMin, h = yMax - yMin;
     if (!isFinite(w) || !isFinite(h)) continue;
 
-    if (DEBUG) console.log(`[pdfUtils] p${pageNum} path#${pathCount}(${isV5?'v5':'old'}): w=${w.toFixed(1)} h=${h.toFixed(1)} hasCurve=${hasCurve} yMin=${yMin.toFixed(1)} yMax=${yMax.toFixed(1)}`);
-
     if (hasCurve && w > pageWidth * 0.05 && h > 10) {
       if (!curveRegions.some(r => Math.abs(r.yMin - yMin) < 10 && Math.abs(r.yMax - yMax) < 10)) {
-        if (DEBUG) console.log(`[pdfUtils] p${pageNum}: → CURVE REGION yMin=${yMin.toFixed(1)} yMax=${yMax.toFixed(1)}`);
         curveRegions.push({ yMin, yMax });
       }
-    } else {
-      if (DEBUG) console.log(`[pdfUtils] p${pageNum}: path skipped (hasCurve=${hasCurve} w=${w.toFixed(1)} thresh>${(pageWidth*0.05).toFixed(1)} h=${h.toFixed(1)} thresh>10)`);
     }
   }
-
-  if (DEBUG) console.log(`[pdfUtils] p${pageNum}: paths=${pathCount} → curveRegions=${curveRegions.length}`);
   return { curveRegions };
 };
 
@@ -365,9 +347,68 @@ const detectHorizontalRulesCanvas = (
   return rules;
 };
 
+const detectDecorativeRegionsFromCanvas = (
+  canvas: HTMLCanvasElement,
+  pageViewport: ReturnType<pdfjsLib.PDFPageProxy['getViewport']>,
+  scale: number,
+  textLines: PdfLine[],
+): { yMin: number; yMax: number }[] => {
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return [];
+  const w = canvas.width, h = canvas.height;
+  const { data } = ctx.getImageData(0, 0, w, h);
+
+  // Mask canvas rows covered by extracted text lines (with generous padding)
+  const textMask = new Uint8Array(h);
+  for (const line of textLines) {
+    if (line.height === 0) continue;
+    const cy = Math.round((pageViewport.height - line.y) * scale);
+    const lh = Math.ceil(line.height * scale);
+    for (let dy = -(lh + 6); dy <= lh + 6; dy++) {
+      const r = cy + dy;
+      if (r >= 0 && r < h) textMask[r] = 1;
+    }
+  }
+
+  // Find non-text rows with ≥3% dark pixels
+  const darkRow = new Uint8Array(h);
+  for (let y = 0; y < h; y++) {
+    if (textMask[y]) continue;
+    let dark = 0;
+    for (let x = 0; x < w; x++) {
+      const i = (y * w + x) * 4;
+      if ((data[i] + data[i + 1] + data[i + 2]) / 3 < 200) dark++;
+    }
+    if (dark > w * 0.03) darkRow[y] = 1;
+  }
+
+  // Cluster dark rows into regions (up to 5px gap allowed), min height ~15pt
+  const regions: { yMin: number; yMax: number }[] = [];
+  const minHeightPx = Math.ceil(scale * 15);
+  let y = 0;
+  while (y < h) {
+    if (!darkRow[y]) { y++; continue; }
+    const start = y;
+    let lastDark = y;
+    while (y < h) {
+      if (darkRow[y]) lastDark = y;
+      else if (y - lastDark > 5) break;
+      y++;
+    }
+    if (lastDark - start + 1 >= minHeightPx) {
+      regions.push({
+        yMin: pageViewport.height - lastDark / scale,
+        yMax: pageViewport.height - start / scale,
+      });
+    }
+  }
+  return regions;
+};
+
 export const extractPdfPages = async (
   pdf: pdfjsLib.PDFDocumentProxy,
   onProgress?: (current: number, total: number) => void,
+  onPageExtracted?: (pageNum: number, content: JSONContent) => void,
 ): Promise<JSONContent[]> => {
   const allPagesContent: JSONContent[] = [];
   const textRgb = resolveCssColorToRgb();
@@ -381,7 +422,9 @@ export const extractPdfPages = async (
     const pageDims = { pageWidth: Math.round(pageViewport.width), pageHeight: Math.round(pageViewport.height) };
 
     if (content.items.length === 0) {
-      allPagesContent.push({ ...emptyPageContent, attrs: pageDims });
+      const emptyPage = { ...emptyPageContent, attrs: pageDims };
+      allPagesContent.push(emptyPage);
+      onPageExtracted?.(pageNum, emptyPage);
       onProgress?.(pageNum, pdf.numPages);
       continue;
     }
@@ -389,6 +432,7 @@ export const extractPdfPages = async (
     const items = content.items as TextItem[];
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const contentStyles = (content as any).styles as Record<string, { fontFamily?: string }> | undefined;
+
 
     // Large decorative glyphs (e.g. drop-cap "❝") have a low baseline but tall visual extent.
     // Sort and group them by visual top (baseline + height) so they land next to the text they belong to.
@@ -435,7 +479,10 @@ export const extractPdfPages = async (
         const currLine = lines[j];
         const yDiff = prevLine.y - currLine.y;
         const capH = avgLineHeight * 3;
-        const threshold = Math.max(Math.min(prevLine.height, capH), Math.min(currLine.height, capH), avgLineHeight) * 1.5;
+        // Use min of adjacent heights so a large heading followed by smaller text still
+        // splits correctly (the old max-based formula required gap > 1.5× the LARGER height,
+        // which was too big when crossing size boundaries like title → subtitle).
+        const threshold = Math.max(Math.min(prevLine.height, currLine.height, capH), avgLineHeight) * 1.5;
         if (yDiff > threshold) {
           if (currentParagraph.length > 0) paragraphs.push({ lines: currentParagraph, yTop: currentParagraph[0].y });
           const numEmpty = Math.floor(yDiff / avgLineHeight) - 1;
@@ -450,9 +497,10 @@ export const extractPdfPages = async (
       if (currentParagraph.length > 0) paragraphs.push({ lines: currentParagraph, yTop: currentParagraph[0].y });
     }
 
-    const leftmostX = lines.length > 0 ? Math.min(...lines.map(l => l.x)) : 0;
-    const rightmostExtent = lines.length > 0
-      ? Math.max(...lines.flatMap(l => l.items.map(item => item.transform[4] + item.width)))
+    const visibleLineItems = lines.flatMap(l => l.items.filter(i => i.str.trim().length > 0));
+    const leftmostX = visibleLineItems.length > 0 ? Math.min(...visibleLineItems.map(i => i.transform[4])) : 0;
+    const rightmostExtent = visibleLineItems.length > 0
+      ? Math.max(...visibleLineItems.map(i => i.transform[4] + i.width))
       : pageViewport.width;
     const topY = lines.length > 0 ? Math.max(...lines.map(l => l.y)) : pageViewport.height;
     const bottomY = lines.length > 0 ? Math.min(...lines.map(l => l.y)) : 0;
@@ -472,17 +520,16 @@ export const extractPdfPages = async (
     // Horizontal rules via pixel analysis (robust, version-agnostic)
     const horizontalRules = detectHorizontalRulesCanvas(pageCanvas, pageViewport, xScale, lines);
 
-    // Curve regions via vector path analysis
-    const opList = await page.getOperatorList();
-    const { curveRegions } = analyzePdfPaths(opList, pageViewport.width, pageNum);
+    // Decorative/graphic regions: detected from the rendered canvas so coordinates are always
+    // correct regardless of PDF structure (Form XObjects, unusual CTM, etc.)
+    const graphicRegions = detectDecorativeRegionsFromCanvas(pageCanvas, pageViewport, xScale, lines);
 
-    // Top-level (non-nested) curve regions
-    const topLevelRegions = curveRegions.filter((r, i) =>
-      !curveRegions.some((other, j) => i !== j && other.yMin <= r.yMin && other.yMax >= r.yMax)
+    // Top-level (non-nested) regions only
+    const topLevelRegions = graphicRegions.filter((r, i) =>
+      !graphicRegions.some((other, j) => i !== j && other.yMin <= r.yMin && other.yMax >= r.yMax)
     );
 
-    // Use the visual top of the first top-of-page graphic as the marginTop so the paper's
-    // top padding matches where the graphic actually starts, not where the text inside it is.
+    // Use the visual top of the first top-of-page graphic as marginTop
     let marginTop = Math.max(0, Math.round((pageViewport.height - topY) * xScale));
     const topRegion = topLevelRegions.find(r => !lines.some(l => l.y > r.yMax + 5));
     if (topRegion) {
@@ -495,9 +542,9 @@ export const extractPdfPages = async (
     type Item = { yPdf: number; node: JSONContent };
     const contentItems: Item[] = [];
 
-    // Paragraph items (skip those whose Y falls within a curve region — they'll appear in the rendered image)
+    // Paragraph items (skip those whose Y falls within a graphic region — they'll appear in the rendered image)
     for (const p of paragraphs) {
-      if (curveRegions.some(r => p.yTop >= r.yMin - 5 && p.yTop <= r.yMax + 5)) continue;
+      if (graphicRegions.some(r => p.yTop >= r.yMin - 5 && p.yTop <= r.yMax + 5)) continue;
 
       if (p.lines.length === 0) {
         contentItems.push({ yPdf: p.yTop, node: { type: 'paragraph' } });
@@ -506,6 +553,29 @@ export const extractPdfPages = async (
 
       const paragraphX = p.lines[0]?.x ?? leftmostX;
       const pMarginLeft = Math.max(0, Math.round((paragraphX - leftmostX) * xScale));
+
+      // Detect text alignment from X coordinates of the first line.
+      // Use the text block's own center/width as reference so that full-width lines
+      // (whose center naturally falls near the page center) are NOT flagged as centered.
+      const firstLine = p.lines[0];
+      let textAlign: 'center' | 'right' | undefined;
+      const visibleFirstLineItems = firstLine?.items.filter(i => i.str.trim().length > 0) ?? [];
+      if (visibleFirstLineItems.length > 0) {
+        const lineStartX = visibleFirstLineItems[0].transform[4];
+        const lineEndX = Math.max(...visibleFirstLineItems.map(i => i.transform[4] + i.width));
+        const lineWidth = lineEndX - lineStartX;
+        const lineCenterX = (lineStartX + lineEndX) / 2;
+        const textAreaWidth = rightmostExtent - leftmostX;
+        const textAreaCenter = (leftmostX + rightmostExtent) / 2;
+        if (lineWidth < textAreaWidth * 0.8) {
+          if (Math.abs(lineCenterX - textAreaCenter) < textAreaWidth * 0.08) {
+            textAlign = 'center';
+          } else if (lineStartX > textAreaCenter && lineWidth < textAreaWidth * 0.5) {
+            textAlign = 'right';
+          }
+        }
+      }
+
       const contentNodes: object[] = [];
 
       for (let i = 0; i < p.lines.length; i++) {
@@ -538,30 +608,30 @@ export const extractPdfPages = async (
       const firstLineHeight = p.lines[0]?.height || 0;
       let nodeType = 'paragraph';
       let attrs: Record<string, unknown> = {};
-      if (firstLineHeight > avgLineHeight * 1.8) { nodeType = 'heading'; attrs = { level: 1 }; }
-      else if (firstLineHeight > avgLineHeight * 1.5) { nodeType = 'heading'; attrs = { level: 2 }; }
-      else if (firstLineHeight > avgLineHeight * 1.2) { nodeType = 'heading'; attrs = { level: 3 }; }
-      if (pMarginLeft > 0) attrs = { ...attrs, marginLeft: pMarginLeft };
+      // Cap the baseline at ~14pt so title pages (where all text is large and avgLineHeight is
+      // inflated) still produce proper h1/h2/h3 hierarchy instead of everything being a paragraph.
+      const headingBaseline = Math.min(avgLineHeight, 14);
+      if (firstLineHeight > headingBaseline * 1.8) { nodeType = 'heading'; attrs = { level: 1 }; }
+      else if (firstLineHeight > headingBaseline * 1.5) { nodeType = 'heading'; attrs = { level: 2 }; }
+      else if (firstLineHeight > headingBaseline * 1.2) { nodeType = 'heading'; attrs = { level: 3 }; }
+      if (pMarginLeft > 0 && !textAlign) attrs = { ...attrs, marginLeft: pMarginLeft };
+      if (textAlign) attrs = { ...attrs, textAlign };
 
       contentItems.push({ yPdf: p.yTop, node: { type: nodeType, attrs, content: contentNodes } });
     }
 
-    const debugPage = pageNum === 12;
-
     // Horizontal rule items
-    if (debugPage) console.log(`[pdfUtils] p${pageNum}: inserting ${horizontalRules.length} horizontal rules at y=${horizontalRules.map(y => y.toFixed(1)).join(', ')}`);
     for (const y of horizontalRules) {
       contentItems.push({ yPdf: y, node: { type: 'horizontalRule' } });
     }
 
-    if (debugPage) console.log(`[pdfUtils] p${pageNum}: processing ${topLevelRegions.length}/${curveRegions.length} top-level curve regions`);
     for (const region of topLevelRegions) {
       const src = cropCanvasRegion(pageCanvas, pageViewport, xScale, region.yMin, region.yMax, textRgb);
-      if (debugPage) console.log(`[pdfUtils] p${pageNum}: cropCanvasRegion result: ${src ? `dataUrl(${src.length} chars)` : 'null'}`);
       if (src) contentItems.push({ yPdf: region.yMax, node: { type: 'image', attrs: { src, alt: null, title: 'pdf-graphic' } } });
     }
 
     // XObject images — try to get approximate Y from operator list, fallback to bottomY
+    const opList = await page.getOperatorList();
     const pageImages = await extractPageImages(page);
     const imageYs = extractImageYPositions(opList, pageImages.length, pageViewport.height);
     for (let i = 0; i < pageImages.length; i++) {
@@ -572,7 +642,9 @@ export const extractPdfPages = async (
     contentItems.sort((a, b) => b.yPdf - a.yPdf);
 
     const pageContent: JSONContent = { type: 'doc', attrs: pageAttrs, content: contentItems.map(i => i.node) };
-    allPagesContent.push(pageContent.content!.length > 0 ? pageContent : { ...emptyPageContent, attrs: pageAttrs });
+    const finalContent = pageContent.content!.length > 0 ? pageContent : { ...emptyPageContent, attrs: pageAttrs };
+    allPagesContent.push(finalContent);
+    onPageExtracted?.(pageNum, finalContent);
     onProgress?.(pageNum, pdf.numPages);
   }
 

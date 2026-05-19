@@ -107,3 +107,32 @@
   border-color: var(--color-primary);
   color: var(--color-primary);
 }
+
+.processingPage {
+  border-color: var(--color-primary);
+  animation: pagePulse 1s ease-in-out infinite;
+}
+
+@keyframes pagePulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-primary) 40%, transparent); }
+  50% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-primary) 0%, transparent); }
+}
+
+.pendingPage {
+  opacity: 0.45;
+}
+
+.doneIndicator {
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--color-success, #22c55e);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+}
