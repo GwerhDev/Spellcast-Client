@@ -186,13 +186,18 @@ export function MagicTextEditor({
       className="magic-text-editor__ruler-grid"
       style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}
     >
-      {/* Top row: corner + horizontal ruler spanning full width */}
+      {/* Top row: corner + horizontal ruler spanning full width.
+          overflow-y:auto + scrollbar-gutter:stable mirrors paperBackground so both rows
+          always have the same effective width, keeping the ruler aligned with the paper. */}
       <div style={{
         display: 'flex',
         flexShrink: 0,
         background: 'var(--magic-ruler-bg, #232323)',
         borderBottom: '1px solid var(--magic-ruler-border, #3c3c3c)',
-      }}>
+        overflowX: 'hidden',
+        overflowY: 'auto',
+        scrollbarGutter: 'stable',
+      } as React.CSSProperties}>
         <div style={{
           width: 20, height: 20, flexShrink: 0,
           borderRight: '1px solid var(--magic-ruler-border, #3c3c3c)',

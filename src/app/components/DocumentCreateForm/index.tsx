@@ -4,7 +4,6 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useAppSelector } from '../../../store/hooks';
 import { RootState } from 'store';
 import * as pdfjsLib from 'pdfjs-dist';
-import { Spinner } from '../Spinner';
 import { PageList } from './PageList';
 import { DocumentEditor } from '../Editors/DocumentEditor';
 import jsPDF from 'jspdf';
@@ -35,6 +34,7 @@ export const DocumentCreateForm: React.FC = () => {
   const [cover, setCover] = useState<Blob | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [pdfProgress, setPdfProgress] = useState<{ current: number; total: number } | null>(null);
   const [editingPageIndex, setEditingPageIndex] = useState<number>(0);
   const pdfInputRef = useRef<HTMLInputElement>(null);
 
@@ -114,12 +114,13 @@ export const DocumentCreateForm: React.FC = () => {
 
       try {
         setIsLoading(true);
+        setPdfProgress(null);
         const pdfData = atob(document.fileContent.substring(document.fileContent.indexOf(',') + 1));
         const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
 
         const [coverBlob, rawPages] = await Promise.all([
           renderPageToCover(pdf),
-          extractPdfPages(pdf),
+          extractPdfPages(pdf, (current, total) => setPdfProgress({ current, total })),
         ]);
         const allPagesContent = await injectCoverIntoPages(rawPages, coverBlob);
         setCover(coverBlob);
@@ -127,6 +128,7 @@ export const DocumentCreateForm: React.FC = () => {
       } catch (error) {
         console.error('Failed to extract text from PDF:', error);
       } finally {
+          setPdfProgress(null);
         setIsLoading(false);
       }
     };
@@ -218,10 +220,6 @@ export const DocumentCreateForm: React.FC = () => {
     }
   };
 
-  if (isLoading) {
-    return <Spinner isLoading />;
-  }
-
   return (
     <div className={s.container}>
       <div className={s.pageInfoContainer}>
@@ -247,15 +245,38 @@ export const DocumentCreateForm: React.FC = () => {
       </div>
 
       <div className={s.editorContainer}>
-        <DocumentEditor
-          pageNumber={editingPageIndex + 1}
-          pageContent={pagesContent[editingPageIndex]}
-          onPageContentChange={handlePageContentChange}
-          ttsMarks={ttsMarks}
-          onTTSPlay={handleTTSPlay}
-          onTTSStop={stopTTSPreview}
-          ttsPlaying={ttsPlaying}
-        />
+        <div className={s.editorWrapper}>
+          <DocumentEditor
+            pageNumber={editingPageIndex + 1}
+            pageContent={pagesContent[editingPageIndex]}
+            onPageContentChange={handlePageContentChange}
+            ttsMarks={ttsMarks}
+            onTTSPlay={handleTTSPlay}
+            onTTSStop={stopTTSPreview}
+            ttsPlaying={ttsPlaying}
+          />
+          {isLoading && (
+            <div className={s.processingOverlay}>
+              <div className={s.processingCard}>
+                <span className={s.processingLabel}>
+                  {pdfProgress
+                    ? `${t.document.processingPdf} (${pdfProgress.current}/${pdfProgress.total})`
+                    : t.document.processingPdf}
+                </span>
+                <div className={s.progressTrack}>
+                  <div
+                    className={s.progressFill}
+                    style={{
+                      width: pdfProgress
+                        ? `${(pdfProgress.current / pdfProgress.total) * 100}%`
+                        : '0%',
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
         <div className={s.pagesContainer}>
           <PageList
             pages={pagesContent.map(() => '')}
