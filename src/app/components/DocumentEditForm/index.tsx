@@ -301,7 +301,7 @@ export const DocumentEditForm: React.FC = () => {
         </div>
       </div>
 
-      <CustomModal show={showImportModal} onClose={() => { setShowImportModal(false); setPendingFile(null); }} title={t.document.replaceContent}>
+      <CustomModal compact show={showImportModal} onClose={() => { setShowImportModal(false); setPendingFile(null); }} title={t.document.replaceContent}>
         <div className={s.importModalBody}>
           <p>{t.document.replaceContentDesc}</p>
           <div className={s.importModalActions}>

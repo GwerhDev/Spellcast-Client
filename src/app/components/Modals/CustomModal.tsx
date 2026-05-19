@@ -8,16 +8,17 @@ interface ModalProps {
   onClose: () => void;
   title: string;
   children: React.ReactNode;
+  compact?: boolean;
 }
 
-export const CustomModal: React.FC<ModalProps> = ({ show, onClose, title, children }) => {
+export const CustomModal: React.FC<ModalProps> = ({ show, onClose, title, children, compact }) => {
   if (!show) {
     return null;
   }
 
   return (
     <div className={s.container} onClick={onClose}>
-      <div className={s.modalContent} onClick={(e) => e.stopPropagation()}>
+      <div className={`${s.modalContent} ${compact ? s.compact : ''}`} onClick={(e) => e.stopPropagation()}>
         <span className={s.closeButtonContainer}>
           <IconButton className={s.closeButton} icon={faXmark} onClick={onClose} />
         </span>

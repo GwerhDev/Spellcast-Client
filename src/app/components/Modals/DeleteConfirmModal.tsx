@@ -20,7 +20,7 @@ export const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({ show, on
   }
 
   return (
-    <CustomModal show={show} onClose={onClose} title={title}>
+    <CustomModal compact show={show} onClose={onClose} title={title}>
       <div className={s.container}>
         <p>{message}</p>
         <div className={s.buttons}>
