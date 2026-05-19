@@ -13,6 +13,7 @@ import { RootBackground } from './app/components/Backgrounds/RootBackground';
 
 import { Home } from './app/pages/Home';
 import { Audios } from './app/pages/Audios';
+import { Editor } from './app/pages/Editor';
 import { Library } from './app/pages/Library';
 import { Storage } from './app/pages/Storage';
 import { Overview } from './app/pages/Overview';
@@ -23,12 +24,11 @@ import { UserGroups } from './app/pages/UserGroups';
 import { Appearance } from './app/pages/Appearance';
 import { UserArchive } from './app/pages/UserArchive';
 import { Unauthorized } from './app/pages/Unauthorized';
+import { EditorSelect } from './app/pages/EditorSelect';
 import { DocumentEdit } from './app/pages/DocumentEdit';
 import { DocumentCreate } from './app/pages/DocumentCreate';
 import { UserCredentials } from './app/pages/UserCredentials';
 import { DocumentDetailPage } from './app/pages/DocumentDetail';
-import { Editor } from './app/pages/Editor';
-import { EditorSelect } from './app/pages/EditorSelect';
 import { LocalDocumentReader } from './app/pages/LocalDocumentReader';
 
 import DefaultLayout from './app/layouts/DefaultLayout';
@@ -48,45 +48,46 @@ function App() {
       const timer = setTimeout(() => setShowLoader(false), 500);
       return () => clearTimeout(timer);
     }
+    //eslint-disable-next-line
   }, [loader]);
 
   return (
     <ThemeProvider>
       <Routes>
-            <Route path="/unauthorized" element={<Unauthorized />} />
-            <Route element={<DefaultLayout />}>
-              <Route path="/" element={<Home />} />
-              <Route path="/editor" element={<Editor />} />
-              <Route path="/editor/select" element={<EditorSelect />} />
-              <Route path="/editor/create" element={<DocumentCreate />} />
-              <Route path="/editor/:id" element={<DocumentEdit />} />
-              <Route path="/editor/:id/:page" element={<DocumentEdit />} />
-              <Route path="/document/:id" element={<DocumentDetailPage />} />
-              <Route path="/document/:id/reader" element={<LocalDocumentReader />} />
-              <Route path="/user/archive" element={<UserArchive />} />
+        <Route path="/unauthorized" element={<Unauthorized />} />
+        <Route element={<DefaultLayout />}>
+          <Route path="/" element={<Home />} />
+          <Route path="/editor" element={<Editor />} />
+          <Route path="/editor/select" element={<EditorSelect />} />
+          <Route path="/editor/create" element={<DocumentCreate />} />
+          <Route path="/editor/:id" element={<DocumentEdit />} />
+          <Route path="/editor/:id/:page" element={<DocumentEdit />} />
+          <Route path="/document/:id" element={<DocumentDetailPage />} />
+          <Route path="/document/:id/reader" element={<LocalDocumentReader />} />
+          <Route path="/user/archive" element={<UserArchive />} />
 
-              <Route path="/user/dashboard" element={<Dashboard />} />
-              <Route path="/user" element={<RootBackground />} />
-              <Route path="/user/dashboard/overview" element={<Overview />} />
-              <Route path="/user/dashboard/groups" element={<UserGroups />} />
+          <Route path="/user/dashboard" element={<Dashboard />} />
+          <Route path="/user" element={<RootBackground />} />
+          <Route path="/user/dashboard/overview" element={<Overview />} />
+          <Route path="/user/dashboard/groups" element={<UserGroups />} />
 
-              <Route path="/user/storage" element={<Storage />} />
-              <Route path="/user/storage/library" element={<Library />} />
-              <Route path="/user/storage/audios" element={<Audios />} />
+          <Route path="/user/storage" element={<Storage />} />
+          <Route path="/user/storage/library" element={<Library />} />
+          <Route path="/user/storage/audios" element={<Audios />} />
 
-              <Route path="/user/settings" element={<Settings />} />
-              <Route path="/user/settings/credentials" element={<UserCredentials />} />
-              <Route path="/user/settings/appearance" element={<Appearance />} />
-              <Route path="/user/not-found" element={<NotFound />} />
-              <Route path="/user/*" element={<NotFound />} />
-              <Route path="/explore/*" element={<NotFound />} />
-            </Route>
-            <Route path="/user/not-found" element={<NotFound />} />
-            <Route path="/user/*" element={<NotFound />} />
-            <Route path="/user/not-found" element={<NotFound />} />
-            <Route path="/user/*" element={<NotFound />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <Route path="/user/settings" element={<Settings />} />
+          <Route path="/user/settings/credentials" element={<UserCredentials />} />
+          <Route path="/user/settings/appearance" element={<Appearance />} />
+          <Route path="/user/not-found" element={<NotFound />} />
+          <Route path="/user/*" element={<NotFound />} />
+          <Route path="/explore/*" element={<NotFound />} />
+        </Route>
+        <Route path="/user/not-found" element={<NotFound />} />
+        <Route path="/user/*" element={<NotFound />} />
+        <Route path="/user/not-found" element={<NotFound />} />
+        <Route path="/user/*" element={<NotFound />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
       {showLoader && <Loader progress={loaderProgress} message={loaderMessage} exiting={loaderExiting} />}
       <Toast />
     </ThemeProvider>
