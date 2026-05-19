@@ -189,20 +189,26 @@ export const DocumentEditForm: React.FC = () => {
       });
       const pdfData = atob(fileContent.substring(fileContent.indexOf(',') + 1));
       const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
-      const coverPromise = renderPageToCover(pdf).then(async blob => {
-        if (blob) setCoverUrl(await blobToDataUrl(blob));
-        return blob;
-      });
+
+      // Render cover first so page 0 is immediately available
+      const coverBlob = await renderPageToCover(pdf);
+      const coverDataUrl = coverBlob ? await blobToDataUrl(coverBlob) : null;
+      if (coverDataUrl) setCoverUrl(coverDataUrl);
+
       const rawPages = await extractPdfPages(
         pdf,
         (current, total) => setPdfProgress({ current, total }),
-        (pageNum, content) => setPagesContent(prev => {
-          const next = [...prev];
-          next[pageNum - 1] = content;
-          return next;
-        }),
+        (pageNum, content) => {
+          const pageContent: JSONContent = pageNum === 1 && coverDataUrl
+            ? { ...content, content: [{ type: 'image', attrs: { src: coverDataUrl, alt: null, title: null } }, ...(content.content ?? [])] }
+            : content;
+          setPagesContent(prev => {
+            const next = [...prev];
+            next[pageNum - 1] = pageContent;
+            return next;
+          });
+        },
       );
-      const coverBlob = await coverPromise;
       const pages = await injectCoverIntoPages(rawPages, coverBlob);
       await updateDocumentFull(id, userData.id, {
         title: documentTitle,

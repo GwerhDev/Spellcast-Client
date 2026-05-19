@@ -120,24 +120,36 @@ export const DocumentCreateForm: React.FC = () => {
         setCoverUrl(null);
         const pdfData = atob(document.fileContent.substring(document.fileContent.indexOf(',') + 1));
         const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
-        setPagesContent(Array.from({ length: pdf.numPages }, () => emptyContent));
 
-        const coverPromise = renderPageToCover(pdf).then(async blob => {
-          if (blob) setCoverUrl(await blobToDataUrl(blob));
-          return blob;
-        });
+        // Render cover first so page 0 is immediately populated
+        const coverBlob = await renderPageToCover(pdf);
+        const coverDataUrl = coverBlob ? await blobToDataUrl(coverBlob) : null;
+        if (coverDataUrl) setCoverUrl(coverDataUrl);
+        setCover(coverBlob);
+
+        const coverNode: JSONContent = coverDataUrl
+          ? { type: 'image', attrs: { src: coverDataUrl, alt: null, title: null } }
+          : emptyContent;
+        const initialPages = Array.from({ length: pdf.numPages }, (_, i) =>
+          i === 0 ? { type: 'doc', content: [coverNode] } as JSONContent : emptyContent
+        );
+        setPagesContent(initialPages);
+
         const rawPages = await extractPdfPages(
           pdf,
           (current, total) => setPdfProgress({ current, total }),
-          (pageNum, content) => setPagesContent(prev => {
-            const next = [...prev];
-            next[pageNum - 1] = content;
-            return next;
-          }),
+          (pageNum, content) => {
+            const pageContent: JSONContent = pageNum === 1 && coverDataUrl
+              ? { ...content, content: [{ type: 'image', attrs: { src: coverDataUrl, alt: null, title: null } }, ...(content.content ?? [])] }
+              : content;
+            setPagesContent(prev => {
+              const next = [...prev];
+              next[pageNum - 1] = pageContent;
+              return next;
+            });
+          },
         );
-        const coverBlob = await coverPromise;
         const allPagesContent = await injectCoverIntoPages(rawPages, coverBlob);
-        setCover(coverBlob);
         setPagesContent(allPagesContent);
       } catch (error) {
         console.error('Failed to extract text from PDF:', error);
