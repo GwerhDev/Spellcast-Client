@@ -173,7 +173,7 @@ const analyzePdfPaths = (
 
     pathCount++;
 
-    let hasCurve = false, hasNonHorizLine = false, hasLineTo = false;
+    let hasCurve = false;
     let xMin = Infinity, xMax = -Infinity, yMin = Infinity, yMax = -Infinity;
 
     const updPdf = (x: number, y: number) => {
@@ -198,18 +198,15 @@ const analyzePdfPaths = (
       const data = Array.from(dataRaw as Iterable<number>);
       if (DEBUG) console.log(`[pdfUtils] p${pageNum} path#${pathCount} v5: ${data.length} elements, first8=[${data.slice(0,8).join(',')}]`);
       let idx = 0;
-      let curY = 0;
       while (idx < data.length) {
         const op = data[idx++];
         if (op === 0) {
-          const x = data[idx++], y = data[idx++]; curY = y; updPdf(x, y);
+          const x = data[idx++], y = data[idx++]; updPdf(x, y);
         } else if (op === 1) {
-          const x = data[idx++], y = data[idx++];
-          if (Math.abs(y - curY) > 3) hasNonHorizLine = true;
-          hasLineTo = true; curY = y; updPdf(x, y);
+          const x = data[idx++], y = data[idx++]; updPdf(x, y);
         } else if (op === 2) {
           const x1=data[idx++],y1=data[idx++],x2=data[idx++],y2=data[idx++],x3=data[idx++],y3=data[idx++];
-          hasCurve = true; curY = y3;
+          hasCurve = true;
           updPdf(x1,y1); updPdf(x2,y2); updPdf(x3,y3);
         } else if (op === 3) {
           // closePath — no coords
@@ -224,14 +221,14 @@ const analyzePdfPaths = (
       if (!isArrayLike(rawArgs[0]) || !isArrayLike(rawArgs[1])) continue;
       const subOps = Array.from(rawArgs[0] as Iterable<number>);
       const coords = Array.from(rawArgs[1] as Iterable<number>);
-      let idx = 0, curY = 0;
+      let idx = 0;
       for (const op of subOps) {
         switch (op) {
-          case 0: { const x=coords[idx++],y=coords[idx++]; curY=y; updPdf(x,y); break; }
-          case 1: { const x=coords[idx++],y=coords[idx++]; if(Math.abs(y-curY)>3)hasNonHorizLine=true; hasLineTo=true; curY=y; updPdf(x,y); break; }
-          case 2: { const x1=coords[idx++],y1=coords[idx++],x2=coords[idx++],y2=coords[idx++],x3=coords[idx++],y3=coords[idx++]; hasCurve=true; curY=y3; updPdf(x1,y1);updPdf(x2,y2);updPdf(x3,y3); break; }
-          case 3: { const x2=coords[idx++],y2=coords[idx++],x3=coords[idx++],y3=coords[idx++]; hasCurve=true; curY=y3; updPdf(x2,y2);updPdf(x3,y3); break; }
-          case 4: { const x1=coords[idx++],y1=coords[idx++],x3=coords[idx++],y3=coords[idx++]; hasCurve=true; curY=y3; updPdf(x1,y1);updPdf(x3,y3); break; }
+          case 0: { const x=coords[idx++],y=coords[idx++]; updPdf(x,y); break; }
+          case 1: { const x=coords[idx++],y=coords[idx++]; updPdf(x,y); break; }
+          case 2: { const x1=coords[idx++],y1=coords[idx++],x2=coords[idx++],y2=coords[idx++],x3=coords[idx++],y3=coords[idx++]; hasCurve=true; updPdf(x1,y1);updPdf(x2,y2);updPdf(x3,y3); break; }
+          case 3: { const x2=coords[idx++],y2=coords[idx++],x3=coords[idx++],y3=coords[idx++]; hasCurve=true; updPdf(x2,y2);updPdf(x3,y3); break; }
+          case 4: { const x1=coords[idx++],y1=coords[idx++],x3=coords[idx++],y3=coords[idx++]; hasCurve=true; updPdf(x1,y1);updPdf(x3,y3); break; }
           case 5: break;
           case 6: { const rx=coords[idx++],ry=coords[idx++],rw=coords[idx++],rh=coords[idx++]; updPdf(rx,ry);updPdf(rx+rw,ry+rh); break; }
           default: break;
