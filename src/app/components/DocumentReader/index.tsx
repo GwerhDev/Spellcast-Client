@@ -169,9 +169,26 @@ export const DocumentReader = () => {
 
       if (node.type !== 'paragraph' && node.type !== 'heading') return null;
 
-      const hasText = (node.content || []).some(c => c.type === 'text' && (c as { text?: string }).text?.trim());
-      if (!hasText) return <p key={nIdx} className={s.emptyBlock} />;
+      // Build rawText and per-character mark info in one pass — keeps sentence
+      // splitting identical to before while adding bold/italic support.
+      type CharMark = { bold: boolean; italic: boolean };
+      const charMarks: CharMark[] = [];
+      const rawText = (node.content || [])
+        .map((c) => {
+          const text =
+            c.type === 'text' ? ((c as { text?: string }).text || '') :
+            c.type === 'hardBreak' ? (fit ? ' ' : '\n') : '';
+          const marks = c.type === 'text' ? ((c as { marks?: { type: string }[] }).marks || []) : [];
+          const bold = marks.some(m => m.type === 'bold');
+          const italic = marks.some(m => m.type === 'italic');
+          for (let i = 0; i < text.length; i++) charMarks.push({ bold, italic });
+          return text;
+        })
+        .join('');
 
+      if (!rawText.trim()) return <p key={nIdx} className={s.emptyBlock} />;
+
+      const nodeSentences = rawText.split(fit ? /(?<=[.!?])\s*/ : /(?<=[.!?])/).filter(Boolean);
       const level = node.type === 'heading' ? ((node.attrs as { level?: number })?.level ?? 1) : 0;
       const Tag = (node.type === 'heading' ? `h${level}` : 'p') as keyof JSX.IntrinsicElements;
       const marginLeftSent = (node.attrs as { marginLeft?: number })?.marginLeft;
@@ -180,39 +197,52 @@ export const DocumentReader = () => {
         ...(marginLeftSent ? { marginLeft: `${marginLeftSent}px` } : {}),
       };
 
-      const spans: React.ReactNode[] = [];
-      for (const c of (node.content || [])) {
-        if (c.type === 'hardBreak') {
-          spans.push(fit ? ' ' : <br key={`br-${sentIdx}`} />);
-          continue;
+      let sentOffset = 0;
+      const spans = nodeSentences.map((sentence) => {
+        // Locate sentence in rawText — for fit mode the split regex consumes
+        // trailing whitespace, so we skip past it after each sentence.
+        let sentStart: number;
+        if (fit) {
+          const found = rawText.indexOf(sentence, sentOffset);
+          sentStart = found >= sentOffset ? found : sentOffset;
+        } else {
+          sentStart = sentOffset;
         }
-        if (c.type !== 'text') continue;
-        const text = (c as { text?: string }).text || '';
-        if (!text) continue;
+        const sentEnd = sentStart + sentence.length;
+        sentOffset = sentEnd;
+        if (fit) while (sentOffset < rawText.length && /\s/.test(rawText[sentOffset])) sentOffset++;
 
-        const marks = (c as { marks?: { type: string }[] }).marks || [];
-        const isBold = marks.some(m => m.type === 'bold');
-        const isItalic = marks.some(m => m.type === 'italic');
-
-        const parts = text.split(fit ? /(?<=[.!?])\s*/ : /(?<=[.!?])/).filter(Boolean);
-        for (let j = 0; j < parts.length; j++) {
-          const part = parts[j];
-          const idx = sentIdx++;
-          let inner: React.ReactNode = part;
-          if (isBold && isItalic) inner = <strong><em>{part}</em></strong>;
-          else if (isBold) inner = <strong>{part}</strong>;
-          else if (isItalic) inner = <em>{part}</em>;
-          spans.push(
-            <span
-              key={idx}
-              className={idx === currentSentenceIndex ? s.highlight : s.sentence}
-              onClick={() => handleSentenceClick(idx)}
-            >
-              {inner}{' '}
-            </span>
-          );
+        // Render the sentence as mark-consistent runs
+        const parts: React.ReactNode[] = [];
+        let i = sentStart;
+        while (i < sentEnd) {
+          const m = charMarks[i] ?? { bold: false, italic: false };
+          let j = i + 1;
+          while (j < sentEnd) {
+            const m2 = charMarks[j] ?? { bold: false, italic: false };
+            if (m2.bold !== m.bold || m2.italic !== m.italic) break;
+            j++;
+          }
+          const slice = rawText.slice(i, j);
+          let el: React.ReactNode = slice;
+          if (m.bold && m.italic) el = <strong><em>{slice}</em></strong>;
+          else if (m.bold) el = <strong>{slice}</strong>;
+          else if (m.italic) el = <em>{slice}</em>;
+          parts.push(<React.Fragment key={i}>{el}</React.Fragment>);
+          i = j;
         }
-      }
+
+        const idx = sentIdx++;
+        return (
+          <span
+            key={idx}
+            className={idx === currentSentenceIndex ? s.highlight : s.sentence}
+            onClick={() => handleSentenceClick(idx)}
+          >
+            {parts}{' '}
+          </span>
+        );
+      });
 
       return <Tag key={nIdx} className={s.readerBlock} style={sentBlockStyle}>{spans}</Tag>;
     });
