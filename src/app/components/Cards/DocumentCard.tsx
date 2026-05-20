@@ -2,20 +2,21 @@ import s from './DocumentCard.module.css';
 import { useMemo, useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faFilePdf, faTrash, faPen, faPlay, faEllipsisVertical } from '@fortawesome/free-solid-svg-icons';
+import { faFilePdf, faTrash, faPen, faPlay, faPause, faEllipsisVertical } from '@fortawesome/free-solid-svg-icons';
 import { Document } from 'src/interfaces';
 import { useLanguage } from '../../../i18n';
 
 interface DocumentCardProps {
   doc: Document;
   isActive?: boolean;
+  isPlaying?: boolean;
   onClick: () => void;
   onDelete: (e: React.MouseEvent) => void;
   onEdit: (e: React.MouseEvent) => void;
   onPlay?: (e: React.MouseEvent) => void;
 }
 
-export const DocumentCard = ({ doc, isActive, onClick, onDelete, onEdit, onPlay }: DocumentCardProps) => {
+export const DocumentCard = ({ doc, isActive, isPlaying, onClick, onDelete, onEdit, onPlay }: DocumentCardProps) => {
   const { t } = useLanguage();
   const totalPages = useMemo(() => {
     if (!doc.pagesContent) return null;
@@ -88,8 +89,13 @@ export const DocumentCard = ({ doc, isActive, onClick, onDelete, onEdit, onPlay 
       )}
       {isActive && <span className={s.readingTag}>{t.document.reading}</span>}
       {onPlay && (
-        <button className={s.playAction} onClick={(e) => { e.stopPropagation(); onPlay(e); }}>
-          <FontAwesomeIcon icon={faPlay} />
+        <button
+          className={`${s.playAction} ${isPlaying ? s.playActionPlaying : isActive ? s.playActionActive : ''}`}
+          onClick={(e) => { e.stopPropagation(); onPlay(e); }}
+        >
+          <span className={s.playIcon}>
+            <FontAwesomeIcon icon={isPlaying ? faPause : faPlay} />
+          </span>
         </button>
       )}
       <div className={s.coverWrapper}>

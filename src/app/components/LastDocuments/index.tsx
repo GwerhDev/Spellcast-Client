@@ -7,8 +7,9 @@ import { useAppSelector } from 'store/hooks';
 import { Document } from 'src/interfaces';
 import { DocumentCard } from '../Cards/DocumentCard';
 import { useDispatch } from 'react-redux';
-import { setAutoPlayOnLoad } from '../../../store/browserPlayerSlice';
-import { setAutoPlayOnLoad as setAudioAutoPlayOnLoad } from '../../../store/audioPlayerSlice';
+import { setAutoPlayOnLoad, resetBrowserPlayer, requestTogglePlay } from '../../../store/browserPlayerSlice';
+import { setAutoPlayOnLoad as setAudioAutoPlayOnLoad, resetAudioPlayer } from '../../../store/audioPlayerSlice';
+import { setPdfFile, setPdfDocumentInfo, resetPdfReader } from '../../../store/pdfReaderSlice';
 import { useLanguage } from '../../../i18n';
 
 export const LastDocuments: React.FC = () => {
@@ -25,10 +26,19 @@ export const LastDocuments: React.FC = () => {
   const location = useLocation();
   const dispatch = useDispatch();
 
-  const handlePlay = (id: string) => {
+  const handlePlay = (doc: Document) => {
+    if (activeDocId === doc.id && readerLoaded) {
+      dispatch(requestTogglePlay());
+      return;
+    }
+    const totalPages = doc.pagesContent ? (() => { try { return JSON.parse(doc.pagesContent!).length; } catch { return 1; } })() : 1;
+    dispatch(resetPdfReader());
+    dispatch(resetBrowserPlayer());
+    dispatch(resetAudioPlayer());
     dispatch(setAutoPlayOnLoad(true));
     dispatch(setAudioAutoPlayOnLoad(true));
-    navigate(`/document/${id}/reader`);
+    dispatch(setPdfFile({ id: doc.id, title: doc.title, progress: doc.progress }));
+    dispatch(setPdfDocumentInfo({ totalPages }));
   };
 
   const fetchDocuments = async () => {
@@ -102,10 +112,11 @@ export const LastDocuments: React.FC = () => {
               key={doc.id}
               doc={doc}
               isActive={activeDocId === doc.id && (readerLoaded || audioPlaying || browserPlaying)}
+              isPlaying={activeDocId === doc.id && (audioPlaying || browserPlaying)}
               onClick={() => navigate(`/document/${doc.id}`)}
               onEdit={(e) => { e.stopPropagation(); navigate(`/editor/${doc.id}`, { state: { from: location.pathname } }); }}
               onDelete={(e) => openDeleteModal(doc.id, doc.title, e)}
-              onPlay={() => handlePlay(doc.id)}
+              onPlay={() => handlePlay(doc)}
             />
           ))}
         </div>

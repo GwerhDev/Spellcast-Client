@@ -40,25 +40,106 @@
 .playAction {
   top: 0.5rem;
   left: 0.5rem;
-  padding: .6rem;
-  aspect-ratio: 1;
-  border-radius: 100%;
+  width: 38px;
+  height: 38px;
+  border: none;
+  border-radius: 50%;
   display: flex;
   position: absolute;
   align-items: center;
   justify-content: center;
-  background: transparent;
+  font-size: 14px;
+  color: var(--app-white);
+  background: color-mix(in srgb, var(--color-primary) 32%, #1c3a52c0);
+  backdrop-filter: blur(10px);
+  box-shadow:
+    0 0 8px color-mix(in srgb, var(--color-primary) 18%, transparent),
+    inset 0 0 12px rgba(0, 0, 0, 0.42),
+    inset 0 1px 0 color-mix(in srgb, white 18%, transparent);
   opacity: 0;
   pointer-events: none;
   z-index: 2;
-  transition: opacity 0.2s ease, background 0.2s ease, color 0.2s ease;
+  overflow: hidden;
+  transition: opacity 0.2s ease, box-shadow 0.7s ease-in-out;
 }
 
-.card:hover .playAction {
+.playIcon {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.playAction::before {
+  content: "";
+  position: absolute;
+  inset: -25%;
+  background:
+    radial-gradient(ellipse 55% 45% at 36% 66%,
+      color-mix(in srgb, var(--color-primary) 96%, white) 0%,
+      var(--color-primary) 32%,
+      transparent 66%
+    ),
+    radial-gradient(ellipse 48% 40% at 67% 32%,
+      color-mix(in srgb, var(--color-secondary) 70%, var(--color-primary)) 0%,
+      color-mix(in srgb, var(--color-secondary) 28%, transparent) 55%,
+      transparent 78%
+    );
+  filter: blur(9px);
+  opacity: 0.95;
+  animation: palantirChurn 7s linear infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.playAction::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 50% 52%,
+    rgba(255, 255, 255, 0.75) 0%,
+    color-mix(in srgb, var(--color-primary) 88%, white) 24%,
+    transparent 56%
+  );
+  filter: blur(4px);
+  animation: coreBreath 2.6s ease-in-out infinite alternate;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.card:hover .playAction,
+.playActionPlaying,
+.playActionActive {
   opacity: 1;
   pointer-events: all;
-  color: var(--app-white);
-  background: var(--color-primary);
+}
+
+.playActionPlaying {
+  box-shadow:
+    0 0 20px color-mix(in srgb, var(--color-primary) 70%, transparent),
+    0 0 40px color-mix(in srgb, var(--color-primary) 30%, transparent),
+    inset 0 0 10px rgba(0, 0, 0, 0.32),
+    inset 0 1px 0 color-mix(in srgb, white 28%, transparent);
+}
+
+.playActionActive {
+  box-shadow:
+    0 0 10px color-mix(in srgb, var(--color-primary) 35%, transparent),
+    inset 0 0 12px rgba(0, 0, 0, 0.42),
+    inset 0 1px 0 color-mix(in srgb, white 18%, transparent);
+}
+
+@keyframes palantirChurn {
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes coreBreath {
+  0%   { opacity: 0.58; transform: scale(0.76); }
+  100% { opacity: 1;    transform: scale(1.06); }
 }
 
 .actions {

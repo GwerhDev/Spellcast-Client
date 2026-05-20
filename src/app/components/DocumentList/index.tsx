@@ -8,8 +8,9 @@ import { Document } from 'src/interfaces';
 import { Spinner } from '../Spinner';
 import { DocumentCard } from '../Cards/DocumentCard';
 import { useDispatch } from 'react-redux';
-import { setAutoPlayOnLoad } from '../../../store/browserPlayerSlice';
-import { setAutoPlayOnLoad as setAudioAutoPlayOnLoad } from '../../../store/audioPlayerSlice';
+import { setAutoPlayOnLoad, resetBrowserPlayer, requestTogglePlay } from '../../../store/browserPlayerSlice';
+import { setAutoPlayOnLoad as setAudioAutoPlayOnLoad, resetAudioPlayer } from '../../../store/audioPlayerSlice';
+import { setPdfFile, setPdfDocumentInfo, resetPdfReader } from '../../../store/pdfReaderSlice';
 import { useLanguage } from '../../../i18n';
 
 export type LibraryFilter = 'all' | 'local' | 'cloud';
@@ -25,15 +26,27 @@ export const DocumentList: React.FC<DocumentListProps> = ({ query = '', filter =
   const { t } = useLanguage();
   const dispatch = useDispatch();
   const { userData, logged } = useAppSelector(state => state.session);
+  const { documentId: activeDocId, isLoaded: readerLoaded } = useAppSelector(state => state.pdfReader);
+  const audioPlaying = useAppSelector(state => state.audioPlayer.isPlaying);
+  const browserPlaying = useAppSelector(state => state.browserPlayer.isPlaying);
   const [documents, setDocuments] = useState<Document[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState<{ id: string, title: string } | null>(null);
 
-  const handlePlay = (id: string) => {
+  const handlePlay = (doc: Document) => {
+    if (activeDocId === doc.id && readerLoaded) {
+      dispatch(requestTogglePlay());
+      return;
+    }
+    const totalPages = doc.pagesContent ? (() => { try { return JSON.parse(doc.pagesContent!).length; } catch { return 1; } })() : 1;
+    dispatch(resetPdfReader());
+    dispatch(resetBrowserPlayer());
+    dispatch(resetAudioPlayer());
     dispatch(setAutoPlayOnLoad(true));
     dispatch(setAudioAutoPlayOnLoad(true));
-    navigate(`/document/${id}/reader`);
+    dispatch(setPdfFile({ id: doc.id, title: doc.title, progress: doc.progress }));
+    dispatch(setPdfDocumentInfo({ totalPages }));
   };
 
   const fetchLocal = async () => {
@@ -100,7 +113,9 @@ export const DocumentList: React.FC<DocumentListProps> = ({ query = '', filter =
               onClick={() => navigate(`/document/${doc.id}`)}
               onEdit={(e) => { e.stopPropagation(); navigate(`/editor/${doc.id}`, { state: { from: location.pathname } }); }}
               onDelete={(e) => openDeleteModal(doc.id, doc.title, e)}
-              onPlay={() => handlePlay(doc.id)}
+              isActive={activeDocId === doc.id && (readerLoaded || audioPlaying || browserPlaying)}
+              isPlaying={activeDocId === doc.id && (audioPlaying || browserPlaying)}
+              onPlay={() => handlePlay(doc)}
             />
           ))}
         </div>

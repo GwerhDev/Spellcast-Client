@@ -12,6 +12,7 @@ import {
   setAutoPlayOnLoad,
 } from '../../../../store/browserPlayerSlice';
 
+
 import {
   goToNextPage,
   goToPreviousPage,
@@ -42,6 +43,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
     volume,
     isPlaying,
     autoPlayOnLoad,
+    toggleSeq,
   } = useSelector((state: RootState) => state.browserPlayer);
   const {
     isLoaded,
@@ -67,6 +69,12 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
   const waitingForSentencesRef = useRef(false);
   useEffect(() => { waitingForSentencesRef.current = true; }, [currentPage]);
   useEffect(() => { waitingForSentencesRef.current = false; }, [sentences]);
+
+  const togglePlayPauseRef = useRef<() => void>(() => {});
+  useEffect(() => {
+    if (!toggleSeq) return;
+    togglePlayPauseRef.current();
+  }, [toggleSeq]);
   const volumePercentage = volume * 100;
 
   const handleTitle = () => {
@@ -211,6 +219,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
     );
     dispatch(play());
   };
+  togglePlayPauseRef.current = handleTogglePlayPause;
 
   const handleStop = () => {
     activeUtteranceRef.current = null;

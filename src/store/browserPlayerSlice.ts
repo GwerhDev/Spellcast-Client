@@ -5,6 +5,7 @@ interface BrowserPlayerState {
   voice: SpeechSynthesisVoice | null;
   volume: number;
   autoPlayOnLoad: boolean;
+  toggleSeq: number;
 }
 
 const initialState: BrowserPlayerState = {
@@ -12,6 +13,7 @@ const initialState: BrowserPlayerState = {
   voice: null,
   volume: 1,
   autoPlayOnLoad: false,
+  toggleSeq: 0,
 };
 
 const browserPlayerSlice = createSlice({
@@ -40,6 +42,9 @@ const browserPlayerSlice = createSlice({
     setVoice: (state, action: PayloadAction<SpeechSynthesisVoice | null>) => {
       state.voice = action.payload;
     },
+    requestTogglePlay: (state) => {
+      state.toggleSeq += 1;
+    },
   },
 });
 
@@ -51,6 +56,7 @@ export const {
   setVolume,
   resetBrowserPlayer,
   setAutoPlayOnLoad,
+  requestTogglePlay,
 } = browserPlayerSlice.actions;
 
 export default browserPlayerSlice.reducer;
