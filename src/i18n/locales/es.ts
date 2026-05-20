@@ -70,6 +70,10 @@ export const es: Translations = {
     editDocument: 'Editar documento',
     notFound: 'Documento no encontrado.',
     addPage: 'Agregar página',
+    resetAll: 'Restablecer todo',
+    resetAllTitle: 'Volver al original',
+    resetAllDesc: 'Todas las páginas volverán al contenido original extraído del PDF. Los cambios manuales se perderán.',
+    resetPage: 'Restablecer página',
   },
   editor: {
     tagline: 'Dale forma a tus palabras',

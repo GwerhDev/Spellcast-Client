@@ -285,10 +285,12 @@ export const extractPdfPages = async (
   for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
     const page = await pdf.getPage(pageNum);
     const pageViewport = page.getViewport({ scale: 1 });
-    const xScale = 800 / pageViewport.width;
+    const displayWidth = Math.round(pageViewport.width * (96 / 72));
+    const displayHeight = Math.round(pageViewport.height * (96 / 72));
+    const xScale = displayWidth / pageViewport.width;
     const content = await page.getTextContent();
 
-    const pageDims = { pageWidth: Math.round(pageViewport.width), pageHeight: Math.round(pageViewport.height) };
+    const pageDims = { pageWidth: Math.round(pageViewport.width), pageHeight: Math.round(pageViewport.height), displayWidth, displayHeight };
 
     if (content.items.length === 0) {
       const emptyPage = { ...emptyPageContent, attrs: pageDims };

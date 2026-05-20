@@ -55,10 +55,11 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
     setContent(pageContent);
   }, [pageContent, pageNumber]);
 
-  const attrs = pageContent?.attrs as { pageWidth?: number; pageHeight?: number } | undefined;
-  const paperHeight = attrs?.pageWidth && attrs?.pageHeight
-    ? Math.round((attrs.pageHeight / attrs.pageWidth) * PAPER_WIDTH)
-    : 1131;
+  const attrs = pageContent?.attrs as { pageWidth?: number; pageHeight?: number; displayWidth?: number; displayHeight?: number } | undefined;
+  const paperWidth = attrs?.displayWidth ?? PAPER_WIDTH;
+  const paperHeight = attrs?.displayHeight ?? (attrs?.pageWidth && attrs?.pageHeight
+    ? Math.round((attrs.pageHeight / attrs.pageWidth) * paperWidth)
+    : 1131);
 
   const activeMargins = margins ?? DEFAULT_MARGINS;
 
@@ -84,7 +85,7 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
         ruler={{
           enabled: true,
           margins: activeMargins,
-          paperWidth: PAPER_WIDTH,
+          paperWidth,
           paperHeight,
           onMarginsChange,
           zoom,
@@ -106,13 +107,14 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
                 <div
                   className={s.zoomWrapper}
                   style={{
-                    width: `${PAPER_WIDTH * zoom}px`,
+                    width: `${paperWidth * zoom}px`,
                     height: `${paperHeight * zoom}px`,
                   }}
                 >
                   <div
                     className={s.paperSheet}
                     style={{
+                      width: `${paperWidth}px`,
                       minHeight: `${paperHeight}px`,
                       paddingTop: activeMargins.marginTop,
                       paddingRight: activeMargins.marginRight,

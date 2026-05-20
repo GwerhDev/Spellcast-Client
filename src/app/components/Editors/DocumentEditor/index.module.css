@@ -60,9 +60,8 @@
   overflow: hidden;
 }
 
-/* Paper sheet */
+/* Paper sheet — width is set via inline style (dynamic per page) */
 .paperSheet {
-  width: 800px;
   flex-shrink: 0;
   background: var(--paper-bg);
   border-radius: 2px;

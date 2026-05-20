@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import s from './PageList.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faNewspaper, faTrash, faPlus, faCheck, faSpinner } from '@fortawesome/free-solid-svg-icons';
+import { faNewspaper, faTrash, faPlus, faCheck, faSpinner, faRotateLeft } from '@fortawesome/free-solid-svg-icons';
 import { useLanguage } from '../../../i18n';
 
 interface PageListProps {
@@ -10,10 +10,11 @@ interface PageListProps {
   onPageClick: (pageIndex: number) => void;
   onPageDelete?: (pageIndex: number) => void;
   onAddPage?: () => void;
+  onPageReset?: (pageIndex: number) => void;
   pdfProgress?: { current: number; total: number } | null;
 }
 
-export const PageList: React.FC<PageListProps> = ({ pages, currentPage, onPageClick, onPageDelete, onAddPage, pdfProgress }) => {
+export const PageList: React.FC<PageListProps> = ({ pages, currentPage, onPageClick, onPageDelete, onAddPage, onPageReset, pdfProgress }) => {
   const { t } = useLanguage();
   const gridRef = useRef<HTMLDivElement>(null);
 
@@ -28,6 +29,11 @@ export const PageList: React.FC<PageListProps> = ({ pages, currentPage, onPageCl
   const handleDelete = (e: React.MouseEvent, index: number) => {
     e.stopPropagation();
     onPageDelete?.(index);
+  };
+
+  const handleReset = (e: React.MouseEvent, index: number) => {
+    e.stopPropagation();
+    onPageReset?.(index);
   };
 
   const getProgressState = (index: number): 'done' | 'processing' | 'pending' | null => {
@@ -55,6 +61,11 @@ export const PageList: React.FC<PageListProps> = ({ pages, currentPage, onPageCl
             {onPageDelete && (
               <button className={s.deleteButton} onClick={(e) => handleDelete(e, index)}>
                 <FontAwesomeIcon icon={faTrash} size='xs' />
+              </button>
+            )}
+            {onPageReset && (
+              <button className={s.resetButton} title={t.document.resetPage} onClick={(e) => handleReset(e, index)}>
+                <FontAwesomeIcon icon={faRotateLeft} size='xs' />
               </button>
             )}
             {progressState === 'done' && (

@@ -68,6 +68,10 @@ export const en = {
     editDocument: 'Edit Document',
     notFound: 'Document not found.',
     addPage: 'Add Page',
+    resetAll: 'Reset all',
+    resetAllTitle: 'Reset to original',
+    resetAllDesc: 'All pages will be reverted to the original extracted content from the PDF. Any manual edits will be lost.',
+    resetPage: 'Reset page',
   },
   editor: {
     tagline: 'Shape your words',

@@ -4,15 +4,15 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import type { JSONContent } from '../../../magictext';
 import { useDispatch } from 'react-redux';
 import { useAppSelector } from '../../../store/hooks';
-import { getDocumentById, updateDocumentContent, updateDocumentFull } from '../../../db';
+import { getDocumentById, updateDocumentContent, updateDocumentFull, getDocumentOriginalPages } from '../../../db';
 import { setShowEditorSettings } from '../../../store/editorSlice';
 import { invalidateContent } from '../../../store/pdfReaderSlice';
 import { textToSpeechService } from '../../../services/tts';
 import { Spinner } from '../Spinner';
 import { PageList } from '../DocumentCreateForm/PageList';
 import { DocumentEditor, PageMargins } from '../Editors/DocumentEditor';
-import { faArrowLeft, faCloudUpload, faPaperclip, faGear, faSave, faFile } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faArrowLeft, faCloudUpload, faPaperclip, faGear, faSave, faRotateLeft } from '@fortawesome/free-solid-svg-icons';
+import { PdfProcessingStatus } from '../PdfProcessingStatus';
 import { IconButton } from '../Buttons/IconButton';
 import { CustomModal } from '../Modals/CustomModal';
 import { PrimaryButton } from '../Buttons/PrimaryButton';
@@ -54,7 +54,13 @@ export const DocumentEditForm: React.FC = () => {
   const [hasChanges, setHasChanges] = useState(false);
   const [currentMargins, setCurrentMargins] = useState<PageMargins>({ marginTop: 48, marginRight: 64, marginBottom: 48, marginLeft: 64 });
 
+  const isCoverPage = (p: JSONContent): boolean => {
+    const first = p?.content?.[0];
+    return first?.type === 'image' && (first?.attrs as Record<string, unknown>)?.title !== 'pdf-graphic';
+  };
+
   const getMarginsFromPage = (p: JSONContent): PageMargins => {
+    if (isCoverPage(p)) return { marginTop: 0, marginRight: 0, marginBottom: 0, marginLeft: 0 };
     const a = p?.attrs as Record<string, number> | undefined;
     return {
       marginTop: a?.marginTop ?? 48,
@@ -63,11 +69,14 @@ export const DocumentEditForm: React.FC = () => {
       marginLeft: a?.marginLeft ?? 64,
     };
   };
+  const [originalPages, setOriginalPages] = useState<JSONContent[] | null>(null);
+  const [showResetAllModal, setShowResetAllModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [isProcessingPdf, setIsProcessingPdf] = useState(false);
   const [pdfProgress, setPdfProgress] = useState<{ current: number; total: number } | null>(null);
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
+  const [processingCollapsed, setProcessingCollapsed] = useState(false);
   const pdfInputRef = useRef<HTMLInputElement>(null);
   const [ttsPlaying, setTtsPlaying] = useState(false);
   const ttsAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -125,6 +134,9 @@ export const DocumentEditForm: React.FC = () => {
           : [emptyContent];
         const finalPages = pages.length > 0 ? pages : [emptyContent];
         setPagesContent(finalPages);
+        if (doc.originalPagesContent) {
+          setOriginalPages(JSON.parse(doc.originalPagesContent));
+        }
         const initIndex = Number(page) - 1 || 0;
         setCurrentMargins(getMarginsFromPage(finalPages[initIndex] ?? finalPages[0]));
         hasLoaded.current = true;
@@ -180,6 +192,7 @@ export const DocumentEditForm: React.FC = () => {
     setIsProcessingPdf(true);
     setPdfProgress(null);
     setCoverUrl(null);
+    setProcessingCollapsed(false);
     try {
       const reader = new FileReader();
       const fileContent: string = await new Promise((resolve, reject) => {
@@ -215,7 +228,10 @@ export const DocumentEditForm: React.FC = () => {
         pagesContent: JSON.stringify(pages),
         pdf: pendingFile,
         cover: coverBlob ?? undefined,
+        originalPdf: pendingFile,
+        originalPagesContent: JSON.stringify(pages),
       });
+      setOriginalPages(pages);
       const clampedIndex = Math.min(Number(editingPageIndex), pages.length - 1);
       setPagesContent(pages);
       setEditingPageIndex(clampedIndex);
@@ -270,6 +286,25 @@ export const DocumentEditForm: React.FC = () => {
     }
   };
 
+  const handleResetAll = () => {
+    if (!originalPages) return;
+    setPagesContent(originalPages);
+    setCurrentMargins(getMarginsFromPage(originalPages[Number(editingPageIndex)] ?? originalPages[0]));
+    setHasChanges(true);
+    setShowResetAllModal(false);
+  };
+
+  const handleResetPage = (index: number) => {
+    if (!originalPages || !originalPages[index]) return;
+    const updated = [...pagesContent];
+    updated[index] = originalPages[index];
+    setPagesContent(updated);
+    if (index === Number(editingPageIndex)) {
+      setCurrentMargins(getMarginsFromPage(originalPages[index]));
+    }
+    setHasChanges(true);
+  };
+
   if (isLoading) return <div className={s.container}><Spinner isLoading /></div>;
   if (error) return <div className={s.container}><div className={s.error}>{error}</div></div>;
 
@@ -287,30 +322,43 @@ export const DocumentEditForm: React.FC = () => {
           />
         </span>
 
-        {isProcessingPdf && <span className={s.saveStatus}>{t.document.processingPdf}{pdfProgress ? ` (${pdfProgress.current}/${pdfProgress.total})` : ''}</span>}
+        {isProcessingPdf && processingCollapsed && (
+          <PdfProcessingStatus
+            variant="compact"
+            progress={pdfProgress}
+            coverUrl={coverUrl}
+            documentTitle={documentTitle}
+            onExpand={() => setProcessingCollapsed(false)}
+          />
+        )}
         {!isProcessingPdf && saveStatus === 'saving' && <span className={s.saveStatus}>{t.common.saving}</span>}
         {!isProcessingPdf && saveStatus === 'saved' && <span className={s.saveStatus}>{t.common.saved}</span>}
 
         <IconButton icon={faPaperclip} variant='transparent' disabled={isProcessingPdf} onClick={() => pdfInputRef.current?.click()} />
         <input ref={pdfInputRef} type="file" accept=".pdf" style={{ display: 'none' }} onChange={handleFileSelect} />
+        {originalPages && <IconButton icon={faRotateLeft} variant='transparent' disabled={isProcessingPdf} onClick={() => setShowResetAllModal(true)} />}
         <IconButton icon={faSave} variant='transparent' disabled={!hasChanges || isProcessingPdf} onClick={handleSave} />
         <IconButton icon={faCloudUpload} disabled variant='transparent' onClick={() => {}} />
         <IconButton icon={faGear} variant='transparent' onClick={() => dispatch(setShowEditorSettings(true))} />
       </div>
-      {isProcessingPdf && pdfProgress && (
-        <div className={s.pdfProgressBar}>
-          <div className={s.pdfProgressFill} style={{ width: `${(pdfProgress.current / pdfProgress.total) * 100}%` }} />
-        </div>
-      )}
 
       <div className={s.editorContainer}>
+        {isProcessingPdf && !processingCollapsed && (
+          <PdfProcessingStatus
+            variant="overlay"
+            progress={pdfProgress}
+            coverUrl={coverUrl}
+            documentTitle={documentTitle}
+            onCollapse={() => setProcessingCollapsed(true)}
+          />
+        )}
         <div className={s.editorWrapper}>
           <DocumentEditor
             pageNumber={Number(editingPageIndex) + 1}
             pageContent={pagesContent[Number(editingPageIndex)]}
             onPageContentChange={handlePageContentChange}
             margins={currentMargins}
-            onMarginsChange={(m) => {
+            onMarginsChange={isCoverPage(pagesContent[Number(editingPageIndex)]) ? undefined : (m) => {
               setCurrentMargins(m);
               const idx = Number(editingPageIndex);
               const updated = [...pagesContent];
@@ -324,32 +372,6 @@ export const DocumentEditForm: React.FC = () => {
             onTTSStop={stopTTSPreview}
             ttsPlaying={ttsPlaying}
           />
-          {isProcessingPdf && Number(editingPageIndex) === 0 && (
-            <div className={s.processingOverlay}>
-              <div className={s.processingCard}>
-                {coverUrl
-                  ? <img src={coverUrl} alt="" className={s.coverPreview} />
-                  : <FontAwesomeIcon icon={faFile} className={s.coverFallback} />
-                }
-                {documentTitle && <span className={s.processingTitle}>{documentTitle}</span>}
-                <span className={s.processingLabel}>
-                  {pdfProgress
-                    ? `${t.document.processingPdf} (${pdfProgress.current}/${pdfProgress.total})`
-                    : t.document.processingPdf}
-                </span>
-                <div className={s.progressTrack}>
-                  <div
-                    className={s.progressFill}
-                    style={{
-                      width: pdfProgress
-                        ? `${(pdfProgress.current / pdfProgress.total) * 100}%`
-                        : '0%',
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-          )}
         </div>
         <div className={s.pagesContainer}>
           <PageList
@@ -358,6 +380,7 @@ export const DocumentEditForm: React.FC = () => {
             onPageClick={handlePageClick}
             onPageDelete={handlePageDelete}
             onAddPage={handleAddPage}
+            onPageReset={originalPages ? handleResetPage : undefined}
             pdfProgress={pdfProgress}
           />
         </div>
@@ -369,6 +392,16 @@ export const DocumentEditForm: React.FC = () => {
           <div className={s.importModalActions}>
             <SecondaryButton onClick={() => { setShowImportModal(false); setPendingFile(null); }}>{t.common.cancel}</SecondaryButton>
             <PrimaryButton onClick={handleImportConfirm}>{t.common.replace}</PrimaryButton>
+          </div>
+        </div>
+      </CustomModal>
+
+      <CustomModal compact show={showResetAllModal} onClose={() => setShowResetAllModal(false)} title={t.document.resetAllTitle}>
+        <div className={s.importModalBody}>
+          <p>{t.document.resetAllDesc}</p>
+          <div className={s.importModalActions}>
+            <SecondaryButton onClick={() => setShowResetAllModal(false)}>{t.common.cancel}</SecondaryButton>
+            <PrimaryButton onClick={handleResetAll}>{t.document.resetAll}</PrimaryButton>
           </div>
         </div>
       </CustomModal>

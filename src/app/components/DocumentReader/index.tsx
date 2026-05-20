@@ -69,10 +69,11 @@ export const DocumentReader = () => {
   const playerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { zoom, showIndicator, adjustZoom, resetZoom, ZOOM_STEP } = useZoom(paperBgRef);
 
-  const pageAttrs = editedText?.attrs as { pageWidth?: number; pageHeight?: number; marginTop?: number; marginRight?: number; marginBottom?: number; marginLeft?: number } | undefined;
-  const paperMinHeight = pageAttrs?.pageWidth && pageAttrs?.pageHeight
-    ? Math.round((pageAttrs.pageHeight / pageAttrs.pageWidth) * 800)
-    : 1131;
+  const pageAttrs = editedText?.attrs as { pageWidth?: number; pageHeight?: number; displayWidth?: number; displayHeight?: number; marginTop?: number; marginRight?: number; marginBottom?: number; marginLeft?: number } | undefined;
+  const paperWidth = pageAttrs?.displayWidth ?? 800;
+  const paperMinHeight = pageAttrs?.displayHeight ?? (pageAttrs?.pageWidth && pageAttrs?.pageHeight
+    ? Math.round((pageAttrs.pageHeight / pageAttrs.pageWidth) * paperWidth)
+    : 1131);
   const pageMargins = {
     marginTop: pageAttrs?.marginTop ?? 48,
     marginRight: pageAttrs?.marginRight ?? 64,
@@ -191,9 +192,12 @@ export const DocumentReader = () => {
       const nodeSentences = rawText.split(fit ? /(?<=[.!?])\s*/ : /(?<=[.!?])/).filter(Boolean);
       const level = node.type === 'heading' ? ((node.attrs as { level?: number })?.level ?? 1) : 0;
       const Tag = (node.type === 'heading' ? `h${level}` : 'p') as keyof JSX.IntrinsicElements;
-      const marginLeftSent = (node.attrs as { marginLeft?: number })?.marginLeft;
+      const nodeAttrs = node.attrs as { marginLeft?: number; textAlign?: string } | undefined;
+      const marginLeftSent = nodeAttrs?.marginLeft;
+      const textAlignSent = nodeAttrs?.textAlign;
       const sentBlockStyle: React.CSSProperties = {
         whiteSpace: 'pre-wrap',
+        ...(textAlignSent ? { textAlign: textAlignSent as React.CSSProperties['textAlign'] } : {}),
         ...(marginLeftSent ? { marginLeft: `${marginLeftSent}px` } : {}),
       };
 
@@ -257,6 +261,7 @@ export const DocumentReader = () => {
       <div
         className={s.paperSheet}
         style={{
+          width: `${paperWidth}px`,
           minHeight: `${paperMinHeight}px`,
           transform: `scale(${zoom})`,
           transformOrigin: 'top center',
@@ -275,7 +280,7 @@ export const DocumentReader = () => {
     );
 
     const wrapperStyle: React.CSSProperties = {
-      width: `${800 * zoom}px`,
+      width: `${paperWidth * zoom}px`,
       height: `${paperMinHeight * zoom}px`,
     };
 

@@ -6,14 +6,15 @@ import { RootState } from 'store';
 import * as pdfjsLib from 'pdfjs-dist';
 import { PageList } from './PageList';
 import { DocumentEditor } from '../Editors/DocumentEditor';
+import type { PageMargins } from '../Editors/DocumentEditor';
 import jsPDF from 'jspdf';
 import { saveDocumentToDB } from '../../../db';
 import { useNavigate } from 'react-router-dom';
 import type { JSONContent } from '../../../magictext';
 import type { TTSPlayPayload } from '../../../magictext';
 import workerSrc from 'pdfjs-dist/build/pdf.worker?url';
-import { faArrowLeft, faCloudUpload, faPaperclip, faSave, faFile } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faArrowLeft, faCloudUpload, faPaperclip, faSave } from '@fortawesome/free-solid-svg-icons';
+import { PdfProcessingStatus } from '../PdfProcessingStatus';
 import { IconButton } from '../Buttons/IconButton';
 import { resetDocumentState, setDocumentDetails, setDocumentTitle as setDocumentTitleAction } from 'store/documentSlice';
 import { resetPdfReader } from 'store/pdfReaderSlice';
@@ -38,12 +39,32 @@ export const DocumentCreateForm: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [pdfProgress, setPdfProgress] = useState<{ current: number; total: number } | null>(null);
   const [editingPageIndex, setEditingPageIndex] = useState<number>(0);
+  const [currentMargins, setCurrentMargins] = useState<PageMargins>({ marginTop: 48, marginRight: 64, marginBottom: 48, marginLeft: 64 });
   const pdfInputRef = useRef<HTMLInputElement>(null);
+  const originalPdfRef = useRef<File | null>(null);
+  const originalPagesRef = useRef<JSONContent[] | null>(null);
+
+  const isCoverPage = (p: JSONContent): boolean => {
+    const first = p?.content?.[0];
+    return first?.type === 'image' && (first?.attrs as Record<string, unknown>)?.title !== 'pdf-graphic';
+  };
+
+  const getMarginsFromPage = (p: JSONContent): PageMargins => {
+    if (isCoverPage(p)) return { marginTop: 0, marginRight: 0, marginBottom: 0, marginLeft: 0 };
+    const a = p?.attrs as Record<string, number> | undefined;
+    return {
+      marginTop: a?.marginTop ?? 48,
+      marginRight: a?.marginRight ?? 64,
+      marginBottom: a?.marginBottom ?? 48,
+      marginLeft: a?.marginLeft ?? 64,
+    };
+  };
 
   const credentials = useAppSelector((state) => state.credentials.credentials);
   const aiVoices = credentials[0]?.voices ?? [];
   const ttsMarks = aiVoices.map((v) => ({ id: v.value, name: v.name, voices: [v.value] }));
 
+  const [processingCollapsed, setProcessingCollapsed] = useState(false);
   const [ttsPlaying, setTtsPlaying] = useState(false);
   const ttsAudioRef = useRef<HTMLAudioElement | null>(null);
   const ttsSpeechRef = useRef<SpeechSynthesisUtterance | null>(null);
@@ -86,6 +107,8 @@ export const DocumentCreateForm: React.FC = () => {
   };
 
   const handlePdfImport = (file: File) => {
+    originalPdfRef.current = file;
+    originalPagesRef.current = null;
     const parts = file.type.split('/');
     const fileType = parts[parts.length - 1];
     const fileName = file.name.split('.').filter((e) => e !== fileType).join(' ');
@@ -118,6 +141,7 @@ export const DocumentCreateForm: React.FC = () => {
         setIsLoading(true);
         setPdfProgress(null);
         setCoverUrl(null);
+        setProcessingCollapsed(false);
         const pdfData = atob(document.fileContent.substring(document.fileContent.indexOf(',') + 1));
         const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
 
@@ -150,6 +174,7 @@ export const DocumentCreateForm: React.FC = () => {
           },
         );
         const allPagesContent = await injectCoverIntoPages(rawPages, coverBlob);
+        originalPagesRef.current = allPagesContent;
         setPagesContent(allPagesContent);
       } catch (error) {
         console.error('Failed to extract text from PDF:', error);
@@ -164,6 +189,7 @@ export const DocumentCreateForm: React.FC = () => {
 
   const handlePageClick = (pageIndex: number) => {
     setEditingPageIndex(pageIndex);
+    setCurrentMargins(getMarginsFromPage(pagesContent[pageIndex]));
   };
 
   const handlePageDelete = (pageIndex: number) => {
@@ -233,6 +259,8 @@ export const DocumentCreateForm: React.FC = () => {
         cover: cover ?? undefined,
         userId: userData.id,
         pagesContent: JSON.stringify(pagesContent),
+        originalPdf: originalPdfRef.current ?? undefined,
+        originalPagesContent: originalPagesRef.current ? JSON.stringify(originalPagesRef.current) : undefined,
       });
 
       dispatch(resetPdfReader());
@@ -262,7 +290,15 @@ export const DocumentCreateForm: React.FC = () => {
             }}
           />
         </span>
-        {isLoading && pdfProgress && <span className={s.saveStatus}>{t.document.processingPdf} ({pdfProgress.current}/{pdfProgress.total})</span>}
+        {isLoading && pdfProgress && processingCollapsed && (
+          <PdfProcessingStatus
+            variant="compact"
+            progress={pdfProgress}
+            coverUrl={coverUrl}
+            documentTitle={documentTitle}
+            onExpand={() => setProcessingCollapsed(false)}
+          />
+        )}
         {isSaving && <span className={s.saveStatus}>{t.common.saving}</span>}
         <IconButton icon={faPaperclip} variant='transparent' onClick={() => pdfInputRef.current?.click()} />
         <input ref={pdfInputRef} type="file" accept=".pdf" style={{ display: 'none' }}
@@ -270,49 +306,35 @@ export const DocumentCreateForm: React.FC = () => {
         <IconButton icon={faSave} variant='transparent' disabled={isSaving || !documentTitle} onClick={handleSaveLocal} />
         <IconButton icon={faCloudUpload} disabled variant='transparent' onClick={() => {}} />
       </div>
-      {isLoading && pdfProgress && (
-        <div className={s.pdfProgressBar}>
-          <div className={s.pdfProgressFill} style={{ width: `${(pdfProgress.current / pdfProgress.total) * 100}%` }} />
-        </div>
-      )}
 
       <div className={s.editorContainer}>
+        {isLoading && pdfProgress && !processingCollapsed && (
+          <PdfProcessingStatus
+            variant="overlay"
+            progress={pdfProgress}
+            coverUrl={coverUrl}
+            documentTitle={documentTitle}
+            onCollapse={() => setProcessingCollapsed(true)}
+          />
+        )}
         <div className={s.editorWrapper}>
           <DocumentEditor
             pageNumber={editingPageIndex + 1}
             pageContent={pagesContent[editingPageIndex]}
             onPageContentChange={handlePageContentChange}
+            margins={currentMargins}
+            onMarginsChange={isCoverPage(pagesContent[editingPageIndex]) ? undefined : (m) => {
+              setCurrentMargins(m);
+              const updated = [...pagesContent];
+              const p = updated[editingPageIndex];
+              updated[editingPageIndex] = { ...p, attrs: { ...(p?.attrs as object ?? {}), ...m } };
+              setPagesContent(updated);
+            }}
             ttsMarks={ttsMarks}
             onTTSPlay={handleTTSPlay}
             onTTSStop={stopTTSPreview}
             ttsPlaying={ttsPlaying}
           />
-          {isLoading && editingPageIndex === 0 && (
-            <div className={s.processingOverlay}>
-              <div className={s.processingCard}>
-                {coverUrl
-                  ? <img src={coverUrl} alt="" className={s.coverPreview} />
-                  : <FontAwesomeIcon icon={faFile} className={s.coverFallback} />
-                }
-                {documentTitle && <span className={s.processingTitle}>{documentTitle}</span>}
-                <span className={s.processingLabel}>
-                  {pdfProgress
-                    ? `${t.document.processingPdf} (${pdfProgress.current}/${pdfProgress.total})`
-                    : t.document.processingPdf}
-                </span>
-                <div className={s.progressTrack}>
-                  <div
-                    className={s.progressFill}
-                    style={{
-                      width: pdfProgress
-                        ? `${(pdfProgress.current / pdfProgress.total) * 100}%`
-                        : '0%',
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-          )}
         </div>
         <div className={s.pagesContainer}>
           <PageList

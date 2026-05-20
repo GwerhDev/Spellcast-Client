@@ -9,6 +9,8 @@ interface Document {
   userId: string | undefined;
   progress?: DocumentProgress;
   pagesContent?: string;
+  originalPdf?: Blob;
+  originalPagesContent?: string;
 }
 
 interface DocumentProgress {
@@ -191,7 +193,7 @@ export const updateDocumentContent = async (id: string, userId: string, updates:
 export const updateDocumentFull = async (
   id: string,
   userId: string,
-  updates: { title: string; pagesContent: string; pdf: Blob; cover?: Blob }
+  updates: { title: string; pagesContent: string; pdf: Blob; cover?: Blob; originalPdf?: Blob; originalPagesContent?: string }
 ): Promise<void> => {
   const db = await openDB();
   const transaction = db.transaction(DOCUMENTS_STORE_NAME, 'readwrite');
@@ -210,6 +212,22 @@ export const updateDocumentFull = async (
       }
     };
     getRequest.onerror = (e) => reject((e.target as IDBRequest).error);
+  });
+};
+
+export const getDocumentOriginalPages = async (id: string, userId: string | undefined): Promise<string | undefined> => {
+  const db = await openDB();
+  const transaction = db.transaction(DOCUMENTS_STORE_NAME, 'readonly');
+  const store = transaction.objectStore(DOCUMENTS_STORE_NAME);
+
+  return new Promise((resolve, reject) => {
+    const request = store.get(id);
+    request.onsuccess = () => {
+      const doc = request.result as Document | undefined;
+      if (!doc || doc.userId !== userId) return resolve(undefined);
+      resolve(doc.originalPagesContent);
+    };
+    request.onerror = (e) => reject((e.target as IDBRequest).error);
   });
 };
 
