@@ -182,3 +182,72 @@
   border: none;
   cursor: pointer;
 }
+
+/* ── Sound background picker ── */
+.soundBgList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.soundBgItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  background: var(--color-options-background);
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  text-align: left;
+}
+
+.soundBgItem:hover {
+  background: var(--color-dark-500);
+}
+
+.soundBgItemActive {
+  border-color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 10%, var(--color-options-background));
+}
+
+.soundBgDot {
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.soundBgDotNone {
+  background: var(--color-dark-300);
+  border: 1px dashed var(--color-dark-500);
+}
+
+.soundBgDotIcon {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.soundBgName {
+  flex: 1;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--color-light-100);
+}
+
+.soundBgCheck {
+  font-size: 0.7rem;
+  color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.soundBgEmpty {
+  font-size: 0.75rem;
+  color: var(--color-light-400);
+  padding: 0.5rem 0.25rem;
+  margin: 0;
+}

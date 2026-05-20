@@ -11,6 +11,7 @@ import {
   pause,
   setAutoPlayOnLoad,
 } from '../../../../store/browserPlayerSlice';
+import { setSoundBgVolume, setMasterVolume } from '../../../../store/userLibrarySlice';
 
 
 import {
@@ -65,6 +66,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
   const isSpeechPausedRef = useRef(false);
   const volumeDragPausedRef = useRef(false);
   const { userData } = useAppSelector((state) => state.session);
+  const { activeSoundBgId, soundBgVolume, masterVolume } = useAppSelector((state) => state.userLibrary);
 
   // Prevent advancing on stale empty sentences before PdfProcessor loads the new page
   const waitingForSentencesRef = useRef(false);
@@ -126,7 +128,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
       isSpeechPausedRef.current = false;
     }
     if (voice) utterance.voice = voice;
-    utterance.volume = volume;
+    utterance.volume = volume * masterVolume;
 
     if (!isRetry && onStart) utterance.onstart = onStart;
 
@@ -330,6 +332,11 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
               setVolume={(vol) => dispatch(setVolume(vol))}
               onSliderPointerDown={handleVolumePointerDown}
               onSliderPointerUp={handleVolumePointerUp}
+              activeSoundBgId={activeSoundBgId}
+              soundBgVolume={soundBgVolume}
+              setSoundBgVolume={(v) => dispatch(setSoundBgVolume(v))}
+              masterVolume={masterVolume}
+              setMasterVolume={(v) => dispatch(setMasterVolume(v))}
             />
             <PlayerConfigButton onClick={() => showPlayerConfigModal(true)} />
           </div>

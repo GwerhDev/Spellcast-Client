@@ -10,6 +10,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowLeft, faEdit, faFilePdf, faGear, faExpand, faCompress, faInfoCircle } from '@fortawesome/free-solid-svg-icons';
 import { RootState } from '../../../store';
 import { goToPage, setCurrentSentenceIndex, setShowReaderSettings } from '../../../store/pdfReaderSlice';
+import { pageBackgrounds } from '../../../config/assets';
 import { Spinner } from '../Spinner';
 import { IconButton } from '../Buttons/IconButton';
 import { SearcherButton } from './Searcher/SearcherButton';
@@ -62,6 +63,15 @@ export const DocumentReader = () => {
   } = useSelector((state: RootState) => state.pdfReader);
   const { selectedVoice, } = useSelector((state: RootState) => state.voice);
   const { isPlaying } = useSelector((state: RootState) => state.browserPlayer);
+  const { activePageBgId } = useSelector((state: RootState) => state.userLibrary);
+  const activeBg = pageBackgrounds.find(b => b.id === activePageBgId) ?? null;
+  const activePageBgCss = activeBg?.cssValue ?? null;
+  const pageBgVars = {
+    ...(activePageBgCss ? { background: activePageBgCss } : {}),
+    ...(activeBg?.textColor ? { '--page-text-color': activeBg.textColor } : {}),
+    ...(activeBg?.highlightColor ? { '--page-highlight': activeBg.highlightColor } : {}),
+    ...(activeBg?.sentenceHoverColor ? { '--page-sentence-hover': activeBg.sentenceHoverColor } : {}),
+  } as React.CSSProperties;
   const [editedText, setEditedText] = useState<JSONContent>(emptyContent);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -261,6 +271,7 @@ export const DocumentReader = () => {
       <div
         className={s.paperSheet}
         style={{
+          ...pageBgVars,
           width: `${paperWidth}px`,
           minHeight: `${paperMinHeight}px`,
           transform: `scale(${zoom})`,
@@ -295,7 +306,7 @@ export const DocumentReader = () => {
         );
       }
       return (
-        <div ref={scrollContainerRef} className={`${s.textContainer} ${s.readerContent}`}>
+        <div ref={scrollContainerRef} className={`${s.textContainer} ${s.readerContent}`} style={Object.keys(pageBgVars).length ? pageBgVars : undefined}>
           {renderFormattedSentences(true)}
         </div>
       );
@@ -320,7 +331,7 @@ export const DocumentReader = () => {
     }
 
     return (
-      <div ref={scrollContainerRef} className={`${s.textContainer} ${s.readerContent}`}>
+      <div ref={scrollContainerRef} className={`${s.textContainer} ${s.readerContent}`} style={Object.keys(pageBgVars).length ? pageBgVars : undefined}>
         <MagicTextEditor
           key={currentPage}
           editable={false}

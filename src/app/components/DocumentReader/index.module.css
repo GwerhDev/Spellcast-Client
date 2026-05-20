@@ -99,19 +99,41 @@
 .sentence {
   cursor: pointer;
   transition: .1s;
+  color: var(--page-text-color, inherit);
 }
 
 .sentence:hover {
-  background-color: var(--color-sentence-hover);
-  color: var(--color-dark-900);
+  background-color: var(--page-sentence-hover, var(--color-sentence-hover));
+  color: var(--page-text-color, var(--color-dark-900));
 }
 
 .highlight {
   cursor: pointer;
   transition: .1s;
-  background-color: var(--color-highlight);
-  color: var(--color-dark-900);
+  background-color: var(--page-highlight, var(--color-highlight));
+  color: var(--page-text-color, var(--color-dark-900));
   border-radius: 3px;
+}
+
+/* Override global p/heading color when a custom page background is active */
+.paperSheet p,
+.paperSheet h1,
+.paperSheet h2,
+.paperSheet h3,
+.paperSheet h4,
+.paperSheet h5,
+.paperSheet h6 {
+  color: var(--page-text-color, inherit);
+}
+
+.textContainer p,
+.textContainer h1,
+.textContainer h2,
+.textContainer h3,
+.textContainer h4,
+.textContainer h5,
+.textContainer h6 {
+  color: var(--page-text-color, inherit);
 }
 
 /* Body wrapper (content + page list side by side) */
@@ -253,7 +275,7 @@
   background: var(--paper-bg);
   border-radius: 2px;
   box-shadow: var(--paper-shadow);
-  color: var(--color-light-100);
+  color: var(--page-text-color, var(--color-light-100));
   box-sizing: border-box;
 }
 

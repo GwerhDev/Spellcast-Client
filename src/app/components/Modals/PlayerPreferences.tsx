@@ -1,6 +1,11 @@
 import s from './PlayerPreferences.module.css';
 import React, { useState } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faCheck, faMusic } from '@fortawesome/free-solid-svg-icons';
 import { useLanguage } from '../../../i18n';
+import { useAppSelector, useAppDispatch } from '../../../store/hooks';
+import { setActiveSoundBg } from '../../../store/userLibrarySlice';
+import { soundBackgrounds } from '../../../config/assets';
 
 interface ToggleRowProps {
   label: string;
@@ -70,6 +75,15 @@ const SliderRow: React.FC<SliderRowProps> = ({ label, description, value, min, m
   </div>
 );
 
+const SOUND_ARTWORK: Record<string, string> = {
+  'rain-window':      'linear-gradient(135deg, #0e2a40 0%, #1e5a8a 100%)',
+  'cafe-murmur':      'linear-gradient(135deg, #2e1808 0%, #8a4010 100%)',
+  'ancient-forest':   'linear-gradient(135deg, #0a2414 0%, #145c30 100%)',
+  'ocean-tides':      'linear-gradient(135deg, #082430 0%, #0e6e80 100%)',
+  'crackling-hearth': 'linear-gradient(135deg, #2e0e08 0%, #a03010 100%)',
+  'northern-winds':   'linear-gradient(135deg, #120a30 0%, #3a1870 100%)',
+};
+
 export const PlayerPreferences: React.FC = () => {
   const [autoplay, setAutoplay] = useState(false);
   const [continueOnPageTurn, setContinueOnPageTurn] = useState(true);
@@ -78,9 +92,57 @@ export const PlayerPreferences: React.FC = () => {
   const [loopDocument, setLoopDocument] = useState(false);
   const [speed, setSpeed] = useState(1);
   const { t } = useLanguage();
+  const dispatch = useAppDispatch();
+  const { activeSoundBgId, unlockedIds } = useAppSelector(state => state.userLibrary);
+
+  const unlockedSounds = soundBackgrounds.filter(bg => unlockedIds.includes(bg.id));
+
+  const handleSoundBgClick = (id: string) => {
+    dispatch(setActiveSoundBg(activeSoundBgId === id ? null : id));
+  };
 
   return (
     <div className={s.container}>
+      <div className={s.section}>
+        <p className={s.sectionTitle}>{t.player.soundBackground}</p>
+        <div className={s.soundBgList}>
+          <button
+            className={`${s.soundBgItem} ${activeSoundBgId === null ? s.soundBgItemActive : ''}`}
+            onClick={() => dispatch(setActiveSoundBg(null))}
+          >
+            <span className={`${s.soundBgDot} ${s.soundBgDotNone}`} />
+            <span className={s.soundBgName}>{t.common.none}</span>
+            {activeSoundBgId === null && (
+              <FontAwesomeIcon icon={faCheck} className={s.soundBgCheck} />
+            )}
+          </button>
+          {unlockedSounds.map(bg => {
+            const isActive = activeSoundBgId === bg.id;
+            return (
+              <button
+                key={bg.id}
+                className={`${s.soundBgItem} ${isActive ? s.soundBgItemActive : ''}`}
+                onClick={() => handleSoundBgClick(bg.id)}
+              >
+                <span
+                  className={s.soundBgDot}
+                  style={{ background: SOUND_ARTWORK[bg.id] ?? 'var(--color-dark-300)' }}
+                >
+                  <FontAwesomeIcon icon={faMusic} className={s.soundBgDotIcon} />
+                </span>
+                <span className={s.soundBgName}>{bg.name}</span>
+                {isActive && (
+                  <FontAwesomeIcon icon={faCheck} className={s.soundBgCheck} />
+                )}
+              </button>
+            );
+          })}
+          {unlockedSounds.length === 0 && (
+            <p className={s.soundBgEmpty}>{t.havenStore.soundBackgrounds}</p>
+          )}
+        </div>
+      </div>
+
       <div className={s.section}>
         <p className={s.sectionTitle}>{t.player.playback}</p>
         <ToggleRow soon label={t.player.autoplay} description={t.player.autoplayDesc} value={autoplay} onChange={setAutoplay} />

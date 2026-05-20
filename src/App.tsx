@@ -29,6 +29,7 @@ import { DocumentCreate } from './app/pages/DocumentCreate';
 import { UserCredentials } from './app/pages/UserCredentials';
 import { DocumentDetailPage } from './app/pages/DocumentDetail';
 import { LocalDocumentReader } from './app/pages/LocalDocumentReader';
+import { HavenStore } from './app/pages/HavenStore';
 
 import DefaultLayout from './app/layouts/DefaultLayout';
 
@@ -69,6 +70,7 @@ function App() {
           <Route path="/user/dashboard/groups" element={<UserGroups />} />
 
           <Route path="/library" element={<Library />} />
+          <Route path="/havenstore" element={<HavenStore />} />
 
           <Route path="/user/storage" element={<Storage />} />
           <Route path="/user/storage/local" element={<StorageLocal />} />

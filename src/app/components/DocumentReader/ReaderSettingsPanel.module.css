@@ -84,3 +84,40 @@
   background-color: var(--color-primary);
   color: var(--app-white);
 }
+
+.sectionDivider {
+  height: 1px;
+  background: var(--color-dark-300);
+  margin: 0.25rem 0;
+}
+
+.sectionLabel {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-light-400);
+}
+
+.bgGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.bgSwatch {
+  aspect-ratio: 3 / 4;
+  border-radius: 5px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.bgSwatch:hover {
+  border-color: var(--color-dark-200);
+}
+
+.bgSwatchActive {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 1px var(--color-primary);
+}

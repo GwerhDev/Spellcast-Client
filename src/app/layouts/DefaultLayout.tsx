@@ -16,6 +16,7 @@ import { EditorSettings } from '../components/EditorSettingsPanel/EditorSettings
 import { AccountMenu } from '../components/AccountMenu/AccountMenu';
 import { AppSwitcher } from '../components/AppSwitcher/AppSwitcher';
 import { VoiceSelectorModal } from '../components/Modals/VoiceSelectorModal';
+import { SoundBackground } from '../components/SoundBackground/SoundBackground';
 
 export default function DefaultLayout() {
   const shouldHideMenu = location.pathname.startsWith(`/user`);
@@ -39,6 +40,7 @@ export default function DefaultLayout() {
 
   return (
     <main>
+      <SoundBackground />
       <PdfProcessor />
       <SearcherModal />
       <VoiceSelectorModal

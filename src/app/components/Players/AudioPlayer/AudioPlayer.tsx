@@ -13,6 +13,7 @@ import {
   pause,
   setAutoPlayOnLoad,
 } from '../../../../store/audioPlayerSlice';
+import { setSoundBgVolume, setMasterVolume } from '../../../../store/userLibrarySlice';
 import { goToNextPage, goToPreviousPage, setShowSearcher } from '../../../../store/pdfReaderSlice';
 import { PlaybackControls } from './PlaybackControls/PlaybackControls';
 import { VolumeControls } from './VolumeControls/VolumeControls';
@@ -56,6 +57,7 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
   } = useSelector((state: RootState) => state.pdfReader);
   const { selectedVoice } = useSelector((state: RootState) => state.voice);
   const { userData } = useAppSelector((state) => state.session);
+  const { activeSoundBgId, soundBgVolume, masterVolume } = useAppSelector((state) => state.userLibrary);
 
   const [isFetching, setIsFetching] = useState(false);
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
@@ -143,9 +145,9 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
 
   useEffect(() => {
     if (audioRef.current) {
-      audioRef.current.volume = volume;
+      audioRef.current.volume = volume * masterVolume;
     }
-  }, [volume]);
+  }, [volume, masterVolume]);
 
   useEffect(() => {
     if (audioRef.current && !isPlaying && currentTime === 0) {
@@ -364,6 +366,11 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
               volumeSliderRef={volumeSliderRef}
               volumeButtonRef={volumeButtonRef}
               setVolume={(vol) => dispatch(setVolume(vol))}
+              activeSoundBgId={activeSoundBgId}
+              soundBgVolume={soundBgVolume}
+              setSoundBgVolume={(v) => dispatch(setSoundBgVolume(v))}
+              masterVolume={masterVolume}
+              setMasterVolume={(v) => dispatch(setMasterVolume(v))}
             />
             <PlayerConfigButton onClick={() => showPlayerConfigModal(true)} />
           </div>

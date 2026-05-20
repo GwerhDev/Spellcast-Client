@@ -4,6 +4,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import { faDesktop, faPalette } from '@fortawesome/free-solid-svg-icons';
 import { RootState } from '../../../store';
 import { setShowReaderSettings, setFitToWidth, setLightningMode } from '../../../store/pdfReaderSlice';
+import { setActivePageBg } from '../../../store/userLibrarySlice';
+import { pageBackgrounds } from '../../../config/assets';
 import { TabModal } from '../Modals/TabModal';
 import { useLanguage } from '../../../i18n';
 
@@ -77,14 +79,38 @@ const DisplayTab: React.FC = () => {
 };
 
 const AppearanceTab: React.FC = () => {
+  const dispatch = useDispatch();
   const [highContrast, setHighContrast] = useState(false);
   const [sepiaMode, setSepiaMode] = useState(false);
   const [invertColors, setInvertColors] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
   const { t } = useLanguage();
+  const { activePageBgId, unlockedIds } = useSelector((state: RootState) => state.userLibrary);
+
+  const unlockedPageBgs = pageBackgrounds.filter(bg => unlockedIds.includes(bg.id));
 
   return (
     <div className={s.container}>
+      <div className={s.section}>
+        <p className={s.sectionTitle}>{t.reader.pageBackground}</p>
+        <div className={s.bgGrid}>
+          {unlockedPageBgs.map(bg => {
+            const isActive = activePageBgId === bg.id;
+            const thumbStyle = bg.thumbnail.startsWith('var(')
+              ? { background: 'var(--paper-bg)' }
+              : { background: bg.thumbnail };
+            return (
+              <button
+                key={bg.id}
+                className={`${s.bgSwatch} ${isActive ? s.bgSwatchActive : ''}`}
+                style={thumbStyle}
+                onClick={() => dispatch(setActivePageBg(bg.id))}
+                title={bg.name}
+              />
+            );
+          })}
+        </div>
+      </div>
       <div className={s.section}>
         <p className={s.sectionTitle}>{t.reader.filters}</p>
         <ToggleRow soon label={t.reader.sepiaMode} description={t.reader.sepiaModeDesc} value={sepiaMode} onChange={setSepiaMode} />

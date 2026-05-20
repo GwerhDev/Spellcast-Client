@@ -9,6 +9,7 @@ import voiceReducer from './voiceSlice';
 import credentialsReducer from './credentialsSlice';
 import groupsReducer from './groupsSlice';
 import editorReducer from './editorSlice';
+import userLibraryReducer from './userLibrarySlice';
 
 export const store = configureStore({
   reducer: {
@@ -22,6 +23,7 @@ export const store = configureStore({
     audioPlayer: audioPlayerReducer,
     browserPlayer: browserPlayerReducer,
     apiResponses: apiResponsesReducer,
+    userLibrary: userLibraryReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
@@ -30,6 +32,12 @@ export const store = configureStore({
         ignoredPaths: ['pdfReader.pdfDoc', 'browserPlayer.voice'],
       },
     }),
+});
+
+store.subscribe(() => {
+  try {
+    localStorage.setItem('userLibrary', JSON.stringify(store.getState().userLibrary));
+  } catch {}
 });
 
 export type RootState = ReturnType<typeof store.getState>;

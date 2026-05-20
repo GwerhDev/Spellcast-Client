@@ -123,6 +123,7 @@ export const LateralMenu = ({ onNavigate }: LateralMenuProps) => {
               );
             })}
           </ul>
+
         </div>
       </div>
     </motion.div>

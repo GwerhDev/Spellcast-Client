@@ -1,5 +1,5 @@
 import s from './TabBar.module.css';
-import { faBars, faBuildingColumns, faCompass, faFeatherPointed, faHome } from '@fortawesome/free-solid-svg-icons';
+import { faBars, faBuildingColumns, faCompass, faFeatherPointed, faHome, faStore } from '@fortawesome/free-solid-svg-icons';
 import { Tab } from '../../../interfaces';
 import { TabButton } from '../Buttons/TabButton';
 import { useLanguage } from '../../../i18n';
@@ -33,6 +33,11 @@ export const TabBar = (props: TabBarProps) => {
       title: 'Explore',
       route: '/explore',
       icon: faCompass,
+      showMenu: false,
+    }, {
+      title: t.nav.havenStore,
+      route: '/havenstore',
+      icon: faStore,
       showMenu: false,
     }
   ];

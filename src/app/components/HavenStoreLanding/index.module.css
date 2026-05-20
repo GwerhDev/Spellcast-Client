@@ -1,0 +1,412 @@
+.container {
+  width: 100%;
+  padding: 2rem 2rem 3rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+/* ── Hero ── */
+.hero {
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.heroContent {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.heroSubtitle {
+  font-size: 0.82rem;
+  color: var(--color-light-400);
+  margin: 0;
+}
+
+.heroCtaLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  text-decoration: none;
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 40%, transparent);
+  background: color-mix(in srgb, var(--color-primary) 8%, transparent);
+  transition: background 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+
+.heroCtaLink:hover {
+  background: color-mix(in srgb, var(--color-primary) 16%, transparent);
+  border-color: var(--color-primary);
+}
+
+/* ── Panel ── */
+.panel {
+  width: 100%;
+  border: 1px solid var(--color-dark-300);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.panelHeader {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.25rem;
+  padding: 0.6rem 0.6rem 0;
+  border-bottom: 1px solid var(--color-dark-300);
+}
+
+.tab {
+  padding: 0.45rem 1rem;
+  border-radius: 6px 6px 0 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-light-400);
+  background: transparent;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+  border-bottom: 2px solid transparent;
+}
+
+.tab:hover {
+  color: var(--text-color);
+  background: rgba(115, 165, 204, 0.08);
+}
+
+.tabActive {
+  color: var(--color-primary);
+  border-bottom: 2px solid var(--color-primary);
+}
+
+.searchWrapper {
+  position: relative;
+  margin-left: auto;
+  margin-bottom: 0.4rem;
+  display: flex;
+  align-items: center;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 10px;
+  font-size: 11px;
+  color: var(--color-light-400);
+  pointer-events: none;
+}
+
+.searchInput {
+  width: 200px;
+  padding: 0.35rem 0.75rem 0.35rem 2rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-dark-200);
+  background: var(--surface-inset);
+  color: var(--text-color);
+  font-size: 0.78rem;
+  transition: border-color 0.2s, width 0.2s;
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  width: 260px;
+}
+
+.panelBody {
+  padding: 1.25rem;
+}
+
+/* ── Sound product grid ── */
+.soundGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+  gap: 0.75rem;
+}
+
+/* ── Page product grid ── */
+.pageGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.75rem;
+}
+
+/* ── Product card (shared) ── */
+.productCard {
+  display: flex;
+  flex-direction: column;
+  border-radius: 10px;
+  border: 1.5px solid var(--color-dark-300);
+  overflow: hidden;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.productCard:hover {
+  border-color: var(--color-dark-200);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+}
+
+.productCardActive {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 1px var(--color-primary);
+}
+
+.productCardLocked {
+  opacity: 0.82;
+}
+
+.pageProductCard {
+  cursor: pointer;
+}
+
+/* ── Sound card artwork ── */
+.artwork {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.artworkIcon {
+  font-size: 2rem;
+  color: rgba(255, 255, 255, 0.25);
+}
+
+/* ── Page card thumbnail ── */
+.pageThumbnail {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pageThumbnailLines {
+  width: 58%;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.pageThumbnailLine {
+  height: 2px;
+  background: currentColor;
+  border-radius: 2px;
+}
+
+/* ── Lock overlay ── */
+.lockOverlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lockIcon {
+  font-size: 1.4rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* ── Active pill ── */
+.activePill {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--app-white);
+  background: var(--color-primary);
+  padding: 3px 7px;
+  border-radius: 999px;
+}
+
+/* ── Product body ── */
+.productBody {
+  padding: 0.65rem 0.75rem 0.75rem;
+  background: var(--component-background);
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  flex: 1;
+}
+
+.productName {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.productDesc {
+  font-size: 0.7rem;
+  color: var(--color-light-400);
+  margin: 0;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.productFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+  margin-top: auto;
+  flex-wrap: wrap;
+}
+
+/* ── Badges ── */
+.freeBadge {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #4caf7d;
+  background: color-mix(in srgb, #4caf7d 14%, transparent);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.priceBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #f5b342;
+}
+
+.achievementBadge {
+  font-size: 0.72rem;
+  color: #f5b342;
+}
+
+.achievementLabel {
+  font-size: 0.6rem;
+  color: var(--color-light-400);
+  line-height: 1.3;
+}
+
+/* ── Action buttons ── */
+.btnBuy {
+  padding: 0.28rem 0.65rem;
+  border-radius: 6px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  background: var(--color-primary);
+  color: var(--app-white);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.15s;
+  margin-left: auto;
+}
+
+.btnBuy:hover { opacity: 0.85; }
+
+.btnActive {
+  padding: 0.28rem 0.65rem;
+  border-radius: 6px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  background: color-mix(in srgb, var(--color-primary) 16%, transparent);
+  color: var(--color-primary);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+  margin-left: auto;
+}
+
+.btnActive:hover {
+  background: color-mix(in srgb, var(--color-primary) 26%, transparent);
+}
+
+.btnSet {
+  padding: 0.28rem 0.65rem;
+  border-radius: 6px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  background: transparent;
+  color: var(--color-light-300);
+  border: 1px solid var(--color-dark-200);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+  margin-left: auto;
+}
+
+.btnSet:hover {
+  background: var(--color-dark-300);
+  color: var(--text-color);
+}
+
+/* ── Assets tab sections ── */
+.assetsBody {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.assetsSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.sectionLabel {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-light-400);
+  margin: 0;
+}
+
+/* ── Companions coming soon ── */
+.companionsSoon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 4rem 2rem;
+  text-align: center;
+}
+
+.companionsSoonIcon {
+  font-size: 2.5rem;
+  color: var(--color-dark-200);
+}
+
+.companionsSoonTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-light-300);
+  margin: 0;
+}
+
+.companionsSoonDesc {
+  font-size: 0.8rem;
+  color: var(--color-light-400);
+  margin: 0;
+  max-width: 380px;
+  line-height: 1.5;
+}
