@@ -62,9 +62,9 @@ const buildBuckets = (docs: Document[], period: Period): Bucket[] => {
   });
 };
 
-const countIDB = (dbName: string, version: number, store: string): Promise<number> =>
+const countIDB = (dbName: string, store: string): Promise<number> =>
   new Promise(resolve => {
-    const req = indexedDB.open(dbName, version);
+    const req = indexedDB.open(dbName);
     req.onsuccess = e => {
       const db = (e.target as IDBOpenDBRequest).result;
       if (!db.objectStoreNames.contains(store)) { db.close(); resolve(0); return; }
@@ -86,7 +86,7 @@ export const LibraryCharts: React.FC = () => {
   useEffect(() => {
     if (!logged) return;
     getDocumentsFromDB(userData.id).then(setDocs).catch(() => {});
-    countIDB('spellcast-audio-cache', 1, 'audio_pages').then(setAudioCount);
+    countIDB('spellcast-audio-cache', 'audio_pages').then(setAudioCount);
   }, [logged, userData.id]);
 
   const periodTabs = [

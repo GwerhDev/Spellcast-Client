@@ -48,9 +48,9 @@ const getLocalStorageSize = (): number => {
   return size;
 };
 
-const countIDBStore = (dbName: string, version: number, storeName: string): Promise<number> =>
+const countIDBStore = (dbName: string, storeName: string): Promise<number> =>
   new Promise((resolve) => {
-    const req = indexedDB.open(dbName, version);
+    const req = indexedDB.open(dbName);
     req.onsuccess = (e) => {
       const db = (e.target as IDBOpenDBRequest).result;
       if (!db.objectStoreNames.contains(storeName)) { db.close(); resolve(0); return; }
@@ -80,12 +80,12 @@ export const BrowserStorage: React.FC = () => {
     });
 
     Promise.all([
-      countIDBStore(DB_NAME, Number(DB_VERSION), DOCUMENTS_STORE_NAME),
-      countIDBStore('spellcast-audio-cache', 1, 'audio_pages'),
-      countIDBStore('spellcast-preferences', 1, 'user_voice'),
+      countIDBStore(DB_NAME, DOCUMENTS_STORE_NAME),
+      countIDBStore('spellcast-audio-cache', 'audio_pages'),
+      countIDBStore('spellcast-preferences', 'user_voice'),
     ]).then(([documents, audioPages, voiceProfiles]) => {
       setCounts({ documents, audioPages, voiceProfiles });
-    });
+    }).catch(() => setCounts({ documents: 0, audioPages: 0, voiceProfiles: 0 }));
 
     setSettings(
       KNOWN_LS_KEYS
