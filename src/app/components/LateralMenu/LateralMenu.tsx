@@ -57,7 +57,9 @@ export const LateralMenu = ({ onNavigate }: LateralMenuProps) => {
               <Link to={`/user/dashboard`}>
                 <h4>{t.nav.dashboard}</h4>
               </Link>
-              <FontAwesomeIcon icon={faTableColumns} />
+              <span className={location.pathname.startsWith(`/user/dashboard`) ? s.magicIcon : s.sectionIcon}>
+                <FontAwesomeIcon icon={faTableColumns} />
+              </span>
             </span>
           </div>
 
@@ -76,11 +78,13 @@ export const LateralMenu = ({ onNavigate }: LateralMenuProps) => {
             })}
           </ul>
 
-          <span className={s.section}>
+          <span className={`${s.section} ${location.pathname.startsWith(`/user/storage`) ? s.activeLink : ''}`}>
             <Link to={`/user/storage`}>
               <h4>{t.nav.storage}</h4>
             </Link>
-            <FontAwesomeIcon icon={faBox} />
+            <span className={location.pathname.startsWith(`/user/storage`) ? s.magicIcon : s.sectionIcon}>
+              <FontAwesomeIcon icon={faBox} />
+            </span>
           </span>
           <ul className={s.menuList}>
             {storageDirectoryList.map(({ name, icon, path }, index) => {
@@ -101,7 +105,9 @@ export const LateralMenu = ({ onNavigate }: LateralMenuProps) => {
             <Link to={`/user/settings`}>
               <h4>{t.nav.settings}</h4>
             </Link>
-            <FontAwesomeIcon icon={faGear} />
+            <span className={location.pathname.startsWith(`/user/settings`) ? s.magicIcon : s.sectionIcon}>
+              <FontAwesomeIcon icon={faGear} />
+            </span>
           </span>
           <ul className={s.menuList}>
             {settingsDirectoryList.map(({ name, icon, path }, index) => {

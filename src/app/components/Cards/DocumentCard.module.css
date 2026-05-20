@@ -60,7 +60,12 @@
   pointer-events: none;
   z-index: 2;
   overflow: hidden;
-  transition: opacity 0.2s ease, box-shadow 0.7s ease-in-out;
+  transition: opacity 0.2s ease, box-shadow 0.7s ease-in-out, color 0s;
+}
+
+.playAction:hover {
+  color: var(--app-white);
+  background: color-mix(in srgb, var(--color-primary) 32%, #1c3a52c0);
 }
 
 .playIcon {

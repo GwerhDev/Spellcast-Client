@@ -122,3 +122,51 @@
   background-color: var(--color-primary);
   color: var(--app-white);
 }
+
+.section.activeLink h4 {
+  color: var(--color-primary);
+}
+
+.sectionIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+}
+
+.magicIcon {
+  position: relative;
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-primary);
+  filter: drop-shadow(0 0 1px var(--color-secondary));
+}
+
+.magicIcon::before,
+.magicIcon::after {
+  content: "";
+  position: absolute;
+  top: calc(50% - 1px);
+  left: calc(50% - 7.5px);
+  width: 15px;
+  height: 2px;
+  background: linear-gradient(to left, transparent 0%, var(--color-primary) 100%);
+  border-radius: 2px;
+  box-shadow: 0 0 5px var(--color-primary);
+  animation: orbit 4s linear infinite;
+}
+
+.magicIcon::after {
+  animation-delay: -2s;
+}
+
+@keyframes orbit {
+  from { transform: rotate(0deg) translateX(18px) rotate(-90deg); }
+  to   { transform: rotate(360deg) translateX(18px) rotate(-90deg); }
+}
