@@ -18,6 +18,11 @@
   flex-direction: column;
 }
 
+.createContainer p {
+  color: var(--color-light-400);
+  margin: 0;
+}
+
 .optionContainer {
   width: 100%;
   min-height: 220px;

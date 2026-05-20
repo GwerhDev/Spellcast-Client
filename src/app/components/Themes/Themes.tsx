@@ -71,8 +71,6 @@ export const Themes = () => {
   return (
     <div className={s.container}>
       <div className={s.settingsList}>
-      <div className={s.pageTitle}><h1 className="featured">{t.appearance.title}</h1></div>
-
         <div className={s.settingsSection}>
           <div className={s.sectionHeader}>
             <p className={s.sectionTitle}>{t.appearance.themeTitle}</p>

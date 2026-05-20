@@ -19,7 +19,6 @@ import { Storage } from './app/pages/Storage';
 import { Overview } from './app/pages/Overview';
 import { NotFound } from './app/pages/NotFound';
 import { Settings } from './app/pages/Settings';
-import { Dashboard } from './app/pages/Dashboard';
 import { UserGroups } from './app/pages/UserGroups';
 import { Appearance } from './app/pages/Appearance';
 import { UserArchive } from './app/pages/UserArchive';
@@ -65,9 +64,8 @@ function App() {
           <Route path="/document/:id/reader" element={<LocalDocumentReader />} />
           <Route path="/user/archive" element={<UserArchive />} />
 
-          <Route path="/user/dashboard" element={<Dashboard />} />
+          <Route path="/user/dashboard" element={<Overview />} />
           <Route path="/user" element={<RootBackground />} />
-          <Route path="/user/dashboard/overview" element={<Overview />} />
           <Route path="/user/dashboard/groups" element={<UserGroups />} />
 
           <Route path="/library" element={<Library />} />

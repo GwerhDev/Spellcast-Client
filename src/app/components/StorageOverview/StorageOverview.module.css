@@ -7,16 +7,10 @@
 
 /* ── Cards grid ── */
 .cards {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 1rem;
   width: 100%;
-  max-width: 1024px;
-}
-
-@media screen and (max-width: 720px) {
-  .cards {
-    flex-direction: column;
-  }
 }
 
 .card {

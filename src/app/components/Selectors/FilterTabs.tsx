@@ -13,6 +13,7 @@ interface FilterTabsProps {
   tabs: FilterTab[];
   active: string;
   onChange: (id: string) => void;
+  compact?: boolean;
 }
 
 const positionClass = (index: number, total: number) => {
@@ -22,8 +23,8 @@ const positionClass = (index: number, total: number) => {
   return s.middle;
 };
 
-export const FilterTabs: React.FC<FilterTabsProps> = ({ tabs, active, onChange }) => (
-  <div className={s.container}>
+export const FilterTabs: React.FC<FilterTabsProps> = ({ tabs, active, onChange, compact }) => (
+  <div className={s.container} style={compact ? { marginBottom: 0 } : undefined}>
     <span className={s.buttonsContainer}>
       {tabs.map((tab, i) => (
         <button

@@ -80,6 +80,20 @@ export const en = {
   library: {
     subtitle: 'Your documents, always at hand',
   },
+  overview: {
+    activity: 'Activity',
+    docsAdded: 'Documents added',
+    booksRead: 'Books read',
+    inProgress: 'In progress',
+    audioCached: 'Audio cached',
+    total: 'Total',
+    noActivity: 'No activity in this period',
+    readingTracking: 'Reading tracking requires cloud sync',
+    period30d: '30d',
+    period60d: '60d',
+    period90d: '90d',
+    allTime: 'All',
+  },
   editor: {
     tagline: 'Shape your words',
     subtitle: 'Start from scratch or pick up where you left off',
@@ -168,6 +182,7 @@ export const en = {
   },
   appearance: {
     title: 'Appearance',
+    subtitle: 'Customize how Spellcast looks and feels.',
     themeTitle: 'Theme',
     themeSubtitle: 'Select a theme for the application.',
     languageTitle: 'Language',
@@ -232,6 +247,7 @@ export const en = {
     labelRegion: 'region',
     azureKeyLabel: 'Azure Key',
     regionLabel: 'Region',
+    subtitle: 'Manage API keys and third-party service connections.',
   },
   groups: {
     createNew: 'Create new group',
@@ -239,10 +255,18 @@ export const en = {
     labelName: 'name',
     members: 'Members',
     activity: 'Activity',
+    subtitle: 'Collaborate and share documents with your groups.',
   },
   shared: {
     public: 'Public',
     inGroups: 'In groups',
+  },
+  archive: {
+    title: 'Archive',
+    subtitle: 'Documents and projects you have set aside.',
+  },
+  settings: {
+    subtitle: 'Manage your account, appearance, and service credentials.',
   },
   storage: {
     title: 'Storage',
@@ -265,6 +289,9 @@ export const en = {
     appSettings: 'Settings',
     notConnected: 'Not connected',
     cloudSyncDesc: 'Cloud sync is not configured. Your data is stored locally only.',
+    subtitle: 'Overview of your local and cloud storage usage.',
+    localSubtitle: 'Documents, audio cache, and settings stored in your browser.',
+    cloudSubtitle: 'Sync your library and preferences across all your devices.',
   },
   start: {
     castSpell: 'Cast a spell',

@@ -31,7 +31,6 @@ export const Groups = () => {
 
   return (
     <div className={s.container}>
-      <h1 className="featured">{t.nav.groups}</h1>
       <ul className={s.list}>
         {groups.map((group: Group) => (
           <GroupCard fetchGroups={() => dispatch(getGroups())} group={group} key={group.id} />

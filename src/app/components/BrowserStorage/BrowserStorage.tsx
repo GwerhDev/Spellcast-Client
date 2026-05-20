@@ -120,8 +120,6 @@ export const BrowserStorage: React.FC = () => {
 
   return (
     <div className={s.container}>
-      <h2 className={s.title}>{t.storage.browserStorage}</h2>
-
       <div className={s.overview}>
         <div className={s.ring} style={{ '--pct': `${usedPct.toFixed(1)}%` } as React.CSSProperties}>
           <div className={s.ringInner}>

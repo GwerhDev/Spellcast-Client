@@ -38,8 +38,8 @@ export const UserPresentation = () => {
         </ul>
       </div>
       <div className={s.stats}>
-        <UserStats />
         <LibraryCharts />
+        <UserStats />
         <StorageOverview />
       </div>
     </div>

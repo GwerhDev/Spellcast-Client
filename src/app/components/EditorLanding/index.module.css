@@ -18,6 +18,11 @@
   flex-direction: column;
 }
 
+.selectInner p {
+  color: var(--color-light-400);
+  margin: 0;
+}
+
 .cards {
   display: flex;
   gap: 1.5rem;

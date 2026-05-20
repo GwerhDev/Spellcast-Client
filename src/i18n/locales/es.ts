@@ -82,6 +82,20 @@ export const es: Translations = {
   library: {
     subtitle: 'Tus documentos, siempre a mano',
   },
+  overview: {
+    activity: 'Actividad',
+    docsAdded: 'Documentos añadidos',
+    booksRead: 'Libros leídos',
+    inProgress: 'En progreso',
+    audioCached: 'Audio en caché',
+    total: 'Total',
+    noActivity: 'Sin actividad en este período',
+    readingTracking: 'El seguimiento de lectura requiere sincronización en la nube',
+    period30d: '30d',
+    period60d: '60d',
+    period90d: '90d',
+    allTime: 'Todo',
+  },
   editor: {
     tagline: 'Dale forma a tus palabras',
     subtitle: 'Empieza desde cero o continúa donde lo dejaste',
@@ -170,6 +184,7 @@ export const es: Translations = {
   },
   appearance: {
     title: 'Apariencia',
+    subtitle: 'Personaliza el aspecto y la experiencia de Spellcast.',
     themeTitle: 'Tema',
     themeSubtitle: 'Selecciona un tema para la aplicación.',
     languageTitle: 'Idioma',
@@ -234,6 +249,7 @@ export const es: Translations = {
     labelRegion: 'región',
     azureKeyLabel: 'Clave Azure',
     regionLabel: 'Región',
+    subtitle: 'Gestiona claves API y conexiones a servicios externos.',
   },
   groups: {
     createNew: 'Crear nuevo grupo',
@@ -241,10 +257,18 @@ export const es: Translations = {
     labelName: 'nombre',
     members: 'Miembros',
     activity: 'Actividad',
+    subtitle: 'Colabora y comparte documentos con tus grupos.',
   },
   shared: {
     public: 'Público',
     inGroups: 'En grupos',
+  },
+  archive: {
+    title: 'Archivo',
+    subtitle: 'Documentos y proyectos que has dejado a un lado.',
+  },
+  settings: {
+    subtitle: 'Administra tu cuenta, apariencia y credenciales de servicios.',
   },
   storage: {
     title: 'Almacenamiento',
@@ -267,6 +291,9 @@ export const es: Translations = {
     appSettings: 'Ajustes',
     notConnected: 'Sin conexión',
     cloudSyncDesc: 'La sincronización en la nube no está configurada. Tus datos se almacenan únicamente de forma local.',
+    subtitle: 'Vista general del uso de almacenamiento local y en la nube.',
+    localSubtitle: 'Documentos, caché de audio y ajustes guardados en tu navegador.',
+    cloudSubtitle: 'Sincroniza tu biblioteca y preferencias en todos tus dispositivos.',
   },
   start: {
     castSpell: 'Lanza un hechizo',

@@ -1,7 +1,6 @@
-import { faDiagramProject, faUsers, faFingerprint, faShield, faShare, faPalette, faHardDrive, faCloud } from "@fortawesome/free-solid-svg-icons";
+import { faUsers, faFingerprint, faShield, faShare, faPalette, faHardDrive, faCloud } from "@fortawesome/free-solid-svg-icons";
 
 export const dashboardDirectoryList = [
-  { name: "Overview", icon: faDiagramProject, path: "dashboard/overview" },
   { name: "Groups", icon: faUsers, path: "dashboard/groups" },
   { name: "Shared", icon: faShare, path: "dashboard/shared" },
 ];

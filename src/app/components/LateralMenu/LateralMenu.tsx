@@ -6,7 +6,7 @@ import { faBox, faGear, faTableColumns } from '@fortawesome/free-solid-svg-icons
 import { dashboardDirectoryList, settingsDirectoryList, storageDirectoryList } from '../../../config/consts';
 import { useLanguage } from '../../../i18n';
 
-type NavKey = 'overview' | 'groups' | 'shared' | 'local' | 'cloud' | 'credentials' | 'permissions' | 'appearance';
+type NavKey = 'groups' | 'shared' | 'local' | 'cloud' | 'credentials' | 'permissions' | 'appearance';
 
 interface LateralMenuProps {
   onNavigate?: () => void;
@@ -17,7 +17,6 @@ export const LateralMenu = ({ onNavigate }: LateralMenuProps) => {
   const isMobile = window.matchMedia('(max-width: 1024px)').matches;
 
   const navName: Record<NavKey, string> = {
-    overview: t.nav.overview,
     groups: t.nav.groups,
     shared: t.nav.shared,
     local: t.nav.local,

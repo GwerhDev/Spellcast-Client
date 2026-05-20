@@ -31,7 +31,6 @@ export const Credentials = () => {
 
   return (
     <div className={s.container}>
-      <h1 className="featured">{t.nav.credentials}</h1>
       <ul className={s.list}>
         {credentials.map((credential: TTS_Credential) => (
           <CredentialCard fetchCredentials={() => dispatch(getCredentials())} credential={credential} key={credential.id || `existing-${credential.region}-${credential.azure_key}`} />
