@@ -2,12 +2,15 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { soundBackgrounds } from '../config/assets/soundBackgrounds';
 import { pageBackgrounds } from '../config/assets/pageBackgrounds';
 
+const STATE_VERSION = 2;
+
 const FREE_IDS = [
   ...soundBackgrounds.filter(a => a.unlockMethod === 'free').map(a => a.id),
   ...pageBackgrounds.filter(a => a.unlockMethod === 'free').map(a => a.id),
 ];
 
 interface UserLibraryState {
+  version: number;
   unlockedIds: string[];
   activeSoundBgId: string | null;
   activePageBgId: string | null;
@@ -18,7 +21,13 @@ interface UserLibraryState {
 const loadPersistedState = (): Partial<UserLibraryState> => {
   try {
     const raw = localStorage.getItem('userLibrary');
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const parsed = JSON.parse(raw) as Partial<UserLibraryState>;
+      if (parsed.version !== STATE_VERSION) {
+        return { ...parsed, unlockedIds: FREE_IDS, version: STATE_VERSION };
+      }
+      return parsed;
+    }
   } catch {}
   return {};
 };
@@ -26,6 +35,7 @@ const loadPersistedState = (): Partial<UserLibraryState> => {
 const persisted = loadPersistedState();
 
 const initialState: UserLibraryState = {
+  version: STATE_VERSION,
   unlockedIds: persisted.unlockedIds ?? FREE_IDS,
   activeSoundBgId: persisted.activeSoundBgId ?? null,
   activePageBgId: persisted.activePageBgId ?? 'default',

@@ -6,6 +6,9 @@ export const SoundBackground = () => {
   const activeSoundBgId = useAppSelector(state => state.userLibrary.activeSoundBgId);
   const soundBgVolume = useAppSelector(state => state.userLibrary.soundBgVolume);
   const masterVolume = useAppSelector(state => state.userLibrary.masterVolume);
+  const browserPlaying = useAppSelector(state => state.browserPlayer.isPlaying);
+  const audioPlaying = useAppSelector(state => state.audioPlayer.isPlaying);
+  const isPlaying = browserPlaying || audioPlaying;
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
@@ -21,7 +24,6 @@ export const SoundBackground = () => {
     const audio = new Audio(bg.streamUrl);
     audio.loop = bg.loop;
     audio.volume = soundBgVolume * masterVolume;
-    audio.play().catch(() => {});
     audioRef.current = audio;
 
     return () => {
@@ -29,6 +31,15 @@ export const SoundBackground = () => {
       audioRef.current = null;
     };
   }, [activeSoundBgId]);
+
+  useEffect(() => {
+    if (!audioRef.current) return;
+    if (isPlaying) {
+      audioRef.current.play().catch(() => {});
+    } else {
+      audioRef.current.pause();
+    }
+  }, [isPlaying]);
 
   useEffect(() => {
     if (audioRef.current) {

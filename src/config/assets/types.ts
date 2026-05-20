@@ -16,6 +16,7 @@ export interface SoundBackground extends BaseAsset {
   category: 'sound-background';
   streamUrl: string;
   loop: boolean;
+  available?: boolean;
 }
 
 export interface PageBackground extends BaseAsset {

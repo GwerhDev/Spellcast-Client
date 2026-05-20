@@ -95,7 +95,7 @@ export const PlayerPreferences: React.FC = () => {
   const dispatch = useAppDispatch();
   const { activeSoundBgId, unlockedIds } = useAppSelector(state => state.userLibrary);
 
-  const unlockedSounds = soundBackgrounds.filter(bg => unlockedIds.includes(bg.id));
+  const unlockedSounds = soundBackgrounds.filter(bg => bg.available && unlockedIds.includes(bg.id));
 
   const handleSoundBgClick = (id: string) => {
     dispatch(setActiveSoundBg(activeSoundBgId === id ? null : id));

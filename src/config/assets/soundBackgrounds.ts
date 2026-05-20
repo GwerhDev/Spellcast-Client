@@ -1,4 +1,5 @@
 import type { SoundBackground } from './types';
+import rainWindowUrl from '../../assets/sounds/rain-window.mp3';
 
 export const soundBackgrounds: SoundBackground[] = [
   {
@@ -7,8 +8,9 @@ export const soundBackgrounds: SoundBackground[] = [
     description: 'Soft droplets against a windowpane',
     category: 'sound-background',
     unlockMethod: 'free',
-    streamUrl: 'https://cdn.nhexa.cl/assets/sounds/rain-window.mp3',
+    streamUrl: rainWindowUrl,
     loop: true,
+    available: true,
     tags: ['rain', 'calm', 'focus'],
   },
   {
@@ -16,7 +18,8 @@ export const soundBackgrounds: SoundBackground[] = [
     name: 'Café Murmur',
     description: 'Gentle café ambience with distant chatter',
     category: 'sound-background',
-    unlockMethod: 'free',
+    unlockMethod: 'purchase',
+    price: 120,
     streamUrl: 'https://cdn.nhexa.cl/assets/sounds/cafe-murmur.mp3',
     loop: true,
     tags: ['café', 'social', 'focus'],

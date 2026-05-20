@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faMusic, faLock, faTrophy, faCheck, faCoins, faArrowUpRightFromSquare, faMagnifyingGlass, faCube } from '@fortawesome/free-solid-svg-icons';
+import { faMusic, faLock, faTrophy, faCheck, faArrowUpRightFromSquare, faMagnifyingGlass, faCube } from '@fortawesome/free-solid-svg-icons';
 import { useAppSelector, useAppDispatch } from 'store/hooks';
 import { unlockAsset, setActiveSoundBg, setActivePageBg } from '../../../store/userLibrarySlice';
 import { soundBackgrounds, pageBackgrounds } from '../../../config/assets';
@@ -82,19 +82,14 @@ export const HavenStoreLanding = () => {
                 {bg.unlockMethod === 'free' && (
                   <span className={s.freeBadge}>{t.havenStore.free}</span>
                 )}
-                {bg.unlockMethod === 'purchase' && (
-                  <span className={s.priceBadge}>
-                    <FontAwesomeIcon icon={faCoins} /> {bg.price}
-                  </span>
-                )}
                 {bg.unlockMethod === 'achievement' && (
                   <span className={s.achievementBadge}>
                     <FontAwesomeIcon icon={faTrophy} />
                   </span>
                 )}
-                {locked && bg.unlockMethod !== 'achievement' && (
+                {locked && bg.unlockMethod === 'free' && (
                   <button className={s.btnBuy} onClick={() => handleSoundAction(bg.id)}>
-                    {bg.unlockMethod === 'free' ? t.havenStore.unlock : t.havenStore.purchase}
+                    {t.havenStore.unlock}
                   </button>
                 )}
                 {locked && bg.unlockMethod === 'achievement' && (
@@ -153,15 +148,12 @@ export const HavenStoreLanding = () => {
               <span className={s.productName}>{bg.name}</span>
               <div className={s.productFooter}>
                 {bg.unlockMethod === 'free' && <span className={s.freeBadge}>{t.havenStore.free}</span>}
-                {bg.unlockMethod === 'purchase' && (
-                  <span className={s.priceBadge}><FontAwesomeIcon icon={faCoins} /> {bg.price}</span>
-                )}
                 {bg.unlockMethod === 'achievement' && (
                   <span className={s.achievementBadge}><FontAwesomeIcon icon={faTrophy} /></span>
                 )}
-                {locked && bg.unlockMethod !== 'achievement' && (
+                {locked && bg.unlockMethod === 'free' && (
                   <button className={s.btnBuy} onClick={e => { e.stopPropagation(); handlePageAction(bg.id); }}>
-                    {bg.unlockMethod === 'free' ? t.havenStore.unlock : t.havenStore.purchase}
+                    {t.havenStore.unlock}
                   </button>
                 )}
                 {locked && bg.unlockMethod === 'achievement' && (
