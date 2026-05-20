@@ -11,6 +11,8 @@ import { setAutoPlayOnLoad, resetBrowserPlayer, requestTogglePlay } from '../../
 import { setAutoPlayOnLoad as setAudioAutoPlayOnLoad, resetAudioPlayer } from '../../../store/audioPlayerSlice';
 import { setPdfFile, setPdfDocumentInfo, resetPdfReader } from '../../../store/pdfReaderSlice';
 import { useLanguage } from '../../../i18n';
+import { faArrowRight, faBuildingColumns } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 export const LastDocuments: React.FC = () => {
   const { userData } = useAppSelector((state) => state.session);
@@ -102,12 +104,23 @@ export const LastDocuments: React.FC = () => {
     return null;
   }
 
+  const MAX = 10;
+  const visible = documents.slice(0, MAX);
+  const hasMore = documents.length > MAX;
+
   return (
     <>
       <div className={s.container}>
-        <h2 className={s.title}>{t.nav.lastDocuments}</h2>
+        <div className={s.header}>
+          <h2 className={s.title}>{t.nav.lastDocuments}</h2>
+          <span className={s.libraryLink} onClick={() => navigate('/library')}>
+            <FontAwesomeIcon icon={faBuildingColumns} />
+            {t.nav.library}
+            <FontAwesomeIcon icon={faArrowRight} />
+          </span>
+        </div>
         <div className={s.slider}>
-          {documents.map((doc) => (
+          {visible.map((doc) => (
             <DocumentCard
               key={doc.id}
               doc={doc}
@@ -119,6 +132,12 @@ export const LastDocuments: React.FC = () => {
               onPlay={() => handlePlay(doc)}
             />
           ))}
+          {hasMore && (
+            <div className={s.seeAllCard} onClick={() => navigate('/library')}>
+              <FontAwesomeIcon icon={faArrowRight} />
+              <span>{t.nav.library}</span>
+            </div>
+          )}
         </div>
       </div>
       {selectedDoc && (
