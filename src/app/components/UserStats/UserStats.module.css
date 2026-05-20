@@ -5,30 +5,88 @@
   display: flex;
 }
 
-.statCard {
-  width: 100%;
+@media screen and (max-width: 720px) {
+  .statsContainer {
+    flex-direction: column;
+  }
+}
+
+/* ── Card ── */
+.card {
+  flex: 1;
   background: var(--component-background);
-  padding: 1.5rem;
   border-radius: 10px;
-  text-align: center;
-}
-
-.clickable {
+  padding: 1.5rem;
+  border: none;
+  text-align: left;
   cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
   transition: background-color 0.2s ease-in-out;
+  color: inherit;
 }
 
-.clickable:hover {
+.card:hover {
   background-color: var(--color-dark-200);
 }
 
-.statCard h4 {
-  margin-bottom: 0.5rem;
-  color: var(--color-text-primary);
+/* ── Header ── */
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
 }
 
-.statCard p {
-  font-size: 2em;
-  font-weight: bold;
+.cardIcon {
   color: var(--color-primary);
+  font-size: 1rem;
+}
+
+.cardTitle {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-color-accent);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.chevron {
+  font-size: 12px;
+  color: var(--color-light-400);
+}
+
+/* ── Detail grid ── */
+.detailGrid {
+  display: flex;
+  gap: 10px;
+}
+
+.detailCard {
+  flex: 1;
+  background: var(--surface-inset);
+  border-radius: 8px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.card:hover .detailCard {
+  background: var(--surface-track);
+}
+
+.detailValue {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-color-accent);
+  line-height: 1;
+}
+
+.detailLabel {
+  font-size: 11px;
+  color: var(--color-light-400);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }

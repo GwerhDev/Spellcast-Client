@@ -3,6 +3,7 @@ import type { Translations } from '../types';
 export const es: Translations = {
   common: {
     loading: 'Cargando…',
+    all: 'Todos',
     save: 'Guardar',
     cancel: 'Cancelar',
     delete: 'Eliminar',
@@ -44,6 +45,8 @@ export const es: Translations = {
     account: 'Cuenta',
     lastDocuments: 'Últimos documentos',
     home: 'Inicio',
+    local: 'Local',
+    cloud: 'Nube',
   },
   document: {
     untitled: 'Sin título',
@@ -75,6 +78,9 @@ export const es: Translations = {
     resetAllTitle: 'Volver al original',
     resetAllDesc: 'Todas las páginas volverán al contenido original extraído del PDF. Los cambios manuales se perderán.',
     resetPage: 'Restablecer página',
+  },
+  library: {
+    subtitle: 'Tus documentos, siempre a mano',
   },
   editor: {
     tagline: 'Dale forma a tus palabras',
@@ -233,6 +239,34 @@ export const es: Translations = {
     createNew: 'Crear nuevo grupo',
     namePlaceholder: 'Nombre del grupo',
     labelName: 'nombre',
+    members: 'Miembros',
+    activity: 'Actividad',
+  },
+  shared: {
+    public: 'Público',
+    inGroups: 'En grupos',
+  },
+  storage: {
+    title: 'Almacenamiento',
+    browserStorage: 'Almacenamiento del navegador',
+    used: 'Usado',
+    available: 'Disponible',
+    total: 'Total',
+    indexedDB: 'IndexedDB',
+    cacheStorage: 'Caché',
+    localStorage: 'Local Storage',
+    serviceWorker: 'Service Worker',
+    other: 'Otro',
+    calculating: 'Calculando…',
+    notSupported: 'La estimación de almacenamiento no está disponible en este navegador.',
+    of: 'de',
+    storedContent: 'Contenido almacenado',
+    documents: 'Documentos',
+    audioCache: 'Caché de audio',
+    voiceProfile: 'Perfil de voz',
+    appSettings: 'Ajustes',
+    notConnected: 'Sin conexión',
+    cloudSyncDesc: 'La sincronización en la nube no está configurada. Tus datos se almacenan únicamente de forma local.',
   },
   start: {
     castSpell: 'Lanza un hechizo',

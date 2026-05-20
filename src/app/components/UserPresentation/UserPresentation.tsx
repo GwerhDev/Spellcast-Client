@@ -3,6 +3,7 @@ import skeleton from '../Loader/Skeleton.module.css';
 import { useSelector } from 'react-redux';
 import { UserStats } from '../UserStats/UserStats';
 import { LibraryCharts } from '../LibraryCharts/LibraryCharts';
+import { StorageOverview } from '../StorageOverview/StorageOverview';
 import { userData } from '../../../interfaces';
 import { RootState } from '../../../store';
 
@@ -39,6 +40,7 @@ export const UserPresentation = () => {
       <div className={s.stats}>
         <UserStats />
         <LibraryCharts />
+        <StorageOverview />
       </div>
     </div>
   );

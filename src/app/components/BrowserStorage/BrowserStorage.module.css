@@ -1,0 +1,242 @@
+.container {
+  padding: 32px;
+  max-width: 640px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-color-accent);
+  margin: 0;
+}
+
+/* ── Overview row ── */
+.overview {
+  display: flex;
+  align-items: center;
+  gap: 40px;
+}
+
+/* ── Ring ── */
+.ring {
+  flex-shrink: 0;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: conic-gradient(
+    var(--color-primary) 0% var(--pct),
+    var(--surface-track) var(--pct) 100%
+  );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.ringInner {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  background: var(--background-color-dark);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+.ringPct {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-color-accent);
+  line-height: 1;
+}
+
+.ringLabel {
+  font-size: 10px;
+  color: var(--color-light-400);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ── Stats ── */
+.overviewStats {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.statLabel {
+  font-size: 11px;
+  color: var(--color-light-400);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.statValue {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-color-accent);
+}
+
+/* ── Total stacked bar ── */
+.totalBar {
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--surface-track);
+  overflow: hidden;
+  display: flex;
+}
+
+.totalBarSegment {
+  height: 100%;
+  transition: width 0.5s ease;
+  min-width: 2px;
+}
+
+/* ── Breakdown list ── */
+.breakdown {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.breakdownItem {
+  display: grid;
+  grid-template-columns: 10px 1fr auto auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.breakdownLabel {
+  font-size: 13px;
+  color: var(--text-color);
+}
+
+.breakdownBar {
+  width: 140px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--surface-track);
+  overflow: hidden;
+}
+
+.breakdownFill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.5s ease;
+  min-width: 2px;
+}
+
+.breakdownValue {
+  font-size: 12px;
+  color: var(--color-light-400);
+  text-align: right;
+  min-width: 56px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Divider ── */
+.divider {
+  width: 100%;
+  height: 1px;
+  background: var(--surface-track);
+}
+
+/* ── Content detail ── */
+.sectionTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-light-400);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin: 0;
+}
+
+.detailGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 10px;
+}
+
+.detailCard {
+  background: var(--surface-inset);
+  border-radius: 8px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.detailValue {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-color-accent);
+  line-height: 1;
+}
+
+.detailLabel {
+  font-size: 11px;
+  color: var(--color-light-400);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ── Settings list ── */
+.settingsList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.settingsItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 7px 10px;
+  border-radius: 6px;
+  background: var(--surface-inset);
+}
+
+.settingsKey {
+  font-size: 12px;
+  color: var(--color-light-400);
+  font-family: monospace;
+}
+
+.settingsValue {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-color-accent);
+}
+
+/* ── States ── */
+.loading,
+.unsupported {
+  padding: 32px;
+  color: var(--color-light-400);
+  font-size: 14px;
+}

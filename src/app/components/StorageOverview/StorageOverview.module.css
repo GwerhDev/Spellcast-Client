@@ -1,0 +1,135 @@
+.container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* ── Cards grid ── */
+.cards {
+  display: flex;
+  gap: 1rem;
+  width: 100%;
+  max-width: 1024px;
+}
+
+@media screen and (max-width: 720px) {
+  .cards {
+    flex-direction: column;
+  }
+}
+
+.card {
+  flex: 1;
+  background: var(--component-background);
+  border-radius: 10px;
+  padding: 1.5rem;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  transition: background-color 0.2s ease-in-out;
+  color: inherit;
+}
+
+.card:hover {
+  background-color: var(--color-dark-200);
+}
+
+/* ── Card header ── */
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.cardIcon {
+  color: var(--color-primary);
+  font-size: 1rem;
+}
+
+.cardTitle {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-color-accent);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.chevron {
+  font-size: 12px;
+  color: var(--color-light-400);
+}
+
+/* ── Card body ── */
+.cardBody {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+/* ── Mini ring ── */
+.ring {
+  flex-shrink: 0;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: conic-gradient(
+    var(--color-primary) 0% var(--pct),
+    var(--surface-track) var(--pct) 100%
+  );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ringInner {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: var(--component-background);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.card:hover .ringInner {
+  background: var(--color-dark-200);
+}
+
+.ringPct {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-color-accent);
+  line-height: 1;
+}
+
+/* ── Stats ── */
+.stats {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.statLabel {
+  font-size: 10px;
+  color: var(--color-light-400);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.statValue {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-color-accent);
+}

@@ -1,7 +1,8 @@
 import s from './TabBar.module.css';
-import { faBars, faCompass, faFeatherPointed, faHome } from '@fortawesome/free-solid-svg-icons';
+import { faBars, faBuildingColumns, faCompass, faFeatherPointed, faHome } from '@fortawesome/free-solid-svg-icons';
 import { Tab } from '../../../interfaces';
 import { TabButton } from '../Buttons/TabButton';
+import { useLanguage } from '../../../i18n';
 
 interface TabBarProps {
   showMenu?: boolean,
@@ -10,12 +11,18 @@ interface TabBarProps {
 
 export const TabBar = (props: TabBarProps) => {
   const { setShowMenu, showMenu } = props;
+  const { t } = useLanguage();
 
   const tabList: Tab[] = [
     {
-      title: 'Home',
+      title: t.nav.home,
       route: '/',
       icon: faHome,
+      showMenu: false,
+    }, {
+      title: t.nav.library,
+      route: '/library',
+      icon: faBuildingColumns,
       showMenu: false,
     }, {
       title: 'Editor',

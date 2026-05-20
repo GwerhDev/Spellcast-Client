@@ -55,6 +55,9 @@
   --color-danger-400: rgb(147, 63, 63);
   --color-danger-500: rgb(74, 33, 33);
 
+  --surface-inset: var(--color-dark-500);
+  --surface-track: var(--color-dark-400);
+
   --background-color-dark: #1a1a1c;
   --background-color-light: #2f2f2f;
   --background-color-dark-transparency: #1e1e1ead;
@@ -113,6 +116,10 @@ html.light {
   --color-light-200: #424242;
   --color-light-300: #616161;
   --color-light-400: #757575;
+
+  --text-color-accent: var(--color-light-100);
+  --surface-inset: var(--color-dark-300);
+  --surface-track: var(--color-dark-400);
 
   --background-color-dark: #f5f5f5;
   --background-color-light: #eeeeee;

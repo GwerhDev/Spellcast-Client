@@ -6,7 +6,7 @@ import { faBox, faGear, faTableColumns } from '@fortawesome/free-solid-svg-icons
 import { dashboardDirectoryList, settingsDirectoryList, storageDirectoryList } from '../../../config/consts';
 import { useLanguage } from '../../../i18n';
 
-type NavKey = 'overview' | 'groups' | 'shared' | 'library' | 'audios' | 'credentials' | 'permissions' | 'appearance';
+type NavKey = 'overview' | 'groups' | 'shared' | 'local' | 'cloud' | 'credentials' | 'permissions' | 'appearance';
 
 interface LateralMenuProps {
   onNavigate?: () => void;
@@ -20,8 +20,8 @@ export const LateralMenu = ({ onNavigate }: LateralMenuProps) => {
     overview: t.nav.overview,
     groups: t.nav.groups,
     shared: t.nav.shared,
-    library: t.nav.library,
-    audios: t.nav.audios,
+    local: t.nav.local,
+    cloud: t.nav.cloud,
     credentials: t.nav.credentials,
     permissions: t.nav.permissions,
     appearance: t.nav.appearance,

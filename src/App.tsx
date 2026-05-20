@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { RootState } from './store';
-import { userData } from './interfaces';
 import { useSelector } from 'react-redux';
 import { Routes, Route } from 'react-router-dom';
 
@@ -12,7 +11,8 @@ import { Loader } from './app/components/Loader';
 import { RootBackground } from './app/components/Backgrounds/RootBackground';
 
 import { Home } from './app/pages/Home';
-import { Audios } from './app/pages/Audios';
+import { StorageLocal } from './app/pages/StorageLocal';
+import { StorageCloud } from './app/pages/StorageCloud';
 import { Editor } from './app/pages/Editor';
 import { Library } from './app/pages/Library';
 import { Storage } from './app/pages/Storage';
@@ -34,12 +34,11 @@ import { LocalDocumentReader } from './app/pages/LocalDocumentReader';
 import DefaultLayout from './app/layouts/DefaultLayout';
 
 function App() {
-  const userData: userData = useSelector((state: RootState) => state.session.userData);
-  const { loader } = userData || {};
-  const [loaderProgress, setLoaderProgress] = useState(0);
-  const [loaderMessage, setLoaderMessage] = useState('');
+  const { loader } = useSelector((state: RootState) => state.session.userData);
   const [showLoader, setShowLoader] = useState(true);
   const [loaderExiting, setLoaderExiting] = useState(false);
+  const [loaderMessage, setLoaderMessage] = useState('');
+  const [loaderProgress, setLoaderProgress] = useState(0);
   useInitSession(setLoaderProgress, setLoaderMessage);
 
   useEffect(() => {
@@ -71,9 +70,11 @@ function App() {
           <Route path="/user/dashboard/overview" element={<Overview />} />
           <Route path="/user/dashboard/groups" element={<UserGroups />} />
 
+          <Route path="/library" element={<Library />} />
+
           <Route path="/user/storage" element={<Storage />} />
-          <Route path="/user/storage/library" element={<Library />} />
-          <Route path="/user/storage/audios" element={<Audios />} />
+          <Route path="/user/storage/local" element={<StorageLocal />} />
+          <Route path="/user/storage/cloud" element={<StorageCloud />} />
 
           <Route path="/user/settings" element={<Settings />} />
           <Route path="/user/settings/credentials" element={<UserCredentials />} />

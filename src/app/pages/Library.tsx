@@ -1,8 +1,8 @@
 import { PageTransition } from '../components/PageTransition';
-import { DocumentList } from "../components/DocumentList";
+import { LibraryLanding } from '../components/LibraryLanding';
 
 export const Library = () => (
   <PageTransition className="dashboard-sections">
-    <DocumentList />
+    <LibraryLanding />
   </PageTransition>
 );
