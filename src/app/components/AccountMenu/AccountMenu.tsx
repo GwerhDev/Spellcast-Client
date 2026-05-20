@@ -79,7 +79,7 @@ export const AccountMenu = () => {
             href={EXTERNAL_LINKS.nhexaInterface}
             onClick={() => setOpen(false)}
           >
-            <img src={nhexaLogo} alt="Nhexa" className={s.nhexaIcon} />
+            <span className={s.nhexaIcon} style={{ maskImage: `url(${nhexaLogo})`, WebkitMaskImage: `url(${nhexaLogo})` }} />
             {t.nav.nhexaInterface}
           </a>
         </div>
