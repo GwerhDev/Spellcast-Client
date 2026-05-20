@@ -295,6 +295,9 @@ export const es: Translations = {
     localSubtitle: 'Documentos, caché de audio y ajustes guardados en tu navegador.',
     cloudSubtitle: 'Sincroniza tu biblioteca y preferencias en todos tus dispositivos.',
   },
+  permissions: {
+    subtitle: 'Controla los niveles de acceso y lo que otros pueden hacer con tu contenido.',
+  },
   gamification: {
     level: 'Nivel',
     xp: 'XP',

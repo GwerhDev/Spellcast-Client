@@ -293,6 +293,9 @@ export const en = {
     localSubtitle: 'Documents, audio cache, and settings stored in your browser.',
     cloudSubtitle: 'Sync your library and preferences across all your devices.',
   },
+  permissions: {
+    subtitle: 'Control access levels and what others can do with your content.',
+  },
   gamification: {
     level: 'Level',
     xp: 'XP',
