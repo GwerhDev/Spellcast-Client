@@ -12,7 +12,14 @@ import { setAutoPlayOnLoad } from '../../../store/browserPlayerSlice';
 import { setAutoPlayOnLoad as setAudioAutoPlayOnLoad } from '../../../store/audioPlayerSlice';
 import { useLanguage } from '../../../i18n';
 
-export const DocumentList: React.FC = () => {
+export type LibraryFilter = 'all' | 'local' | 'cloud';
+
+interface DocumentListProps {
+  query?: string;
+  filter?: LibraryFilter;
+}
+
+export const DocumentList: React.FC<DocumentListProps> = ({ query = '', filter = 'local' }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useLanguage();
@@ -29,7 +36,7 @@ export const DocumentList: React.FC = () => {
     navigate(`/document/${id}/reader`);
   };
 
-  const fetchDocuments = async () => {
+  const fetchLocal = async () => {
     if (!logged) { setIsLoading(false); return; }
     try {
       setIsLoading(true);
@@ -43,9 +50,11 @@ export const DocumentList: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchDocuments();
+    // 'all' and 'local' both read from IndexedDB for now.
+    // When cloud is wired up: 'cloud' → API fetch, 'all' → merge both sources.
+    if (filter !== 'cloud') fetchLocal();
     //eslint-disable-next-line
-  }, [userData.id]);
+  }, [userData.id, filter]);
 
   const openDeleteModal = (id: string, title: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -62,7 +71,7 @@ export const DocumentList: React.FC = () => {
     if (selectedDoc && userData?.id) {
       try {
         await deleteDocumentFromDB(selectedDoc.id, userData.id);
-        fetchDocuments();
+        fetchLocal();
       } catch (error) {
         console.error('Failed to delete document:', error);
       } finally {
@@ -71,15 +80,20 @@ export const DocumentList: React.FC = () => {
     }
   };
 
+  const q = query.trim().toLowerCase();
+  const visible = q
+    ? documents.filter(d => d.title.toLowerCase().includes(q))
+    : documents;
+
   if (isLoading) return <Spinner isLoading />;
-  if (documents.length === 0) return <p>{t.document.noDocuments}</p>;
+  if (documents.length === 0) return <p className={s.empty}>{t.document.noLocalDocuments}</p>;
+  if (visible.length === 0) return <p className={s.empty}>{t.document.noDocuments}</p>;
 
   return (
     <>
       <div className={s.container}>
-        <h2 className={s.title}>{t.document.allDocuments}</h2>
         <div className={s.slider}>
-          {documents.map((doc) => (
+          {visible.map((doc) => (
             <DocumentCard
               key={doc.id}
               doc={doc}
