@@ -20,6 +20,11 @@ export const injectCoverIntoPages = async (pages: JSONContent[], coverBlob: Blob
   const firstNode = pages[0]?.content?.[0];
   // Skip if already has a non-graphic cover image
   if (firstNode?.type === 'image' && (firstNode?.attrs as Record<string, unknown>)?.title !== 'pdf-graphic') return pages;
+  // Only treat the first page as a decorative cover if it has no text content
+  const firstPageHasText = (pages[0]?.content ?? []).some(
+    node => node.type === 'paragraph' || node.type === 'heading'
+  );
+  if (firstPageHasText) return pages;
   try {
     const coverDataUrl = await blobToDataUrl(coverBlob);
     const updated = [...pages];
