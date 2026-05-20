@@ -1,4 +1,5 @@
 import s from './BrowserPlayer.module.css';
+import { useLanguage } from '../../../../i18n';
 import { useEffect, useState, useRef, SetStateAction } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../../../store';
@@ -33,6 +34,7 @@ interface PlayerProps {
 }
 
 export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, showPlayerConfigModal }) => {
+  const { t } = useLanguage();
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const {
@@ -294,7 +296,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
             {isLoaded && (
               <div className={s.documentDetails}>
                 <p title={documentTitle || ""} onClick={documentId ? handleTitle : undefined} style={documentId ? undefined : { cursor: 'default' }}>{documentTitle}</p>
-                {documentId && <small onClick={handleSearcher}>Page {currentPage} of {totalPages}</small>}
+                {documentId && <small onClick={handleSearcher}>{t.document.page} {currentPage} {t.document.of} {totalPages}</small>}
               </div>
             )}
           </section>

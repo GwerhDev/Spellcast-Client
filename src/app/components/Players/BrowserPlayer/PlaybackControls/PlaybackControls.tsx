@@ -30,8 +30,8 @@ export const PlaybackControls: React.FC<PlaybackControlsProps> = ({
         <button onClick={handlePrevious} disabled={disabled || isPrevDisabled} className={s.controlButton}>
           <FontAwesomeIcon icon={faStepBackward} />
         </button>
-        <button disabled={disabled} onClick={handleTogglePlayPause} className={s.playPauseButton}>
-          <FontAwesomeIcon icon={isPlaying ? faPause : faPlay} />
+        <button disabled={disabled} onClick={handleTogglePlayPause} className={`${s.playPauseButton}${isPlaying ? ` ${s.playing}` : ''}`}>
+          <span className={s.playIcon}><FontAwesomeIcon icon={isPlaying ? faPause : faPlay} /></span>
         </button>
         <button onClick={handleNext} disabled={disabled || isNextDisabled} className={s.controlButton}>
           <FontAwesomeIcon icon={faStepForward} />

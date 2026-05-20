@@ -251,26 +251,72 @@ const detectDecorativeRegionsFromCanvas = (
     if (dark > w * 0.03) darkRow[y] = 1;
   }
 
-  // Cluster dark rows into regions (up to 5px gap allowed), min height ~15pt
-  const regions: { yMin: number; yMax: number }[] = [];
-  const minHeightPx = Math.ceil(scale * 15);
+  // Phase 1: collect raw dark-row clusters with a 5-row gap tolerance.
+  const rawClusters: { start: number; end: number }[] = [];
   let y = 0;
   while (y < h) {
     if (!darkRow[y]) { y++; continue; }
     const start = y;
     let lastDark = y;
+    y++;
     while (y < h) {
-      if (darkRow[y]) lastDark = y;
-      else if (y - lastDark > 5) break;
-      y++;
+      if (darkRow[y]) {
+        lastDark = y;
+        y++;
+      } else if (y - lastDark > 5) {
+        break;
+      } else {
+        y++;
+      }
     }
-    if (lastDark - start + 1 >= minHeightPx) {
+    rawClusters.push({ start, end: lastDark });
+  }
+
+  console.log('[pdfUtils] detectDecorativeRegions — canvas', w, 'x', h, '| raw clusters:', rawClusters.length, rawClusters.map(c => `[${c.start}–${c.end}]`));
+
+  // Phase 2: merge adjacent clusters that have a text zone between them.
+  // Handles ornaments where text sits inside a graphic (e.g. an ellipse wrapping
+  // a heading): [top arc cluster] | [text rows] | [bottom arc cluster] → one region.
+  // Gap is capped at 150px so distant elements (page header + footer) never merge.
+  const mergedClusters: { start: number; end: number }[] = [];
+  let ci = 0;
+  while (ci < rawClusters.length) {
+    let { start, end } = rawClusters[ci];
+    while (ci + 1 < rawClusters.length) {
+      const next = rawClusters[ci + 1];
+      const gap = next.start - end;
+      if (gap > 150) break;
+      let hasText = false;
+      for (let gy = end + 1; gy < next.start; gy++) {
+        if (textMask[gy]) { hasText = true; break; }
+      }
+      console.log(`[pdfUtils]   gap [${end}–${next.start}] (${gap}px) hasText=${hasText}`);
+      if (hasText) {
+        end = next.end;
+        ci++;
+      } else {
+        break;
+      }
+    }
+    mergedClusters.push({ start, end });
+    ci++;
+  }
+
+  console.log('[pdfUtils] merged clusters:', mergedClusters.length, mergedClusters.map(c => `[${c.start}–${c.end}]`));
+
+  // Phase 3: convert to PDF Y-coordinates and filter by minimum height.
+  const minHeightPx = Math.ceil(scale * 15);
+  const regions: { yMin: number; yMax: number }[] = [];
+  for (const { start, end } of mergedClusters) {
+    if (end - start + 1 >= minHeightPx) {
       regions.push({
-        yMin: pageViewport.height - lastDark / scale,
+        yMin: pageViewport.height - end / scale,
         yMax: pageViewport.height - start / scale,
       });
     }
   }
+
+  console.log('[pdfUtils] final regions (PDF coords):', regions.map(r => `yMin=${r.yMin.toFixed(1)} yMax=${r.yMax.toFixed(1)}`));
   return regions;
 };
 
@@ -415,7 +461,12 @@ export const extractPdfPages = async (
 
     // Paragraph items (skip those whose Y falls within a graphic region — they'll appear in the rendered image)
     for (const p of paragraphs) {
-      if (graphicRegions.some(r => p.yTop >= r.yMin - 5 && p.yTop <= r.yMax + 5)) continue;
+      const inRegion = graphicRegions.some(r => p.yTop >= r.yMin - 5 && p.yTop <= r.yMax + 5);
+      if (inRegion) {
+        const text = p.lines.flatMap(l => l.items.map(i => i.str)).join(' ');
+        console.log(`[pdfUtils] p${pageNum} skipping paragraph yTop=${p.yTop.toFixed(1)} — inside graphic region. text="${text.slice(0, 60)}"`);
+        continue;
+      }
 
       if (p.lines.length === 0) {
         contentItems.push({ yPdf: p.yTop, node: { type: 'paragraph' } });

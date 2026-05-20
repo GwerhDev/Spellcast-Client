@@ -48,6 +48,7 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
   const fromEditorRef = useRef(false);
 
   useEffect(() => {
+    paperBgRef.current?.scrollTo({ top: 0 });
     if (fromEditorRef.current) {
       fromEditorRef.current = false;
       return;
@@ -73,7 +74,6 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
           fromEditorRef.current = true;
           const json = newContent as JSONContent;
           const preserved: JSONContent = attrs ? { ...json, attrs } : json;
-          setContent(preserved);
           onPageContentChange(preserved);
         }}
         editable

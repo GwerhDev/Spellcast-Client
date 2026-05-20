@@ -4,6 +4,7 @@
   background: rgba(82, 82, 82, 0.014);
   backdrop-filter: blur(10px);
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   z-index: 1000;
@@ -12,6 +13,7 @@
 .modal {
   width: 90%;
   max-width: 800px;
+  flex-grow: 1;
   max-height: 90%;
   border-radius: 12px;
   background: var(--component-background);

@@ -10,6 +10,7 @@ import { goToPage, setShowSearcher } from '../../../store/pdfReaderSlice';
 import { getDocumentById } from '../../../db';
 import { useAppSelector } from '../../../store/hooks';
 import { CustomModal } from './CustomModal';
+import { useLanguage } from '../../../i18n';
 
 type SearchMode = 'page' | 'text';
 
@@ -39,6 +40,7 @@ const getSnippet = (text: string, maxLen = 80) =>
   text ? text.slice(0, maxLen) + (text.length > maxLen ? '…' : '') : '';
 
 export const SearcherModal: React.FC = () => {
+  const { t } = useLanguage();
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { currentPage, totalPages, showSearcher, documentId } = useSelector(
@@ -141,19 +143,19 @@ export const SearcherModal: React.FC = () => {
   );
 
   return (
-    <CustomModal title="Buscar" show={showSearcher} onClose={onClose}>
+    <CustomModal title={t.reader.selectPage} show={showSearcher} onClose={onClose}>
       <div className={s.tabContainer}>
         <button
           className={`${s.tabButton} ${s.left} ${mode === 'page' ? s.activeTab : ''}`}
           onClick={() => { setMode('page'); setQuery(''); }}
         >
-          Por página
+          {t.reader.byPage}
         </button>
         <button
           className={`${s.tabButton} ${s.right} ${mode === 'text' ? s.activeTab : ''}`}
           onClick={() => { setMode('text'); setQuery(''); }}
         >
-          Por texto
+          {t.reader.byText}
         </button>
       </div>
 
@@ -163,8 +165,8 @@ export const SearcherModal: React.FC = () => {
           autoFocus
           placeholder={
             mode === 'page'
-              ? `Número de página (1 – ${totalPages})…`
-              : 'Buscar palabra o frase…'
+              ? t.reader.pageNumberHint.replace('{max}', String(totalPages))
+              : t.reader.searchTextHint
           }
           className={s.searchInput}
           value={query}
@@ -173,7 +175,7 @@ export const SearcherModal: React.FC = () => {
         />
         {canJump && (
           <button className={s.jumpButton} onClick={() => handlePageSelection(jumpTarget)}>
-            Ir a {jumpTarget}
+            {t.reader.goTo} {jumpTarget}
           </button>
         )}
       </div>
@@ -194,7 +196,7 @@ export const SearcherModal: React.FC = () => {
                 <span className={s.snippet}>
                   {snippet || <span className={s.noSnippet}>—</span>}
                 </span>
-                {isCurrent && <span className={s.currentBadge}>actual</span>}
+                {isCurrent && <span className={s.currentBadge}>{t.reader.current}</span>}
                 {isRead && <FontAwesomeIcon icon={faCheck} className={s.readIcon} />}
               </li>
             );
@@ -205,9 +207,9 @@ export const SearcherModal: React.FC = () => {
       {mode === 'text' && (
         <>
           {query.trim().length < 2 ? (
-            <p className={s.hint}>Escribe al menos 2 caracteres para buscar.</p>
+            <p className={s.hint}>{t.reader.typeAtLeast}</p>
           ) : textMatches.length === 0 ? (
-            <p className={s.hint}>Sin resultados para «{query}».</p>
+            <p className={s.hint}>{t.reader.noResultsFor.replace('{query}', query)}</p>
           ) : (
             <ul className={s.pageList}>
               {textMatches.map((match, i) => (

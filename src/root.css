@@ -19,6 +19,7 @@
   --color-primary: #73a5cc;
   --color-secondary: #8469bb;
   --color-button-primary: #73a5cc;
+  --color-button-primary-glass: color-mix(in srgb, var(--color-button-primary) 72%, transparent);
   --color-button-primary-hover: #8469bb;
   --color-primary-darker: #2d3134;
   --color-secondary-darker: #2b2a2e;
@@ -88,6 +89,7 @@ html.light {
   --color-primary: #73a5cc;
   --color-secondary: #8469bb;
   --color-button-primary: #73a5cc;
+  --color-button-primary-glass: color-mix(in srgb, var(--color-button-primary) 72%, transparent);
   --color-button-primary-hover: #8469bb;
   --color-primary-lighter: #dde8f2;
   --color-secondary-lighter: #ddd6e8;

@@ -82,11 +82,14 @@
   margin-bottom: -6rem;
 }
 
-/* PDF graphic (decorative header, ornament) — normal inline image */
+/* PDF graphic (decorative header, ornament) — bleeds out of text margins to match
+   the full canvas width it was cropped from, so ornaments always appear at the
+   correct scale regardless of per-page text margins. */
 .paperSheet :global(.ProseMirror img[title="pdf-graphic"]) {
   display: block;
   height: auto;
-  max-width: 100%;
-  margin: 0 auto;
+  width: calc(100% + var(--margin-left, 64px) + var(--margin-right, 64px));
+  max-width: none;
+  margin-left: calc(-1 * var(--margin-left, 64px));
 }
 

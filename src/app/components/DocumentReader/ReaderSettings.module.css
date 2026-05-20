@@ -130,7 +130,15 @@
   align-items: center;
 }
 
+.toggle:hover {
+  background: var(--color-dark-300);
+}
+
 .toggleOn {
+  background: var(--color-primary);
+}
+
+.toggleOn:hover {
   background: var(--color-primary);
 }
 

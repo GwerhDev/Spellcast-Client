@@ -133,8 +133,8 @@
 }
 
 .playPauseButton {
-  width: 40px;
-  height: 40px;
+  width: 48px;
+  height: 48px;
   font-size: 18px;
   border-radius: 50%;
   border: none;
@@ -143,10 +143,99 @@
   align-items: center;
   justify-content: center;
   color: var(--app-white);
-  background: var(--color-button-primary);
+  background: color-mix(in srgb, var(--color-primary) 32%, #1c3a52c0);
+  backdrop-filter: blur(10px);
+  box-shadow:
+    0 0 8px color-mix(in srgb, var(--color-primary) 18%, transparent),
+    0 0 0px color-mix(in srgb, var(--color-primary) 0%, transparent),
+    inset 0 0 12px rgba(0, 0, 0, 0.42),
+    inset 0 1px 0 color-mix(in srgb, white 18%, transparent);
+  position: relative;
+  overflow: hidden;
+  transition: box-shadow 0.7s ease-in-out;
 }
 
-.playPauseButton:hover {
-  color: var(--app-white);
-  background-color: var(--color-primary-accent);
+/* icono siempre encima */
+.playIcon {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
+
+/* fuego interior giratorio — gradiente asimétrico que rota */
+.playPauseButton::before {
+  content: "";
+  position: absolute;
+  inset: -25%;
+  background:
+    radial-gradient(ellipse 55% 45% at 36% 66%,
+      color-mix(in srgb, var(--color-primary) 96%, white) 0%,
+      var(--color-primary) 32%,
+      transparent 66%
+    ),
+    radial-gradient(ellipse 48% 40% at 67% 32%,
+      color-mix(in srgb, var(--color-secondary) 70%, var(--color-primary)) 0%,
+      color-mix(in srgb, var(--color-secondary) 28%, transparent) 55%,
+      transparent 78%
+    );
+  filter: blur(9px);
+  opacity: 0.95;
+  animation: palantirChurn 7s linear infinite;
+  pointer-events: none;
+  z-index: 0;
+  transition: filter 0.7s ease-in-out, opacity 0.7s ease-in-out;
+}
+
+/* núcleo brillante pulsante */
+.playPauseButton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 50% 52%,
+    rgba(255, 255, 255, 0.75) 0%,
+    color-mix(in srgb, var(--color-primary) 88%, white) 24%,
+    transparent 56%
+  );
+  filter: blur(4px);
+  animation: coreBreath 2.6s ease-in-out infinite alternate;
+  pointer-events: none;
+  z-index: 1;
+  transition: filter 0.7s ease-in-out;
+}
+
+.playPauseButton:hover,
+.playing {
+  color: var(--app-white);
+  background: color-mix(in srgb, var(--color-primary) 32%, #1c3a52c0);
+  box-shadow:
+    0 0 26px color-mix(in srgb, var(--color-primary) 85%, transparent),
+    0 0 52px color-mix(in srgb, var(--color-primary) 42%, transparent),
+    inset 0 0 10px rgba(0, 0, 0, 0.32),
+    inset 0 1px 0 color-mix(in srgb, white 28%, transparent);
+}
+
+.playPauseButton:hover::before,
+.playing::before {
+  opacity: 1;
+  filter: blur(12px);
+}
+
+.playPauseButton:hover::after,
+.playing::after {
+  filter: blur(6px);
+}
+
+@keyframes palantirChurn {
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes coreBreath {
+  0%   { opacity: 0.58; transform: scale(0.76); }
+  100% { opacity: 1;    transform: scale(1.06); }
+}
+

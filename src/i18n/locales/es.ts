@@ -17,6 +17,7 @@ export const es: Translations = {
     saved: 'Guardado',
     replace: 'Reemplazar',
     update: 'Actualizar',
+    minimize: 'Minimizar',
   },
   auth: {
     login: 'Iniciar sesión',
@@ -151,6 +152,15 @@ export const es: Translations = {
     searchOrJump: 'Buscar o ir a la página (1–{max})…',
     goTo: 'Ir a',
     current: 'actual',
+    byPage: 'Por página',
+    byText: 'Por texto',
+    pageNumberHint: 'Número de página (1–{max})…',
+    searchTextHint: 'Buscar palabra o frase…',
+    typeAtLeast: 'Escribe al menos 2 caracteres para buscar.',
+    noResultsFor: 'Sin resultados para «{query}».',
+    zoomIn: 'Acercar',
+    zoomOut: 'Alejar',
+    resetZoom: 'Restablecer zoom (100%)',
   },
   appearance: {
     title: 'Apariencia',

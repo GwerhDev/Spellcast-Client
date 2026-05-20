@@ -44,7 +44,7 @@ export const PdfProcessingStatus: React.FC<PdfProcessingStatusProps> = ({
   return (
     <div className={s.overlay}>
       <div className={s.card}>
-        <button className={s.collapseBtn} onClick={onCollapse} title="Minimizar">
+        <button className={s.collapseBtn} onClick={onCollapse} title={t.common.minimize}>
           <FontAwesomeIcon icon={faChevronUp} />
         </button>
         {coverUrl

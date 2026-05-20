@@ -1,4 +1,5 @@
 import s from './AudioPlayer.module.css';
+import { useLanguage } from '../../../../i18n';
 import { useRef, useEffect, useState, SetStateAction } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../../../store';
@@ -30,6 +31,7 @@ interface PlayerProps {
 }
 
 export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, showPlayerConfigModal }) => {
+  const { t } = useLanguage();
   const audioRef = useRef<HTMLAudioElement>(null);
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -330,7 +332,7 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
             {isLoaded && (
               <div className={s.documentDetails}>
                 <p title={documentTitle || ""} onClick={documentId ? handleTitle : undefined} style={documentId ? undefined : { cursor: 'default' }}>{documentTitle}</p>
-                {documentId && <small onClick={handleSearcher}>Page {currentPage} of {totalPages}</small>}
+                {documentId && <small onClick={handleSearcher}>{t.document.page} {currentPage} {t.document.of} {totalPages}</small>}
               </div>
             )}
           </section>

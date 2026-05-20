@@ -21,6 +21,17 @@
   border: 1px solid transparent;
 }
 
+/* Fit-to-width: center cover images (browser-voice path) */
+.textContainer .readerImage:first-child:not([title="pdf-graphic"]) {
+  margin: 0 auto;
+}
+
+/* Fit-to-width: center cover images (MagicTextEditor / AI-voice path) */
+.textContainer :global(.ProseMirror > img:first-child:not([title="pdf-graphic"])) {
+  display: block;
+  margin: 0 auto;
+}
+
 .pdfMode {
   white-space: pre-wrap;
 }
@@ -261,8 +272,9 @@
 .paperSheet img[title="pdf-graphic"] {
   display: block;
   height: auto;
-  max-width: 100%;
-  margin: 0 auto;
+  width: calc(100% + var(--margin-left, 64px) + var(--margin-right, 64px));
+  max-width: none;
+  margin-left: calc(-1 * var(--margin-left, 64px));
 }
 
 /* Hide empty placeholder blocks that trail the cover image */

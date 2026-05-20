@@ -15,6 +15,7 @@ export const en = {
     saved: 'Saved',
     replace: 'Replace',
     update: 'Update',
+    minimize: 'Minimize',
   },
   auth: {
     login: 'Log in',
@@ -149,6 +150,15 @@ export const en = {
     searchOrJump: 'Search or jump to page (1–{max})…',
     goTo: 'Go to',
     current: 'current',
+    byPage: 'By page',
+    byText: 'By text',
+    pageNumberHint: 'Page number (1–{max})…',
+    searchTextHint: 'Search word or phrase…',
+    typeAtLeast: 'Type at least 2 characters to search.',
+    noResultsFor: 'No results for «{query}».',
+    zoomIn: 'Zoom in',
+    zoomOut: 'Zoom out',
+    resetZoom: 'Reset zoom (100%)',
   },
   appearance: {
     title: 'Appearance',

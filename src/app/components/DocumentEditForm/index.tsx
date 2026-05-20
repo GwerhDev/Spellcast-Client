@@ -288,8 +288,11 @@ export const DocumentEditForm: React.FC = () => {
 
   const handleResetAll = () => {
     if (!originalPages) return;
-    setPagesContent(originalPages);
-    setCurrentMargins(getMarginsFromPage(originalPages[Number(editingPageIndex)] ?? originalPages[0]));
+    // Shallow-copy each page so every reference is new — React re-renders even
+    // if pagesContent previously pointed to the same objects as originalPages.
+    const fresh = originalPages.map(p => ({ ...p }));
+    setPagesContent(fresh);
+    setCurrentMargins(getMarginsFromPage(fresh[Number(editingPageIndex)] ?? fresh[0]));
     setHasChanges(true);
     setShowResetAllModal(false);
   };
@@ -297,7 +300,9 @@ export const DocumentEditForm: React.FC = () => {
   const handleResetPage = (index: number) => {
     if (!originalPages || !originalPages[index]) return;
     const updated = [...pagesContent];
-    updated[index] = originalPages[index];
+    // Shallow-copy so the reference always changes, even on repeated resets of
+    // the same page with no edits in between.
+    updated[index] = { ...originalPages[index] };
     setPagesContent(updated);
     if (index === Number(editingPageIndex)) {
       setCurrentMargins(getMarginsFromPage(originalPages[index]));
