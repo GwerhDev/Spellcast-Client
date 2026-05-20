@@ -293,6 +293,13 @@ export const en = {
     localSubtitle: 'Documents, audio cache, and settings stored in your browser.',
     cloudSubtitle: 'Sync your library and preferences across all your devices.',
   },
+  gamification: {
+    level: 'Level',
+    xp: 'XP',
+    toNextLevel: 'to next level',
+    achievements: 'achievements',
+    rank: 'Novice',
+  },
   start: {
     castSpell: 'Cast a spell',
     importSubtitle: 'Get started by importing a new Document',

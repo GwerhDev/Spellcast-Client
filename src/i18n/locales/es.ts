@@ -295,6 +295,13 @@ export const es: Translations = {
     localSubtitle: 'Documentos, caché de audio y ajustes guardados en tu navegador.',
     cloudSubtitle: 'Sincroniza tu biblioteca y preferencias en todos tus dispositivos.',
   },
+  gamification: {
+    level: 'Nivel',
+    xp: 'XP',
+    toNextLevel: 'para el siguiente nivel',
+    achievements: 'logros',
+    rank: 'Novato',
+  },
   start: {
     castSpell: 'Lanza un hechizo',
     importSubtitle: 'Empieza importando un nuevo documento',
