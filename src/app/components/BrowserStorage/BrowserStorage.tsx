@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import s from './BrowserStorage.module.css';
 import { useLanguage } from '../../../i18n';
-import { DB_NAME, DB_VERSION, DOCUMENTS_STORE_NAME } from '../../../config/api';
+import { DB_NAME, DOCUMENTS_STORE_NAME } from '../../../config/api';
 
 interface StorageBreakdown {
   indexedDB?: number;
