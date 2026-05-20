@@ -4,7 +4,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import type { JSONContent } from '../../../magictext';
 import { useDispatch } from 'react-redux';
 import { useAppSelector } from '../../../store/hooks';
-import { getDocumentById, updateDocumentContent, updateDocumentFull, getDocumentOriginalPages } from '../../../db';
+import { getDocumentById, updateDocumentContent, updateDocumentFull } from '../../../db';
 import { setShowEditorSettings } from '../../../store/editorSlice';
 import { invalidateContent } from '../../../store/pdfReaderSlice';
 import { textToSpeechService } from '../../../services/tts';
