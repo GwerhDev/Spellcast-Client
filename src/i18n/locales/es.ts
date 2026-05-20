@@ -43,6 +43,8 @@ export const es: Translations = {
     permissions: 'Permisos',
     appearance: 'Apariencia',
     account: 'Cuenta',
+    accountsCenter: 'Centro de cuentas',
+    nhexaInterface: 'Nhexa Interface',
     lastDocuments: 'Últimos documentos',
     home: 'Inicio',
     local: 'Local',

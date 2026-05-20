@@ -1,16 +1,23 @@
 import { useRef, useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from 'store/hooks';
-import { fetchLogout } from 'src/services/auth';
 import { useLanguage } from 'src/i18n';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faBolt, faTrophy, faArrowUpRightFromSquare } from '@fortawesome/free-solid-svg-icons';
+import nhexaLogo from '../../../assets/nhexa-logo.svg';
+import { EXTERNAL_LINKS } from '../../../config/externalLinks';
 import s from './AccountMenu.module.css';
+
+const XP_CAP = 500;
+const userXP = 0;
+const userLevel = 1;
+const userAchievements = 0;
+const xpPct = Math.min(Math.round(userXP / XP_CAP * 100), 100);
 
 export const AccountMenu = () => {
   const userData = useAppSelector(state => state.session.userData);
   const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const navigate = useNavigate();
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -19,15 +26,6 @@ export const AccountMenu = () => {
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
-
-  const handleLogout = async () => {
-    try {
-      await fetchLogout();
-      window.location.reload();
-    } catch {
-      window.location.reload();
-    }
-  };
 
   return (
     <div className={s.root} ref={ref}>
@@ -46,14 +44,44 @@ export const AccountMenu = () => {
               : <span className={s.profileInitials}>{(userData.username ?? 'U')[0].toUpperCase()}</span>
             }
             <span className={s.username}>{userData.username ?? 'User'}</span>
+
+            <div className={s.gamification}>
+              <div className={s.rankRow}>
+                <span className={s.rankBadge}><FontAwesomeIcon icon={faBolt} /> {t.gamification.rank}</span>
+                <span className={s.levelLabel}>{t.gamification.level} {userLevel}</span>
+              </div>
+              <div className={s.xpBarTrack}>
+                <div className={s.xpBarFill} style={{ width: `${xpPct}%` }} />
+              </div>
+              <div className={s.xpFooter}>
+                <span>{userXP} / {XP_CAP} {t.gamification.xp}</span>
+                <span className={s.xpDot}>·</span>
+                <FontAwesomeIcon icon={faTrophy} />
+                <span>{userAchievements} {t.gamification.achievements}</span>
+              </div>
+            </div>
           </div>
+
           <div className={s.divider}/>
-          <button className={s.menuItem} onClick={() => { navigate('/user'); setOpen(false); }}>
-            {t.nav.account}
-          </button>
-          <button className={`${s.menuItem} ${s.logout}`} onClick={handleLogout}>
-            {t.auth.logout}
-          </button>
+
+          <a
+            className={s.menuItem}
+            href={EXTERNAL_LINKS.accountsCenter}
+            target="_blank"
+            rel="noreferrer"
+            onClick={() => setOpen(false)}
+          >
+            <FontAwesomeIcon icon={faArrowUpRightFromSquare} />
+            {t.nav.accountsCenter}
+          </a>
+          <a
+            className={s.menuItem}
+            href={EXTERNAL_LINKS.nhexaInterface}
+            onClick={() => setOpen(false)}
+          >
+            <img src={nhexaLogo} alt="Nhexa" className={s.nhexaIcon} />
+            {t.nav.nhexaInterface}
+          </a>
         </div>
       )}
     </div>

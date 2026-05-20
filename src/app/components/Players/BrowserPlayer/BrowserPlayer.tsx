@@ -27,7 +27,8 @@ import { useNavigate } from 'react-router-dom';
 import { setSelectedVoice } from 'store/voiceSlice';
 import { getDocumentById } from '../../../../db';
 import { useAppSelector } from '../../../../store/hooks';
-import defaultCover from '../../../../assets/default-img.png';
+import { faFilePdf } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 interface PlayerProps {
   showVoiceSelectorModal: React.Dispatch<SetStateAction<boolean>>;
@@ -296,12 +297,10 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
       <div className={s.container}>
         <div className={s.audioPlayerContainer}>
           <section className={s.leftSection}>
-            <img
-              src={coverUrl ?? defaultCover}
-              alt=""
-              className={s.cover}
-              onError={(e) => { (e.target as HTMLImageElement).src = defaultCover; }}
-            />
+            {coverUrl
+              ? <img src={coverUrl} alt="" className={s.cover} />
+              : <div className={s.coverIcon}><FontAwesomeIcon icon={faFilePdf} /></div>
+            }
             {isLoaded && (
               <div className={s.documentDetails}>
                 <p title={documentTitle || ""} onClick={documentId ? handleTitle : undefined} style={documentId ? undefined : { cursor: 'default' }}>{documentTitle}</p>

@@ -41,6 +41,8 @@ export const en = {
     permissions: 'Permissions',
     appearance: 'Appearance',
     account: 'Account',
+    accountsCenter: 'Accounts center',
+    nhexaInterface: 'Nhexa Interface',
     lastDocuments: 'Last Documents',
     home: 'Home',
     local: 'Local',
