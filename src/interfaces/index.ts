@@ -91,7 +91,7 @@ export interface DocumentProgress {
 export interface Document {
   id: string;
   title: string;
-  pdf: Blob;
+  pdf?: Blob;
   cover?: Blob;
   createdAt: Date;
   userId: string | undefined;
