@@ -145,8 +145,9 @@ export const DocumentCreateForm: React.FC = () => {
         const pdfData = atob(document.fileContent.substring(document.fileContent.indexOf(',') + 1));
         const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
 
-        // Render cover first so page 0 is immediately populated
-        const coverBlob = await renderPageToCover(pdf);
+        const page1TextContent = await (await pdf.getPage(1)).getTextContent();
+        const page1HasText = page1TextContent.items.some((item) => (item as { str: string }).str.trim().length > 0);
+        const coverBlob = page1HasText ? null : await renderPageToCover(pdf);
         const coverDataUrl = coverBlob ? await blobToDataUrl(coverBlob) : null;
         if (coverDataUrl) setCoverUrl(coverDataUrl);
         setCover(coverBlob);

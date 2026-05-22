@@ -20,9 +20,10 @@ export const injectCoverIntoPages = async (pages: JSONContent[], coverBlob: Blob
   const firstNode = pages[0]?.content?.[0];
   // Skip if already has a non-graphic cover image
   if (firstNode?.type === 'image' && (firstNode?.attrs as Record<string, unknown>)?.title !== 'pdf-graphic') return pages;
-  // Only treat the first page as a decorative cover if it has no text content
+  // Only treat the first page as a decorative cover if it has no text content.
+  // Empty paragraphs from emptyPageContent don't count as text.
   const firstPageHasText = (pages[0]?.content ?? []).some(
-    node => node.type === 'paragraph' || node.type === 'heading'
+    node => (node.type === 'paragraph' || node.type === 'heading') && (node.content ?? []).length > 0
   );
   if (firstPageHasText) return pages;
   try {
@@ -286,7 +287,8 @@ const detectDecorativeRegionsFromCanvas = (
   const mergedClusters: { start: number; end: number }[] = [];
   let ci = 0;
   while (ci < rawClusters.length) {
-    let { start, end } = rawClusters[ci];
+    const { start } = rawClusters[ci];
+    let { end } = rawClusters[ci];
     while (ci + 1 < rawClusters.length) {
       const next = rawClusters[ci + 1];
       const gap = next.start - end;

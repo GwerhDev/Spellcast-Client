@@ -1,5 +1,5 @@
 import s from './index.module.css';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { getDocumentsFromDB, deleteDocumentFromDB } from '../../../db';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { DeleteConfirmModal } from '../Modals/DeleteConfirmModal';
@@ -11,7 +11,7 @@ import { setAutoPlayOnLoad, resetBrowserPlayer, requestTogglePlay } from '../../
 import { setAutoPlayOnLoad as setAudioAutoPlayOnLoad, resetAudioPlayer } from '../../../store/audioPlayerSlice';
 import { setPdfFile, setPdfDocumentInfo, resetPdfReader } from '../../../store/pdfReaderSlice';
 import { useLanguage } from '../../../i18n';
-import { faArrowRight, faBuildingColumns } from '@fortawesome/free-solid-svg-icons';
+import { faArrowRight, faBuildingColumns, faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 export const LastDocuments: React.FC = () => {
@@ -24,9 +24,25 @@ export const LastDocuments: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState<{ id: string, title: string } | null>(null);
+  const [canPrev, setCanPrev] = useState(false);
+  const [canNext, setCanNext] = useState(false);
+  const sliderRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
+
+  const updateButtons = useCallback(() => {
+    const el = sliderRef.current;
+    if (!el) return;
+    setCanPrev(el.scrollLeft > 4);
+    setCanNext(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+  }, []);
+
+  const scroll = (dir: 'prev' | 'next') => {
+    const el = sliderRef.current;
+    if (!el) return;
+    el.scrollBy({ left: dir === 'next' ? 280 : -280, behavior: 'smooth' });
+  };
 
   const handlePlay = (doc: Document) => {
     if (activeDocId === doc.id && readerLoaded) {
@@ -61,6 +77,16 @@ export const LastDocuments: React.FC = () => {
   }, [userData.id]);
 
   useEffect(() => {
+    const el = sliderRef.current;
+    if (!el) return;
+    updateButtons();
+    el.addEventListener('scroll', updateButtons);
+    const ro = new ResizeObserver(updateButtons);
+    ro.observe(el);
+    return () => { el.removeEventListener('scroll', updateButtons); ro.disconnect(); };
+  }, [documents, updateButtons]);
+
+  useEffect(() => {
     if (!activeDocId || !activeCurrentPage) return;
     setDocuments(prev => prev.map(doc =>
       doc.id === activeDocId
@@ -93,16 +119,26 @@ export const LastDocuments: React.FC = () => {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className={s.container}>
+  if (isLoading) return (
+    <div className={s.container}>
+      <div className={s.header}>
+        <h2 className={s.title}>{t.nav.lastDocuments}</h2>
       </div>
-    );
-  }
-
-  if (documents.length === 0) {
-    return null;
-  }
+      <div className={s.slider}>
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className={s.skeletonCard}>
+            <div className={`${s.skeletonCover} ${s.skeletonLine}`} />
+            <div className={s.skeletonFooter}>
+              <div className={`${s.skeletonLine} ${s.skeletonTitle}`} />
+              <div className={`${s.skeletonLine} ${s.skeletonTitleShort}`} />
+              <div className={`${s.skeletonLine} ${s.skeletonDate}`} />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+  if (documents.length === 0) return null;
 
   const MAX = 10;
   const visible = documents.slice(0, MAX);
@@ -119,24 +155,36 @@ export const LastDocuments: React.FC = () => {
             <FontAwesomeIcon icon={faArrowRight} />
           </span>
         </div>
-        <div className={s.slider}>
-          {visible.map((doc) => (
-            <DocumentCard
-              key={doc.id}
-              doc={doc}
-              isActive={activeDocId === doc.id && (readerLoaded || audioPlaying || browserPlaying)}
-              isPlaying={activeDocId === doc.id && (audioPlaying || browserPlaying)}
-              onClick={() => navigate(`/document/${doc.id}`)}
-              onEdit={(e) => { e.stopPropagation(); navigate(`/editor/${doc.id}`, { state: { from: location.pathname } }); }}
-              onDelete={(e) => openDeleteModal(doc.id, doc.title, e)}
-              onPlay={() => handlePlay(doc)}
-            />
-          ))}
-          {hasMore && (
-            <div className={s.seeAllCard} onClick={() => navigate('/library')}>
-              <FontAwesomeIcon icon={faArrowRight} />
-              <span>{t.nav.library}</span>
-            </div>
+        <div className={s.carouselWrapper}>
+          {canPrev && (
+            <button className={`${s.navBtn} ${s.navBtnPrev}`} onClick={() => scroll('prev')}>
+              <FontAwesomeIcon icon={faChevronLeft} />
+            </button>
+          )}
+          <div className={s.slider} ref={sliderRef}>
+            {visible.map((doc) => (
+              <DocumentCard
+                key={doc.id}
+                doc={doc}
+                isActive={activeDocId === doc.id && (readerLoaded || audioPlaying || browserPlaying)}
+                isPlaying={activeDocId === doc.id && (audioPlaying || browserPlaying)}
+                onClick={() => navigate(`/document/${doc.id}`)}
+                onEdit={(e) => { e.stopPropagation(); navigate(`/editor/${doc.id}`, { state: { from: location.pathname } }); }}
+                onDelete={(e) => openDeleteModal(doc.id, doc.title, e)}
+                onPlay={() => handlePlay(doc)}
+              />
+            ))}
+            {hasMore && (
+              <div className={s.seeAllCard} onClick={() => navigate('/library')}>
+                <FontAwesomeIcon icon={faArrowRight} />
+                <span>{t.nav.library}</span>
+              </div>
+            )}
+          </div>
+          {canNext && (
+            <button className={`${s.navBtn} ${s.navBtnNext}`} onClick={() => scroll('next')}>
+              <FontAwesomeIcon icon={faChevronRight} />
+            </button>
           )}
         </div>
       </div>

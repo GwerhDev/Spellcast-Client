@@ -73,12 +73,12 @@ export const ImportOption: React.FC<ImportOptionProps> = () => {
 
   return (
     document.fileContent ? (
-      <>
+      <div className={s.container}>
         <DocumentCreateInput document={document} />
         <p onClick={() => dispatch(resetDocumentState())} className={s.resetPdf}>
           {t.start.orImportNew}
         </p>
-      </>
+      </div>
     ) : (
       <div
         className={`${s.dropzone} ${isDragging ? s.dragging : ''}`}

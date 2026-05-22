@@ -5,7 +5,6 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { DeleteConfirmModal } from '../Modals/DeleteConfirmModal';
 import { useAppSelector } from '../../../store/hooks';
 import { Document } from 'src/interfaces';
-import { Spinner } from '../Spinner';
 import { DocumentCard } from '../Cards/DocumentCard';
 import { useDispatch } from 'react-redux';
 import { setAutoPlayOnLoad, resetBrowserPlayer, requestTogglePlay } from '../../../store/browserPlayerSlice';
@@ -98,7 +97,22 @@ export const DocumentList: React.FC<DocumentListProps> = ({ query = '', filter =
     ? documents.filter(d => d.title.toLowerCase().includes(q))
     : documents;
 
-  if (isLoading) return <Spinner isLoading />;
+  if (isLoading) return (
+    <div className={s.container}>
+      <div className={s.slider}>
+        {Array.from({ length: 10 }).map((_, i) => (
+          <div key={i} className={s.skeletonCard}>
+            <div className={`${s.skeletonCover} ${s.skeletonLine}`} />
+            <div className={s.skeletonFooter}>
+              <div className={`${s.skeletonLine} ${s.skeletonTitle}`} />
+              <div className={`${s.skeletonLine} ${s.skeletonTitleShort}`} />
+              <div className={`${s.skeletonLine} ${s.skeletonDate}`} />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
   if (documents.length === 0) return <p className={s.empty}>{t.document.noLocalDocuments}</p>;
   if (visible.length === 0) return <p className={s.empty}>{t.document.noDocuments}</p>;
 

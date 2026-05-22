@@ -9,6 +9,8 @@
   gap: 1rem;
   transition: all 0.3s ease;
   background: var(--component-background);
+  position: relative;
+  overflow: hidden;
 }
 
 .container:hover {
@@ -44,32 +46,128 @@
 }
 
 .continueButton {
-  width: 8rem;
-  padding: 0rem 0rem;
-  border-radius: 4rem;
   display: flex;
-  cursor: pointer;
   align-items: center;
-  justify-content: flex-end;
-  gap: 0.25rem;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.4rem 0.5rem 0.4rem 1rem;
+  border-radius: 999px;
   background-color: transparent;
-  border: 1.5px solid transparent;
-  color: var(--color-primary);
-  transition: all 0.25s ease;
+  border: 1.5px solid currentColor;
+  color: var(--app-white);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.25s, border-color 0.25s;
 }
 
 .continueButton:hover {
   border-color: var(--color-primary-accent);
-  color: var(--app-white);
   background-color: var(--color-primary-accent);
 }
 
 .continueButton p {
-  width: 100%;
-  padding-inline: 4rem;
-  font-size: 0.875rem;
+  margin: 0;
+  font-size: 0.8rem;
   font-weight: 500;
-  color: var(--app-white);
-  background-color: transparent;
+  color: inherit;
+  opacity: 0.85;
+}
+
+.metaRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.actionCol {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+.creatingIndicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--color-primary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  width: 8rem;
+  padding: 0.4rem 0;
+}
+
+.toggleGroupDisabled {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.toggleGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.toggleLabel {
+  font-size: 0.65rem;
+  color: var(--color-light-400);
+  white-space: nowrap;
+}
+
+.toggle {
+  flex-shrink: 0;
+  width: 36px;
+  height: 20px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  padding: 2px;
+  background: var(--color-dark-300);
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+}
+
+.toggle:hover {
+  background: var(--color-dark-200);
+}
+
+.toggleOn {
+  background: var(--color-primary);
+}
+
+.toggleOn:hover {
+  background: var(--color-primary);
+}
+
+.toggleThumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.2s;
+  display: block;
+  transform: translateX(0);
+}
+
+.toggleThumbOn {
+  transform: translateX(16px);
+}
+
+.progressBar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background: var(--color-primary);
+  border-radius: 0 2px 0 0;
+  transition: width 0.25s ease;
+}
+
+.progressText {
+  font-size: 0.7rem;
+  color: var(--color-light-400);
   white-space: nowrap;
 }

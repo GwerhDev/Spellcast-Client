@@ -3,7 +3,7 @@ import { DB_NAME, DB_VERSION, DOCUMENTS_STORE_NAME } from "../config/api";
 interface Document {
   id: string;
   title: string;
-  pdf: Blob;
+  pdf?: Blob;
   cover?: Blob;
   createdAt: Date;
   userId: string | undefined;

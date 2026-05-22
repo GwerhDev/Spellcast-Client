@@ -1,7 +1,7 @@
 import s from "./DocumentCreateInput.module.css";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { faArrowAltCircleRight, faFileCircleCheck, faFilePdf, faFileWord } from "@fortawesome/free-solid-svg-icons";
+import { faArrowAltCircleRight, faFileCircleCheck, faFilePdf, faFileWord, faSpinner } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useDispatch } from "react-redux";
 import { resetDocumentState, setDocumentTitle } from "store/documentSlice";
@@ -24,7 +24,9 @@ export const DocumentCreateInput = (props: DocumentCreateInputProps) => {
   const [editTitle, setEditTitle] = useState(false);
   const { t } = useLanguage();
   const [isCreating, setIsCreating] = useState(false);
-  const [buttonHovered, setButtonHovered] = useState(false);
+
+  const [pdfProgress, setPdfProgress] = useState<{ current: number; total: number } | null>(null);
+  const [saveOriginal, setSaveOriginal] = useState(true);
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { userData } = useAppSelector(state => state.session);
@@ -53,10 +55,10 @@ export const DocumentCreateInput = (props: DocumentCreateInputProps) => {
       const pdfData = atob(document.fileContent.substring(document.fileContent.indexOf(',') + 1));
       const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
 
-      const [coverBlob, rawPages] = await Promise.all([
-        renderPageToCover(pdf),
-        extractPdfPages(pdf),
-      ]);
+      const page1TextContent = await (await pdf.getPage(1)).getTextContent();
+      const page1HasText = page1TextContent.items.some((item) => (item as { str: string }).str.trim().length > 0);
+      const coverBlob = page1HasText ? null : await renderPageToCover(pdf);
+      const rawPages = await extractPdfPages(pdf, (current, total) => setPdfProgress({ current, total }));
       const pagesContent = await injectCoverIntoPages(rawPages, coverBlob);
 
       const byteString = atob(document.fileContent.split(',')[1]);
@@ -67,9 +69,11 @@ export const DocumentCreateInput = (props: DocumentCreateInputProps) => {
       const id = await saveDocumentToDB({
         title: document.title,
         pdf: pdfBlob,
+        originalPdf: saveOriginal ? pdfBlob : undefined,
         cover: coverBlob ?? undefined,
         userId: userData?.id,
         pagesContent: JSON.stringify(pagesContent),
+        originalPagesContent: saveOriginal ? JSON.stringify(pagesContent) : undefined,
       });
 
       dispatch(resetDocumentState());
@@ -79,6 +83,10 @@ export const DocumentCreateInput = (props: DocumentCreateInputProps) => {
       setIsCreating(false);
     }
   };
+
+  const progressPct = pdfProgress
+    ? Math.round((pdfProgress.current / pdfProgress.total) * 100)
+    : isCreating ? 4 : 0;
 
   return (
     <div className={s.container}>
@@ -93,18 +101,52 @@ export const DocumentCreateInput = (props: DocumentCreateInputProps) => {
           onChange={(e) => dispatch(setDocumentTitle(e.target.value))}
           type="text"
         />
-        <small>{formatBytes(document.size || 0)}{document.totalPages > 0 && ` - ${document.totalPages} pages`}</small>
+        <div className={s.metaRow}>
+          <small>
+            {formatBytes(document.size || 0)}
+            {document.totalPages > 0 && ` · ${document.totalPages} ${document.totalPages === 1 ? t.document.pageSingular : t.document.pagePlural}`}
+          </small>
+        </div>
+        {isCreating && (
+          <span className={s.progressText}>
+            {pdfProgress
+              ? `${t.document.processingPdf} ${pdfProgress.current} / ${pdfProgress.total}`
+              : t.document.creating}
+          </span>
+        )}
       </div>
-      <button
-        onMouseEnter={() => setButtonHovered(true)}
-        onMouseLeave={() => setButtonHovered(false)}
-        onClick={handleCreate}
-        className={s.continueButton}
-        disabled={isCreating}
-      >
-        {buttonHovered && <p>{isCreating ? t.document.creating : t.editor.create}</p>}
-        <FontAwesomeIcon size="3x" icon={faArrowAltCircleRight} />
-      </button>
+      <div className={s.actionCol}>
+        {isCreating ? (
+          <div className={s.creatingIndicator}>
+            <FontAwesomeIcon icon={faSpinner} spin />
+            <span>{progressPct}%</span>
+          </div>
+        ) : (
+          <button
+            onClick={handleCreate}
+            className={s.continueButton}
+          >
+            <p>{t.editor.create}</p>
+            <FontAwesomeIcon icon={faArrowAltCircleRight} size="2x" />
+          </button>
+        )}
+        <div className={`${s.toggleGroup} ${isCreating ? s.toggleGroupDisabled : ''}`}>
+          <span className={s.toggleLabel}>{t.common.saveOriginal}</span>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={saveOriginal}
+            disabled={isCreating}
+            className={`${s.toggle} ${saveOriginal ? s.toggleOn : ''}`}
+            onClick={() => setSaveOriginal(v => !v)}
+          >
+            <span className={`${s.toggleThumb} ${saveOriginal ? s.toggleThumbOn : ''}`} />
+          </button>
+        </div>
+      </div>
+      {isCreating && (
+        <div className={s.progressBar} style={{ width: `${progressPct}%` } as React.CSSProperties} />
+      )}
     </div>
   );
 };

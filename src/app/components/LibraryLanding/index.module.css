@@ -78,3 +78,9 @@
   font-size: 0.9rem;
   margin: 0;
 }
+
+@media (max-width: 1024px) {
+  .container {
+    padding: 1rem 0;
+  }
+}

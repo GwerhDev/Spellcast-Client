@@ -222,6 +222,7 @@ main {
 
 .app-viewer {
   width: 100%;
+  min-width: 0;
   flex-grow: 1;
   display: flex;
   position: relative;
