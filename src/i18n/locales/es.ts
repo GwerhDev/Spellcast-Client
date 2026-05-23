@@ -75,6 +75,7 @@ export const es: Translations = {
     pageSingular: 'página',
     pagePlural: 'páginas',
     complete: 'completado',
+    startReading: 'Leer',
     continueReading: 'Continuar leyendo',
     editDocument: 'Editar documento',
     notFound: 'Documento no encontrado.',

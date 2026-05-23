@@ -73,6 +73,7 @@ export const en = {
     pageSingular: 'page',
     pagePlural: 'pages',
     complete: 'complete',
+    startReading: 'Read',
     continueReading: 'Continue Reading',
     editDocument: 'Edit Document',
     notFound: 'Document not found.',

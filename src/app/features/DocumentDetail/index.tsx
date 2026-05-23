@@ -13,7 +13,7 @@ import { SecondaryButton } from '../../components/Buttons/SecondaryButton';
 import { IconButton } from '../../components/Buttons/IconButton';
 import { DeleteConfirmModal } from '../../components/Modals/DeleteConfirmModal';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faFilePdf, faPlay, faBookOpen, faPen, faArrowLeft, faTrash } from '@fortawesome/free-solid-svg-icons';
+import { faFilePdf, faBookOpen, faPen, faArrowLeft, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { useLanguage } from '../../../i18n';
 
 export const DocumentDetail: React.FC = () => {
@@ -123,8 +123,9 @@ export const DocumentDetail: React.FC = () => {
           </div>
         </div>
         <div className={s.actions}>
-          <PrimaryButton icon={faPlay} onClick={handlePlay}>{t.player.play}</PrimaryButton>
-          <SecondaryButton className={s.solid} icon={faBookOpen} onClick={handleContinueReading}>{t.document.continueReading}</SecondaryButton>
+          <PrimaryButton icon={faBookOpen} onClick={currentPage > 0 ? handleContinueReading : handlePlay}>
+            {currentPage > 0 ? t.document.continueReading : t.document.startReading}
+          </PrimaryButton>
           <SecondaryButton className={s.solid} icon={faPen} onClick={handleEdit}>{t.document.editDocument}</SecondaryButton>
           <PrimaryButton variant="danger" icon={faTrash} onClick={() => setShowDeleteModal(true)}>{t.common.delete}</PrimaryButton>
         </div>
