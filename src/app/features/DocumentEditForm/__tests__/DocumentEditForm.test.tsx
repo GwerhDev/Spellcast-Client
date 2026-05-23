@@ -1,8 +1,9 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
 import { screen } from '@testing-library/react';
 import { Routes, Route } from 'react-router-dom';
-import { renderWithProviders } from '../../../../test/renderWithProviders';
+import { renderWithProviders, makeStore } from '../../../../test/renderWithProviders';
 import { DocumentEditForm } from '../index';
+import { setSession } from '../../../../store/sessionSlice';
 
 vi.mock('../../../../db', () => ({
   getDocumentById: vi.fn(),
@@ -15,6 +16,10 @@ vi.mock('../../../../app/components/Editors/DocumentEditor', () => ({
 
 import { getDocumentById } from '../../../../db';
 
+beforeAll(() => {
+  Element.prototype.scrollTo = vi.fn();
+});
+
 const mockDoc = {
   id: 'doc-1',
   title: 'Test Doc',
@@ -22,14 +27,17 @@ const mockDoc = {
   originalPagesContent: null,
 };
 
-const renderForm = (initialPath = '/editor/doc-1') =>
-  renderWithProviders(
+const renderForm = (initialPath = '/editor/doc-1') => {
+  const store = makeStore();
+  store.dispatch(setSession({ logged: true, userData: { id: 'user-1', username: 'Test', loader: false } }));
+  return renderWithProviders(
     <Routes>
       <Route path="/editor/:id" element={<DocumentEditForm />} />
       <Route path="/editor/:id/:page" element={<DocumentEditForm />} />
     </Routes>,
-    { initialPath }
+    { store, initialPath }
   );
+};
 
 beforeEach(() => {
   vi.mocked(getDocumentById).mockResolvedValue(mockDoc as never);

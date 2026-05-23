@@ -18,7 +18,6 @@ const timeAgo = (ts: number, t: { justNow: string; minutesAgo: string; hoursAgo:
 
 const HistoryRow: React.FC<{ entry: UploadHistoryEntry; t: ReturnType<typeof useLanguage>['t'] }> = ({ entry, t }) => {
   const navigate = useNavigate();
-  const dispatch = useDispatch();
   const isDone = entry.status === 'done';
 
   const handleClick = () => {

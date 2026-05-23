@@ -8,8 +8,9 @@ const mockDoc: DocumentState = {
   title: 'Test',
   fileContent: null,
   size: 0,
-  type: null,
   totalPages: 0,
+  currentPage: 0,
+  isLoaded: false,
 };
 
 describe('DocumentCreateInput', () => {
