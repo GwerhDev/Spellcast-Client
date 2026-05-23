@@ -278,8 +278,6 @@ const detectDecorativeRegionsFromCanvas = (
     rawClusters.push({ start, end: lastDark });
   }
 
-  console.log('[pdfUtils] detectDecorativeRegions — canvas', w, 'x', h, '| raw clusters:', rawClusters.length, rawClusters.map(c => `[${c.start}–${c.end}]`));
-
   // Phase 2: merge adjacent clusters that have a text zone between them.
   // Handles ornaments where text sits inside a graphic (e.g. an ellipse wrapping
   // a heading): [top arc cluster] | [text rows] | [bottom arc cluster] → one region.
@@ -297,7 +295,6 @@ const detectDecorativeRegionsFromCanvas = (
       for (let gy = end + 1; gy < next.start; gy++) {
         if (textMask[gy]) { hasText = true; break; }
       }
-      console.log(`[pdfUtils]   gap [${end}–${next.start}] (${gap}px) hasText=${hasText}`);
       if (hasText) {
         end = next.end;
         ci++;
@@ -308,8 +305,6 @@ const detectDecorativeRegionsFromCanvas = (
     mergedClusters.push({ start, end });
     ci++;
   }
-
-  console.log('[pdfUtils] merged clusters:', mergedClusters.length, mergedClusters.map(c => `[${c.start}–${c.end}]`));
 
   // Phase 3: convert to PDF Y-coordinates and filter by minimum height.
   const minHeightPx = Math.ceil(scale * 15);
@@ -323,7 +318,6 @@ const detectDecorativeRegionsFromCanvas = (
     }
   }
 
-  console.log('[pdfUtils] final regions (PDF coords):', regions.map(r => `yMin=${r.yMin.toFixed(1)} yMax=${r.yMax.toFixed(1)}`));
   return regions;
 };
 
@@ -469,11 +463,7 @@ export const extractPdfPages = async (
     // Paragraph items (skip those whose Y falls within a graphic region — they'll appear in the rendered image)
     for (const p of paragraphs) {
       const inRegion = graphicRegions.some(r => p.yTop >= r.yMin - 5 && p.yTop <= r.yMax + 5);
-      if (inRegion) {
-        const text = p.lines.flatMap(l => l.items.map(i => i.str)).join(' ');
-        console.log(`[pdfUtils] p${pageNum} skipping paragraph yTop=${p.yTop.toFixed(1)} — inside graphic region. text="${text.slice(0, 60)}"`);
-        continue;
-      }
+      if (inRegion) continue;
 
       if (p.lines.length === 0) {
         contentItems.push({ yPdf: p.yTop, node: { type: 'paragraph' } });

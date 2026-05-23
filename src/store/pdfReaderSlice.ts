@@ -18,6 +18,7 @@ interface PdfReaderState {
   fitToWidth: boolean;
   lightningMode: boolean;
   contentVersion: number;
+  listVersion: number;
 }
 
 const initialState: PdfReaderState = {
@@ -36,6 +37,7 @@ const initialState: PdfReaderState = {
   fitToWidth: localStorage.getItem('reader:fitToWidth') !== 'false',
   lightningMode: localStorage.getItem('reader:lightningMode') !== 'false',
   contentVersion: 0,
+  listVersion: 0,
   progress: {
     currentPage: 1,
     pagesProgress: [],
@@ -112,6 +114,9 @@ const pdfReaderSlice = createSlice({
     invalidateContent(state) {
       state.contentVersion += 1;
     },
+    invalidateDocumentList(state) {
+      state.listVersion += 1;
+    },
     setReaderTitle(state, action: PayloadAction<string>) {
       state.documentTitle = action.payload;
     },
@@ -136,6 +141,7 @@ export const {
   setFitToWidth,
   setLightningMode,
   invalidateContent,
+  invalidateDocumentList,
   setReaderTitle,
 } = pdfReaderSlice.actions;
 

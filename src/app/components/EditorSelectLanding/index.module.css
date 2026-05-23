@@ -54,7 +54,6 @@
   padding: 0.55rem 1rem 0.55rem 2.4rem;
   border-radius: 999px;
   border: 1px solid var(--surface-track);
-  background: var(--surface-inset);
   color: var(--text-color);
   font-size: 0.9rem;
   transition: border-color 0.2s;

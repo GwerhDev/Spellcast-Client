@@ -48,29 +48,46 @@
 .continueButton {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  padding: 0.4rem 0.5rem 0.4rem 1rem;
-  border-radius: 999px;
-  background-color: transparent;
-  border: 1.5px solid currentColor;
-  color: var(--app-white);
+  justify-content: center;
+  padding: 0;
+  box-sizing: border-box;
+  background: transparent;
+  border: none;
+  color: var(--color-light-400);
+  font-size: 1.3rem;
   cursor: pointer;
-  white-space: nowrap;
-  transition: background-color 0.25s, border-color 0.25s;
+  flex-shrink: 0;
+  transition: color 0.2s;
 }
 
 .continueButton:hover {
-  border-color: var(--color-primary-accent);
-  background-color: var(--color-primary-accent);
+  color: var(--color-primary);
 }
 
-.continueButton p {
-  margin: 0;
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: inherit;
-  opacity: 0.85;
+.removeBtn {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.4rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 0.5px solid var(--color-dark-300);
+  background: var(--component-background);
+  color: var(--color-light-400);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.removeBtn:hover {
+  background: var(--color-danger);
+  border-color: var(--color-danger);
+  color: #fff;
 }
 
 .metaRow {
@@ -85,6 +102,44 @@
   align-items: center;
   gap: 0.4rem;
   flex-shrink: 0;
+  min-width: 3rem;
+}
+
+.containerActive {
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+.processingSpinner {
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 2.5px solid var(--color-dark-200);
+  border-top-color: var(--color-primary);
+  animation: inputSpin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+
+.processingPct {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.queuedIcon {
+  font-size: 1.2rem;
+  color: var(--color-light-400);
+}
+
+.doneIcon {
+  font-size: 1.2rem;
+  color: var(--color-primary);
+}
+
+@keyframes inputSpin {
+  to { transform: rotate(360deg); }
 }
 
 .creatingIndicator {

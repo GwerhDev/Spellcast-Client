@@ -22,6 +22,86 @@
   margin: 0;
 }
 
+/* ── Actions row (below search) ── */
+.actionsRow {
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.toolbarBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-dark-300);
+  background: var(--component-background);
+  color: var(--color-light-400);
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
+  white-space: nowrap;
+}
+
+.toolbarBtn:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.toolbarBtnActive {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 10%, var(--component-background));
+}
+
+
+/* ── Bulk delete bar ── */
+.bulkBar {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.6rem 1rem 0.6rem 1.25rem;
+  background: var(--component-background);
+  border: 1px solid var(--color-dark-300);
+  border-radius: 999px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+  z-index: 50;
+}
+
+.bulkCount {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-color);
+  white-space: nowrap;
+}
+
+.bulkDeleteBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.9rem;
+  border-radius: 999px;
+  border: none;
+  background: var(--color-danger);
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  white-space: nowrap;
+}
+
+.bulkDeleteBtn:hover {
+  opacity: 0.85;
+}
+
 /* ── Search bar ── */
 .searchWrapper {
   width: 100%;
@@ -45,7 +125,6 @@
   padding: 0.55rem 1rem 0.55rem 2.4rem;
   border-radius: 999px;
   border: 1px solid var(--surface-track);
-  background: var(--surface-inset);
   color: var(--text-color);
   font-size: 0.9rem;
   transition: border-color 0.2s;

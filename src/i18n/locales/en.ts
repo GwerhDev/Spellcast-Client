@@ -84,6 +84,12 @@ export const en = {
   },
   library: {
     subtitle: 'Your documents, always at hand',
+    addDocuments: 'Add documents',
+    selectMode: 'Select',
+    deleteSelected: 'Delete selected',
+    cancelSelection: 'Cancel',
+    nSelected: '{n} selected',
+    deleteSelectedConfirm: 'Are you sure you want to delete {n} documents? This action cannot be undone.',
   },
   overview: {
     activity: 'Activity',
@@ -103,6 +109,8 @@ export const en = {
     tagline: 'Shape your words',
     subtitle: 'Start from scratch or pick up where you left off',
     create: 'Create',
+    createDocument: 'Create document',
+    createAll: 'Create all documents',
     createDesc: 'Write a new document',
     editDesc: 'Modify existing document',
     selectDocument: 'Select a document',
@@ -320,6 +328,7 @@ export const en = {
     textTab: 'Text',
     importTab: 'Import',
     orImportNew: 'Or import a new one',
+    addMore: 'Add more files',
     dragDrop: 'Drag and drop a PDF file here, or click to select a file',
   },
   havenStore: {

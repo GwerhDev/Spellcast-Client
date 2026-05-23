@@ -1,0 +1,207 @@
+.wrapper {
+  position: fixed;
+  bottom: 80px;
+  right: 20px;
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+  pointer-events: none;
+}
+
+/* ── Collapsed chip ── */
+.chip {
+  pointer-events: all;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.75rem 0.35rem 0.5rem;
+  border-radius: 999px;
+  background: var(--component-background);
+  border: 1px solid var(--color-dark-300);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  font-size: 0.75rem;
+  color: var(--color-light-400);
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.chip:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.chipDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  animation: pulse 1.4s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.5; transform: scale(0.75); }
+}
+
+/* ── Panel ── */
+.panel {
+  pointer-events: all;
+  width: 280px;
+  background: var(--component-background);
+  border: 1px solid var(--color-dark-300);
+  border-radius: 10px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+}
+
+.panelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid var(--color-dark-300);
+}
+
+.panelTitle {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.minimizeBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-light-400);
+  font-size: 0.7rem;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+}
+
+.minimizeBtn:hover {
+  color: var(--text-color);
+  background: var(--color-dark-300);
+}
+
+.jobList {
+  display: flex;
+  flex-direction: column;
+  max-height: 320px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+/* ── Job row ── */
+.job {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid var(--color-dark-300);
+  position: relative;
+  overflow: hidden;
+  cursor: default;
+}
+
+.job:last-child {
+  border-bottom: none;
+}
+
+.jobDone {
+  cursor: pointer;
+}
+
+.jobDone:hover {
+  background: var(--color-dark-300);
+}
+
+.jobThumb {
+  width: 36px;
+  height: 36px;
+  border-radius: 4px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.jobIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: 4px;
+  background: var(--color-dark-300);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+
+.jobInfo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.jobTitle {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.jobStatus {
+  font-size: 0.65rem;
+  color: var(--color-light-400);
+}
+
+.jobStatusDone {
+  color: var(--color-primary);
+}
+
+.jobStatusError {
+  color: var(--color-danger-100, #e06c75);
+}
+
+.jobProgressTrack {
+  height: 2px;
+  background: var(--color-dark-200);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.jobProgressFill {
+  height: 100%;
+  background: var(--color-primary);
+  border-radius: 999px;
+  transition: width 0.25s ease;
+}
+
+.dismissBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-light-400);
+  font-size: 0.65rem;
+  padding: 0.2rem;
+  border-radius: 4px;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s;
+}
+
+.job:hover .dismissBtn {
+  opacity: 1;
+}
+
+.dismissBtn:hover {
+  color: var(--text-color);
+}

@@ -4,9 +4,10 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import type { JSONContent } from '../../../magictext';
 import { useDispatch } from 'react-redux';
 import { useAppSelector } from '../../../store/hooks';
-import { getDocumentById, updateDocumentContent, updateDocumentFull } from '../../../db';
+import { getDocumentById, updateDocumentContent } from '../../../db';
 import { setShowEditorSettings } from '../../../store/editorSlice';
 import { invalidateContent } from '../../../store/pdfReaderSlice';
+import { enqueueUpload } from '../../../store/pdfUploadSlice';
 import { textToSpeechService } from '../../../services/tts';
 import { Spinner } from '../Spinner';
 import { PageList } from '../DocumentCreateForm/PageList';
@@ -18,11 +19,7 @@ import { CustomModal } from '../Modals/CustomModal';
 import { PrimaryButton } from '../Buttons/PrimaryButton';
 import { SecondaryButton } from '../Buttons/SecondaryButton';
 import type { TTSPlayPayload } from '../../../magictext/types';
-import * as pdfjsLib from 'pdfjs-dist';
-import workerSrc from 'pdfjs-dist/build/pdf.worker?url';
-import { renderPageToCover, extractPdfPages, injectCoverIntoPages, blobToDataUrl } from '../../../utils/pdfUtils';
 import { useLanguage } from '../../../i18n';
-pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
 const emptyContent: JSONContent = {
   type: 'doc',
@@ -73,11 +70,30 @@ export const DocumentEditForm: React.FC = () => {
   const [showResetAllModal, setShowResetAllModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
-  const [isProcessingPdf, setIsProcessingPdf] = useState(false);
-  const [pdfProgress, setPdfProgress] = useState<{ current: number; total: number } | null>(null);
-  const [coverUrl, setCoverUrl] = useState<string | null>(null);
   const [processingCollapsed, setProcessingCollapsed] = useState(false);
   const pdfInputRef = useRef<HTMLInputElement>(null);
+
+  const activeJob = useAppSelector(state =>
+    state.pdfUpload.queue.find(j => j.targetDocId === id && (j.status === 'queued' || j.status === 'processing'))
+  );
+  const isProcessingPdf = !!activeJob;
+  const { contentVersion } = useAppSelector(state => state.pdfReader);
+  const contentVersionRef = useRef(contentVersion);
+
+  useEffect(() => {
+    if (contentVersion === contentVersionRef.current) return;
+    contentVersionRef.current = contentVersion;
+    if (!id || !logged) return;
+    getDocumentById(id, userData.id).then(doc => {
+      if (!doc) return;
+      const pages: JSONContent[] = doc.pagesContent ? JSON.parse(doc.pagesContent) : [emptyContent];
+      const finalPages = pages.length > 0 ? pages : [emptyContent];
+      setPagesContent(finalPages);
+      if (doc.originalPagesContent) setOriginalPages(JSON.parse(doc.originalPagesContent));
+      setHasChanges(false);
+    });
+    //eslint-disable-next-line
+  }, [contentVersion]);
   const [ttsPlaying, setTtsPlaying] = useState(false);
   const ttsAudioRef = useRef<HTMLAudioElement | null>(null);
   const ttsSpeechRef = useRef<SpeechSynthesisUtterance | null>(null);
@@ -189,63 +205,22 @@ export const DocumentEditForm: React.FC = () => {
   const handleImportConfirm = async () => {
     if (!pendingFile || !id || !userData.id) return;
     setShowImportModal(false);
-    setIsProcessingPdf(true);
-    setPdfProgress(null);
-    setCoverUrl(null);
     setProcessingCollapsed(false);
-    try {
-      const reader = new FileReader();
-      const fileContent: string = await new Promise((resolve, reject) => {
-        reader.onload = (e) => resolve(e.target?.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(pendingFile);
-      });
-      const pdfData = atob(fileContent.substring(fileContent.indexOf(',') + 1));
-      const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
-
-      const page1TextContent = await (await pdf.getPage(1)).getTextContent();
-      const page1HasText = page1TextContent.items.some((item) => (item as { str: string }).str.trim().length > 0);
-      const coverBlob = page1HasText ? null : await renderPageToCover(pdf);
-      const coverDataUrl = coverBlob ? await blobToDataUrl(coverBlob) : null;
-      if (coverDataUrl) setCoverUrl(coverDataUrl);
-
-      const rawPages = await extractPdfPages(
-        pdf,
-        (current, total) => setPdfProgress({ current, total }),
-        (pageNum, content) => {
-          const pageContent: JSONContent = pageNum === 1 && coverDataUrl
-            ? { ...content, content: [{ type: 'image', attrs: { src: coverDataUrl, alt: null, title: null } }, ...(content.content ?? [])] }
-            : content;
-          setPagesContent(prev => {
-            const next = [...prev];
-            next[pageNum - 1] = pageContent;
-            return next;
-          });
-        },
-      );
-      const pages = await injectCoverIntoPages(rawPages, coverBlob);
-      await updateDocumentFull(id, userData.id, {
-        title: documentTitle,
-        pagesContent: JSON.stringify(pages),
-        pdf: pendingFile,
-        cover: coverBlob ?? undefined,
-        originalPdf: pendingFile,
-        originalPagesContent: JSON.stringify(pages),
-      });
-      setOriginalPages(pages);
-      const clampedIndex = Math.min(Number(editingPageIndex), pages.length - 1);
-      setPagesContent(pages);
-      setEditingPageIndex(clampedIndex);
-      setCurrentMargins(getMarginsFromPage(pages[clampedIndex]));
-      setHasChanges(false);
-      dispatch(invalidateContent());
-    } catch (err) {
-      console.error('Failed to import PDF:', err);
-    } finally {
-      setIsProcessingPdf(false);
-      setPdfProgress(null);
-      setPendingFile(null);
-    }
+    const reader = new FileReader();
+    const fileContent: string = await new Promise((resolve, reject) => {
+      reader.onload = (e) => resolve(e.target?.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(pendingFile);
+    });
+    dispatch(enqueueUpload({
+      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      title: documentTitle,
+      fileContent,
+      saveOriginal: true,
+      userId: userData.id,
+      targetDocId: id,
+    }));
+    setPendingFile(null);
   };
 
   const handlePageClick = (index: number) => {
@@ -331,8 +306,8 @@ export const DocumentEditForm: React.FC = () => {
         {isProcessingPdf && processingCollapsed && (
           <PdfProcessingStatus
             variant="compact"
-            progress={pdfProgress}
-            coverUrl={coverUrl}
+            progress={activeJob?.progress ?? null}
+            coverUrl={activeJob?.coverUrl ?? null}
             documentTitle={documentTitle}
             onExpand={() => setProcessingCollapsed(false)}
           />
@@ -352,8 +327,8 @@ export const DocumentEditForm: React.FC = () => {
         {isProcessingPdf && !processingCollapsed && (
           <PdfProcessingStatus
             variant="overlay"
-            progress={pdfProgress}
-            coverUrl={coverUrl}
+            progress={activeJob?.progress ?? null}
+            coverUrl={activeJob?.coverUrl ?? null}
             documentTitle={documentTitle}
             onCollapse={() => setProcessingCollapsed(true)}
           />
@@ -387,7 +362,7 @@ export const DocumentEditForm: React.FC = () => {
             onPageDelete={handlePageDelete}
             onAddPage={handleAddPage}
             onPageReset={originalPages ? handleResetPage : undefined}
-            pdfProgress={pdfProgress}
+            pdfProgress={activeJob?.progress ?? null}
           />
         </div>
       </div>

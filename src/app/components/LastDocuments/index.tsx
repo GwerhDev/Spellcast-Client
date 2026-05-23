@@ -16,7 +16,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 export const LastDocuments: React.FC = () => {
   const { userData } = useAppSelector((state) => state.session);
-  const { documentId: activeDocId, currentPage: activeCurrentPage, isLoaded: readerLoaded } = useAppSelector((state) => state.pdfReader);
+  const { documentId: activeDocId, currentPage: activeCurrentPage, isLoaded: readerLoaded, listVersion } = useAppSelector((state) => state.pdfReader);
+  const uploadQueue = useAppSelector((state) => state.pdfUpload.queue);
   const audioPlaying = useAppSelector((state) => state.audioPlayer.isPlaying);
   const browserPlaying = useAppSelector((state) => state.browserPlayer.isPlaying);
   const { t } = useLanguage();
@@ -74,7 +75,7 @@ export const LastDocuments: React.FC = () => {
   useEffect(() => {
     fetchDocuments();
     //eslint-disable-next-line
-  }, [userData.id]);
+  }, [userData.id, listVersion]);
 
   useEffect(() => {
     const el = sliderRef.current;
@@ -162,18 +163,22 @@ export const LastDocuments: React.FC = () => {
             </button>
           )}
           <div className={s.slider} ref={sliderRef}>
-            {visible.map((doc) => (
-              <DocumentCard
-                key={doc.id}
-                doc={doc}
-                isActive={activeDocId === doc.id && (readerLoaded || audioPlaying || browserPlaying)}
-                isPlaying={activeDocId === doc.id && (audioPlaying || browserPlaying)}
-                onClick={() => navigate(`/document/${doc.id}`)}
-                onEdit={(e) => { e.stopPropagation(); navigate(`/editor/${doc.id}`, { state: { from: location.pathname } }); }}
-                onDelete={(e) => openDeleteModal(doc.id, doc.title, e)}
-                onPlay={() => handlePlay(doc)}
-              />
-            ))}
+            {visible.map((doc) => {
+              const uploadJob = uploadQueue.find(j => j.targetDocId === doc.id && (j.status === 'queued' || j.status === 'processing')) ?? null;
+              return (
+                <DocumentCard
+                  key={doc.id}
+                  doc={doc}
+                  isActive={activeDocId === doc.id && (readerLoaded || audioPlaying || browserPlaying)}
+                  isPlaying={activeDocId === doc.id && (audioPlaying || browserPlaying)}
+                  onClick={() => navigate(`/document/${doc.id}`)}
+                  onEdit={(e) => { e.stopPropagation(); navigate(`/editor/${doc.id}`, { state: { from: location.pathname } }); }}
+                  onDelete={(e) => openDeleteModal(doc.id, doc.title, e)}
+                  onPlay={() => handlePlay(doc)}
+                  uploadJob={uploadJob}
+                />
+              );
+            })}
             {hasMore && (
               <div className={s.seeAllCard} onClick={() => navigate('/library')}>
                 <FontAwesomeIcon icon={faArrowRight} />

@@ -1,35 +1,47 @@
 import s from "./DocumentCreateInput.module.css";
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { faArrowAltCircleRight, faFileCircleCheck, faFilePdf, faFileWord, faSpinner } from "@fortawesome/free-solid-svg-icons";
+import { useEffect, useRef, useState } from "react";
+import { faUpload, faFileCircleCheck, faFilePdf, faFileWord, faXmark, faHourglassHalf, faCheck } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useDispatch } from "react-redux";
-import { resetDocumentState, setDocumentTitle } from "store/documentSlice";
+import { setDocumentTitle } from "store/documentSlice";
 import { DocumentState } from "src/interfaces";
-import { saveDocumentToDB } from "src/db";
 import { useAppSelector } from "store/hooks";
-import * as pdfjsLib from 'pdfjs-dist';
-import workerSrc from 'pdfjs-dist/build/pdf.worker?url';
-import { renderPageToCover, extractPdfPages, injectCoverIntoPages } from 'src/utils/pdfUtils';
+import { enqueueUpload } from "store/pdfUploadSlice";
 import { useLanguage } from '../../../i18n';
-
-pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
 interface DocumentCreateInputProps {
   document: DocumentState;
+  onRemove?: () => void;
+  onDone?: (resultDocId?: string) => void;
+  autoCreate?: boolean;
 }
 
 export const DocumentCreateInput = (props: DocumentCreateInputProps) => {
-  const { document } = props;
+  const { document, onRemove, onDone, autoCreate } = props;
   const [editTitle, setEditTitle] = useState(false);
-  const { t } = useLanguage();
-  const [isCreating, setIsCreating] = useState(false);
-
-  const [pdfProgress, setPdfProgress] = useState<{ current: number; total: number } | null>(null);
   const [saveOriginal, setSaveOriginal] = useState(true);
-  const navigate = useNavigate();
+  const [jobId, setJobId] = useState<string | null>(null);
+  const { t } = useLanguage();
   const dispatch = useDispatch();
   const { userData } = useAppSelector(state => state.session);
+  const job = useAppSelector(state => jobId ? state.pdfUpload.queue.find(j => j.id === jobId) : null);
+  const onDoneRef = useRef(onDone);
+  onDoneRef.current = onDone;
+
+  useEffect(() => {
+    if (autoCreate && !jobId) handleCreate();
+    //eslint-disable-next-line
+  }, [autoCreate]);
+
+  useEffect(() => {
+    if (!job) return;
+    if (job.status === 'done') {
+      onDoneRef.current?.(job.resultDocId);
+    } else if (job.status === 'error') {
+      setJobId(null);
+    }
+    //eslint-disable-next-line
+  }, [job?.status]);
 
   const formatBytes = (bytes: number, decimals = 2) => {
     if (bytes === 0) return '0 Bytes';
@@ -48,57 +60,41 @@ export const DocumentCreateInput = (props: DocumentCreateInputProps) => {
     }
   };
 
-  const handleCreate = async () => {
-    if (!document.fileContent) return;
-    setIsCreating(true);
-    try {
-      const pdfData = atob(document.fileContent.substring(document.fileContent.indexOf(',') + 1));
-      const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
-
-      const page1TextContent = await (await pdf.getPage(1)).getTextContent();
-      const page1HasText = page1TextContent.items.some((item) => (item as { str: string }).str.trim().length > 0);
-      const coverBlob = page1HasText ? null : await renderPageToCover(pdf);
-      const rawPages = await extractPdfPages(pdf, (current, total) => setPdfProgress({ current, total }));
-      const pagesContent = await injectCoverIntoPages(rawPages, coverBlob);
-
-      const byteString = atob(document.fileContent.split(',')[1]);
-      const byteArray = new Uint8Array(byteString.length);
-      for (let i = 0; i < byteString.length; i++) byteArray[i] = byteString.charCodeAt(i);
-      const pdfBlob = new Blob([byteArray], { type: 'application/pdf' });
-
-      const id = await saveDocumentToDB({
-        title: document.title,
-        pdf: pdfBlob,
-        originalPdf: saveOriginal ? pdfBlob : undefined,
-        cover: coverBlob ?? undefined,
-        userId: userData?.id,
-        pagesContent: JSON.stringify(pagesContent),
-        originalPagesContent: saveOriginal ? JSON.stringify(pagesContent) : undefined,
-      });
-
-      dispatch(resetDocumentState());
-      navigate(`/document/${id}`);
-    } catch (err) {
-      console.error('Failed to create document:', err);
-      setIsCreating(false);
-    }
+  const handleCreate = () => {
+    if (!document.fileContent || !userData?.id || jobId) return;
+    const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    dispatch(enqueueUpload({
+      id,
+      title: document.title || t.document.untitled,
+      fileContent: document.fileContent,
+      saveOriginal,
+      userId: userData.id,
+    }));
+    setJobId(id);
   };
 
-  const progressPct = pdfProgress
-    ? Math.round((pdfProgress.current / pdfProgress.total) * 100)
-    : isCreating ? 4 : 0;
+  const pct = job?.progress
+    ? Math.round(job.progress.current / job.progress.total * 100)
+    : 0;
+
+  const isActive = job && (job.status === 'queued' || job.status === 'processing');
 
   return (
-    <div className={s.container}>
+    <div className={`${s.container} ${isActive ? s.containerActive : ''}`}>
+      {onRemove && !jobId && (
+        <button className={s.removeBtn} onClick={onRemove} title="Remove">
+          <FontAwesomeIcon icon={faXmark} />
+        </button>
+      )}
       <FontAwesomeIcon size="2x" icon={getFileTypeIcon(document.type)} />
       <div className={s.metadata} onMouseLeave={() => setEditTitle(false)}>
         <input
           placeholder={t.document.titleInputPlaceholder}
-          readOnly={document.title.length > 0 && !editTitle}
+          readOnly={document.title.length > 0 && !editTitle || !!jobId}
           className={s.title}
-          onClick={() => setEditTitle(true)}
+          onClick={() => { if (!jobId) setEditTitle(true); }}
           value={document.title}
-          onChange={(e) => dispatch(setDocumentTitle(e.target.value))}
+          onChange={(e) => { if (!jobId) dispatch(setDocumentTitle(e.target.value)); }}
           type="text"
         />
         <div className={s.metaRow}>
@@ -107,45 +103,39 @@ export const DocumentCreateInput = (props: DocumentCreateInputProps) => {
             {document.totalPages > 0 && ` · ${document.totalPages} ${document.totalPages === 1 ? t.document.pageSingular : t.document.pagePlural}`}
           </small>
         </div>
-        {isCreating && (
-          <span className={s.progressText}>
-            {pdfProgress
-              ? `${t.document.processingPdf} ${pdfProgress.current} / ${pdfProgress.total}`
-              : t.document.creating}
-          </span>
-        )}
       </div>
       <div className={s.actionCol}>
-        {isCreating ? (
-          <div className={s.creatingIndicator}>
-            <FontAwesomeIcon icon={faSpinner} spin />
-            <span>{progressPct}%</span>
-          </div>
+        {job?.status === 'processing' ? (
+          <>
+            <div className={s.processingSpinner} />
+            <span className={s.processingPct}>{pct}%</span>
+          </>
+        ) : job?.status === 'queued' ? (
+          <FontAwesomeIcon icon={faHourglassHalf} className={s.queuedIcon} />
+        ) : job?.status === 'done' ? (
+          <FontAwesomeIcon icon={faCheck} className={s.doneIcon} />
         ) : (
-          <button
-            onClick={handleCreate}
-            className={s.continueButton}
-          >
-            <p>{t.editor.create}</p>
-            <FontAwesomeIcon icon={faArrowAltCircleRight} size="2x" />
-          </button>
+          <>
+            <button onClick={handleCreate} className={s.continueButton} title={t.editor.createDocument}>
+              <FontAwesomeIcon icon={faUpload} />
+            </button>
+            <div className={s.toggleGroup}>
+              <span className={s.toggleLabel}>{t.common.saveOriginal}</span>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={saveOriginal}
+                className={`${s.toggle} ${saveOriginal ? s.toggleOn : ''}`}
+                onClick={() => setSaveOriginal(v => !v)}
+              >
+                <span className={`${s.toggleThumb} ${saveOriginal ? s.toggleThumbOn : ''}`} />
+              </button>
+            </div>
+          </>
         )}
-        <div className={`${s.toggleGroup} ${isCreating ? s.toggleGroupDisabled : ''}`}>
-          <span className={s.toggleLabel}>{t.common.saveOriginal}</span>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={saveOriginal}
-            disabled={isCreating}
-            className={`${s.toggle} ${saveOriginal ? s.toggleOn : ''}`}
-            onClick={() => setSaveOriginal(v => !v)}
-          >
-            <span className={`${s.toggleThumb} ${saveOriginal ? s.toggleThumbOn : ''}`} />
-          </button>
-        </div>
       </div>
-      {isCreating && (
-        <div className={s.progressBar} style={{ width: `${progressPct}%` } as React.CSSProperties} />
+      {isActive && (
+        <div className={s.progressBar} style={{ width: `${pct}%` }} />
       )}
     </div>
   );

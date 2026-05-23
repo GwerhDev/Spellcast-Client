@@ -53,6 +53,23 @@
   display: flex;
 }
 
+.createAllBtn {
+  width: 100%;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--size-4);
+  background: linear-gradient(45deg, var(--color-primary), var(--color-secondary));
+  border: none;
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.createAllBtn:hover {
+  opacity: 0.85;
+}
+
 .resetPdf {
   cursor: pointer;
   margin-top: 1rem;
@@ -61,5 +78,26 @@
 }
 
 .resetPdf:hover {
+  color: var(--color-primary);
+}
+
+.addMoreBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.6rem 1rem;
+  border-radius: var(--size-4);
+  background: transparent;
+  border: 1.5px dashed var(--color-dark-300);
+  color: var(--color-light-400);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.addMoreBtn:hover {
+  border-color: var(--color-primary);
   color: var(--color-primary);
 }

@@ -4,12 +4,24 @@ import { useLanguage } from '../../../i18n';
 import { FilterTabs } from '../Selectors/FilterTabs';
 import { DocumentList, LibraryFilter } from '../DocumentList';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCloud, faHardDrive, faLayerGroup, faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
+import { faCloud, faHardDrive, faLayerGroup, faMagnifyingGlass, faPlus, faCheckSquare, faTrash, faXmark } from '@fortawesome/free-solid-svg-icons';
+import { ImportOption } from '../Start/ImportOption';
+import { CustomModal } from '../Modals/CustomModal';
+import { DeleteConfirmModal } from '../Modals/DeleteConfirmModal';
+import { deleteDocumentFromDB } from '../../../db';
+import { useAppSelector, useAppDispatch } from '../../../store/hooks';
+import { invalidateDocumentList } from '../../../store/pdfReaderSlice';
 
 export const LibraryLanding = () => {
   const { t } = useLanguage();
+  const dispatch = useAppDispatch();
+  const { userData } = useAppSelector(state => state.session);
   const [filter, setFilter] = useState<LibraryFilter>('all');
   const [query, setQuery] = useState('');
+  const [showImport, setShowImport] = useState(false);
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
 
   const tabs = [
     { id: 'all',   label: t.common.all,  icon: faLayerGroup },
@@ -22,6 +34,31 @@ export const LibraryLanding = () => {
     setQuery('');
   };
 
+  const toggleSelectionMode = () => {
+    if (selectionMode) {
+      setSelectionMode(false);
+      setSelectedIds([]);
+    } else {
+      setShowImport(false);
+      setSelectionMode(true);
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+  };
+
+  const handleBulkDeleteConfirm = async () => {
+    if (!userData?.id) return;
+    await Promise.all(selectedIds.map(id => deleteDocumentFromDB(id, userData.id)));
+    dispatch(invalidateDocumentList());
+    setSelectedIds([]);
+    setSelectionMode(false);
+    setShowBulkDeleteModal(false);
+  };
+
   return (
     <div className={s.container}>
       <div className={s.header}>
@@ -30,6 +67,10 @@ export const LibraryLanding = () => {
       </div>
 
       <FilterTabs tabs={tabs} active={filter} onChange={handleFilterChange} />
+
+      <CustomModal show={showImport} onClose={() => setShowImport(false)} title={t.library.addDocuments} compact>
+        <ImportOption />
+      </CustomModal>
 
       <div className={s.searchWrapper}>
         <FontAwesomeIcon icon={faMagnifyingGlass} className={s.searchIcon} />
@@ -42,13 +83,60 @@ export const LibraryLanding = () => {
         />
       </div>
 
+      <div className={s.actionsRow}>
+        <button
+          className={`${s.toolbarBtn} ${showImport ? s.toolbarBtnActive : ''}`}
+          onClick={() => { setShowImport(v => !v); if (selectionMode) toggleSelectionMode(); }}
+          title={t.library.addDocuments}
+        >
+          <FontAwesomeIcon icon={faPlus} />
+          {t.library.addDocuments}
+        </button>
+        <button
+          className={`${s.toolbarBtn} ${selectionMode ? s.toolbarBtnActive : ''}`}
+          onClick={toggleSelectionMode}
+          title={selectionMode ? t.library.cancelSelection : t.library.selectMode}
+        >
+          <FontAwesomeIcon icon={selectionMode ? faXmark : faCheckSquare} />
+          {selectionMode ? t.library.cancelSelection : t.library.selectMode}
+        </button>
+      </div>
+
       {filter === 'cloud' ? (
         <div className={s.empty}>
           <FontAwesomeIcon icon={faCloud} className={s.emptyIcon} />
           <p>{t.storage.cloudSyncDesc}</p>
         </div>
       ) : (
-        <DocumentList query={query} filter={filter} />
+        <DocumentList
+          query={query}
+          filter={filter}
+          selectionMode={selectionMode}
+          selectedIds={selectedIds}
+          onToggleSelect={toggleSelect}
+        />
+      )}
+
+      {selectionMode && selectedIds.length > 0 && (
+        <div className={s.bulkBar}>
+          <span className={s.bulkCount}>
+            {t.library.nSelected.replace('{n}', String(selectedIds.length))}
+          </span>
+          <button className={s.bulkDeleteBtn} onClick={() => setShowBulkDeleteModal(true)}>
+            <FontAwesomeIcon icon={faTrash} />
+            {t.library.deleteSelected}
+          </button>
+        </div>
+      )}
+
+      {showBulkDeleteModal && (
+        <DeleteConfirmModal
+          show={showBulkDeleteModal}
+          onClose={() => setShowBulkDeleteModal(false)}
+          onConfirm={handleBulkDeleteConfirm}
+          title={t.document.deleteTitle}
+          message={t.library.deleteSelectedConfirm.replace('{n}', String(selectedIds.length))}
+        />
       )}
     </div>
   );

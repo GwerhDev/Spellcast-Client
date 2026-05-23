@@ -86,6 +86,12 @@ export const es: Translations = {
   },
   library: {
     subtitle: 'Tus documentos, siempre a mano',
+    addDocuments: 'Añadir documentos',
+    selectMode: 'Seleccionar',
+    deleteSelected: 'Eliminar seleccionados',
+    cancelSelection: 'Cancelar',
+    nSelected: '{n} seleccionados',
+    deleteSelectedConfirm: '¿Seguro que quieres eliminar {n} documentos? Esta acción no se puede deshacer.',
   },
   overview: {
     activity: 'Actividad',
@@ -105,6 +111,8 @@ export const es: Translations = {
     tagline: 'Dale forma a tus palabras',
     subtitle: 'Empieza desde cero o continúa donde lo dejaste',
     create: 'Crear',
+    createDocument: 'Crear documento',
+    createAll: 'Crear todos los documentos',
     createDesc: 'Escribe un nuevo documento',
     editDesc: 'Modifica un documento existente',
     selectDocument: 'Selecciona un documento',
@@ -322,6 +330,7 @@ export const es: Translations = {
     textTab: 'Texto',
     importTab: 'Importar',
     orImportNew: 'O importa uno nuevo',
+    addMore: 'Añadir más archivos',
     dragDrop: 'Arrastra y suelta un archivo PDF aquí, o haz clic para seleccionar uno',
   },
   havenStore: {

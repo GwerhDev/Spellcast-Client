@@ -17,6 +17,8 @@ import { AccountMenu } from '../components/AccountMenu/AccountMenu';
 import { AppSwitcher } from '../components/AppSwitcher/AppSwitcher';
 import { VoiceSelectorModal } from '../components/Modals/VoiceSelectorModal';
 import { SoundBackground } from '../components/SoundBackground/SoundBackground';
+import { PdfUploadWorker } from '../components/PdfUploadWorker';
+import { PdfUploadQueue } from '../components/PdfUploadQueue';
 
 export default function DefaultLayout() {
   const shouldHideMenu = location.pathname.startsWith(`/user`);
@@ -42,6 +44,8 @@ export default function DefaultLayout() {
     <main>
       <SoundBackground />
       <PdfProcessor />
+      <PdfUploadWorker />
+      <PdfUploadQueue />
       <SearcherModal />
       <VoiceSelectorModal
         show={isVoiceSelectorOpen}

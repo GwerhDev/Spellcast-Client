@@ -226,9 +226,77 @@
   color: var(--color-danger-100);
 }
 
+.cardSelected {
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 16px rgba(115, 165, 204, 0.3);
+}
+
+.selectionOverlay {
+  position: absolute;
+  top: 0.4rem;
+  left: 0.4rem;
+  z-index: 4;
+}
+
+.checkbox {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.7);
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.checkboxSelected {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
 .coverWrapper {
   position: relative;
   flex-shrink: 0;
+}
+
+.uploadOverlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  z-index: 3;
+}
+
+.uploadSpinnerRing {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2.5px solid rgba(255, 255, 255, 0.2);
+  border-top-color: var(--color-primary);
+  animation: cardSpin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+
+.uploadPendingIcon {
+  font-size: 1.25rem;
+  color: var(--color-light-400);
+}
+
+.uploadPct {
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  line-height: 1;
+}
+
+@keyframes cardSpin {
+  to { transform: rotate(360deg); }
 }
 
 .coverWrapper::after {

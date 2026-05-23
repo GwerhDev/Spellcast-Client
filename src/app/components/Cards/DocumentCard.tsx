@@ -2,9 +2,14 @@ import s from './DocumentCard.module.css';
 import { useMemo, useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faFilePdf, faTrash, faPen, faPlay, faPause, faEllipsisVertical } from '@fortawesome/free-solid-svg-icons';
+import { faFilePdf, faTrash, faPen, faPlay, faPause, faEllipsisVertical, faHourglassHalf, faCheck } from '@fortawesome/free-solid-svg-icons';
 import { Document } from 'src/interfaces';
 import { useLanguage } from '../../../i18n';
+
+interface UploadJob {
+  status: 'queued' | 'processing';
+  progress: { current: number; total: number } | null;
+}
 
 interface DocumentCardProps {
   doc: Document;
@@ -14,9 +19,13 @@ interface DocumentCardProps {
   onDelete: (e: React.MouseEvent) => void;
   onEdit: (e: React.MouseEvent) => void;
   onPlay?: (e: React.MouseEvent) => void;
+  uploadJob?: UploadJob | null;
+  selectionMode?: boolean;
+  selected?: boolean;
+  onToggleSelect?: () => void;
 }
 
-export const DocumentCard = ({ doc, isActive, isPlaying, onClick, onDelete, onEdit, onPlay }: DocumentCardProps) => {
+export const DocumentCard = ({ doc, isActive, isPlaying, onClick, onDelete, onEdit, onPlay, uploadJob, selectionMode, selected, onToggleSelect }: DocumentCardProps) => {
   const { t } = useLanguage();
   const totalPages = useMemo(() => {
     if (!doc.pagesContent) return null;
@@ -63,8 +72,23 @@ export const DocumentCard = ({ doc, isActive, isPlaying, onClick, onDelete, onEd
     ? Math.min(Math.round(currentPage / totalPages * 100), 100)
     : null;
 
+  const handleClick = () => {
+    if (selectionMode) { onToggleSelect?.(); return; }
+    onClick();
+  };
+
   return (
-    <div className={`${s.card} ${isActive ? s.cardActive : ''}`} onClick={onClick}>
+    <div
+      className={`${s.card} ${isActive ? s.cardActive : ''} ${selected ? s.cardSelected : ''}`}
+      onClick={handleClick}
+    >
+      {selectionMode && (
+        <div className={s.selectionOverlay}>
+          <span className={`${s.checkbox} ${selected ? s.checkboxSelected : ''}`}>
+            {selected && <FontAwesomeIcon icon={faCheck} style={{ fontSize: '0.6rem', color: '#0a0c10' }} />}
+          </span>
+        </div>
+      )}
       <div className={`${s.actions} ${menuOpen ? s.actionsVisible : ''}`}>
         <button ref={btnRef} className={s.menuButton} onClick={openMenu}>
           <FontAwesomeIcon icon={faEllipsisVertical} />
@@ -103,6 +127,22 @@ export const DocumentCard = ({ doc, isActive, isPlaying, onClick, onDelete, onEd
           ? <img src={coverUrl} alt={doc.title} className={s.cover} />
           : <div className={s.iconWrapper}><FontAwesomeIcon icon={faFilePdf} className={s.icon} /></div>
         }
+        {uploadJob && (
+          <div className={s.uploadOverlay}>
+            {uploadJob.status === 'processing' ? (
+              <>
+                <div className={s.uploadSpinnerRing} />
+                <span className={s.uploadPct}>
+                  {uploadJob.progress
+                    ? `${Math.round(uploadJob.progress.current / uploadJob.progress.total * 100)}%`
+                    : '…'}
+                </span>
+              </>
+            ) : (
+              <FontAwesomeIcon icon={faHourglassHalf} className={s.uploadPendingIcon} />
+            )}
+          </div>
+        )}
       </div>
       <div className={s.footer}>
         <span className={s.title}>{doc.title}</span>

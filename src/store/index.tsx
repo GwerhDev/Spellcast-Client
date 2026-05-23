@@ -10,6 +10,7 @@ import credentialsReducer from './credentialsSlice';
 import groupsReducer from './groupsSlice';
 import editorReducer from './editorSlice';
 import userLibraryReducer from './userLibrarySlice';
+import pdfUploadReducer from './pdfUploadSlice';
 
 export const store = configureStore({
   reducer: {
@@ -24,12 +25,13 @@ export const store = configureStore({
     browserPlayer: browserPlayerReducer,
     apiResponses: apiResponsesReducer,
     userLibrary: userLibraryReducer,
+    pdfUpload: pdfUploadReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
         ignoredActions: ['pdfReader/loadPdf/fulfilled', 'browserPlayer/setVoice'],
-        ignoredPaths: ['pdfReader.pdfDoc', 'browserPlayer.voice'],
+        ignoredPaths: ['pdfReader.pdfDoc', 'browserPlayer.voice', 'pdfUpload.queue'],
       },
     }),
 });

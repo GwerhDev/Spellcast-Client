@@ -17,15 +17,19 @@ export type LibraryFilter = 'all' | 'local' | 'cloud';
 interface DocumentListProps {
   query?: string;
   filter?: LibraryFilter;
+  selectionMode?: boolean;
+  selectedIds?: string[];
+  onToggleSelect?: (id: string) => void;
 }
 
-export const DocumentList: React.FC<DocumentListProps> = ({ query = '', filter = 'local' }) => {
+export const DocumentList: React.FC<DocumentListProps> = ({ query = '', filter = 'local', selectionMode, selectedIds = [], onToggleSelect }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useLanguage();
   const dispatch = useDispatch();
   const { userData, logged } = useAppSelector(state => state.session);
-  const { documentId: activeDocId, isLoaded: readerLoaded } = useAppSelector(state => state.pdfReader);
+  const { documentId: activeDocId, isLoaded: readerLoaded, listVersion } = useAppSelector(state => state.pdfReader);
+  const uploadQueue = useAppSelector(state => state.pdfUpload.queue);
   const audioPlaying = useAppSelector(state => state.audioPlayer.isPlaying);
   const browserPlaying = useAppSelector(state => state.browserPlayer.isPlaying);
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -66,7 +70,7 @@ export const DocumentList: React.FC<DocumentListProps> = ({ query = '', filter =
     // When cloud is wired up: 'cloud' → API fetch, 'all' → merge both sources.
     if (filter !== 'cloud') fetchLocal();
     //eslint-disable-next-line
-  }, [userData.id, filter]);
+  }, [userData.id, filter, listVersion]);
 
   const openDeleteModal = (id: string, title: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -120,18 +124,25 @@ export const DocumentList: React.FC<DocumentListProps> = ({ query = '', filter =
     <>
       <div className={s.container}>
         <div className={s.slider}>
-          {visible.map((doc) => (
-            <DocumentCard
-              key={doc.id}
-              doc={doc}
-              onClick={() => navigate(`/document/${doc.id}`)}
-              onEdit={(e) => { e.stopPropagation(); navigate(`/editor/${doc.id}`, { state: { from: location.pathname } }); }}
-              onDelete={(e) => openDeleteModal(doc.id, doc.title, e)}
-              isActive={activeDocId === doc.id && (readerLoaded || audioPlaying || browserPlaying)}
-              isPlaying={activeDocId === doc.id && (audioPlaying || browserPlaying)}
-              onPlay={() => handlePlay(doc)}
-            />
-          ))}
+          {visible.map((doc) => {
+            const uploadJob = uploadQueue.find(j => j.targetDocId === doc.id && (j.status === 'queued' || j.status === 'processing')) ?? null;
+            return (
+              <DocumentCard
+                key={doc.id}
+                doc={doc}
+                onClick={() => navigate(`/document/${doc.id}`)}
+                onEdit={(e) => { e.stopPropagation(); navigate(`/editor/${doc.id}`, { state: { from: location.pathname } }); }}
+                onDelete={(e) => openDeleteModal(doc.id, doc.title, e)}
+                isActive={activeDocId === doc.id && (readerLoaded || audioPlaying || browserPlaying)}
+                isPlaying={activeDocId === doc.id && (audioPlaying || browserPlaying)}
+                onPlay={() => handlePlay(doc)}
+                uploadJob={uploadJob}
+                selectionMode={selectionMode}
+                selected={selectedIds.includes(doc.id)}
+                onToggleSelect={() => onToggleSelect?.(doc.id)}
+              />
+            );
+          })}
         </div>
       </div>
       {selectedDoc && (
