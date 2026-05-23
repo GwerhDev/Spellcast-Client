@@ -167,6 +167,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
   useEffect(() => {
     // This effect triggers the start of sentence-based playback once sentences are set
     activeUtteranceRef.current = null;
+    isSpeechPausedRef.current = false;
     window.speechSynthesis.cancel();
 
     if (isLoaded && currentSentenceIndex > -1) {
