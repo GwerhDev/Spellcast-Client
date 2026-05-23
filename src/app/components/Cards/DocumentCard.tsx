@@ -3,7 +3,7 @@ import { useMemo, useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFilePdf, faTrash, faPen, faPlay, faPause, faEllipsisVertical, faHourglassHalf, faCheck } from '@fortawesome/free-solid-svg-icons';
-import { Document } from 'src/interfaces';
+import { Document } from '../../../interfaces';
 import { useLanguage } from '../../../i18n';
 
 interface UploadJob {
@@ -79,6 +79,7 @@ export const DocumentCard = ({ doc, isActive, isPlaying, onClick, onDelete, onEd
 
   return (
     <div
+      data-testid={`document-card-${doc.id}`}
       className={`${s.card} ${isActive ? s.cardActive : ''} ${selected ? s.cardSelected : ''}`}
       onClick={handleClick}
     >

@@ -20,10 +20,11 @@ export const Toast: React.FC = () => {
   }, [responses, dispatch]);
 
   return (
-    <div className={s.toastContainer}>
+    <div data-testid="toast-container" className={s.toastContainer}>
       {responses.map((response) => (
         <div
           key={response.id}
+          data-testid={`toast-${response.id}`}
           className={`${s.toast} ${response.type === 'error' ? s.error : s.success}`}
           onClick={() => dispatch(removeApiResponse(response.id))}
         >
