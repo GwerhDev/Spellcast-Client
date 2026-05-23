@@ -7,7 +7,7 @@ import { Document } from 'src/interfaces';
 import { useLanguage } from '../../../i18n';
 
 interface UploadJob {
-  status: 'queued' | 'processing';
+  status: 'queued' | 'processing' | 'done' | 'error';
   progress: { current: number; total: number } | null;
 }
 
