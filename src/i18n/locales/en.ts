@@ -327,9 +327,17 @@ export const en = {
     textSubtitle: 'Write some magic words',
     textTab: 'Text',
     importTab: 'Import',
-    orImportNew: 'Or import a new one',
+    orImportNew: 'Import new file',
     addMore: 'Add more files',
     dragDrop: 'Drag and drop a PDF file here, or click to select a file',
+  },
+  notifications: {
+    title: 'Notifications',
+    empty: 'No notifications yet',
+    clearAll: 'Clear all',
+    justNow: 'Just now',
+    minutesAgo: '{n}m ago',
+    hoursAgo: '{n}h ago',
   },
   havenStore: {
     title: 'Havenstore',

@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 import s from '../../components/PdfUploadQueue/index.module.css';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { RootState } from '../../../store';
-import { dismissUpload, PdfUploadJob } from '../../../store/pdfUploadSlice';
+import { dismissUpload, setQueueUiState, PdfUploadJob } from '../../../store/pdfUploadSlice';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFile, faXmark, faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons';
 import { useLanguage } from '../../../i18n';
@@ -73,17 +73,18 @@ const JobRow: React.FC<{ job: PdfUploadJob }> = ({ job }) => {
 
 export const PdfUploadQueue: React.FC = () => {
   const { t } = useLanguage();
+  const dispatch = useDispatch();
   const queue = useSelector((state: RootState) => state.pdfUpload.queue);
-  const [minimized, setMinimized] = useState(false);
+  const uiState = useSelector((state: RootState) => state.pdfUpload.uiState);
 
-  if (queue.length === 0) return null;
+  if (queue.length === 0 || uiState === 'closed') return null;
 
   const activeCount = queue.filter(j => j.status === 'queued' || j.status === 'processing').length;
 
-  if (minimized) {
+  if (uiState === 'minimized') {
     return (
       <div data-testid="upload-queue" className={s.wrapper}>
-        <button data-testid="upload-queue-chip" className={s.chip} onClick={() => setMinimized(false)}>
+        <button data-testid="upload-queue-chip" className={s.chip} onClick={() => dispatch(setQueueUiState('open'))}>
           {activeCount > 0 && <span className={s.chipDot} />}
           <span>
             {activeCount > 0
@@ -107,9 +108,14 @@ export const PdfUploadQueue: React.FC = () => {
               : `${queue.length} PDF${queue.length > 1 ? 's' : ''}`
             }
           </span>
-          <button data-testid="upload-queue-minimize" className={s.minimizeBtn} onClick={() => setMinimized(true)}>
-            <FontAwesomeIcon icon={faChevronDown} />
-          </button>
+          <div className={s.headerActions}>
+            <button data-testid="upload-queue-minimize" className={s.minimizeBtn} onClick={() => dispatch(setQueueUiState('minimized'))} title={t.common.minimize}>
+              <FontAwesomeIcon icon={faChevronDown} />
+            </button>
+            <button data-testid="upload-queue-close" className={s.minimizeBtn} onClick={() => dispatch(setQueueUiState('closed'))} title={t.common.close}>
+              <FontAwesomeIcon icon={faXmark} />
+            </button>
+          </div>
         </div>
         <div className={s.jobList}>
           {queue.map(job => <JobRow key={job.id} job={job} />)}

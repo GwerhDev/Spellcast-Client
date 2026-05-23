@@ -28,7 +28,7 @@ export const ImportOption: React.FC = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([]);
   const [createAllTriggered, setCreateAllTriggered] = useState(false);
-  const [doneCount, setDoneCount] = useState(false);
+  const [doneCount, setDoneCount] = useState(0);
   const addMoreInputRef = useRef<HTMLInputElement>(null);
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -94,16 +94,16 @@ export const ImportOption: React.FC = () => {
   const removePending = (index: number) =>
     setPendingFiles(prev => prev.filter((_, i) => i !== index));
 
-  const hasSingleReduxFile = document.isLoaded && pendingFiles.length === 0;
+  const hasSingleReduxFile = document.isLoaded;
   const hasAnyFile = hasSingleReduxFile || pendingFiles.length > 0;
   const hasMultiple = pendingFiles.length > 1 || (pendingFiles.length > 0 && document.isLoaded);
   const totalCards = pendingFiles.length + (hasSingleReduxFile ? 1 : 0);
-  const allDone = totalCards > 0 && doneCount;
+  const allDone = totalCards > 0 && doneCount >= totalCards;
 
   const resetAll = () => {
     dispatch(resetDocumentState());
     setPendingFiles([]);
-    setDoneCount(false);
+    setDoneCount(0);
     setCreateAllTriggered(false);
   };
 
@@ -128,7 +128,7 @@ export const ImportOption: React.FC = () => {
         <DocumentCreateInput
           document={document}
           onDone={(resultDocId) => {
-            setDoneCount(true);
+            setDoneCount(prev => prev + 1);
             if (resultDocId) navigate(`/document/${resultDocId}`);
           }}
         />
@@ -139,15 +139,15 @@ export const ImportOption: React.FC = () => {
           document={{ ...f, currentPage: 0, isLoaded: true }}
           onRemove={() => removePending(i)}
           autoCreate={createAllTriggered}
-          onDone={() => setDoneCount(true)}
+          onDone={() => setDoneCount(prev => prev + 1)}
         />
       ))}
-      {!allDone && hasMultiple && (
+      {!createAllTriggered && !allDone && hasMultiple && (
         <button className={s.createAllBtn} onClick={handleCreateAll}>
           {t.editor.createAll}
         </button>
       )}
-      {!allDone && (
+      {!createAllTriggered && !allDone && (
         <>
           <input
             ref={addMoreInputRef}

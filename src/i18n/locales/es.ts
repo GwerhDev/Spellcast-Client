@@ -329,9 +329,17 @@ export const es: Translations = {
     textSubtitle: 'Escribe unas palabras mágicas',
     textTab: 'Texto',
     importTab: 'Importar',
-    orImportNew: 'O importa uno nuevo',
+    orImportNew: 'Importar nuevo archivo',
     addMore: 'Añadir más archivos',
     dragDrop: 'Arrastra y suelta un archivo PDF aquí, o haz clic para seleccionar uno',
+  },
+  notifications: {
+    title: 'Notifications',
+    empty: 'No notifications yet',
+    clearAll: 'Clear all',
+    justNow: 'Just now',
+    minutesAgo: '{n}m ago',
+    hoursAgo: '{n}h ago',
   },
   havenStore: {
     title: 'Havenstore',

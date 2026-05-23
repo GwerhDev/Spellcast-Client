@@ -1,0 +1,42 @@
+import s from '../../../components/Players/BrowserPlayer/PlaybackControls/PlaybackControls.module.css';
+import React from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faPlay, faPause, faStepBackward, faStepForward } from '@fortawesome/free-solid-svg-icons';
+import { useSelector } from 'react-redux';
+import { RootState } from '../../../../store';
+
+interface PlaybackControlsProps {
+  handlePrevious: () => void;
+  handleNext: () => void;
+  disabled: boolean;
+  isPrevDisabled: boolean;
+  isNextDisabled: boolean;
+  handleTogglePlayPause: () => void;
+}
+
+export const PlaybackControls: React.FC<PlaybackControlsProps> = ({
+  handlePrevious,
+  handleNext,
+  disabled,
+  isPrevDisabled,
+  isNextDisabled,
+  handleTogglePlayPause,
+}) => {
+  const { isPlaying } = useSelector((state: RootState) => state.browserPlayer);
+
+  return (
+    <section className={s.controlsContainer}>
+      <div className={s.controls}>
+        <button onClick={handlePrevious} disabled={disabled || isPrevDisabled} className={s.controlButton}>
+          <FontAwesomeIcon icon={faStepBackward} />
+        </button>
+        <button disabled={disabled} onClick={handleTogglePlayPause} className={`${s.playPauseButton}${isPlaying ? ` ${s.playing}` : ''}`}>
+          <span className={s.playIcon}><FontAwesomeIcon icon={isPlaying ? faPause : faPlay} /></span>
+        </button>
+        <button onClick={handleNext} disabled={disabled || isNextDisabled} className={s.controlButton}>
+          <FontAwesomeIcon icon={faStepForward} />
+        </button>
+      </div>
+    </section>
+  );
+};

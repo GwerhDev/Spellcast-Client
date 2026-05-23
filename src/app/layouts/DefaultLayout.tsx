@@ -19,6 +19,7 @@ import { VoiceSelectorModal } from '../components/Modals/VoiceSelectorModal';
 import { SoundBackground } from '../components/SoundBackground/SoundBackground';
 import { PdfUploadWorker } from '../components/PdfUploadWorker';
 import { PdfUploadQueue } from '../components/PdfUploadQueue';
+import { NotificationsButton } from '../features/NotificationsButton';
 
 export default function DefaultLayout() {
   const shouldHideMenu = location.pathname.startsWith(`/user`);
@@ -45,7 +46,6 @@ export default function DefaultLayout() {
       <SoundBackground />
       <PdfProcessor />
       <PdfUploadWorker />
-      <PdfUploadQueue />
       <SearcherModal />
       <VoiceSelectorModal
         show={isVoiceSelectorOpen}
@@ -57,6 +57,7 @@ export default function DefaultLayout() {
       />
       <div className="header-app">
         <AppSwitcher />
+        <NotificationsButton />
         <AccountMenu />
       </div>
       <div className="dashboard-container">
@@ -75,6 +76,7 @@ export default function DefaultLayout() {
         </div>
         <ReaderSettings />
         <EditorSettings />
+        <PdfUploadQueue />
       </div>
       {documentLoaded && (
         <div className="audioplayer-container">

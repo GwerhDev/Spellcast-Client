@@ -240,6 +240,7 @@ main {
   overflow: visible;
   padding-right: 16px;
   position: relative;
+  gap: 0.5rem;
 }
 
 .title-container {
@@ -312,6 +313,7 @@ a:hover {
   overflow-y: auto;
   margin-bottom: .5rem;
   padding-inline: .5rem;
+  position: relative;
 }
 
 @media (max-width: 1024px) {

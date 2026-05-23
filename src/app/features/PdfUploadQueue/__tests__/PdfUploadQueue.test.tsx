@@ -36,4 +36,12 @@ describe('PdfUploadQueue', () => {
     fireEvent.click(screen.getByTestId('upload-queue-chip'));
     expect(screen.getByTestId('upload-job-job-3')).toBeInTheDocument();
   });
+
+  it('hides panel when close button is clicked', () => {
+    const store = makeStore();
+    store.dispatch(makeQueuedJob('job-4'));
+    renderWithProviders(<PdfUploadQueue />, { store });
+    fireEvent.click(screen.getByTestId('upload-queue-close'));
+    expect(screen.queryByTestId('upload-queue')).not.toBeInTheDocument();
+  });
 });
