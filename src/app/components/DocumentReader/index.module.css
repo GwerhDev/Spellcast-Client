@@ -279,7 +279,8 @@
   box-sizing: border-box;
 }
 
-.paperSheet .readerImage:first-child:not([title="pdf-graphic"]) {
+.paperSheet .readerImage:first-child:not([title="pdf-graphic"]),
+.paperSheet :global(.ProseMirror > img:first-child:not([title="pdf-graphic"])) {
   display: block;
   object-fit: cover;
   height: var(--paper-height, auto);
