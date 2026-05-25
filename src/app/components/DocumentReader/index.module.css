@@ -281,13 +281,14 @@
 
 .paperSheet .readerImage:first-child:not([title="pdf-graphic"]) {
   display: block;
-  height: auto;
+  object-fit: cover;
+  height: var(--paper-height, auto);
   border-radius: 0;
   width: calc(100% + var(--margin-left, 64px) + var(--margin-right, 64px));
   max-width: none;
   margin-left: calc(-1 * var(--margin-left, 64px));
   margin-top: calc(-1 * var(--margin-top, 48px));
-  margin-bottom: -6rem;
+  margin-bottom: 0;
 }
 
 /* PDF graphic (decorative header) — normal inline image, no bleed */

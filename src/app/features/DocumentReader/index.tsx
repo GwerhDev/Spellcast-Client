@@ -239,6 +239,7 @@ export const DocumentReader = () => {
           '--margin-right': `${pageMargins.marginRight}px`,
           '--margin-bottom': `${pageMargins.marginBottom}px`,
           '--margin-left': `${pageMargins.marginLeft}px`,
+          '--paper-height': `${paperMinHeight}px`,
         } as React.CSSProperties}
       >
         {children}
