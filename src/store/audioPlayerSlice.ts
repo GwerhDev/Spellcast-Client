@@ -1,4 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import type { TimelineEntry } from '../services/tts';
 
 interface AudioPlayerState {
   playlist: string[];
@@ -9,6 +10,8 @@ interface AudioPlayerState {
   duration: number;
   sourceType: 'playlist' | 'pdfPage';
   autoPlayOnLoad: boolean;
+  timeline: TimelineEntry[];
+  pendingSeekMs: number | null;
 }
 
 const initialState: AudioPlayerState = {
@@ -20,6 +23,8 @@ const initialState: AudioPlayerState = {
   duration: 0,
   sourceType: 'playlist',
   autoPlayOnLoad: false,
+  timeline: [],
+  pendingSeekMs: null,
 };
 
 const audioPlayerSlice = createSlice({
@@ -91,6 +96,15 @@ const audioPlayerSlice = createSlice({
     setAutoPlayOnLoad: (state, action: PayloadAction<boolean>) => {
       state.autoPlayOnLoad = action.payload;
     },
+    setAiTimeline: (state, action: PayloadAction<TimelineEntry[]>) => {
+      state.timeline = action.payload;
+    },
+    setPendingSeek: (state, action: PayloadAction<number>) => {
+      state.pendingSeekMs = action.payload;
+    },
+    clearPendingSeek: (state) => {
+      state.pendingSeekMs = null;
+    },
     resetAudioPlayer: (state) => {
       state.playlist = [];
       state.currentTrackIndex = null;
@@ -114,6 +128,9 @@ export const {
   setCurrentTime,
   setDuration,
   setAutoPlayOnLoad,
+  setAiTimeline,
+  setPendingSeek,
+  clearPendingSeek,
   resetAudioPlayer,
 } = audioPlayerSlice.actions;
 

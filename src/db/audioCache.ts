@@ -1,3 +1,5 @@
+import type { TimelineEntry } from '../services/tts';
+
 const DB_NAME = 'spellcast-audio-cache';
 const DB_VERSION = 1;
 const STORE_NAME = 'audio_pages';
@@ -27,11 +29,15 @@ export const getCachedAudio = async (
   documentId: string,
   page: number,
   voice: string,
-): Promise<Blob | null> => {
+): Promise<{ blob: Blob; timeline: TimelineEntry[] } | null> => {
   const db = await openDB();
   return new Promise((resolve, reject) => {
     const request = db.transaction(STORE_NAME, 'readonly').objectStore(STORE_NAME).get(makeKey(documentId, page, voice));
-    request.onsuccess = () => resolve((request.result as { id: string; blob: Blob } | undefined)?.blob ?? null);
+    request.onsuccess = () => {
+      const record = request.result as { id: string; blob: Blob; timeline?: TimelineEntry[] } | undefined;
+      if (!record) { resolve(null); return; }
+      resolve({ blob: record.blob, timeline: record.timeline ?? [] });
+    };
     request.onerror = (e) => reject((e.target as IDBRequest).error);
   });
 };
@@ -41,10 +47,11 @@ export const setCachedAudio = async (
   page: number,
   voice: string,
   blob: Blob,
+  timeline: TimelineEntry[] = [],
 ): Promise<void> => {
   const db = await openDB();
   return new Promise((resolve, reject) => {
-    const request = db.transaction(STORE_NAME, 'readwrite').objectStore(STORE_NAME).put({ id: makeKey(documentId, page, voice), blob });
+    const request = db.transaction(STORE_NAME, 'readwrite').objectStore(STORE_NAME).put({ id: makeKey(documentId, page, voice), blob, timeline });
     request.onsuccess = () => resolve();
     request.onerror = (e) => reject((e.target as IDBRequest).error);
   });

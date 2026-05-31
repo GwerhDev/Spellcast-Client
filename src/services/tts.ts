@@ -74,10 +74,17 @@ export async function getVoicesByCredential(credentialId: string): Promise<Voice
   }
 }
 
+export interface TimelineEntry {
+  text: string;
+  start: number;
+  end: number;
+}
+
 export async function textToSpeechService(
   data: { text: string; voice: string },
   signal?: AbortSignal,
-): Promise<Blob> {
+  withTimeline = false,
+): Promise<{ blob: Blob; timeline: TimelineEntry[] }> {
   try {
     let doc: TiptapNode;
     try {
@@ -87,8 +94,9 @@ export async function textToSpeechService(
     }
 
     const body = injectDefaultVoice(flattenToSingleParagraph(doc), data.voice);
+    const url = withTimeline ? `${API_BASE}/tts/?with_timeline=true` : `${API_BASE}/tts/`;
 
-    const response = await fetch(`${API_BASE}/tts/`, {
+    const response = await fetch(url, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
@@ -101,7 +109,21 @@ export async function textToSpeechService(
       throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
     }
 
-    return await response.blob();
+    const blob = await response.blob();
+    let timeline: TimelineEntry[] = [];
+
+    if (withTimeline) {
+      const raw = response.headers.get('X-Timeline');
+      if (raw) {
+        try {
+          const bytes = Uint8Array.from(raw, c => c.charCodeAt(0));
+          const decoded = new TextDecoder('utf-8').decode(bytes);
+          timeline = JSON.parse(decoded);
+        } catch { /* ignore malformed timeline */ }
+      }
+    }
+
+    return { blob, timeline };
   } catch (error) {
     console.error(error);
     throw error;

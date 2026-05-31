@@ -10,13 +10,13 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowLeft, faEdit, faFilePdf, faGear, faExpand, faCompress, faInfoCircle } from '@fortawesome/free-solid-svg-icons';
 import { RootState } from '../../../store';
 import { goToPage, setCurrentSentenceIndex, setShowReaderSettings } from '../../../store/pdfReaderSlice';
+import { setPendingSeek } from '../../../store/audioPlayerSlice';
 import { pageBackgrounds } from '../../../config/assets';
 import { Spinner } from '../../components/Spinner';
 import { IconButton } from '../../components/Buttons/IconButton';
 import { SearcherButton } from '../../components/DocumentReader/Searcher/SearcherButton';
 import { PageList } from '../../components/DocumentCreateForm/PageList';
 import type { JSONContent } from '../../../magictext';
-import { MagicTextEditor } from '../../../magictext';
 import { useLanguage } from '../../../i18n';
 
 const emptyContent: JSONContent = {
@@ -42,6 +42,7 @@ export const DocumentReader = () => {
     isLoaded, currentSentenceIndex, fitToWidth,
   } = useSelector((state: RootState) => state.pdfReader);
   const { selectedVoice } = useSelector((state: RootState) => state.voice);
+  const { timeline: aiTimeline, currentTime: aiCurrentTime, isPlaying: aiIsPlaying } = useSelector((state: RootState) => state.audioPlayer);
   const { isPlaying } = useSelector((state: RootState) => state.browserPlayer);
   const { activePageBgId } = useSelector((state: RootState) => state.userLibrary);
   const activeBg = pageBackgrounds.find(b => b.id === activePageBgId) ?? null;
@@ -101,8 +102,19 @@ export const DocumentReader = () => {
     setEditedText(safeParseJSON(currentPageText));
   }, [currentPageText]);
 
+  const activeSentenceIndex = React.useMemo(() => {
+    if (selectedVoice.type !== 'ai' || aiTimeline.length === 0) return currentSentenceIndex;
+    const ms = aiCurrentTime * 1000;
+    for (let i = aiTimeline.length - 1; i >= 0; i--) {
+      if (ms >= aiTimeline[i].start) return i;
+    }
+    return -1;
+  }, [selectedVoice.type, aiTimeline, aiCurrentTime, currentSentenceIndex]);
+
   useEffect(() => {
-    if (selectedVoice.type !== 'browser' || currentSentenceIndex < 0) return;
+    if (activeSentenceIndex < 0) return;
+    const playing = selectedVoice.type === 'ai' ? aiIsPlaying : isPlaying;
+    if (!playing) return;
     const container = fitToWidth ? scrollContainerRef.current : paperBgRef.current;
     if (!container) return;
     const highlighted = container.querySelector(`.${s.highlight}`) as HTMLElement | null;
@@ -119,7 +131,7 @@ export const DocumentReader = () => {
     } else if (elemTop - TOP_MARGIN < container.scrollTop) {
       container.scrollTo({ top: Math.max(0, elemTop - TOP_MARGIN), behavior: 'smooth' });
     }
-  }, [currentSentenceIndex, isPlaying, selectedVoice.type, fitToWidth]);
+  }, [activeSentenceIndex, isPlaying, aiIsPlaying, selectedVoice.type, fitToWidth]);
 
   useEffect(() => {
     if (selectedVoice.type === 'browser') return;
@@ -129,8 +141,11 @@ export const DocumentReader = () => {
 
   const handleEdit = () => { navigate(`/editor/${documentId}/${currentPage}`); };
   const handleSentenceClick = (clickedIndex: number) => {
-    if (selectedVoice.type !== 'browser') return;
-    dispatch(setCurrentSentenceIndex(clickedIndex));
+    if (selectedVoice.type === 'browser') {
+      dispatch(setCurrentSentenceIndex(clickedIndex));
+    } else if (aiTimeline.length > 0 && aiTimeline[clickedIndex]) {
+      dispatch(setPendingSeek(aiTimeline[clickedIndex].start));
+    }
   };
 
   const renderFormattedSentences = (fit: boolean) => {
@@ -206,7 +221,7 @@ export const DocumentReader = () => {
         return (
           <span
             key={idx}
-            className={idx === currentSentenceIndex ? s.highlight : s.sentence}
+            className={idx === activeSentenceIndex ? s.highlight : s.sentence}
             onClick={() => handleSentenceClick(idx)}
           >
             {parts}{' '}
@@ -251,37 +266,18 @@ export const DocumentReader = () => {
       height: `${paperMinHeight * zoom}px`,
     };
 
-    if (selectedVoice.type === 'browser') {
-      if (!fitToWidth) {
-        return (
-          <div ref={paperBgRef} className={s.paperBackground}>
-            <div className={s.zoomWrapper} style={wrapperStyle}>
-              {paperSheet(renderFormattedSentences(false))}
-            </div>
-          </div>
-        );
-      }
-      return (
-        <div ref={scrollContainerRef} className={`${s.textContainer} ${s.readerContent}`} style={Object.keys(pageBgVars).length ? pageBgVars : undefined}>
-          {renderFormattedSentences(true)}
-        </div>
-      );
-    }
-
     if (!fitToWidth) {
       return (
         <div ref={paperBgRef} className={s.paperBackground}>
           <div className={s.zoomWrapper} style={wrapperStyle}>
-            {paperSheet(
-              <MagicTextEditor key={currentPage} editable={false} content={editedText} inputType="json" contentClassName={s.editorContent} />
-            )}
+            {paperSheet(renderFormattedSentences(false))}
           </div>
         </div>
       );
     }
     return (
       <div ref={scrollContainerRef} className={`${s.textContainer} ${s.readerContent}`} style={Object.keys(pageBgVars).length ? pageBgVars : undefined}>
-        <MagicTextEditor key={currentPage} editable={false} content={editedText} inputType="json" contentClassName={s.editorContent} />
+        {renderFormattedSentences(true)}
       </div>
     );
   };

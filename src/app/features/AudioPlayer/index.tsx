@@ -12,6 +12,8 @@ import {
   play,
   pause,
   setAutoPlayOnLoad,
+  setAiTimeline,
+  clearPendingSeek,
 } from '../../../store/audioPlayerSlice';
 import { setSoundBgVolume, setMasterVolume } from '../../../store/userLibrarySlice';
 import { goToNextPage, goToPreviousPage, setShowSearcher } from '../../../store/pdfReaderSlice';
@@ -19,7 +21,7 @@ import { PlaybackControls } from '../../components/Players/AudioPlayer/PlaybackC
 import { VolumeControls } from '../../components/Players/AudioPlayer/VolumeControls/VolumeControls';
 import { VoiceSelectorButton } from '../../components/Players/AudioPlayer/VoiceSelectorButton/VoiceSelectorButton';
 import { PlayerConfigButton } from '../../components/Players/AudioPlayer/PlayerConfigButton/PlayerConfigButton';
-import { textToSpeechService } from '../../../services/tts';
+import { textToSpeechService, type TimelineEntry } from '../../../services/tts';
 import { getCachedAudio, setCachedAudio } from '../../../db/audioCache';
 import { getDocumentById } from '../../../db';
 import { useNavigate } from 'react-router-dom';
@@ -46,6 +48,7 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
     currentTime,
     currentTrackIndex,
     autoPlayOnLoad,
+    pendingSeekMs,
   } = useSelector((state: RootState) => state.audioPlayer);
   const {
     isLoaded,
@@ -67,6 +70,7 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
   const abortControllerRef = useRef<AbortController | null>(null);
   const prefetchAbortRef = useRef<AbortController | null>(null);
   const currentBlobUrlRef = useRef<string | null>(null);
+  const aiTimelineRef = useRef<TimelineEntry[]>([]);
   const volumeSliderRef = useRef<HTMLDivElement>(null);
   const volumeButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -155,10 +159,15 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
     }
   }, [isPlaying, currentTime]);
 
+  useEffect(() => {
+    if (pendingSeekMs === null || !audioRef.current || !pageAudioReadyRef.current) return;
+    audioRef.current.currentTime = pendingSeekMs / 1000;
+    dispatch(clearPendingSeek());
+  }, [pendingSeekMs, dispatch]);
+
   const handleTimeUpdate = () => {
-    if (audioRef.current) {
-      dispatch(setCurrentTime(audioRef.current.currentTime));
-    }
+    if (!audioRef.current) return;
+    dispatch(setCurrentTime(audioRef.current.currentTime));
   };
 
   const handleLoadedMetadata = () => {
@@ -209,7 +218,7 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
   const prefetchNextPage = async (nextPage: number) => {
     if (!documentId || !userData?.id) return;
     const cached = await getCachedAudio(documentId, nextPage, selectedVoice.value);
-    if (cached) return;
+    if (cached?.timeline.length) return;
 
     const controller = new AbortController();
     prefetchAbortRef.current = controller;
@@ -219,12 +228,13 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
       const pages = JSON.parse(doc.pagesContent) as unknown[];
       const pageText = pages[nextPage - 1];
       if (!pageText) return;
-      const blob = await textToSpeechService(
+      const { blob, timeline } = await textToSpeechService(
         { text: JSON.stringify(pageText), voice: selectedVoice.value },
-        controller.signal
+        controller.signal,
+        true,
       );
       if (!controller.signal.aborted) {
-        setCachedAudio(documentId, nextPage, selectedVoice.value, blob);
+        setCachedAudio(documentId, nextPage, selectedVoice.value, blob, timeline);
       }
     } catch (e) {
       if (e instanceof Error && e.name === 'AbortError') return;
@@ -248,19 +258,24 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
     dispatch(setDuration(0));
 
     try {
-      let blob: Blob | null = documentId
+      const cachedResult = documentId
         ? await getCachedAudio(documentId, currentPage, selectedVoice.value)
         : null;
+      let blob: Blob | null = cachedResult?.blob ?? null;
 
       if (controller.signal.aborted) return;
 
-      if (!blob) {
-        blob = await textToSpeechService({ text, voice: selectedVoice.value }, controller.signal);
-        if (!controller.signal.aborted && documentId) {
-          setCachedAudio(documentId, currentPage, selectedVoice.value, blob);
-        }
+      if (cachedResult && cachedResult.timeline.length > 0) {
+        aiTimelineRef.current = cachedResult.timeline;
+        dispatch(setAiTimeline(cachedResult.timeline));
+      } else {
+        const result = await textToSpeechService({ text, voice: selectedVoice.value }, controller.signal, true);
+        if (controller.signal.aborted) return;
+        blob = result.blob;
+        aiTimelineRef.current = result.timeline;
+        dispatch(setAiTimeline(result.timeline));
+        if (documentId) setCachedAudio(documentId, currentPage, selectedVoice.value, blob, result.timeline);
       }
-
       if (!controller.signal.aborted) {
         loadAudio(blob);
         if (shouldPlay) {
