@@ -83,7 +83,6 @@ export interface TimelineEntry {
 export async function textToSpeechService(
   data: { text: string; voice: string },
   signal?: AbortSignal,
-  withTimeline = false,
 ): Promise<{ blob: Blob; timeline: TimelineEntry[] }> {
   try {
     let doc: TiptapNode;
@@ -94,7 +93,7 @@ export async function textToSpeechService(
     }
 
     const body = injectDefaultVoice(flattenToSingleParagraph(doc), data.voice);
-    const url = withTimeline ? `${API_BASE}/tts/?with_timeline=true` : `${API_BASE}/tts/`;
+    const url = `${API_BASE}/tts/?with_timeline=true`;
 
     const response = await fetch(url, {
       method: 'POST',
@@ -112,15 +111,13 @@ export async function textToSpeechService(
     const blob = await response.blob();
     let timeline: TimelineEntry[] = [];
 
-    if (withTimeline) {
-      const raw = response.headers.get('X-Timeline');
-      if (raw) {
-        try {
-          const bytes = Uint8Array.from(raw, c => c.charCodeAt(0));
-          const decoded = new TextDecoder('utf-8').decode(bytes);
-          timeline = JSON.parse(decoded);
-        } catch { /* ignore malformed timeline */ }
-      }
+    const raw = response.headers.get('X-Timeline');
+    if (raw) {
+      try {
+        const bytes = Uint8Array.from(raw, c => c.charCodeAt(0));
+        const decoded = new TextDecoder('utf-8').decode(bytes);
+        timeline = JSON.parse(decoded);
+      } catch { /* ignore malformed timeline */ }
     }
 
     return { blob, timeline };

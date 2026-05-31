@@ -231,7 +231,6 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
       const { blob, timeline } = await textToSpeechService(
         { text: JSON.stringify(pageText), voice: selectedVoice.value },
         controller.signal,
-        true,
       );
       if (!controller.signal.aborted) {
         setCachedAudio(documentId, nextPage, selectedVoice.value, blob, timeline);
@@ -269,7 +268,7 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
         aiTimelineRef.current = cachedResult.timeline;
         dispatch(setAiTimeline(cachedResult.timeline));
       } else {
-        const result = await textToSpeechService({ text, voice: selectedVoice.value }, controller.signal, true);
+        const result = await textToSpeechService({ text, voice: selectedVoice.value }, controller.signal);
         if (controller.signal.aborted) return;
         blob = result.blob;
         aiTimelineRef.current = result.timeline;
