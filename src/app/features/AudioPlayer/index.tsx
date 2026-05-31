@@ -276,7 +276,7 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
         if (documentId) setCachedAudio(documentId, currentPage, selectedVoice.value, blob, result.timeline);
       }
       if (!controller.signal.aborted) {
-        loadAudio(blob);
+        loadAudio(blob!);
         if (shouldPlay) {
           dispatch(play());
           audioRef.current!.play().catch(e => console.error('Error playing audio:', e));

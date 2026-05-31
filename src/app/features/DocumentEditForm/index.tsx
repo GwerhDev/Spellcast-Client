@@ -110,7 +110,7 @@ export const DocumentEditForm: React.FC = () => {
     if (isAIVoice && payload.voice) {
       setTtsPlaying(true);
       textToSpeechService({ text: payload.text, voice: payload.voice })
-        .then((blob) => {
+        .then(({ blob }) => {
           const url = URL.createObjectURL(blob);
           const audio = new Audio(url);
           ttsAudioRef.current = audio;

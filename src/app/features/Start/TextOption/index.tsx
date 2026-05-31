@@ -181,7 +181,7 @@ export const TextOption: React.FC = () => {
     } else {
       setIsLoading(true);
       try {
-        const blob = await textToSpeechService({ text, voice: selectedVoiceValue });
+        const { blob } = await textToSpeechService({ text, voice: selectedVoiceValue });
         const url = URL.createObjectURL(blob);
         if (audioRef.current) {
           audioRef.current.pause();
