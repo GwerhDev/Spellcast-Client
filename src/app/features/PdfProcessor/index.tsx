@@ -15,7 +15,7 @@ const extractSentencesFromJSON = (text: string): string[] => {
     for (const node of (json.content || [])) {
       if (node.type === 'image') {
         const alt = (node.attrs as { alt?: string })?.alt;
-        if (alt) sentences.push(...alt.split(/(?<=[.!?])\s*/).filter(Boolean));
+        if (alt) sentences.push(...alt.split(/(?<=[.!?])(?!\s*\.)\s*/).filter(Boolean));
         continue;
       }
       if (node.type !== 'paragraph' && node.type !== 'heading') continue;
@@ -28,11 +28,11 @@ const extractSentencesFromJSON = (text: string): string[] => {
         .join('')
         .trim();
       if (!nodeText) continue;
-      sentences.push(...nodeText.split(/(?<=[.!?])\s*/).filter(Boolean));
+      sentences.push(...nodeText.split(/(?<=[.!?])(?!\s*\.)\s*/).filter(Boolean));
     }
     return sentences;
   } catch {
-    return text.split(/(?<=[.!?])/).filter(Boolean);
+    return text.split(/(?<=[.!?])(?!\s*\.)/).filter(Boolean);
   }
 };
 

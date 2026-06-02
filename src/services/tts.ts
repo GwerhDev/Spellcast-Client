@@ -15,48 +15,81 @@ interface TiptapNode {
   attrs?: Record<string, unknown>;
 }
 
-const collectInlineNodes = (node: TiptapNode): TiptapNode[] => {
-  if (node.type === 'text') return node.text?.trim() ? [node] : [];
-  if (node.type === 'hardBreak') return [{ type: 'text', text: ' ' }];
-  return (node.content ?? []).flatMap(collectInlineNodes);
+export interface TtsSegment {
+  text: string;
+  voice: string;
+  inflection: string;
+}
+
+export interface TimelineEntry {
+  text: string;
+  start: number;
+  end: number;
+}
+
+const getNodeText = (node: TiptapNode): string => {
+  if (node.type === 'text') return node.text ?? '';
+  if (node.type === 'hardBreak') return ' ';
+  return (node.content ?? []).map(getNodeText).join('');
 };
 
-const mergeTextNodes = (nodes: TiptapNode[]): TiptapNode[] =>
-  nodes.reduce<TiptapNode[]>((acc, node) => {
-    const last = acc[acc.length - 1];
-    if (
-      node.type === 'text' &&
-      last?.type === 'text' &&
-      JSON.stringify(last.marks ?? []) === JSON.stringify(node.marks ?? [])
-    ) {
-      acc[acc.length - 1] = { ...last, text: (last.text ?? '') + (node.text ?? '') };
-      return acc;
-    }
-    acc.push(node);
-    return acc;
-  }, []);
-
-const flattenToSingleParagraph = (doc: TiptapNode): TiptapNode => ({
-  ...doc,
-  content: [{ type: 'paragraph', content: mergeTextNodes(doc.content?.flatMap(collectInlineNodes) ?? []) }],
-});
-
-const injectDefaultVoice = (node: TiptapNode, voice: string): TiptapNode => {
+const getNodeVoice = (node: TiptapNode, defaultVoice: string): string => {
   if (node.type === 'text') {
-    const hasTtsMark = node.marks?.some(m => m.type === 'tts');
-    if (!hasTtsMark) {
-      return {
-        ...node,
-        marks: [...(node.marks ?? []), { type: 'tts', attrs: { voice } }],
-      };
-    }
-    return node;
+    const mark = node.marks?.find(m => m.type === 'tts');
+    const v = mark?.attrs?.voice as string | undefined;
+    if (v && v !== 'default') return v;
   }
-  if (node.content) {
-    return { ...node, content: node.content.map(n => injectDefaultVoice(n, voice)) };
+  for (const child of node.content ?? []) {
+    const v = getNodeVoice(child, defaultVoice);
+    if (v !== defaultVoice) return v;
   }
-  return node;
+  return defaultVoice;
 };
+
+const getNodeInflection = (node: TiptapNode): string => {
+  if (node.type === 'text') {
+    const mark = node.marks?.find(m => m.type === 'tts');
+    const inf = mark?.attrs?.inflection as string | undefined;
+    if (inf && inf !== 'default') return inf;
+  }
+  for (const child of node.content ?? []) {
+    const inf = getNodeInflection(child);
+    if (inf !== 'default') return inf;
+  }
+  return 'default';
+};
+
+export function buildSegments(docText: string, defaultVoice: string): TtsSegment[] {
+  let doc: TiptapNode;
+  try {
+    doc = JSON.parse(docText);
+  } catch {
+    doc = { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: docText }] }] };
+  }
+
+  const segments: TtsSegment[] = [];
+
+  for (const node of doc.content ?? []) {
+    if (node.type !== 'paragraph' && node.type !== 'heading') continue;
+    const rawText = getNodeText(node).trim();
+    if (!rawText) continue;
+
+    const voice = getNodeVoice(node, defaultVoice);
+    const inflection = getNodeInflection(node);
+
+    const sentences = rawText.split(/(?<=[.!?])(?!\s*\.)/).map(s => s.trim()).filter(Boolean);
+    for (const text of sentences) {
+      segments.push({ text, voice, inflection });
+    }
+  }
+
+  if (segments.length === 0) {
+    const fallback = (doc.content ?? []).map(getNodeText).join(' ').trim();
+    if (fallback) segments.push({ text: fallback, voice: defaultVoice, inflection: 'default' });
+  }
+
+  return segments;
+}
 
 export async function getVoicesByCredential(credentialId: string): Promise<Voice[]> {
   try {
@@ -74,32 +107,19 @@ export async function getVoicesByCredential(credentialId: string): Promise<Voice
   }
 }
 
-export interface TimelineEntry {
-  text: string;
-  start: number;
-  end: number;
-}
-
 export async function textToSpeechService(
   data: { text: string; voice: string },
   signal?: AbortSignal,
 ): Promise<{ blob: Blob; timeline: TimelineEntry[] }> {
   try {
-    let doc: TiptapNode;
-    try {
-      doc = JSON.parse(data.text);
-    } catch {
-      doc = { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: data.text }] }] };
-    }
-
-    const body = injectDefaultVoice(flattenToSingleParagraph(doc), data.voice);
+    const segments = buildSegments(data.text, data.voice);
     const url = `${API_BASE}/tts/?with_timeline=true`;
 
     const response = await fetch(url, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
+      body: JSON.stringify(segments),
       signal,
     });
 

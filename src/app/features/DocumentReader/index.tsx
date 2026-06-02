@@ -105,10 +105,10 @@ export const DocumentReader = () => {
   const activeSentenceIndex = React.useMemo(() => {
     if (selectedVoice.type !== 'ai' || aiTimeline.length === 0) return currentSentenceIndex;
     const ms = aiCurrentTime * 1000;
-    for (let i = aiTimeline.length - 1; i >= 0; i--) {
-      if (ms >= aiTimeline[i].start) return i;
+    for (let i = 0; i < aiTimeline.length; i++) {
+      if (ms < aiTimeline[i].end) return i;
     }
-    return -1;
+    return aiTimeline.length - 1;
   }, [selectedVoice.type, aiTimeline, aiCurrentTime, currentSentenceIndex]);
 
   useEffect(() => {
@@ -175,7 +175,7 @@ export const DocumentReader = () => {
 
       if (!rawText.trim()) return <p key={nIdx} className={s.emptyBlock} />;
 
-      const nodeSentences = rawText.split(fit ? /(?<=[.!?])\s*/ : /(?<=[.!?])/).filter(Boolean);
+      const nodeSentences = rawText.split(fit ? /(?<=[.!?])(?!\s*\.)\s*/ : /(?<=[.!?])(?!\s*\.)/).filter(s => s.trim());
       const level = node.type === 'heading' ? ((node.attrs as { level?: number })?.level ?? 1) : 0;
       const Tag = (node.type === 'heading' ? `h${level}` : 'p') as keyof JSX.IntrinsicElements;
       const nodeAttrs = node.attrs as { marginLeft?: number; textAlign?: string } | undefined;

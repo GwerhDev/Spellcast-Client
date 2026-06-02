@@ -21,8 +21,8 @@ import { PlaybackControls } from '../../components/Players/AudioPlayer/PlaybackC
 import { VolumeControls } from '../../components/Players/AudioPlayer/VolumeControls/VolumeControls';
 import { VoiceSelectorButton } from '../../components/Players/AudioPlayer/VoiceSelectorButton/VoiceSelectorButton';
 import { PlayerConfigButton } from '../../components/Players/AudioPlayer/PlayerConfigButton/PlayerConfigButton';
-import { textToSpeechService, type TimelineEntry } from '../../../services/tts';
-import { getCachedAudio, setCachedAudio } from '../../../db/audioCache';
+import { textToSpeechService, buildSegments, type TimelineEntry } from '../../../services/tts';
+import { getCachedAudio, setCachedAudio, AUDIO_CACHE_VERSION } from '../../../db/audioCache';
 import { getDocumentById } from '../../../db';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '../../../store/hooks';
@@ -252,7 +252,11 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
 
     pageAudioReadyRef.current = false;
     setIsFetching(true);
-    if (audioRef.current) audioRef.current.currentTime = 0;
+    if (shouldPlay) dispatch(pause());
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
     dispatch(setCurrentTime(0));
     dispatch(setDuration(0));
 
@@ -264,7 +268,13 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
 
       if (controller.signal.aborted) return;
 
-      if (cachedResult && cachedResult.timeline.length > 0) {
+      const expectedSegments = buildSegments(text, selectedVoice.value).length;
+      const cacheValid = cachedResult &&
+        cachedResult.cacheVersion === AUDIO_CACHE_VERSION &&
+        cachedResult.timeline.length > 0 &&
+        cachedResult.timeline.length === expectedSegments;
+
+      if (cacheValid) {
         aiTimelineRef.current = cachedResult.timeline;
         dispatch(setAiTimeline(cachedResult.timeline));
       } else {
