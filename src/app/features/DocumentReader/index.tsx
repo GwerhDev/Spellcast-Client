@@ -58,6 +58,7 @@ export const DocumentReader = () => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const paperBgRef = useRef<HTMLDivElement>(null);
   const playerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const { zoom, showIndicator, adjustZoom, resetZoom, ZOOM_STEP } = useZoom(paperBgRef);
 
   const pageAttrs = editedText?.attrs as { pageWidth?: number; pageHeight?: number; displayWidth?: number; displayHeight?: number; marginTop?: number; marginRight?: number; marginBottom?: number; marginLeft?: number } | undefined;

@@ -461,37 +461,38 @@ body.fullscreen-reader .nav-container {
   display: none;
 }
 
+body.fullscreen-reader .dashboard-container,
+body.fullscreen-reader .app-viewer {
+  min-height: 0;
+}
+
 body.fullscreen-reader .audioplayer-container {
-  position: fixed;
-  bottom: 0;
-  margin: 0;
+  max-height: 0;
+  overflow: hidden;
   opacity: 0;
-  transition: opacity 0.25s ease;
-  z-index: 1000;
+  pointer-events: none;
+  transition: max-height 0.25s ease, opacity 0.25s ease;
+  flex-shrink: 0;
 }
 
 body.fullscreen-reader.fullscreen-player-visible .audioplayer-container {
+  max-height: 200px;
   opacity: 1;
+  pointer-events: auto;
 }
 
 body.fullscreen-reader .reader-top-bar {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 10;
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.25s ease;
-  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.15) 0%, transparent 100%);
-  padding: 0.5rem 2.5rem;
-  backdrop-filter: blur(5px);
 }
 
 body.fullscreen-reader.fullscreen-player-visible .reader-top-bar {
   opacity: 1;
   pointer-events: auto;
 }
+
+
 
 .tiptap.ProseMirror.simple-editor {
   width: 100%;
