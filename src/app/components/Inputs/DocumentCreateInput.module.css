@@ -49,45 +49,48 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 2.2rem;
+  height: 2.2rem;
   padding: 0;
   box-sizing: border-box;
   background: transparent;
-  border: none;
-  color: var(--color-light-400);
-  font-size: 1.3rem;
+  border: 1.5px solid var(--color-dark-300);
+  border-radius: 50%;
+  color: var(--color-light-300);
+  font-size: 1rem;
   cursor: pointer;
   flex-shrink: 0;
-  transition: color 0.2s;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
 }
 
 .continueButton:hover {
+  border-color: var(--color-primary);
   color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
 }
 
 .removeBtn {
-  position: absolute;
-  top: 0.4rem;
-  right: 0.4rem;
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 2.2rem;
+  height: 2.2rem;
   padding: 0;
   box-sizing: border-box;
   border-radius: 50%;
-  border: 0.5px solid var(--color-dark-300);
-  background: var(--component-background);
+  border: 1.5px solid var(--color-dark-300);
+  background: transparent;
   color: var(--color-light-400);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.7rem;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  font-size: 0.8rem;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+  flex-shrink: 0;
 }
 
 .removeBtn:hover {
-  background: var(--color-danger);
-  border-color: var(--color-danger);
-  color: #fff;
+  border-color: var(--color-danger, #e06c75);
+  color: var(--color-danger, #e06c75);
+  background: color-mix(in srgb, var(--color-danger, #e06c75) 10%, transparent);
 }
 
 .metaRow {
@@ -98,11 +101,10 @@
 
 .actionCol {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
   gap: 0.4rem;
   flex-shrink: 0;
-  min-width: 3rem;
 }
 
 .containerActive {
@@ -162,7 +164,8 @@
 .toggleGroup {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.3rem;
+  margin-left: 0.25rem;
 }
 
 .toggleLabel {
@@ -173,9 +176,9 @@
 
 .toggle {
   flex-shrink: 0;
-  width: 36px;
-  height: 20px;
-  border-radius: 10px;
+  width: 26px;
+  height: 14px;
+  border-radius: 7px;
   border: none;
   cursor: pointer;
   padding: 2px;
@@ -198,8 +201,8 @@
 }
 
 .toggleThumb {
-  width: 16px;
-  height: 16px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   background: #fff;
   transition: transform 0.2s;
@@ -208,7 +211,7 @@
 }
 
 .toggleThumbOn {
-  transform: translateX(16px);
+  transform: translateX(12px);
 }
 
 .progressBar {

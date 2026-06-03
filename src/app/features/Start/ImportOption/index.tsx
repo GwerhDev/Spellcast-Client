@@ -29,6 +29,7 @@ export const ImportOption: React.FC = () => {
   const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([]);
   const [createAllTriggered, setCreateAllTriggered] = useState(false);
   const [doneCount, setDoneCount] = useState(0);
+  const [isProcessing, setIsProcessing] = useState(false);
   const addMoreInputRef = useRef<HTMLInputElement>(null);
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -56,23 +57,36 @@ export const ImportOption: React.FC = () => {
     const arr = Array.from(files).filter(f => f.type === 'application/pdf');
     if (arr.length === 0) return;
 
-    if (arr.length === 1 && pendingFiles.length === 0 && !document.isLoaded) {
-      const f = arr[0];
-      const fileType = f.type.split('/').at(-1);
-      const fileName = f.name.split('.').filter(e => e !== fileType).join(' ');
-      const reader = new FileReader();
-      reader.onload = async (ev) => {
-        const fileContent = ev.target?.result as string;
-        const pdfData = atob(fileContent.substring(fileContent.indexOf(',') + 1));
-        const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
-        dispatch(setDocumentDetails({ fileContent, size: f.size, type: fileType, title: fileName, totalPages: pdf.numPages }));
-      };
-      reader.readAsDataURL(f);
-      return;
-    }
+    setIsProcessing(true);
+    try {
+      if (arr.length === 1 && pendingFiles.length === 0 && !document.isLoaded) {
+        const f = arr[0];
+        const fileType = f.type.split('/').at(-1);
+        const fileName = f.name.split('.').filter(e => e !== fileType).join(' ');
+        await new Promise<void>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = async (ev) => {
+            try {
+              const fileContent = ev.target?.result as string;
+              const pdfData = atob(fileContent.substring(fileContent.indexOf(',') + 1));
+              const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
+              dispatch(setDocumentDetails({ fileContent, size: f.size, type: fileType, title: fileName, totalPages: pdf.numPages }));
+              resolve();
+            } catch (err) { reject(err); }
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(f);
+        });
+        return;
+      }
 
-    const results = await Promise.all(arr.map(readFile));
-    setPendingFiles(prev => [...prev, ...results]);
+      const results = await Promise.all(arr.map(readFile));
+      setPendingFiles(prev => [...prev, ...results]);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsProcessing(false);
+    }
   }, [dispatch, document.isLoaded, pendingFiles.length]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -122,11 +136,19 @@ export const ImportOption: React.FC = () => {
     setCreateAllTriggered(true);
   };
 
+  if (isProcessing) return (
+    <div className={s.processing}>
+      <div className={s.processingSpinner} />
+      <span>{t.document.processingPdf}</span>
+    </div>
+  );
+
   return hasAnyFile ? (
     <div data-testid="import-option-files" className={s.container}>
       {hasSingleReduxFile && (
         <DocumentCreateInput
           document={document}
+          onRemove={() => dispatch(resetDocumentState())}
           onDone={(resultDocId) => {
             setDoneCount(prev => prev + 1);
             if (resultDocId) navigate(`/document/${resultDocId}`);

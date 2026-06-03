@@ -1,6 +1,6 @@
 import s from '../../components/Inputs/DocumentCreateInput.module.css';
 import { useEffect, useRef, useState } from 'react';
-import { faUpload, faFileCircleCheck, faFilePdf, faFileWord, faXmark, faHourglassHalf, faCheck } from '@fortawesome/free-solid-svg-icons';
+import { faUpload, faFileCircleCheck, faFilePdf, faFileWord, faTrash, faHourglassHalf, faCheck } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useDispatch } from 'react-redux';
 import { setDocumentTitle } from '../../../store/documentSlice';
@@ -81,11 +81,6 @@ export const DocumentCreateInput = (props: DocumentCreateInputProps) => {
 
   return (
     <div data-testid="document-create-input" className={`${s.container} ${isActive ? s.containerActive : ''}`}>
-      {onRemove && !jobId && (
-        <button className={s.removeBtn} onClick={onRemove} title="Remove">
-          <FontAwesomeIcon icon={faXmark} />
-        </button>
-      )}
       <FontAwesomeIcon size="2x" icon={getFileTypeIcon(document.type)} />
       <div className={s.metadata} onMouseLeave={() => setEditTitle(false)}>
         <input
@@ -102,6 +97,21 @@ export const DocumentCreateInput = (props: DocumentCreateInputProps) => {
             {formatBytes(document.size || 0)}
             {document.totalPages > 0 && ` · ${document.totalPages} ${document.totalPages === 1 ? t.document.pageSingular : t.document.pagePlural}`}
           </small>
+          {!jobId && (
+            <div className={s.toggleGroup}>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={saveOriginal}
+                className={`${s.toggle} ${saveOriginal ? s.toggleOn : ''}`}
+                onClick={() => setSaveOriginal(v => !v)}
+                title={t.common.saveOriginal}
+              >
+                <span className={`${s.toggleThumb} ${saveOriginal ? s.toggleThumbOn : ''}`} />
+              </button>
+              <span className={s.toggleLabel}>{t.common.saveOriginal}</span>
+            </div>
+          )}
         </div>
       </div>
       <div className={s.actionCol}>
@@ -119,18 +129,11 @@ export const DocumentCreateInput = (props: DocumentCreateInputProps) => {
             <button onClick={handleCreate} className={s.continueButton} title={t.editor.createDocument}>
               <FontAwesomeIcon icon={faUpload} />
             </button>
-            <div className={s.toggleGroup}>
-              <span className={s.toggleLabel}>{t.common.saveOriginal}</span>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={saveOriginal}
-                className={`${s.toggle} ${saveOriginal ? s.toggleOn : ''}`}
-                onClick={() => setSaveOriginal(v => !v)}
-              >
-                <span className={`${s.toggleThumb} ${saveOriginal ? s.toggleThumbOn : ''}`} />
+            {onRemove && (
+              <button onClick={onRemove} className={s.removeBtn} title={t.common.delete}>
+                <FontAwesomeIcon icon={faTrash} />
               </button>
-            </div>
+            )}
           </>
         )}
       </div>
