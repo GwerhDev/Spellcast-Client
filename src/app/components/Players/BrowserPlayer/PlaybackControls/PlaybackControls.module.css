@@ -112,13 +112,13 @@
   align-items: center;
   justify-content: center;
   color: var(--app-white);
-  background: color-mix(in srgb, var(--color-primary) 32%, #1c3a52c0);
+  background: color-mix(in srgb, var(--color-primary) 60%, #1c3a52c0);
   backdrop-filter: blur(10px);
   box-shadow:
-    0 0 8px color-mix(in srgb, var(--color-primary) 18%, transparent),
+    0 0 14px color-mix(in srgb, var(--color-primary) 40%, transparent),
     0 0 0px color-mix(in srgb, var(--color-primary) 0%, transparent),
-    inset 0 0 12px rgba(0, 0, 0, 0.42),
-    inset 0 1px 0 color-mix(in srgb, white 18%, transparent);
+    inset 0 0 12px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 color-mix(in srgb, white 24%, transparent);
   position: relative;
   overflow: hidden;
   transition: box-shadow 0.7s ease-in-out;
@@ -150,8 +150,7 @@
       transparent 78%
     );
   filter: blur(9px);
-  opacity: 0.95;
-  animation: palantirChurn 7s linear infinite;
+  opacity: 0.6;
   pointer-events: none;
   z-index: 0;
   transition: filter 0.7s ease-in-out, opacity 0.7s ease-in-out;
@@ -170,16 +169,16 @@
     transparent 56%
   );
   filter: blur(4px);
-  animation: coreBreath 2.6s ease-in-out infinite alternate;
+  opacity: 0.8;
   pointer-events: none;
   z-index: 1;
-  transition: filter 0.7s ease-in-out;
+  transition: filter 0.7s ease-in-out, opacity 0.7s ease-in-out;
 }
 
 .playPauseButton:hover,
 .playing {
   color: var(--app-white);
-  background: color-mix(in srgb, var(--color-primary) 32%, #1c3a52c0);
+  background: color-mix(in srgb, var(--color-primary) 60%, #1c3a52c0);
   box-shadow:
     0 0 26px color-mix(in srgb, var(--color-primary) 85%, transparent),
     0 0 52px color-mix(in srgb, var(--color-primary) 42%, transparent),
@@ -187,15 +186,47 @@
     inset 0 1px 0 color-mix(in srgb, white 28%, transparent);
 }
 
-.playPauseButton:hover::before,
+/* While PLAYING — the full living fire (current effect) */
 .playing::before {
   opacity: 1;
   filter: blur(12px);
+  animation: palantirChurn 7s linear infinite;
 }
 
-.playPauseButton:hover::after,
 .playing::after {
+  opacity: 1;
   filter: blur(6px);
+  animation: coreBreath 2.6s ease-in-out infinite alternate;
+}
+
+/* PAUSED + hover — a magic glint sweep (echoes the route titles' spell sheen) */
+.sheen {
+  position: absolute;
+  top: -25%;
+  left: 0;
+  width: 36%;
+  height: 150%;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 0%,
+    color-mix(in srgb, white 60%, transparent) 50%,
+    transparent 100%
+  );
+  filter: blur(2px);
+  transform: translateX(-220%) skewX(-20deg);
+}
+
+.playPauseButton:not(.playing):hover .sheen {
+  animation: playSheen 0.9s ease-out;
+}
+
+@keyframes playSheen {
+  0%   { transform: translateX(-220%) skewX(-20deg); opacity: 0; }
+  12%  { opacity: 1; }
+  100% { transform: translateX(380%) skewX(-20deg); opacity: 0; }
 }
 
 @keyframes palantirChurn {
@@ -206,5 +237,11 @@
 @keyframes coreBreath {
   0%   { opacity: 0.58; transform: scale(0.76); }
   100% { opacity: 1;    transform: scale(1.06); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .playing::before,
+  .playing::after { animation: none; }
+  .sheen { animation: none !important; }
 }
 

@@ -76,6 +76,7 @@ export const PlaybackControls: React.FC<PlaybackControlsProps> = ({
         </button>
         <button onClick={togglePlayPause} disabled={disabled} className={`${s.playPauseButton}${isPlaying ? ` ${s.playing}` : ''}`} style={disabled ? { opacity: '0.5', cursor: 'not-allowed' } : {}}>
           <span className={s.playIcon}><FontAwesomeIcon icon={isPlaying ? faPause : faPlay} /></span>
+          <span className={s.sheen} aria-hidden="true" />
         </button>
         <button onClick={handleNext} disabled={disabled || isNextDisabled} className={s.controlButton}>
           <FontAwesomeIcon icon={faStepForward} />

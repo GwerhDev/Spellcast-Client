@@ -4,7 +4,7 @@ import { useLanguage } from '../../../i18n';
 import { FilterTabs } from '../../components/Selectors/FilterTabs';
 import { DocumentList, LibraryFilter } from '../DocumentList';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCloud, faHardDrive, faLayerGroup, faMagnifyingGlass, faPlus, faCheckSquare, faTrash, faXmark, faBookOpen } from '@fortawesome/free-solid-svg-icons';
+import { faCloud, faHardDrive, faLayerGroup, faMagnifyingGlass, faPlus, faCheckSquare, faTrash, faXmark, faBuildingColumns } from '@fortawesome/free-solid-svg-icons';
 import { SectionHeader } from '../../components/SectionHeader';
 import { ImportOption } from '../../components/Start/ImportOption';
 import { CustomModal } from '../../components/Modals/CustomModal';
@@ -62,7 +62,7 @@ export const LibraryLanding = () => {
 
   return (
     <div className={s.container} data-testid="library-landing">
-      <SectionHeader icon={faBookOpen} title={t.nav.library} subtitle={t.library.subtitle} align="center" />
+      <SectionHeader icon={faBuildingColumns} title={t.nav.library} subtitle={t.library.subtitle} align="center" />
 
       <FilterTabs tabs={tabs} active={filter} onChange={handleFilterChange} />
 
