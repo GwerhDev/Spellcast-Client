@@ -43,9 +43,24 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
   ttsPlaying,
 }) => {
   const [content, setContent] = useState<JSONContent>(pageContent);
+  const [sheetHeight, setSheetHeight] = useState(0);
   const paperBgRef = useRef<HTMLDivElement>(null);
+  const paperSheetRef = useRef<HTMLDivElement>(null);
   const { zoom, showIndicator, adjustZoom, resetZoom, ZOOM_STEP } = useZoom(paperBgRef);
   const fromEditorRef = useRef(false);
+
+  // Grow the (scaled) zoom wrapper to the sheet's real height so content taller
+  // than the nominal page height isn't clipped at the bottom while editing.
+  // offsetHeight is unscaled (transform-agnostic); ResizeObserver tracks typing.
+  useEffect(() => {
+    const el = paperSheetRef.current;
+    if (!el) return;
+    const update = () => setSheetHeight(el.offsetHeight);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [pageNumber]);
 
   useEffect(() => {
     paperBgRef.current?.scrollTo({ top: 0 });
@@ -108,10 +123,11 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({
                   className={s.zoomWrapper}
                   style={{
                     width: `${paperWidth * zoom}px`,
-                    height: `${paperHeight * zoom}px`,
+                    height: `${Math.max(sheetHeight || 0, paperHeight) * zoom}px`,
                   }}
                 >
                   <div
+                    ref={paperSheetRef}
                     className={s.paperSheet}
                     style={{
                       width: `${paperWidth}px`,

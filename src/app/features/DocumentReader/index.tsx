@@ -54,8 +54,10 @@ export const DocumentReader = () => {
   } as React.CSSProperties;
   const [editedText, setEditedText] = useState<JSONContent>(emptyContent);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [sheetHeight, setSheetHeight] = useState(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const paperBgRef = useRef<HTMLDivElement>(null);
+  const paperSheetRef = useRef<HTMLDivElement>(null);
   const playerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { zoom, showIndicator, adjustZoom, resetZoom, ZOOM_STEP } = useZoom(paperBgRef);
@@ -156,6 +158,19 @@ export const DocumentReader = () => {
     />
   );
 
+  // Track the real rendered height of the paper sheet so the (scaled) zoom wrapper
+  // grows to fit reflowed content — otherwise text taller than the nominal page
+  // height gets clipped at the bottom. offsetHeight is unscaled (transform-agnostic).
+  useEffect(() => {
+    const el = paperSheetRef.current;
+    if (fitToWidth || !el) { setSheetHeight(0); return; }
+    const update = () => setSheetHeight(el.offsetHeight);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [fitToWidth, editedText, paperMinHeight]);
+
   const renderBody = () => {
     if (!isLoaded) {
       return <div data-testid="document-reader-loading" className={s.container}><Spinner isLoading message={t.common.loading} /></div>;
@@ -163,6 +178,7 @@ export const DocumentReader = () => {
 
     const paperSheet = (children: React.ReactNode) => (
       <div
+        ref={paperSheetRef}
         className={s.paperSheet}
         style={{
           ...pageBgVars,
@@ -187,7 +203,7 @@ export const DocumentReader = () => {
 
     const wrapperStyle: React.CSSProperties = {
       width: `${paperWidth * zoom}px`,
-      height: `${paperMinHeight * zoom}px`,
+      height: `${Math.max(sheetHeight || 0, paperMinHeight) * zoom}px`,
     };
 
     if (!fitToWidth) {
