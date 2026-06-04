@@ -278,7 +278,7 @@ export const DocumentCreateForm: React.FC = () => {
   return (
     <div data-testid="document-create-form" className={s.container}>
       <div className={s.pageInfoContainer}>
-        <IconButton icon={faArrowLeft} className={s.backButton} variant='transparent' onClick={() => navigate(-1)} />
+        <IconButton icon={faArrowLeft} className={s.backButton} variant='transparent' title={t.common.back} onClick={() => navigate(-1)} />
         <span className={s.titleContainer}>
           <input
             className={s.documentTitle}
@@ -301,11 +301,11 @@ export const DocumentCreateForm: React.FC = () => {
           />
         )}
         {isSaving && <span className={s.saveStatus}>{t.common.saving}</span>}
-        <IconButton icon={faPaperclip} variant='transparent' onClick={() => pdfInputRef.current?.click()} />
+        <IconButton icon={faPaperclip} variant='transparent' title={t.document.importPdf} onClick={() => pdfInputRef.current?.click()} />
         <input ref={pdfInputRef} type="file" accept=".pdf" style={{ display: 'none' }}
           onChange={(e) => { if (e.target.files?.[0]) handlePdfImport(e.target.files[0]); }} />
-        <IconButton icon={faSave} variant='transparent' disabled={isSaving || !documentTitle} onClick={handleSaveLocal} />
-        <IconButton icon={faCloudUpload} disabled variant='transparent' onClick={() => {}} />
+        <IconButton icon={faSave} variant='transparent' title={t.common.save} disabled={isSaving || !documentTitle} onClick={handleSaveLocal} />
+        <IconButton icon={faCloudUpload} disabled variant='transparent' title={t.nav.cloud} onClick={() => {}} />
       </div>
 
       <div className={s.editorContainer}>

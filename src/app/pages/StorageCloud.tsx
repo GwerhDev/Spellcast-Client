@@ -2,6 +2,7 @@ import React from 'react';
 import s from '../components/BrowserStorage/BrowserStorage.module.css';
 import p from './UserPage.module.css';
 import { PageTransition } from '../components/PageTransition';
+import { SectionHeader } from '../components/SectionHeader';
 import { useLanguage } from '../../i18n';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCloud } from '@fortawesome/free-solid-svg-icons';
@@ -20,10 +21,7 @@ export const StorageCloud = () => {
     <PageTransition className="dashboard-sections">
       <div className={p.page}>
         <div className={p.content}>
-          <div className={p.header}>
-            <h1 className="featured">{t.nav.cloud}</h1>
-            <p>{t.storage.cloudSubtitle}</p>
-          </div>
+          <SectionHeader icon={faCloud} title={t.nav.cloud} subtitle={t.storage.cloudSubtitle} />
 
           <div className={s.container}>
             <div className={s.overview}>

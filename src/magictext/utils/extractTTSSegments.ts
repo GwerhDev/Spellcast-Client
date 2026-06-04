@@ -1,11 +1,15 @@
 import type { JSONContent } from '@tiptap/core'
-import type { TTSAttrs, TTSSegment } from '../types'
+import type { TTSAttrs, TTSSegment, TextRun, DocumentBlock } from '../types'
 
-const SENTENCE_RE = /[^.!?]*[.!?]+(?:\s|$)|[^.!?]+$/g
-
+/**
+ * Sentence splitter — kept identical to the host app's TTS pipeline
+ * (PdfProcessor.extractSentencesFromJSON and services/tts.buildSegments) so that
+ * the reader's sentence indices line up exactly with the browser-voice
+ * `sentences` array and the AI-voice `timeline`. Splits after .!? that is not
+ * followed by another dot, then trims.
+ */
 function splitSentences(text: string): string[] {
-  const raw = text.match(SENTENCE_RE) ?? [text]
-  return raw.map(s => s.trim()).filter(Boolean)
+  return text.split(/(?<=[.!?])(?!\s*\.)/).map(s => s.trim()).filter(Boolean)
 }
 
 function getTTSAttrs(marks: { type: string; attrs?: Record<string, unknown> }[]): TTSAttrs | null {
@@ -20,83 +24,131 @@ function getTTSAttrs(marks: { type: string; attrs?: Record<string, unknown> }[])
   }
 }
 
-interface InlineChunk {
-  text: string
-  attrs: TTSAttrs | null
+interface CharInfo {
+  tts: TTSAttrs | null
+  bold: boolean
+  italic: boolean
 }
 
-function extractChunks(node: JSONContent): InlineChunk[] {
-  const chunks: InlineChunk[] = []
+/** Flatten a block's inline content into a string plus per-character mark info. */
+function buildCharInfo(node: JSONContent): { fullText: string; chars: CharInfo[] } {
+  let fullText = ''
+  const chars: CharInfo[] = []
   for (const inline of node.content ?? []) {
     if (inline.type === 'text') {
       const marks = (inline.marks ?? []) as { type: string; attrs?: Record<string, unknown> }[]
-      chunks.push({ text: inline.text ?? '', attrs: getTTSAttrs(marks) })
+      const tts = getTTSAttrs(marks)
+      const bold = marks.some(m => m.type === 'bold')
+      const italic = marks.some(m => m.type === 'italic')
+      const text = inline.text ?? ''
+      for (let i = 0; i < text.length; i++) chars.push({ tts, bold, italic })
+      fullText += text
     } else if (inline.type === 'hardBreak') {
-      chunks.push({ text: ' ', attrs: null })
+      chars.push({ tts: null, bold: false, italic: false })
+      fullText += ' '
     }
   }
-  return chunks
+  return { fullText, chars }
+}
+
+/** Group [start, end) of fullText into bold/italic-consistent runs. */
+function buildRuns(fullText: string, chars: CharInfo[], start: number, end: number): TextRun[] {
+  const runs: TextRun[] = []
+  let i = start
+  while (i < end) {
+    const bold = chars[i]?.bold ?? false
+    const italic = chars[i]?.italic ?? false
+    let j = i + 1
+    while (j < end && (chars[j]?.bold ?? false) === bold && (chars[j]?.italic ?? false) === italic) j++
+    runs.push({ text: fullText.slice(i, j), bold, italic })
+    i = j
+  }
+  return runs
 }
 
 /**
- * Parses a Tiptap JSONContent document into a flat array of TTSSegment,
- * one segment per sentence. Each segment carries any TTS mark attributes
- * assigned to the text in the editor.
+ * Parses a Tiptap JSONContent document into an ordered list of document blocks:
+ * text blocks (paragraph/heading) carrying their sentence segments + block attrs,
+ * plus image and horizontal-rule blocks interleaved in document order. This lets
+ * a read-only renderer reproduce the editor's output exactly (inline formatting,
+ * images, rules, alignment) while preserving sentence highlight indices.
  *
- * The voice attribution strategy: each sentence takes the TTS attrs of its
- * first character. If a sentence spans both marked and unmarked text, the
- * mark of the opening character wins.
+ * Sentence indices increment only across paragraph/heading sentences (images and
+ * rules do not consume an index), matching the host app's TTS segmentation.
  */
-export function extractTTSSegments(content: JSONContent): TTSSegment[] {
-  const result: TTSSegment[] = []
+export function extractDocumentBlocks(content: JSONContent | null | undefined): DocumentBlock[] {
+  if (!content) return []
+  const blocks: DocumentBlock[] = []
   let globalIndex = 0
   let blockIndex = 0
 
-  const processBlock = (node: JSONContent, blockType: 'paragraph' | 'heading', headingLevel?: number) => {
-    const chunks = extractChunks(node)
-    if (!chunks.length) { blockIndex++; return }
+  const processText = (node: JSONContent, blockType: 'paragraph' | 'heading', headingLevel?: number) => {
+    const { fullText, chars } = buildCharInfo(node)
+    const attrs = node.attrs as { textAlign?: string; marginLeft?: number } | undefined
+    const segments: TTSSegment[] = []
 
-    // Build a position-indexed attrs array alongside the full text
-    let fullText = ''
-    const posAttrs: (TTSAttrs | null)[] = []
-    for (const chunk of chunks) {
-      for (let i = 0; i < chunk.text.length; i++) posAttrs.push(chunk.attrs)
-      fullText += chunk.text
+    if (fullText.trim()) {
+      const sentences = splitSentences(fullText)
+      let searchFrom = 0
+      for (const sentText of sentences) {
+        const pos = fullText.indexOf(sentText, searchFrom)
+        const ttsAttrs = pos >= 0 ? (chars[pos]?.tts ?? null) : null
+        const runs = pos >= 0
+          ? buildRuns(fullText, chars, pos, pos + sentText.length)
+          : [{ text: sentText, bold: false, italic: false }]
+        if (pos >= 0) searchFrom = pos + sentText.length
+        segments.push({
+          text: sentText,
+          index: globalIndex++,
+          ttsAttrs,
+          blockIndex,
+          blockType,
+          ...(headingLevel !== undefined ? { headingLevel } : {}),
+          runs,
+        })
+      }
     }
 
-    const sentences = splitSentences(fullText)
-    let searchFrom = 0
-
-    for (const sentText of sentences) {
-      if (!sentText) continue
-      const pos = fullText.indexOf(sentText, searchFrom)
-      const attrs = pos >= 0 ? (posAttrs[pos] ?? null) : null
-      if (pos >= 0) searchFrom = pos + sentText.length
-
-      result.push({
-        text: sentText,
-        index: globalIndex++,
-        ttsAttrs: attrs,
-        blockIndex,
-        blockType,
-        ...(headingLevel !== undefined ? { headingLevel } : {}),
-      })
-    }
-
+    blocks.push({
+      kind: 'text',
+      blockIndex,
+      blockType,
+      ...(headingLevel !== undefined ? { headingLevel } : {}),
+      ...(attrs?.textAlign ? { textAlign: attrs.textAlign } : {}),
+      ...(attrs?.marginLeft ? { marginLeft: attrs.marginLeft } : {}),
+      segments,
+    })
     blockIndex++
   }
 
   const walk = (node: JSONContent) => {
     if (node.type === 'paragraph') {
-      processBlock(node, 'paragraph')
+      processText(node, 'paragraph')
     } else if (node.type === 'heading') {
-      const level = (node.attrs as { level?: number })?.level ?? 1
-      processBlock(node, 'heading', level)
+      processText(node, 'heading', (node.attrs as { level?: number })?.level ?? 1)
+    } else if (node.type === 'image') {
+      const a = (node.attrs ?? {}) as { src?: string; alt?: string | null; title?: string | null }
+      if (a.src) blocks.push({ kind: 'image', src: a.src, alt: a.alt ?? null, title: a.title ?? null })
+    } else if (node.type === 'horizontalRule') {
+      blocks.push({ kind: 'rule' })
     } else if (node.content) {
       for (const child of node.content) walk(child)
     }
   }
 
-  if (content) walk(content)
+  walk(content)
+  return blocks
+}
+
+/**
+ * Flat list of sentence segments (one per sentence), derived from
+ * extractDocumentBlocks. Backward-compatible with prior consumers: indices,
+ * ordering, blockIndex and ttsAttrs are unchanged for text content.
+ */
+export function extractTTSSegments(content: JSONContent): TTSSegment[] {
+  const result: TTSSegment[] = []
+  for (const block of extractDocumentBlocks(content)) {
+    if (block.kind === 'text') result.push(...block.segments)
+  }
   return result
 }

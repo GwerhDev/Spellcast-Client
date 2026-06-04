@@ -1,5 +1,7 @@
 import { PageTransition } from '../components/PageTransition';
 import { ProjectArchive } from '../components/Archives/ProjectArchive';
+import { SectionHeader } from '../components/SectionHeader';
+import { faBoxArchive } from '@fortawesome/free-solid-svg-icons';
 import { useLanguage } from '../../i18n';
 import s from './UserPage.module.css';
 
@@ -10,10 +12,7 @@ export const UserArchive = () => {
     <PageTransition className="dashboard-sections">
       <div className={s.page}>
         <div className={s.content}>
-          <div className={s.header}>
-            <h1 className="featured">{t.archive.title}</h1>
-            <p>{t.archive.subtitle}</p>
-          </div>
+          <SectionHeader icon={faBoxArchive} title={t.archive.title} subtitle={t.archive.subtitle} />
           <ProjectArchive />
         </div>
       </div>

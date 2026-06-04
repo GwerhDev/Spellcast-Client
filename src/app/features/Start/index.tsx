@@ -28,7 +28,7 @@ export const Start = () => {
   return (
     <div data-testid="start" className={s.container}>
       <div className={s.createContainer}>
-        <h1 className="featured">{t.start.castSpell}</h1>
+        <h1 className="featured-glow">{t.start.castSpell}</h1>
         <p>{getSubtitle()}</p>
 
         <InputTypeSelector inputType={inputType} setInputType={handleInputTypeChange} />

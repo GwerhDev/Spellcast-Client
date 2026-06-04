@@ -1,5 +1,7 @@
 import { PageTransition } from '../components/PageTransition';
 import { Groups } from '../components/Groups/Groups';
+import { SectionHeader } from '../components/SectionHeader';
+import { faUsers } from '@fortawesome/free-solid-svg-icons';
 import { useLanguage } from '../../i18n';
 import s from './UserPage.module.css';
 
@@ -10,10 +12,7 @@ export const UserGroups = () => {
     <PageTransition className="dashboard-sections">
       <div className={s.page}>
         <div className={s.content}>
-          <div className={s.header}>
-            <h1 className="featured">{t.nav.groups}</h1>
-            <p>{t.groups.subtitle}</p>
-          </div>
+          <SectionHeader icon={faUsers} title={t.nav.groups} subtitle={t.groups.subtitle} />
           <Groups />
         </div>
       </div>

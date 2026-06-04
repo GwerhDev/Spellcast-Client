@@ -288,7 +288,7 @@ export const DocumentEditForm: React.FC = () => {
   return (
     <div data-testid="document-edit-form" className={s.container}>
       <div className={s.pageInfoContainer}>
-        <IconButton icon={faArrowLeft} className={s.backButton} variant='transparent' onClick={() => navigate((location.state as { from?: string })?.from ?? `/document/${id}`)} />
+        <IconButton icon={faArrowLeft} className={s.backButton} variant='transparent' title={t.common.back} onClick={() => navigate((location.state as { from?: string })?.from ?? `/document/${id}`)} />
         <span className={s.titleContainer}>
           <input
             className={s.documentTitle}
@@ -311,11 +311,11 @@ export const DocumentEditForm: React.FC = () => {
         {!isProcessingPdf && saveStatus === 'saving' && <span className={s.saveStatus}>{t.common.saving}</span>}
         {!isProcessingPdf && saveStatus === 'saved' && <span className={s.saveStatus}>{t.common.saved}</span>}
 
-        <IconButton icon={faPaperclip} variant='transparent' disabled={isProcessingPdf} onClick={() => pdfInputRef.current?.click()} />
+        <IconButton icon={faPaperclip} variant='transparent' title={t.document.replaceContent} disabled={isProcessingPdf} onClick={() => pdfInputRef.current?.click()} />
         <input ref={pdfInputRef} type="file" accept=".pdf" style={{ display: 'none' }} onChange={handleFileSelect} />
-        {originalPages && <IconButton icon={faRotateLeft} variant='transparent' disabled={isProcessingPdf} onClick={() => setShowResetAllModal(true)} />}
-        <IconButton icon={faSave} variant='transparent' disabled={!hasChanges || isProcessingPdf} onClick={handleSave} />
-        <IconButton icon={faCloudUpload} disabled variant='transparent' onClick={() => {}} />
+        {originalPages && <IconButton icon={faRotateLeft} variant='transparent' title={t.document.resetAllTitle} disabled={isProcessingPdf} onClick={() => setShowResetAllModal(true)} />}
+        <IconButton icon={faSave} variant='transparent' title={t.common.save} disabled={!hasChanges || isProcessingPdf} onClick={handleSave} />
+        <IconButton icon={faCloudUpload} disabled variant='transparent' title={t.nav.cloud} onClick={() => {}} />
         <IconButton icon={faGear} variant='transparent' onClick={() => dispatch(setShowEditorSettings(true))} />
       </div>
 

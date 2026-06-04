@@ -2,8 +2,9 @@ import s from '../../components/EditorLanding/index.module.css';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faFile, faPenToSquare } from '@fortawesome/free-solid-svg-icons';
+import { faFile, faPenToSquare, faPenNib } from '@fortawesome/free-solid-svg-icons';
 import { resetDocumentState } from '../../../store/documentSlice';
+import { SectionHeader } from '../../components/SectionHeader';
 import { useLanguage } from '../../../i18n';
 
 export const EditorLanding = () => {
@@ -19,8 +20,7 @@ export const EditorLanding = () => {
   return (
     <div data-testid="editor-landing" className={s.selectContainer}>
       <div className={s.selectInner}>
-        <h1 className="featured">{t.editor.tagline}</h1>
-        <p>{t.editor.subtitle}</p>
+        <SectionHeader icon={faPenNib} title={t.editor.tagline} subtitle={t.editor.subtitle} align="center" />
         <div className={s.cards}>
           <div data-testid="editor-create-card" className={s.card} onClick={handleCreateNew}>
             <FontAwesomeIcon icon={faFile} className={s.cardIcon} />

@@ -161,6 +161,9 @@ export const es: Translations = {
   },
   reader: {
     readerSettings: 'Configuración del lector',
+    documentInfo: 'Información del documento',
+    enterFullscreen: 'Pantalla completa',
+    exitFullscreen: 'Salir de pantalla completa',
     selectPage: 'Seleccionar página',
     displayTab: 'Pantalla',
     appearanceTab: 'Apariencia',

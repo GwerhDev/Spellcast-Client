@@ -21,13 +21,8 @@
   border: 1px solid transparent;
 }
 
-/* Fit-to-width: center cover images (browser-voice path) */
-.textContainer .readerImage:first-child:not([title="pdf-graphic"]) {
-  margin: 0 auto;
-}
-
-/* Fit-to-width: center cover images (MagicTextEditor / AI-voice path) */
-.textContainer :global(.ProseMirror > img:first-child:not([title="pdf-graphic"])) {
+/* Fit-to-width: center cover images */
+.textContainer > img:first-child:not([title="pdf-graphic"]) {
   display: block;
   margin: 0 auto;
 }
@@ -94,25 +89,6 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-}
-
-.sentence {
-  cursor: pointer;
-  transition: .1s;
-  color: var(--page-text-color, inherit);
-}
-
-.sentence:hover {
-  background-color: var(--page-sentence-hover, var(--color-sentence-hover));
-  color: var(--page-text-color, var(--color-dark-900));
-}
-
-.highlight {
-  cursor: pointer;
-  transition: .1s;
-  background-color: var(--page-highlight, var(--color-highlight));
-  color: var(--page-text-color, var(--color-dark-900));
-  border-radius: 3px;
 }
 
 /* Override global p/heading color when a custom page background is active */
@@ -233,29 +209,6 @@
   border: 1px solid transparent;
 }
 
-.readerBlock {
-  margin: 1em 0;
-}
-
-.readerImage {
-  max-width: 100%;
-  height: auto;
-  display: block;
-  border-radius: 4px;
-  margin-bottom: 0.75rem;
-}
-
-.emptyBlock {
-  display: block;
-  height: 0.75rem;
-}
-
-.horizontalRule {
-  border: none;
-  border-top: 1px solid var(--color-dark-300);
-  margin: 1em 0;
-}
-
 .editorContent {
   padding: 0 !important;
   min-height: 0 !important;
@@ -292,8 +245,7 @@
   box-sizing: border-box;
 }
 
-.paperSheet .readerImage:first-child:not([title="pdf-graphic"]),
-.paperSheet :global(.ProseMirror > img:first-child:not([title="pdf-graphic"])) {
+.paperSheet > img:first-child:not([title="pdf-graphic"]) {
   display: block;
   object-fit: cover;
   height: var(--paper-height, auto);
@@ -314,15 +266,25 @@
   margin-left: calc(-1 * var(--margin-left, 64px));
 }
 
-/* Hide empty placeholder blocks that trail the cover image */
-.paperSheet .readerImage:first-child:not([title="pdf-graphic"]) ~ .emptyBlock {
-  display: none;
-}
-
 
 
 @media (max-width: 768px) {
   .titleContainer {
     display: none;
+  }
+
+  /* Stack the pages panel below the sheet as a horizontal strip */
+  .bodyWrapper {
+    flex-direction: column;
+  }
+
+  /* Override the framer-motion inline width animation on mobile so the panel
+     spans full width below the content instead of staying glued to the side. */
+  .pagesContainer {
+    width: 100% !important;
+    max-height: 32vh;
+    flex-shrink: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
   }
 }

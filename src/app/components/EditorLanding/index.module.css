@@ -1,6 +1,8 @@
 /* ── Select step (mirrors Start component pattern) ── */
 .selectContainer {
   width: 100%;
+  flex-grow: 1;
+  min-height: 0;
   padding: 2rem;
   display: flex;
   justify-content: center;

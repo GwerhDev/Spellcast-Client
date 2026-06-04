@@ -62,6 +62,46 @@ h1 {
   color: transparent;
 }
 
+/* Magic title — primary-colored text with a light "spell sheen" that periodically
+   sweeps across the letters (inspired by the player's churning fire) plus a soft
+   constant primary halo. One shared, identical effect for Home, Library and Editor. */
+.featured-glow {
+  /* Layer 1 (moving): the bright sheen band, transparent elsewhere.
+     Layer 2 (fixed): a solid primary fill that ALWAYS covers the text, so it
+     never disappears at the sweep extremes. */
+  background-image:
+    linear-gradient(
+      105deg,
+      transparent 0%,
+      transparent 44%,
+      color-mix(in srgb, var(--color-primary) 50%, white) 50%,
+      transparent 56%,
+      transparent 100%
+    ),
+    linear-gradient(var(--color-primary), var(--color-primary));
+  background-size: 250% 100%, 100% 100%;
+  background-position: 175% 0, 0 0;
+  background-repeat: no-repeat;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 7px color-mix(in srgb, var(--color-primary) 38%, transparent));
+  animation: spellSheen 4.5s ease-in-out infinite;
+}
+
+@keyframes spellSheen {
+  0%        { background-position: 175% 0, 0 0; }
+  55%, 100% { background-position: -75% 0, 0 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .featured-glow {
+    animation: none;
+    background: none;
+    color: var(--color-primary);
+  }
+}
+
 h2 {
   font-size: var(--size-9);
   color: var(--text-color);

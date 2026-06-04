@@ -6,6 +6,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 interface IconButtonProps {
   icon: IconProp;
   text?: string;
+  title?: string;
   disabled?: boolean;
   readonly?: boolean;
   children?: ReactNode;
@@ -15,7 +16,7 @@ interface IconButtonProps {
 }
 
 export const IconButton = (props: IconButtonProps) => {
-  const { icon, text, children, className, disabled, onClick, variant = "transparent", ...rest } = props;
+  const { icon, text, title, children, className, disabled, onClick, variant = "transparent", ...rest } = props;
 
   const variantClass = {
     primary: s.primary,
@@ -26,8 +27,17 @@ export const IconButton = (props: IconButtonProps) => {
     .filter(Boolean)
     .join(" ");
 
+  // For icon-only buttons, surface the label as a native tooltip + accessible name.
+  const accessibleName = title ?? (typeof text === "string" ? text : undefined);
+
   return (
-    <button disabled={disabled} className={buttonClassName} onClick={onClick}>
+    <button
+      disabled={disabled}
+      className={buttonClassName}
+      onClick={onClick}
+      title={title}
+      aria-label={!text && accessibleName ? accessibleName : undefined}
+    >
       <FontAwesomeIcon {...rest} icon={icon} />
       {text || children}
     </button>

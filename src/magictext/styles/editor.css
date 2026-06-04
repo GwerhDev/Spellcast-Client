@@ -48,6 +48,13 @@
   --mte-danger-color: var(--color-danger, #dc2626);
   --mte-danger-hover-bg: var(--color-danger-500, rgba(220, 38, 38, 0.12));
   --mte-danger-border: var(--color-danger-100, #fca5a5);
+
+  /* Document typography tokens — shared by the editor content and the read-only
+     TTSDocumentReader so both render identical vertical rhythm. */
+  --mte-doc-line-height: 1.6;
+  --mte-doc-para-gap: 0.9em;
+  --mte-doc-heading-gap-top: 1.2em;
+  --mte-doc-heading-gap-bottom: 0.5em;
 }
 
 /*
@@ -143,6 +150,30 @@
   height: auto;
   display: block;
   border-radius: 4px;
+}
+
+/* ─── Document typography (shared rhythm with TTSDocumentReader) ─────────────── */
+.magic-text-editor .ProseMirror p {
+  margin: 0 0 var(--mte-doc-para-gap);
+  line-height: var(--mte-doc-line-height);
+}
+
+.magic-text-editor .ProseMirror h1,
+.magic-text-editor .ProseMirror h2,
+.magic-text-editor .ProseMirror h3,
+.magic-text-editor .ProseMirror h4,
+.magic-text-editor .ProseMirror h5,
+.magic-text-editor .ProseMirror h6 {
+  margin: var(--mte-doc-heading-gap-top) 0 var(--mte-doc-heading-gap-bottom);
+  line-height: 1.25;
+}
+
+.magic-text-editor .ProseMirror > :first-child {
+  margin-top: 0;
+}
+
+.magic-text-editor .ProseMirror > :last-child {
+  margin-bottom: 0;
 }
 
 /* ─── Placeholder ────────────────────────────────────────────────────────────── */

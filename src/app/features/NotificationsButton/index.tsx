@@ -2,7 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBell, faFile, faXmark } from '@fortawesome/free-solid-svg-icons';
+import { faBell, faBellSlash, faFile, faXmark } from '@fortawesome/free-solid-svg-icons';
 import { RootState } from '../../../store';
 import { clearHistory, markHistoryRead, UploadHistoryEntry } from '../../../store/pdfUploadSlice';
 import { useLanguage } from '../../../i18n';
@@ -86,7 +86,10 @@ export const NotificationsButton: React.FC = () => {
             )}
           </div>
           {history.length === 0
-            ? <p className={s.empty}>{t.notifications.empty}</p>
+            ? <div className={s.empty}>
+                <FontAwesomeIcon icon={faBellSlash} className={s.emptyIcon} />
+                <p>{t.notifications.empty}</p>
+              </div>
             : <div className={s.list}>
                 {history.map(entry => (
                   <HistoryRow key={entry.id} entry={entry} t={t} />

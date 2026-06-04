@@ -159,6 +159,9 @@ export const en = {
   },
   reader: {
     readerSettings: 'Reader Settings',
+    documentInfo: 'Document info',
+    enterFullscreen: 'Enter fullscreen',
+    exitFullscreen: 'Exit fullscreen',
     selectPage: 'Select a Page',
     displayTab: 'Display',
     appearanceTab: 'Appearance',

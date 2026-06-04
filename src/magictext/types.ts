@@ -38,6 +38,16 @@ export interface TTSAttrs {
 }
 
 /**
+ * An inline run of text within a sentence, carrying its bold/italic state so the
+ * reader can reproduce the editor's inline formatting.
+ */
+export interface TextRun {
+  text: string
+  bold: boolean
+  italic: boolean
+}
+
+/**
  * A single sentence extracted from JSONContent, with any TTS mark metadata.
  * Produced by extractTTSSegments / useTTSSegments for use in the reader.
  */
@@ -48,7 +58,27 @@ export interface TTSSegment {
   blockIndex: number
   blockType: 'paragraph' | 'heading'
   headingLevel?: number
+  /** Inline bold/italic runs covering exactly this sentence's characters. */
+  runs?: TextRun[]
 }
+
+/**
+ * An ordered document block produced by extractDocumentBlocks. Text blocks carry
+ * their sentence segments and block-level attrs; image / rule blocks let the
+ * reader interleave non-sentence content in document order, matching the editor.
+ */
+export type DocumentBlock =
+  | {
+      kind: 'text'
+      blockIndex: number
+      blockType: 'paragraph' | 'heading'
+      headingLevel?: number
+      textAlign?: string
+      marginLeft?: number
+      segments: TTSSegment[]
+    }
+  | { kind: 'image'; src: string; alt: string | null; title: string | null }
+  | { kind: 'rule' }
 
 // ── MagicTextEditor props ─────────────────────────────────────────────────────
 

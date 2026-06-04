@@ -2,7 +2,6 @@ import s from '../../components/DocumentReader/index.module.css';
 import { useNavigate } from 'react-router-dom';
 import React, { useState, useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import type { JSX } from 'react';
 import { useZoom } from '../../../hooks/useZoom';
 import { ZoomOverlay } from '../../components/Zoom/ZoomOverlay';
 import { useDispatch, useSelector } from 'react-redux';
@@ -16,7 +15,7 @@ import { Spinner } from '../../components/Spinner';
 import { IconButton } from '../../components/Buttons/IconButton';
 import { SearcherButton } from '../../components/DocumentReader/Searcher/SearcherButton';
 import { PageList } from '../../components/DocumentCreateForm/PageList';
-import type { JSONContent } from '../../../magictext';
+import { TTSDocumentReader, type JSONContent } from '../../../magictext';
 import { useLanguage } from '../../../i18n';
 
 const emptyContent: JSONContent = {
@@ -118,7 +117,7 @@ export const DocumentReader = () => {
     if (!playing) return;
     const container = fitToWidth ? scrollContainerRef.current : paperBgRef.current;
     if (!container) return;
-    const highlighted = container.querySelector(`.${s.highlight}`) as HTMLElement | null;
+    const highlighted = container.querySelector(`[data-sentence-index="${activeSentenceIndex}"]`) as HTMLElement | null;
     if (!highlighted) return;
     const TOP_MARGIN = 32;
     const BOTTOM_MARGIN = 80;
@@ -149,89 +148,13 @@ export const DocumentReader = () => {
     }
   };
 
-  const renderFormattedSentences = (fit: boolean) => {
-    if (!editedText?.content) return null;
-    let sentIdx = 0;
-    return editedText.content.map((node, nIdx) => {
-      if (node.type === 'image') {
-        const attrs = node.attrs as { src?: string; alt?: string | null; title?: string | null };
-        if (!attrs.src) return null;
-        return <img key={nIdx} src={attrs.src} alt={attrs.alt ?? ''} title={attrs.title ?? undefined} className={s.readerImage} />;
-      }
-      if (node.type === 'horizontalRule') return <hr key={nIdx} className={s.horizontalRule} />;
-      if (node.type !== 'paragraph' && node.type !== 'heading') return null;
-
-      type CharMark = { bold: boolean; italic: boolean };
-      const charMarks: CharMark[] = [];
-      const rawText = (node.content || [])
-        .map((c) => {
-          const text = c.type === 'text' ? ((c as { text?: string }).text || '') : c.type === 'hardBreak' ? (fit ? ' ' : '\n') : '';
-          const marks = c.type === 'text' ? ((c as { marks?: { type: string }[] }).marks || []) : [];
-          const bold = marks.some(m => m.type === 'bold');
-          const italic = marks.some(m => m.type === 'italic');
-          for (let i = 0; i < text.length; i++) charMarks.push({ bold, italic });
-          return text;
-        })
-        .join('');
-
-      if (!rawText.trim()) return <p key={nIdx} className={s.emptyBlock} />;
-
-      const nodeSentences = rawText.split(fit ? /(?<=[.!?])(?!\s*\.)\s*/ : /(?<=[.!?])(?!\s*\.)/).filter(s => s.trim());
-      const level = node.type === 'heading' ? ((node.attrs as { level?: number })?.level ?? 1) : 0;
-      const Tag = (node.type === 'heading' ? `h${level}` : 'p') as keyof JSX.IntrinsicElements;
-      const nodeAttrs = node.attrs as { marginLeft?: number; textAlign?: string } | undefined;
-      const sentBlockStyle: React.CSSProperties = {
-        whiteSpace: 'pre-wrap',
-        ...(nodeAttrs?.textAlign ? { textAlign: nodeAttrs.textAlign as React.CSSProperties['textAlign'] } : {}),
-        ...(nodeAttrs?.marginLeft ? { marginLeft: `${nodeAttrs.marginLeft}px` } : {}),
-      };
-
-      let sentOffset = 0;
-      const spans = nodeSentences.map((sentence) => {
-        let sentStart: number;
-        if (fit) {
-          const found = rawText.indexOf(sentence, sentOffset);
-          sentStart = found >= sentOffset ? found : sentOffset;
-        } else {
-          sentStart = sentOffset;
-        }
-        const sentEnd = sentStart + sentence.length;
-        sentOffset = sentEnd;
-        if (fit) while (sentOffset < rawText.length && /\s/.test(rawText[sentOffset])) sentOffset++;
-
-        const parts: React.ReactNode[] = [];
-        let i = sentStart;
-        while (i < sentEnd) {
-          const m = charMarks[i] ?? { bold: false, italic: false };
-          let j = i + 1;
-          while (j < sentEnd) {
-            const m2 = charMarks[j] ?? { bold: false, italic: false };
-            if (m2.bold !== m.bold || m2.italic !== m.italic) break;
-            j++;
-          }
-          const slice = rawText.slice(i, j);
-          let el: React.ReactNode = slice;
-          if (m.bold && m.italic) el = <strong><em>{slice}</em></strong>;
-          else if (m.bold) el = <strong>{slice}</strong>;
-          else if (m.italic) el = <em>{slice}</em>;
-          parts.push(<React.Fragment key={i}>{el}</React.Fragment>);
-          i = j;
-        }
-
-        const idx = sentIdx++;
-        return (
-          <span
-            key={idx}
-            className={idx === activeSentenceIndex ? s.highlight : s.sentence}
-            onClick={() => handleSentenceClick(idx)}
-          >
-            {parts}{' '}
-          </span>
-        );
-      });
-      return <Tag key={nIdx} className={s.readerBlock} style={sentBlockStyle}>{spans}</Tag>;
-    });
-  };
+  const documentBody = (
+    <TTSDocumentReader
+      content={editedText}
+      currentSentenceIndex={activeSentenceIndex}
+      onSentenceClick={handleSentenceClick}
+    />
+  );
 
   const renderBody = () => {
     if (!isLoaded) {
@@ -271,14 +194,14 @@ export const DocumentReader = () => {
       return (
         <div ref={paperBgRef} className={s.paperBackground}>
           <div className={s.zoomWrapper} style={wrapperStyle}>
-            {paperSheet(renderFormattedSentences(false))}
+            {paperSheet(documentBody)}
           </div>
         </div>
       );
     }
     return (
       <div ref={scrollContainerRef} className={`${s.textContainer} ${s.readerContent}`} style={Object.keys(pageBgVars).length ? pageBgVars : undefined}>
-        {renderFormattedSentences(true)}
+        {documentBody}
       </div>
     );
   };
@@ -287,7 +210,7 @@ export const DocumentReader = () => {
     <div data-testid="document-reader" className={s.pdfReaderContainer}>
       <div className={`${s.pageInfoContainer} reader-top-bar`}>
         <span className={s.headerControls}>
-          <IconButton variant='transparent' icon={faArrowLeft} onClick={() => documentId ? navigate(`/document/${documentId}`) : navigate(-1)} />
+          <IconButton variant='transparent' icon={faArrowLeft} title={t.common.back} onClick={() => documentId ? navigate(`/document/${documentId}`) : navigate(-1)} />
           {isLoaded && <SearcherButton />}
         </span>
         <div className={s.titleContainer}>
@@ -295,10 +218,10 @@ export const DocumentReader = () => {
           {documentTitle}
         </div>
         <div className={s.controlsContainer}>
-          {isLoaded && <IconButton icon={faInfoCircle} variant='transparent' />}
-          {isLoaded && <IconButton icon={faEdit} variant='transparent' onClick={handleEdit} />}
-          {isLoaded && <IconButton icon={faGear} variant='transparent' onClick={() => dispatch(setShowReaderSettings(true))} />}
-          {isLoaded && <IconButton icon={isFullscreen ? faCompress : faExpand} variant='transparent' onClick={() => setIsFullscreen(prev => !prev)} />}
+          {isLoaded && <IconButton icon={faInfoCircle} variant='transparent' title={t.reader.documentInfo} />}
+          {isLoaded && <IconButton icon={faEdit} variant='transparent' title={t.document.editDocument} onClick={handleEdit} />}
+          {isLoaded && <IconButton icon={faGear} variant='transparent' title={t.reader.readerSettings} onClick={() => dispatch(setShowReaderSettings(true))} />}
+          {isLoaded && <IconButton icon={isFullscreen ? faCompress : faExpand} variant='transparent' title={isFullscreen ? t.reader.exitFullscreen : t.reader.enterFullscreen} onClick={() => setIsFullscreen(prev => !prev)} />}
         </div>
       </div>
       <div className={s.bodyWrapper}>

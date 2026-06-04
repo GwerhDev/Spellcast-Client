@@ -81,12 +81,25 @@
 }
 
 .empty {
-  padding: 1.25rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 1.75rem 0.75rem;
   font-size: 0.72rem;
   color: var(--color-light-400);
   text-align: center;
   margin: 0;
   font-family: var(--font-sans);
+}
+
+.empty p {
+  margin: 0;
+}
+
+.emptyIcon {
+  font-size: 1.5rem;
+  opacity: 0.4;
 }
 
 .list {

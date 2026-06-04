@@ -1,0 +1,50 @@
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 0.5rem;
+}
+
+.center {
+  align-items: center;
+  text-align: center;
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.center .titleRow {
+  justify-content: center;
+}
+
+.iconChip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex-shrink: 0;
+  border-radius: 10px;
+  font-size: 1.1rem;
+  color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 14%, transparent);
+}
+
+/* Sizing only — the color + animated spell sheen come from the shared global
+   `.featured-glow`, applied to every section title. */
+.title {
+  margin: 0;
+  font-size: var(--size-9);
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.subtitle {
+  margin: 0;
+  max-width: 60ch;
+  font-size: 0.9rem;
+  color: var(--color-light-400);
+}

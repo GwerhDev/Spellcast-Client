@@ -1,5 +1,7 @@
 import { PageTransition } from '../components/PageTransition';
 import { StorageOverview } from '../components/StorageOverview/StorageOverview';
+import { SectionHeader } from '../components/SectionHeader';
+import { faDatabase } from '@fortawesome/free-solid-svg-icons';
 import { useLanguage } from '../../i18n';
 import s from './UserPage.module.css';
 
@@ -10,10 +12,7 @@ export const Storage = () => {
     <PageTransition className="dashboard-sections">
       <div className={s.page}>
         <div className={s.content}>
-          <div className={s.header}>
-            <h1 className="featured">{t.storage.title}</h1>
-            <p>{t.storage.subtitle}</p>
-          </div>
+          <SectionHeader icon={faDatabase} title={t.storage.title} subtitle={t.storage.subtitle} />
           <StorageOverview />
         </div>
       </div>

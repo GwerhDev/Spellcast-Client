@@ -1,6 +1,23 @@
+/* Block typography — shares the same tokens as the editor's ProseMirror content
+   (defined in styles/editor.css) so the read-only reader and the editor render
+   identical vertical rhythm. */
 .block {
-  margin: 0 0 0.75em;
-  line-height: 1.7;
+  margin: 0 0 var(--mte-doc-para-gap, 0.9em);
+  line-height: var(--mte-doc-line-height, 1.6);
+}
+
+h1.block,
+h2.block,
+h3.block,
+h4.block,
+h5.block,
+h6.block {
+  margin: var(--mte-doc-heading-gap-top, 1.2em) 0 var(--mte-doc-heading-gap-bottom, 0.5em);
+  line-height: 1.25;
+}
+
+.block:first-child {
+  margin-top: 0;
 }
 
 .block:last-child {
@@ -11,14 +28,18 @@
   border-radius: 3px;
   cursor: pointer;
   transition: background 0.1s;
+  color: var(--page-text-color, inherit);
 }
 
 .sentence:hover {
-  background: rgba(255, 255, 255, 0.06);
+  /* Page-background override → active theme color → standalone fallback. */
+  background-color: var(--page-sentence-hover, var(--color-sentence-hover, rgba(255, 255, 255, 0.06)));
+  color: var(--page-text-color, var(--color-dark-900, inherit));
 }
 
 .highlight {
-  background: rgba(99, 102, 241, 0.22);
+  background-color: var(--page-highlight, var(--color-highlight, rgba(99, 102, 241, 0.22)));
+  color: var(--page-text-color, var(--color-dark-900, inherit));
   border-radius: 3px;
   cursor: pointer;
 }
@@ -34,4 +55,19 @@
   border-bottom: 2px solid var(--tts-sentence-color, #6366f1);
   border-radius: 3px;
   padding-bottom: 1px;
+}
+
+/* Inline image — responsive by default; page-level bleed (cover / pdf-graphic)
+   is handled by the consuming layout since it depends on the sheet's margins. */
+.image {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 4px;
+}
+
+.rule {
+  border: none;
+  border-top: 1px solid var(--color-dark-300, rgba(127, 127, 127, 0.3));
+  margin: 1em 0;
 }

@@ -6,6 +6,8 @@ import { DeleteConfirmModal } from '../../components/Modals/DeleteConfirmModal';
 import { useAppSelector } from '../../../store/hooks';
 import { Document } from '../../../interfaces';
 import { DocumentCard } from '../../components/Cards/DocumentCard';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faBookOpen, faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
 import { useDispatch } from 'react-redux';
 import { setAutoPlayOnLoad, resetBrowserPlayer, requestTogglePlay } from '../../../store/browserPlayerSlice';
 import { setAutoPlayOnLoad as setAudioAutoPlayOnLoad, resetAudioPlayer } from '../../../store/audioPlayerSlice';
@@ -117,8 +119,18 @@ export const DocumentList: React.FC<DocumentListProps> = ({ query = '', filter =
       </div>
     </div>
   );
-  if (documents.length === 0) return <p className={s.empty}>{t.document.noLocalDocuments}</p>;
-  if (visible.length === 0) return <p className={s.empty}>{t.document.noDocuments}</p>;
+  if (documents.length === 0) return (
+    <div className={s.empty}>
+      <FontAwesomeIcon icon={faBookOpen} className={s.emptyIcon} />
+      <p>{t.document.noLocalDocuments}</p>
+    </div>
+  );
+  if (visible.length === 0) return (
+    <div className={s.empty}>
+      <FontAwesomeIcon icon={faMagnifyingGlass} className={s.emptyIcon} />
+      <p>{t.document.noDocuments}</p>
+    </div>
+  );
 
   return (
     <>

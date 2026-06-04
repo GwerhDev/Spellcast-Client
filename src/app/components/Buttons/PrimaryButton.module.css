@@ -10,12 +10,12 @@
   transition-duration: .4s;
   border-radius: var(--size-4);
   color: var(--app-white);
-  background: linear-gradient(45deg, var(--color-primary), var(--color-secondary));
+  background: var(--color-primary);
 }
 
 .container:hover {
   color: var(--app-white);
-  background: linear-gradient(45deg, var(--color-primary-accent), var(--color-secondary-accent));
+  background: var(--color-primary-accent);
 }
 
 .container:disabled:hover {

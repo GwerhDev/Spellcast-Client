@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faMusic, faLock, faTrophy, faCheck, faArrowUpRightFromSquare, faMagnifyingGlass, faCube } from '@fortawesome/free-solid-svg-icons';
+import { faMusic, faLock, faTrophy, faCheck, faArrowUpRightFromSquare, faMagnifyingGlass, faCube, faStore } from '@fortawesome/free-solid-svg-icons';
+import { SectionHeader } from '../../components/SectionHeader';
 import { useAppSelector, useAppDispatch } from '../../../store/hooks';
 import { unlockAsset, setActiveSoundBg, setActivePageBg } from '../../../store/userLibrarySlice';
 import { soundBackgrounds, pageBackgrounds } from '../../../config/assets';
@@ -199,10 +200,8 @@ export const HavenStoreLanding = () => {
   return (
     <div data-testid="haven-store" className={s.container}>
       <div className={s.hero}>
-        <div className={s.heroContent}>
-          <h1 className="featured">{t.havenStore.title}</h1>
-          <p className={s.heroSubtitle}>{t.havenStore.subtitle}</p>
-        </div>
+        <SectionHeader icon={faStore} title={t.havenStore.title} subtitle={t.havenStore.subtitle} />
+
         <a
           href={EXTERNAL_LINKS.havenStore}
           target="_blank"

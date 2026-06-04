@@ -3,9 +3,10 @@ import { screen } from '@testing-library/react';
 import { renderWithProviders } from '../../../../test/renderWithProviders';
 import { DocumentReader } from '../index';
 
-// MagicTextEditor uses browser APIs not available in jsdom
+// MagicTextEditor / TTSDocumentReader use browser APIs not available in jsdom
 vi.mock('../../../../magictext', () => ({
   MagicTextEditor: () => null,
+  TTSDocumentReader: () => null,
 }));
 
 describe('DocumentReader', () => {

@@ -1,5 +1,7 @@
 import { PageTransition } from '../components/PageTransition';
 import { Credentials } from '../components/Credentials/Credentials';
+import { SectionHeader } from '../components/SectionHeader';
+import { faFingerprint } from '@fortawesome/free-solid-svg-icons';
 import { useLanguage } from '../../i18n';
 import s from './UserPage.module.css';
 
@@ -10,10 +12,7 @@ export const UserCredentials = () => {
     <PageTransition className="dashboard-sections">
       <div className={s.page}>
         <div className={s.content}>
-          <div className={s.header}>
-            <h1 className="featured">{t.nav.credentials}</h1>
-            <p>{t.credentials.subtitle}</p>
-          </div>
+          <SectionHeader icon={faFingerprint} title={t.nav.credentials} subtitle={t.credentials.subtitle} />
           <Credentials />
         </div>
       </div>

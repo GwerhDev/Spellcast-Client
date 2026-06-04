@@ -4,7 +4,8 @@ import { useLanguage } from '../../../i18n';
 import { FilterTabs } from '../../components/Selectors/FilterTabs';
 import { DocumentList, LibraryFilter } from '../DocumentList';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCloud, faHardDrive, faLayerGroup, faMagnifyingGlass, faPlus, faCheckSquare, faTrash, faXmark } from '@fortawesome/free-solid-svg-icons';
+import { faCloud, faHardDrive, faLayerGroup, faMagnifyingGlass, faPlus, faCheckSquare, faTrash, faXmark, faBookOpen } from '@fortawesome/free-solid-svg-icons';
+import { SectionHeader } from '../../components/SectionHeader';
 import { ImportOption } from '../../components/Start/ImportOption';
 import { CustomModal } from '../../components/Modals/CustomModal';
 import { DeleteConfirmModal } from '../../components/Modals/DeleteConfirmModal';
@@ -61,10 +62,7 @@ export const LibraryLanding = () => {
 
   return (
     <div className={s.container} data-testid="library-landing">
-      <div className={s.header}>
-        <h1 className="featured">{t.nav.library}</h1>
-        <p>{t.library.subtitle}</p>
-      </div>
+      <SectionHeader icon={faBookOpen} title={t.nav.library} subtitle={t.library.subtitle} align="center" />
 
       <FilterTabs tabs={tabs} active={filter} onChange={handleFilterChange} />
 

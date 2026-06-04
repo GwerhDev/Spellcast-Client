@@ -16,13 +16,12 @@
 .primary {
   padding-inline: 3rem;
   color: var(--text-color-accent);
-  background-color: black;
-  background: linear-gradient(45deg, var(--color-primary), var(--color-secondary));
+  background: var(--color-primary);
 }
 
 .primary:hover {
   color: var(--text-color-accent);
-  background: linear-gradient(45deg, var(--color-primary-accent), var(--color-secondary-accent));
+  background: var(--color-primary-accent);
 }
 
 .transparent {
