@@ -48,6 +48,7 @@ export const AppSwitcher = () => {
             <button
               key={app.url}
               className={s.item}
+              style={{ '--app-color': app.color ?? '#ffffff' } as React.CSSProperties}
               onClick={() => { window.location.href = app.url; }}
             >
               <img src={app.icon} alt="" className={s.appIcon} />
