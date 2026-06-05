@@ -107,6 +107,15 @@ export async function getVoicesByCredential(credentialId: string): Promise<Voice
   }
 }
 
+export class TtsError extends Error {
+  status: number;
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = 'TtsError';
+    this.status = status;
+  }
+}
+
 export async function textToSpeechService(
   data: { text: string; voice: string },
   signal?: AbortSignal,
@@ -124,8 +133,8 @@ export async function textToSpeechService(
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+      const errorData = await response.json().catch(() => ({}));
+      throw new TtsError(errorData.detail || `HTTP error! status: ${response.status}`, response.status);
     }
 
     const blob = await response.blob();

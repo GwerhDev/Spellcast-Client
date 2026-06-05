@@ -21,7 +21,9 @@ import { PlaybackControls } from '../../components/Players/AudioPlayer/PlaybackC
 import { VolumeControls } from '../../components/Players/AudioPlayer/VolumeControls/VolumeControls';
 import { VoiceSelectorButton } from '../../components/Players/AudioPlayer/VoiceSelectorButton/VoiceSelectorButton';
 import { PlayerConfigButton } from '../../components/Players/AudioPlayer/PlayerConfigButton/PlayerConfigButton';
-import { textToSpeechService, buildSegments, type TimelineEntry } from '../../../services/tts';
+import { textToSpeechService, buildSegments, TtsError, type TimelineEntry } from '../../../services/tts';
+import { addApiResponse } from '../../../store/apiResponsesSlice';
+import type { CredentialError } from '../../components/Players/AudioPlayer/VoiceSelectorButton/VoiceSelectorButton';
 import { getCachedAudio, setCachedAudio, AUDIO_CACHE_VERSION } from '../../../db/audioCache';
 import { getDocumentById } from '../../../db';
 import { useNavigate } from 'react-router-dom';
@@ -65,6 +67,7 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
   const [isFetching, setIsFetching] = useState(false);
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
+  const [credentialError, setCredentialError] = useState<CredentialError | null>(null);
 
   const pageAudioReadyRef = useRef(false);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -296,6 +299,17 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
     } catch (e) {
       if (e instanceof Error && e.name === 'AbortError') return;
       console.error(e);
+      if (e instanceof TtsError) {
+        if (e.status === 429) {
+          setCredentialError('quota');
+          dispatch(addApiResponse({ message: 'Azure credential has run out of quota. Open voice settings to update it.', type: 'error' }));
+        } else if (e.status === 403 || e.status === 401) {
+          setCredentialError('auth');
+          dispatch(addApiResponse({ message: 'Azure credential is invalid or unauthorized. Open voice settings to update it.', type: 'error' }));
+        } else {
+          dispatch(addApiResponse({ message: 'Audio synthesis failed. Try again or change the voice credential.', type: 'error' }));
+        }
+      }
     } finally {
       if (!controller.signal.aborted) setIsFetching(false);
     }
@@ -330,6 +344,10 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
 
   const isPrevDisabled = isLoaded ? currentPage === 1 : currentTrackIndex === 0;
   const isNextDisabled = isLoaded ? currentPage === totalPages : currentTrackIndex === (playlist.length - 1);
+
+  useEffect(() => {
+    setCredentialError(null);
+  }, [selectedVoice.value]);
 
   useEffect(() => {
     if (selectedVoice.type !== 'ai' || !currentPageText) return;
@@ -380,7 +398,7 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
           />
 
           <div className={s.rightSection}>
-            <VoiceSelectorButton onClick={() => showVoiceSelectorModal(true)} />
+            <VoiceSelectorButton onClick={() => showVoiceSelectorModal(true)} credentialError={credentialError} />
             <VolumeControls
               volume={volume}
               volumePercentage={volumePercentage}
