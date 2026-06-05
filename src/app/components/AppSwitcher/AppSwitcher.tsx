@@ -4,9 +4,6 @@ import s from './AppSwitcher.module.css';
 import { App, getAppList } from '../../../services/apps';
 import { useLanguage } from '../../../i18n';
 
-const isCurrent = (url: string) => {
-  try { return new URL(url).origin === window.location.origin; } catch { return false; }
-};
 
 export const AppSwitcher = () => {
   const [open, setOpen] = useState(false);
@@ -44,7 +41,7 @@ export const AppSwitcher = () => {
           {apps.length === 0 && (
             <span className={s.empty}>{t.common.loading}</span>
           )}
-          {apps.filter(app => !isCurrent(app.url)).map(app => (
+          {apps.map(app => (
             <button
               key={app.url}
               className={s.item}
