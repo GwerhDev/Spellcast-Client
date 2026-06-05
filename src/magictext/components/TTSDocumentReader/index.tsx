@@ -49,7 +49,8 @@ export function TTSDocumentReader({ content, currentSentenceIndex, onSentenceCli
       return <Tag key={key} className={s.block} style={style}><br /></Tag>
     }
 
-    const spans = block.segments.map(seg => {
+    const nodes: ReactNode[] = []
+    for (const seg of block.segments) {
       const isHighlighted = seg.index === currentSentenceIndex
       const hasColor = !!seg.ttsAttrs?.color
       const segStyle: CSSProperties = hasColor
@@ -60,7 +61,7 @@ export function TTSDocumentReader({ content, currentSentenceIndex, onSentenceCli
         ? (isHighlighted ? s.ttsMarkedHighlight : s.ttsMarked)
         : (isHighlighted ? s.highlight : s.sentence)
 
-      return (
+      nodes.push(
         <span
           key={seg.index}
           className={className}
@@ -71,9 +72,10 @@ export function TTSDocumentReader({ content, currentSentenceIndex, onSentenceCli
           {renderRuns(seg.runs, seg.text)}{' '}
         </span>
       )
-    })
+      if (seg.breakAfter) nodes.push(<br key={`br-${seg.index}`} />)
+    }
 
-    return <Tag key={key} className={s.block} style={style}>{spans}</Tag>
+    return <Tag key={key} className={s.block} style={style}>{nodes}</Tag>
   }
 
   return (

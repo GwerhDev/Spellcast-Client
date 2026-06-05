@@ -31,9 +31,10 @@ interface CharInfo {
 }
 
 /** Flatten a block's inline content into a string plus per-character mark info. */
-function buildCharInfo(node: JSONContent): { fullText: string; chars: CharInfo[] } {
+function buildCharInfo(node: JSONContent): { fullText: string; chars: CharInfo[]; hardBreakOffsets: number[] } {
   let fullText = ''
   const chars: CharInfo[] = []
+  const hardBreakOffsets: number[] = []
   for (const inline of node.content ?? []) {
     if (inline.type === 'text') {
       const marks = (inline.marks ?? []) as { type: string; attrs?: Record<string, unknown> }[]
@@ -44,11 +45,12 @@ function buildCharInfo(node: JSONContent): { fullText: string; chars: CharInfo[]
       for (let i = 0; i < text.length; i++) chars.push({ tts, bold, italic })
       fullText += text
     } else if (inline.type === 'hardBreak') {
+      hardBreakOffsets.push(fullText.length)
       chars.push({ tts: null, bold: false, italic: false })
       fullText += ' '
     }
   }
-  return { fullText, chars }
+  return { fullText, chars, hardBreakOffsets }
 }
 
 /** Group [start, end) of fullText into bold/italic-consistent runs. */
@@ -83,20 +85,30 @@ export function extractDocumentBlocks(content: JSONContent | null | undefined): 
   let blockIndex = 0
 
   const processText = (node: JSONContent, blockType: 'paragraph' | 'heading', headingLevel?: number) => {
-    const { fullText, chars } = buildCharInfo(node)
+    const { fullText, chars, hardBreakOffsets } = buildCharInfo(node)
     const attrs = node.attrs as { textAlign?: string; marginLeft?: number } | undefined
     const segments: TTSSegment[] = []
 
     if (fullText.trim()) {
       const sentences = splitSentences(fullText)
+      // First pass: resolve each sentence's position in fullText.
+      const positions: { pos: number; end: number }[] = []
       let searchFrom = 0
       for (const sentText of sentences) {
         const pos = fullText.indexOf(sentText, searchFrom)
+        const end = pos >= 0 ? pos + sentText.length : searchFrom
+        positions.push({ pos, end })
+        if (pos >= 0) searchFrom = end
+      }
+      for (let si = 0; si < sentences.length; si++) {
+        const sentText = sentences[si]
+        const { pos, end } = positions[si]
         const ttsAttrs = pos >= 0 ? (chars[pos]?.tts ?? null) : null
         const runs = pos >= 0
-          ? buildRuns(fullText, chars, pos, pos + sentText.length)
+          ? buildRuns(fullText, chars, pos, end)
           : [{ text: sentText, bold: false, italic: false }]
-        if (pos >= 0) searchFrom = pos + sentText.length
+        const nextStart = si < positions.length - 1 ? positions[si + 1].pos : fullText.length
+        const breakAfter = hardBreakOffsets.some(h => h >= end && h < nextStart)
         segments.push({
           text: sentText,
           index: globalIndex++,
@@ -105,6 +117,7 @@ export function extractDocumentBlocks(content: JSONContent | null | undefined): 
           blockType,
           ...(headingLevel !== undefined ? { headingLevel } : {}),
           runs,
+          ...(breakAfter ? { breakAfter: true } : {}),
         })
       }
     }

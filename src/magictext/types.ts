@@ -60,6 +60,8 @@ export interface TTSSegment {
   headingLevel?: number
   /** Inline bold/italic runs covering exactly this sentence's characters. */
   runs?: TextRun[]
+  /** True when a hardBreak node in the source immediately follows this sentence. */
+  breakAfter?: boolean
 }
 
 /**
