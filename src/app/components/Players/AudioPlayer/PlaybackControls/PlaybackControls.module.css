@@ -6,6 +6,13 @@
   margin-bottom: 15px;
 }
 
+.progressTrackRow {
+  width: 100%;
+  height: 20px;
+  display: flex;
+  align-items: center;
+}
+
 @keyframes fetchingShimmer {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
@@ -102,8 +109,18 @@
 
 .controlsContainer {
   width: 40%;
-  min-width: 280px;
+  min-width: 220px;
   max-width: 520px;
+}
+
+@media (max-width: 640px) {
+  .controlsContainer {
+    width: 100%;
+    min-width: 0;
+  }
+  .timeDisplay {
+    font-size: 10px;
+  }
 }
 
 .controls {

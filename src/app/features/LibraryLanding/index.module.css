@@ -104,6 +104,48 @@
   opacity: 0.85;
 }
 
+/* ── Doc filter chips ── */
+.docFilterBar {
+  display: flex;
+  gap: 0.4rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 0.1rem;
+  margin-bottom: 1rem;
+  max-width: 100%;
+}
+
+.docFilterBar::-webkit-scrollbar {
+  display: none;
+}
+
+.filterChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface-overlay);
+  color: var(--text-2);
+  font-size: 0.75rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+  flex-shrink: 0;
+}
+
+.filterChip:hover {
+  border-color: color-mix(in srgb, var(--color-primary) 50%, transparent);
+  color: var(--color-primary);
+}
+
+.filterChipActive {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 12%, var(--surface-overlay));
+}
+
 /* ── Search bar ── */
 .searchWrapper {
   width: 100%;

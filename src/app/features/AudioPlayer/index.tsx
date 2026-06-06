@@ -30,6 +30,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '../../../store/hooks';
 import { faFilePdf } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { Waveform } from '../../components/Waveform/Waveform';
+import { DocumentDetailModal } from '../../components/Modals/DocumentDetailModal';
 
 interface PlayerProps {
   showVoiceSelectorModal: React.Dispatch<SetStateAction<boolean>>;
@@ -51,6 +53,7 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
     currentTrackIndex,
     autoPlayOnLoad,
     pendingSeekMs,
+    toggleSeq,
   } = useSelector((state: RootState) => state.audioPlayer);
   const {
     isLoaded,
@@ -68,6 +71,7 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
   const [credentialError, setCredentialError] = useState<CredentialError | null>(null);
+  const [showDocDetail, setShowDocDetail] = useState(false);
 
   const pageAudioReadyRef = useRef(false);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -328,6 +332,14 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
     dispatch(play());
   };
 
+  const handleTogglePlayPauseRef = useRef(handleTogglePlayPause);
+  useEffect(() => { handleTogglePlayPauseRef.current = handleTogglePlayPause; });
+  useEffect(() => {
+    if (!toggleSeq) return;
+    handleTogglePlayPauseRef.current();
+    //eslint-disable-next-line
+  }, [toggleSeq]);
+
   const formatTime = (time: number) => {
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
@@ -357,6 +369,12 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
   }, [currentPageText]);
 
   return (
+    <>
+    <DocumentDetailModal
+      documentId={documentId ?? null}
+      show={showDocDetail}
+      onClose={() => setShowDocDetail(false)}
+    />
     <div data-testid="audio-player" className={s.outterContainer}>
       <div className={s.container}>
         <div className={s.audioPlayerContainer}>
@@ -367,16 +385,28 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
             onEnded={handleEnded}
           />
           <section className={s.leftSection}>
-            {coverUrl
-              ? <img src={coverUrl} alt="" className={s.cover} />
-              : <div className={s.coverIcon}><FontAwesomeIcon icon={faFilePdf} /></div>
-            }
+            <div
+              className={s.coverWrap}
+              onClick={documentId ? () => setShowDocDetail(true) : undefined}
+              style={documentId ? { cursor: 'pointer' } : undefined}
+            >
+              {coverUrl
+                ? <img src={coverUrl} alt="" className={s.cover} />
+                : <div className={s.coverIcon}><FontAwesomeIcon icon={faFilePdf} /></div>
+              }
+              {isPlaying && (
+                <div className={s.coverWaveOverlay}>
+                  <Waveform active bars={4} height={14} color="white" />
+                </div>
+              )}
+            </div>
             {isLoaded && (
               <div className={s.documentDetails}>
                 <p title={documentTitle || ''} onClick={documentId ? handleTitle : undefined} style={documentId ? undefined : { cursor: 'default' }}>{documentTitle}</p>
                 {documentId && <small onClick={handleSearcher}>{t.document.page} {currentPage} {t.document.of} {totalPages}</small>}
               </div>
             )}
+            <VoiceSelectorButton onClick={() => showVoiceSelectorModal(true)} credentialError={credentialError} />
           </section>
 
           <PlaybackControls
@@ -398,7 +428,6 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
           />
 
           <div className={s.rightSection}>
-            <VoiceSelectorButton onClick={() => showVoiceSelectorModal(true)} credentialError={credentialError} />
             <VolumeControls
               volume={volume}
               volumePercentage={volumePercentage}
@@ -418,5 +447,6 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
         </div>
       </div>
     </div>
+    </>
   );
 };

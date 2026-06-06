@@ -2,9 +2,9 @@ import { useState } from 'react';
 import s from './index.module.css';
 import { useLanguage } from '../../../i18n';
 import { FilterTabs } from '../../components/Selectors/FilterTabs';
-import { DocumentList, LibraryFilter } from '../DocumentList';
+import { DocumentList, LibraryFilter, LibraryDocFilter } from '../DocumentList';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCloud, faHardDrive, faLayerGroup, faMagnifyingGlass, faPlus, faCheckSquare, faTrash, faXmark, faBuildingColumns } from '@fortawesome/free-solid-svg-icons';
+import { faCloud, faHardDrive, faLayerGroup, faMagnifyingGlass, faPlus, faCheckSquare, faTrash, faXmark, faBuildingColumns, faBookOpen, faFilePdf, faBan } from '@fortawesome/free-solid-svg-icons';
 import { SectionHeader } from '../../components/SectionHeader';
 import { ImportOption } from '../../components/Start/ImportOption';
 import { CustomModal } from '../../components/Modals/CustomModal';
@@ -18,6 +18,7 @@ export const LibraryLanding = () => {
   const dispatch = useAppDispatch();
   const { userData } = useAppSelector(state => state.session);
   const [filter, setFilter] = useState<LibraryFilter>('all');
+  const [docFilter, setDocFilter] = useState<LibraryDocFilter>('all');
   const [query, setQuery] = useState('');
   const [showImport, setShowImport] = useState(false);
   const [selectionMode, setSelectionMode] = useState(false);
@@ -70,6 +71,24 @@ export const LibraryLanding = () => {
         <ImportOption />
       </CustomModal>
 
+      <div className={s.docFilterBar}>
+        {([
+          { id: 'all',         label: t.common.all,        icon: faLayerGroup },
+          { id: 'reading',     label: t.document.reading,  icon: faBookOpen   },
+          { id: 'pdf',         label: 'PDF',               icon: faFilePdf    },
+          { id: 'unprocessed', label: 'Unprocessed', icon: faBan },
+        ] as { id: LibraryDocFilter; label: string; icon: typeof faLayerGroup }[]).map(chip => (
+          <button
+            key={chip.id}
+            className={`${s.filterChip} ${docFilter === chip.id ? s.filterChipActive : ''}`}
+            onClick={() => setDocFilter(chip.id)}
+          >
+            <FontAwesomeIcon icon={chip.icon} />
+            {chip.label}
+          </button>
+        ))}
+      </div>
+
       <div className={s.searchWrapper}>
         <FontAwesomeIcon icon={faMagnifyingGlass} className={s.searchIcon} />
         <input
@@ -112,6 +131,7 @@ export const LibraryLanding = () => {
         <DocumentList
           query={query}
           filter={filter}
+          docFilter={docFilter}
           selectionMode={selectionMode}
           selectedIds={selectedIds}
           onToggleSelect={toggleSelect}

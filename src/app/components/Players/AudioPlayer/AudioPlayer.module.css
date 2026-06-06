@@ -9,7 +9,7 @@
   display: flex;
   background: var(--component-background-transparency);
   backdrop-filter: blur(10px);
-  border: solid .5px var(--color-dark-300);
+  border: solid 1px var(--line);
 }
 
 @media (max-width: 768px) {
@@ -30,10 +30,28 @@
   background: var(--component-background);
 }
 
+.coverWrap {
+  position: relative;
+  flex-shrink: 0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.coverWaveOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.52);
+  border-radius: 4px;
+  pointer-events: none;
+}
+
 .leftSection {
   flex: 1;
   min-width: 0;
-  gap: .5rem;
+  gap: 0.5rem;
   padding: 0;
   min-height: 2.5rem;
   border-radius: .2rem;
@@ -41,6 +59,7 @@
   position: relative;
   align-items: center;
   justify-content: flex-start;
+  overflow: hidden;
 }
 
 .cover {
@@ -112,5 +131,15 @@
 @media (max-width: 768px) {
   .documentDetails {
     display: none;
+  }
+
+  .audioPlayerContainer {
+    padding: 0.25rem 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .rightSection {
+    gap: 0;
   }
 }

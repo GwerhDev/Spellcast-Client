@@ -10,21 +10,23 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBookOpen, faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
 import { useDispatch } from 'react-redux';
 import { setAutoPlayOnLoad, resetBrowserPlayer, requestTogglePlay } from '../../../store/browserPlayerSlice';
-import { setAutoPlayOnLoad as setAudioAutoPlayOnLoad, resetAudioPlayer } from '../../../store/audioPlayerSlice';
+import { setAutoPlayOnLoad as setAudioAutoPlayOnLoad, resetAudioPlayer, requestTogglePlay as requestAudioTogglePlay } from '../../../store/audioPlayerSlice';
 import { setPdfFile, setPdfDocumentInfo, resetPdfReader } from '../../../store/pdfReaderSlice';
 import { useLanguage } from '../../../i18n';
 
 export type LibraryFilter = 'all' | 'local' | 'cloud';
+export type LibraryDocFilter = 'all' | 'reading' | 'pdf' | 'unprocessed';
 
 interface DocumentListProps {
   query?: string;
   filter?: LibraryFilter;
+  docFilter?: LibraryDocFilter;
   selectionMode?: boolean;
   selectedIds?: string[];
   onToggleSelect?: (id: string) => void;
 }
 
-export const DocumentList: React.FC<DocumentListProps> = ({ query = '', filter = 'local', selectionMode, selectedIds = [], onToggleSelect }) => {
+export const DocumentList: React.FC<DocumentListProps> = ({ query = '', filter = 'local', docFilter = 'all', selectionMode, selectedIds = [], onToggleSelect }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useLanguage();
@@ -34,14 +36,19 @@ export const DocumentList: React.FC<DocumentListProps> = ({ query = '', filter =
   const uploadQueue = useAppSelector(state => state.pdfUpload.queue);
   const audioPlaying = useAppSelector(state => state.audioPlayer.isPlaying);
   const browserPlaying = useAppSelector(state => state.browserPlayer.isPlaying);
+  const selectedVoiceType = useAppSelector(state => state.voice.selectedVoice.type);
   const [documents, setDocuments] = useState<Document[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState<{ id: string, title: string } | null>(null);
 
   const handlePlay = (doc: Document) => {
-    if (activeDocId === doc.id && readerLoaded) {
-      dispatch(requestTogglePlay());
+    if (activeDocId === doc.id && (readerLoaded || audioPlaying || browserPlaying)) {
+      if (selectedVoiceType !== 'browser') {
+        dispatch(requestAudioTogglePlay());
+      } else {
+        dispatch(requestTogglePlay());
+      }
       return;
     }
     const totalPages = doc.pagesContent ? (() => { try { return JSON.parse(doc.pagesContent!).length; } catch { return 1; } })() : 1;
@@ -99,9 +106,13 @@ export const DocumentList: React.FC<DocumentListProps> = ({ query = '', filter =
   };
 
   const q = query.trim().toLowerCase();
-  const visible = q
-    ? documents.filter(d => d.title.toLowerCase().includes(q))
-    : documents;
+  const byQuery = q ? documents.filter(d => d.title.toLowerCase().includes(q)) : documents;
+  const visible = byQuery.filter(d => {
+    if (docFilter === 'reading') return (d.progress?.currentPage ?? 0) > 0;
+    if (docFilter === 'pdf') return !!d.pdf;
+    if (docFilter === 'unprocessed') return !d.pagesContent;
+    return true;
+  });
 
   if (isLoading) return (
     <div className={s.container}>

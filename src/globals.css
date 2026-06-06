@@ -426,7 +426,7 @@ a:hover {
   display: flex;
   background: var(--component-background-transparency);
   backdrop-filter: blur(10px);
-  border: solid .5px var(--color-dark-300);
+  border: solid 1px var(--line);
 }
 
 .audioplayer-container {

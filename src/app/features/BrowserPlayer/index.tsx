@@ -28,6 +28,8 @@ import { getDocumentById } from '../../../db';
 import { useAppSelector } from '../../../store/hooks';
 import { faFilePdf } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { Waveform } from '../../components/Waveform/Waveform';
+import { DocumentDetailModal } from '../../components/Modals/DocumentDetailModal';
 
 interface PlayerProps {
   showVoiceSelectorModal: React.Dispatch<SetStateAction<boolean>>;
@@ -58,6 +60,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
 
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
+  const [showDocDetail, setShowDocDetail] = useState(false);
   const volumeSliderRef = useRef<HTMLDivElement>(null);
   const volumeButtonRef = useRef<HTMLButtonElement>(null);
   const activeUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
@@ -288,20 +291,38 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
   }, [dispatch, voice, selectedVoice]);
 
   return (
+    <>
+    <DocumentDetailModal
+      documentId={documentId ?? null}
+      show={showDocDetail}
+      onClose={() => setShowDocDetail(false)}
+    />
     <div data-testid="browser-player" className={s.outterContainer}>
       <div className={s.container}>
         <div className={s.audioPlayerContainer}>
           <section className={s.leftSection}>
-            {coverUrl
-              ? <img src={coverUrl} alt="" className={s.cover} />
-              : <div className={s.coverIcon}><FontAwesomeIcon icon={faFilePdf} /></div>
-            }
+            <div
+              className={s.coverWrap}
+              onClick={documentId ? () => setShowDocDetail(true) : undefined}
+              style={documentId ? { cursor: 'pointer' } : undefined}
+            >
+              {coverUrl
+                ? <img src={coverUrl} alt="" className={s.cover} />
+                : <div className={s.coverIcon}><FontAwesomeIcon icon={faFilePdf} /></div>
+              }
+              {isPlaying && (
+                <div className={s.coverWaveOverlay}>
+                  <Waveform active bars={4} height={14} color="white" />
+                </div>
+              )}
+            </div>
             {isLoaded && (
               <div className={s.documentDetails}>
                 <p title={documentTitle || ''} onClick={documentId ? handleTitle : undefined} style={documentId ? undefined : { cursor: 'default' }}>{documentTitle}</p>
                 {documentId && <small onClick={handleSearcher}>{t.document.page} {currentPage} {t.document.of} {totalPages}</small>}
               </div>
             )}
+            <VoiceSelectorButton onClick={() => showVoiceSelectorModal(true)} />
           </section>
 
           <PlaybackControls
@@ -314,7 +335,6 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
           />
 
           <div className={s.rightSection}>
-            <VoiceSelectorButton onClick={() => showVoiceSelectorModal(true)} />
             <VolumeControls
               volume={volume}
               volumePercentage={volumePercentage}
@@ -336,5 +356,6 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
         </div>
       </div>
     </div>
+    </>
   );
 };

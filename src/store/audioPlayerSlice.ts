@@ -12,6 +12,7 @@ interface AudioPlayerState {
   autoPlayOnLoad: boolean;
   timeline: TimelineEntry[];
   pendingSeekMs: number | null;
+  toggleSeq: number;
 }
 
 const initialState: AudioPlayerState = {
@@ -25,6 +26,7 @@ const initialState: AudioPlayerState = {
   autoPlayOnLoad: false,
   timeline: [],
   pendingSeekMs: null,
+  toggleSeq: 0,
 };
 
 const audioPlayerSlice = createSlice({
@@ -105,6 +107,9 @@ const audioPlayerSlice = createSlice({
     clearPendingSeek: (state) => {
       state.pendingSeekMs = null;
     },
+    requestTogglePlay: (state) => {
+      state.toggleSeq += 1;
+    },
     resetAudioPlayer: (state) => {
       state.playlist = [];
       state.currentTrackIndex = null;
@@ -131,6 +136,7 @@ export const {
   setAiTimeline,
   setPendingSeek,
   clearPendingSeek,
+  requestTogglePlay,
   resetAudioPlayer,
 } = audioPlayerSlice.actions;
 

@@ -1,22 +1,18 @@
 import s from './index.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import type { IconProp } from '@fortawesome/fontawesome-svg-core';
+import { Tag } from '../Tag/Tag';
 
 interface SectionHeaderProps {
-  /** Optional accent icon shown in a primary-tinted chip before the title. */
   icon?: IconProp;
   title: string;
   subtitle?: string;
   align?: 'left' | 'center';
+  count?: number;
+  action?: React.ReactNode;
 }
 
-/**
- * Sober, professional section header: a primary-tinted icon chip + a solid-color
- * title + optional subtitle. Replaces the previous gradient `featured` titles
- * across the app's sections (the `featured` gradient is now reserved for a few
- * strategic brand moments only).
- */
-export const SectionHeader = ({ icon, title, subtitle, align = 'left' }: SectionHeaderProps) => (
+export const SectionHeader = ({ icon, title, subtitle, align = 'left', count, action }: SectionHeaderProps) => (
   <div className={`${s.header} ${align === 'center' ? s.center : ''}`}>
     <div className={s.titleRow}>
       {icon && (
@@ -25,6 +21,10 @@ export const SectionHeader = ({ icon, title, subtitle, align = 'left' }: Section
         </span>
       )}
       <h1 className={`${s.title} featured-glow`}>{title}</h1>
+      {count !== undefined && (
+        <Tag tone="default" size="sm">{count}</Tag>
+      )}
+      {action && <span className={s.action}>{action}</span>}
     </div>
     {subtitle && <p className={s.subtitle}>{subtitle}</p>}
   </div>

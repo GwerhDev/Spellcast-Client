@@ -18,6 +18,7 @@
   overflow: hidden;
   background: var(--component-background);
   backdrop-filter: blur(14px);
+  border-right: 1px solid var(--line);
 }
 
 .projectActionsContainer {
@@ -74,6 +75,17 @@
   flex-direction: column;
 }
 
+.mainMenu h5 {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  padding: 0 0.25rem;
+}
+
 .menuList {
   gap: .3rem;
   display: flex;
@@ -100,7 +112,7 @@
 
 .menuList li:hover {
   cursor: pointer;
-  background-color: var(--color-options-background);
+  background-color: var(--surface-raised);
 }
 
 .deleteButton {
@@ -119,8 +131,20 @@
 }
 
 .menuList li.activeLink {
-  background-color: var(--color-primary);
-  color: var(--app-white);
+  background-color: color-mix(in srgb, var(--color-primary) 16%, transparent);
+  color: var(--color-primary);
+  position: relative;
+}
+
+.menuList li.activeLink::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 20%;
+  height: 60%;
+  width: 2.5px;
+  background: var(--color-primary);
+  border-radius: 0 2px 2px 0;
 }
 
 .section.activeLink h4 {

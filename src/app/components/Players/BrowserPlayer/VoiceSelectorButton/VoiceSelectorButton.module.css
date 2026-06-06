@@ -1,19 +1,38 @@
 .voiceSelectorContainer {
-  position: relative;
   display: flex;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .voiceButton {
-  background-color: transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  background: transparent;
   border: none;
   cursor: pointer;
-  font-size: 20px;
-  padding: 10px;
-  transition: color 0.3s ease;
+  padding: 6px 8px;
+  border-radius: 8px;
+  transition: background 0.15s ease;
 }
 
 .voiceButton:hover {
-  color: var(--color-primary);
-  background-color: transparent;
+  background: var(--surface-raised);
+}
+
+.iconRow {
+  display: flex;
+  align-items: center;
+  font-size: 16px;
+  color: inherit;
+}
+
+@media (max-width: 640px) {
+  .voiceLabel {
+    display: none;
+  }
+  .iconRow {
+    font-size: 18px;
+  }
 }

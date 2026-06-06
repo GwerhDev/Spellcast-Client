@@ -5,6 +5,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFilePdf, faTrash, faPen, faPlay, faPause, faEllipsisVertical, faHourglassHalf, faCheck } from '@fortawesome/free-solid-svg-icons';
 import { Document } from '../../../interfaces';
 import { useLanguage } from '../../../i18n';
+import { Tag } from '../Tag/Tag';
+import { Waveform } from '../Waveform/Waveform';
 
 interface UploadJob {
   status: 'queued' | 'processing' | 'done' | 'error';
@@ -112,7 +114,6 @@ export const DocumentCard = ({ doc, isActive, isPlaying, onClick, onDelete, onEd
         </div>,
         document.body
       )}
-      {isActive && <span className={s.readingTag}>{t.document.reading}</span>}
       {onPlay && (
         <button
           className={`${s.playAction} ${isPlaying ? s.playActionPlaying : isActive ? s.playActionActive : ''}`}
@@ -128,6 +129,11 @@ export const DocumentCard = ({ doc, isActive, isPlaying, onClick, onDelete, onEd
           ? <img src={coverUrl} alt={doc.title} className={s.cover} />
           : <div className={s.iconWrapper}><FontAwesomeIcon icon={faFilePdf} className={s.icon} /></div>
         }
+        <div className={s.coverTags}>
+          {doc.pdf && <Tag tone="default" size="sm">PDF</Tag>}
+          {isPlaying && <Tag tone="live" size="sm" dot>{t.document.reading}</Tag>}
+          {isActive && !isPlaying && <Tag tone="primary" size="sm">{t.document.reading}</Tag>}
+        </div>
         {uploadJob && (
           <div className={s.uploadOverlay}>
             {uploadJob.status === 'processing' ? (
@@ -146,7 +152,10 @@ export const DocumentCard = ({ doc, isActive, isPlaying, onClick, onDelete, onEd
         )}
       </div>
       <div className={s.footer}>
-        <span className={s.title}>{doc.title}</span>
+        <div className={s.titleRow}>
+          <span className={s.title}>{doc.title}</span>
+          {isPlaying && <Waveform active bars={3} height={10} />}
+        </div>
         {progressPct !== null ? (
           <div className={s.progressBar}>
             <div className={s.progressFill} style={{ width: `${progressPct}%` }} />

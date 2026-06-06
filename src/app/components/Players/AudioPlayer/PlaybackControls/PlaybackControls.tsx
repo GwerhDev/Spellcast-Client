@@ -40,27 +40,29 @@ export const PlaybackControls: React.FC<PlaybackControlsProps> = ({
   return (
     <section className={s.controlsContainer}>
       <div className={s.progressBarContainer}>
-        {isFetching ? (
-          <div className={s.fetchingTrack}>
-            <div className={s.fetchingBar} />
-          </div>
-        ) : (
-          <input
-            type="range"
-            min="0"
-            max={duration}
-            step="0.01"
-            value={currentTime}
-            onChange={(e) => {
-              if (audioRef.current) {
-                audioRef.current.currentTime = parseFloat(e.target.value);
-              }
-              setCurrentTime(parseFloat(e.target.value));
-            }}
-            className={s.progressBar}
-            style={{ '--progress-value': `${progressPercentage}%` } as React.CSSProperties}
-          />
-        )}
+        <div className={s.progressTrackRow}>
+          {isFetching ? (
+            <div className={s.fetchingTrack}>
+              <div className={s.fetchingBar} />
+            </div>
+          ) : (
+            <input
+              type="range"
+              min="0"
+              max={duration}
+              step="0.01"
+              value={currentTime}
+              onChange={(e) => {
+                if (audioRef.current) {
+                  audioRef.current.currentTime = parseFloat(e.target.value);
+                }
+                setCurrentTime(parseFloat(e.target.value));
+              }}
+              className={s.progressBar}
+              style={{ '--progress-value': `${progressPercentage}%` } as React.CSSProperties}
+            />
+          )}
+        </div>
         <div className={s.timeDisplay}>
           <span>{formatTime(currentTime)}</span>
           {isFetching ? (

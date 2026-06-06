@@ -49,3 +49,7 @@
   font-size: 0.9rem;
   color: var(--color-light-400);
 }
+
+.action {
+  margin-left: auto;
+}

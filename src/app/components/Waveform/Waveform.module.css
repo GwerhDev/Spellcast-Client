@@ -1,0 +1,42 @@
+.waveform {
+  display: inline-flex;
+  gap: 2px;
+  align-items: center;
+  height: calc(var(--wf-height) + 4px);
+}
+
+.bar {
+  width: 2.5px;
+  background: var(--wf-color);
+  border-radius: 2px;
+  transition: height 0.3s ease;
+}
+
+.idle .bar {
+  height: 2px;
+}
+
+.active .bar0 {
+  animation: waveA 0.6s ease-in-out infinite alternate;
+}
+.active .bar1 {
+  animation: waveB 0.75s ease-in-out infinite alternate;
+  animation-delay: 0.15s;
+}
+.active .bar2 {
+  animation: waveC 0.55s ease-in-out infinite alternate;
+  animation-delay: 0.3s;
+}
+
+@keyframes waveA {
+  from { height: calc(var(--wf-height) * 0.3) }
+  to   { height: var(--wf-height) }
+}
+@keyframes waveB {
+  from { height: calc(var(--wf-height) * 0.6) }
+  to   { height: calc(var(--wf-height) * 0.35) }
+}
+@keyframes waveC {
+  from { height: var(--wf-height) }
+  to   { height: calc(var(--wf-height) * 0.25) }
+}
