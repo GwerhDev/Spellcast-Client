@@ -1,6 +1,5 @@
 import s from './VoiceSelectorButton.module.css';
 import React from 'react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCommentDots, faTriangleExclamation } from '@fortawesome/free-solid-svg-icons';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../../../store';
@@ -21,32 +20,18 @@ export const VoiceSelectorButton: React.FC<VoiceSelectorButtonProps> = ({ onClic
     : 'Browser';
 
   return (
-    <div className={s.voiceSelectorContainer}>
-      <button
-        className={s.voiceButton}
-        onClick={onClick}
-        title={credentialError ? 'Credential error — click to change' : voiceLabel}
-      >
-        <span className={s.iconRow}>
-          <FontAwesomeIcon icon={faCommentDots} />
-          {credentialError && (
-            <FontAwesomeIcon icon={faTriangleExclamation} className={s.errorIcon} title={
-              credentialError === 'quota' ? 'Azure quota exceeded' :
-              credentialError === 'auth'  ? 'Invalid credential' : 'Synthesis error'
-            } />
-          )}
-        </span>
-        <span className={s.voiceLabel}>
-          {!credentialError && (
-            <Tag tone={isAi ? 'primary' : 'default'} size="sm">
-              {voiceLabel}
-            </Tag>
-          )}
-          {credentialError && (
-            <Tag tone="warning" size="sm">Error</Tag>
-          )}
-        </span>
-      </button>
-    </div>
+    <button
+      className={s.voiceButton}
+      onClick={onClick}
+      title={credentialError ? 'Credential error — click to change' : voiceLabel}
+    >
+      {credentialError ? (
+        <Tag tone="warning" size="sm" icon={faTriangleExclamation}>Error</Tag>
+      ) : (
+        <Tag tone={isAi ? 'primary' : 'default'} size="sm" icon={faCommentDots}>
+          {voiceLabel}
+        </Tag>
+      )}
+    </button>
   );
 };
