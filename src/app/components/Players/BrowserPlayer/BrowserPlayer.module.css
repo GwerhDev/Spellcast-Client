@@ -90,10 +90,12 @@
 }
 
 .documentDetails {
-  width: 100%;
   max-width: 180px;
   overflow: hidden;
   font-size: small;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
 }
 
 .documentDetails p {
