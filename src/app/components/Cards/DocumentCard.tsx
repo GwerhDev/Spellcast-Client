@@ -130,7 +130,6 @@ export const DocumentCard = ({ doc, isActive, isPlaying, onClick, onDelete, onEd
           : <div className={s.iconWrapper}><FontAwesomeIcon icon={faFilePdf} className={s.icon} /></div>
         }
         <div className={s.coverTags}>
-          {doc.pdf && <Tag tone="default" size="sm">PDF</Tag>}
           {isPlaying && <Tag tone="live" size="sm" dot>{t.document.reading}</Tag>}
           {isActive && !isPlaying && <Tag tone="primary" size="sm">{t.document.reading}</Tag>}
         </div>
