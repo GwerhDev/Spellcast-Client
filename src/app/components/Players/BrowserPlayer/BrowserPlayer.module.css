@@ -1,24 +1,7 @@
-.outterContainer {
-  width: 100%;
-}
-
 .container {
   gap: .5rem;
-  padding: .5rem;
-  border-radius: 10px;
   display: flex;
-  background: var(--component-background-transparency);
-  backdrop-filter: blur(10px);
-  border: solid 1px var(--line);
-}
-
-@media (max-width: 768px) {
-  .outterContainer {
-    margin: 0;
-    bottom: .5rem;
-    position: fixed;
-    padding-inline: .5rem;
-  }
+  width: 100%;
 }
 
 .audioPlayerContainer {
@@ -26,14 +9,14 @@
   padding: .5rem;
   display: flex;
   align-items: center;
-  border-radius: 10px;
-  background: var(--component-background);
+  justify-content: space-between;
 }
 
 .coverWrap {
-  position: relative;
   flex-shrink: 0;
-  cursor: pointer;
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
 }
 
 .coverWaveOverlay {
@@ -119,8 +102,16 @@
 }
 
 @keyframes marqueeScroll {
-  0%,  20% { transform: translateX(0); }
-  80%, 100% { transform: translateX(calc(-100% + 180px)); }
+
+  0%,
+  20% {
+    transform: translateX(0);
+  }
+
+  80%,
+  100% {
+    transform: translateX(calc(-100% + 180px));
+  }
 }
 
 .pdfControls {
@@ -132,5 +123,15 @@
 @media (max-width: 768px) {
   .documentDetails {
     display: none;
+  }
+
+  .audioPlayerContainer {
+    padding: 0.25rem 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .rightSection {
+    gap: 0;
   }
 }

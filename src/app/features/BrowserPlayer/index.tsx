@@ -73,7 +73,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
   useEffect(() => { waitingForSentencesRef.current = true; }, [currentPage]);
   useEffect(() => { waitingForSentencesRef.current = false; }, [sentences]);
 
-  const togglePlayPauseRef = useRef<() => void>(() => {});
+  const togglePlayPauseRef = useRef<() => void>(() => { });
   useEffect(() => {
     if (!toggleSeq) return;
     togglePlayPauseRef.current();
@@ -292,13 +292,12 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
 
   return (
     <>
-    <DocumentDetailModal
-      documentId={documentId ?? null}
-      show={showDocDetail}
-      onClose={() => setShowDocDetail(false)}
-    />
-    <div data-testid="browser-player" className={s.outterContainer}>
-      <div className={s.container}>
+      <DocumentDetailModal
+        documentId={documentId ?? null}
+        show={showDocDetail}
+        onClose={() => setShowDocDetail(false)}
+      />
+      <div data-testid="browser-player" className={s.container}>
         <div className={s.audioPlayerContainer}>
           <section className={s.leftSection}>
             <div
@@ -355,7 +354,6 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
           </div>
         </div>
       </div>
-    </div>
     </>
   );
 };

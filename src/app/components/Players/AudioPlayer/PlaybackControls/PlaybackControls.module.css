@@ -14,8 +14,13 @@
 }
 
 @keyframes fetchingShimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 .progressBar {
@@ -41,12 +46,10 @@
 .fetchingBar {
   height: 100%;
   border-radius: 999px;
-  background: linear-gradient(
-    90deg,
-    var(--color-dark-500) 0%,
-    var(--color-primary) 50%,
-    var(--color-dark-500) 100%
-  );
+  background: linear-gradient(90deg,
+      var(--color-dark-500) 0%,
+      var(--color-primary) 50%,
+      var(--color-dark-500) 100%);
   background-size: 200% 100%;
   animation: fetchingShimmer 1.2s linear infinite;
 }
@@ -108,9 +111,9 @@
 }
 
 .controlsContainer {
-  width: 40%;
-  min-width: 220px;
-  max-width: 520px;
+  flex: 1;
+  min-width: 320px;
+  max-width: 600px;
 }
 
 @media (max-width: 640px) {
@@ -118,6 +121,7 @@
     width: 100%;
     min-width: 0;
   }
+
   .timeDisplay {
     font-size: 10px;
   }
@@ -190,13 +194,11 @@
     radial-gradient(ellipse 55% 45% at 36% 66%,
       color-mix(in srgb, var(--color-primary) 96%, white) 0%,
       var(--color-primary) 32%,
-      transparent 66%
-    ),
+      transparent 66%),
     radial-gradient(ellipse 48% 40% at 67% 32%,
       color-mix(in srgb, var(--color-secondary) 70%, var(--color-primary)) 0%,
       color-mix(in srgb, var(--color-secondary) 28%, transparent) 55%,
-      transparent 78%
-    );
+      transparent 78%);
   filter: blur(9px);
   opacity: 0.6;
   pointer-events: none;
@@ -210,12 +212,10 @@
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  background: radial-gradient(
-    circle at 50% 52%,
-    rgba(255, 255, 255, 0.75) 0%,
-    color-mix(in srgb, var(--color-primary) 88%, white) 24%,
-    transparent 56%
-  );
+  background: radial-gradient(circle at 50% 52%,
+      rgba(255, 255, 255, 0.75) 0%,
+      color-mix(in srgb, var(--color-primary) 88%, white) 24%,
+      transparent 56%);
   filter: blur(4px);
   opacity: 0.8;
   pointer-events: none;
@@ -257,12 +257,10 @@
   z-index: 2;
   pointer-events: none;
   opacity: 0;
-  background: linear-gradient(
-    100deg,
-    transparent 0%,
-    color-mix(in srgb, white 60%, transparent) 50%,
-    transparent 100%
-  );
+  background: linear-gradient(100deg,
+      transparent 0%,
+      color-mix(in srgb, white 60%, transparent) 50%,
+      transparent 100%);
   filter: blur(2px);
   transform: translateX(-220%) skewX(-20deg);
 }
@@ -272,24 +270,51 @@
 }
 
 @keyframes playSheen {
-  0%   { transform: translateX(-220%) skewX(-20deg); opacity: 0; }
-  12%  { opacity: 1; }
-  100% { transform: translateX(380%) skewX(-20deg); opacity: 0; }
+  0% {
+    transform: translateX(-220%) skewX(-20deg);
+    opacity: 0;
+  }
+
+  12% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: translateX(380%) skewX(-20deg);
+    opacity: 0;
+  }
 }
 
 @keyframes palantirChurn {
-  0%   { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes coreBreath {
-  0%   { opacity: 0.58; transform: scale(0.76); }
-  100% { opacity: 1;    transform: scale(1.06); }
+  0% {
+    opacity: 0.58;
+    transform: scale(0.76);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .playing::before,
-  .playing::after { animation: none; }
-  .sheen { animation: none !important; }
-}
 
+  .playing::before,
+  .playing::after {
+    animation: none;
+  }
+
+  .sheen {
+    animation: none !important;
+  }
+}

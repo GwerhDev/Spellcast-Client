@@ -370,13 +370,12 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
 
   return (
     <>
-    <DocumentDetailModal
-      documentId={documentId ?? null}
-      show={showDocDetail}
-      onClose={() => setShowDocDetail(false)}
-    />
-    <div data-testid="audio-player" className={s.outterContainer}>
-      <div className={s.container}>
+      <DocumentDetailModal
+        documentId={documentId ?? null}
+        show={showDocDetail}
+        onClose={() => setShowDocDetail(false)}
+      />
+      <div data-testid="audio-player" className={s.container}>
         <div className={s.audioPlayerContainer}>
           <audio
             ref={audioRef}
@@ -446,7 +445,6 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
           </div>
         </div>
       </div>
-    </div>
     </>
   );
 };

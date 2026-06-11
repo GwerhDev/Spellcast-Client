@@ -259,19 +259,36 @@ main {
   padding: 0;
   width: 100%;
   flex-grow: 1;
+  padding-inline: .5rem;
+  padding-bottom: .5rem;
   max-width: var(--max-width);
   display: flex;
   flex-direction: column;
+}
+
+.outter-border {
+  width: 100%;
+  min-width: 0;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+  position: relative;
+  padding: .5rem;
+  border-radius: 10px;
+  backdrop-filter: blur(10px);
+  border: solid 1px var(--line);
 }
 
 .app-container {
   width: 100%;
   min-width: 0;
   flex-grow: 1;
-  padding-inline: .5rem;
   display: flex;
   flex-direction: column;
   overflow: auto;
+  position: relative;
+  border-radius: 10px;
 }
 
 .app-viewer {
@@ -282,8 +299,6 @@ main {
   position: relative;
   flex-direction: column;
   background: var(--viewer-background);
-  border-top-right-radius: 10px;
-  border-bottom-right-radius: 10px;
   backdrop-filter: blur(10px);
 }
 
@@ -368,13 +383,6 @@ a:hover {
   flex-grow: 1;
   display: flex;
   overflow-y: auto;
-  margin-bottom: .5rem;
-  padding-inline: .5rem;
-  position: relative;
-  padding: .5rem;
-  border-radius: 10px;
-  backdrop-filter: blur(10px);
-  border: solid 1px var(--line);
 }
 
 @media (max-width: 1024px) {
@@ -385,7 +393,9 @@ a:hover {
   .app-viewer {
     margin: 0;
     padding: 0;
-    border-radius: 10px;
+    border-radius: 0;
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
     overflow-y: auto;
   }
 }
@@ -442,23 +452,21 @@ a:hover {
 .aside-inner-container {
   flex-grow: 1;
   display: flex;
-  border-top-left-radius: 10px;
-  border-bottom-left-radius: 10px;
   background: var(--component-background);
 }
 
 .audioplayer-container {
   width: 100%;
-  padding-bottom: .5rem;
   position: relative;
   z-index: 50;
+  background: var(--component-background);
 }
 
 @media (max-width: 1024px) {
   .nav-container {
     width: 100%;
     height: auto;
-    padding-top: 3.7rem;
+    padding-top: 3rem;
     padding-inline: 0;
     display: flex;
   }
@@ -477,12 +485,13 @@ a:hover {
 
   .aside-inner-container {
     flex-direction: column;
-    border-radius: 10px;
+    border-radius: 0;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
   }
 
   .audioplayer-container {
     padding: 0;
-    padding-bottom: 5.3rem;
     display: flex;
   }
 }
