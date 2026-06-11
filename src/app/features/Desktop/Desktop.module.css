@@ -113,8 +113,10 @@
   flex-shrink: 0;
   position: relative;
   z-index: 1;
-  /* Recolor the (white) app SVG to the theme's icon shade. */
-  filter: var(--icon-filter);
+  /* Tint the (white, cross-origin) app SVG to the app primary cyan (#73a5cc).
+     A computed filter chain is used because the remote SVG cannot be masked
+     (S3 serves it without CORS). */
+  filter: brightness(0) saturate(100%) invert(64%) sepia(11%) saturate(1268%) hue-rotate(166deg) brightness(89%) contrast(83%);
   transition: transform 0.25s ease;
 }
 

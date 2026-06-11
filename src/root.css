@@ -27,7 +27,7 @@
   --icon-filter: brightness(0.8);
   --color-options-background: #3a3d48;
   --viewer-background: #6a6e7a36;
-  --component-background: linear-gradient(to right top, var(--color-primary-darker), var(--color-secondary-darker));
+  --component-background: var(--color-secondary-darker);
   --component-background-transparency: #66656511;
   --color-primary-accent: #84b4d8;
   --color-secondary-accent: #9b85c8;
@@ -61,7 +61,7 @@
 
   --background-color-dark: #1a1a1c;
   --background-color-light: #2f2f2f;
-  --background-color-dark-transparency: #1e1e1ead;
+  --background-color-dark-transparency: #1e1e1e70;
   --background-gradient-color:
     radial-gradient(ellipse 80% 60% at 70% 40%, color-mix(in oklch, var(--color-primary) 12%, transparent), transparent 70%),
     radial-gradient(ellipse 60% 40% at 20% 80%, color-mix(in oklch, var(--color-primary) 8%, transparent), transparent 70%),
@@ -110,8 +110,8 @@ html.light {
   --color-button-primary: #73a5cc;
   --color-button-primary-glass: color-mix(in srgb, var(--color-button-primary) 72%, transparent);
   --color-button-primary-hover: #8469bb;
-  --color-primary-lighter: #dde8f2;
-  --color-secondary-lighter: #ddd6e8;
+  --color-primary-lighter: #dce8f3;
+  --color-secondary-lighter: #e0e0f1;
 
   --color-highlight: #b7d7f0;
 
@@ -120,7 +120,7 @@ html.light {
   --color-sentence-hover: #cacaca;
   --color-options-background: #ddd6e8;
   --viewer-background: #ddd6e842;
-  --component-background: linear-gradient(to right top, var(--color-primary-lighter), var(--color-secondary-lighter));
+  --component-background: var(--color-secondary-lighter);
   --component-background-transparency: #cecece11;
 
   --color-dark-100: #f5f5f5;
