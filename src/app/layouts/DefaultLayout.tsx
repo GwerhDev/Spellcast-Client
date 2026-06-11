@@ -60,32 +60,34 @@ export default function DefaultLayout() {
         <NotificationsButton />
         <AccountMenu />
       </div>
-      <div className="dashboard-container">
-        <nav className="nav-container" ref={navRef}>
-          <aside className="aside-container">
-            <div className="aside-inner-container">
-              <TabBar showMenu={showMenu} setShowMenu={setShowMenu} />
-              <AnimatePresence>
-                {showMenu && <LateralMenu onNavigate={() => { if (window.matchMedia('(max-width: 1024px)').matches) setShowMenu(false); }} />}
-              </AnimatePresence>
-            </div>
-          </aside>
-        </nav>
-        <div className="app-viewer">
-          <Outlet />
+      <div className="app-container">
+        <div className="dashboard-container">
+          <nav className="nav-container" ref={navRef}>
+            <aside className="aside-container">
+              <div className="aside-inner-container">
+                <TabBar showMenu={showMenu} setShowMenu={setShowMenu} />
+                <AnimatePresence>
+                  {showMenu && <LateralMenu onNavigate={() => { if (window.matchMedia('(max-width: 1024px)').matches) setShowMenu(false); }} />}
+                </AnimatePresence>
+              </div>
+            </aside>
+          </nav>
+          <div className="app-viewer">
+            <Outlet />
+          </div>
+          <ReaderSettings />
+          <EditorSettings />
+          <PdfUploadQueue />
         </div>
-        <ReaderSettings />
-        <EditorSettings />
-        <PdfUploadQueue />
+        {documentLoaded && (
+          <div className="audioplayer-container">
+            {selectedVoice.type === 'browser'
+              ? <BrowserPlayer showVoiceSelectorModal={setIsVoiceSelectorOpen} showPlayerConfigModal={setIsPlayerSettingsOpen} />
+              : <AudioPlayer showVoiceSelectorModal={setIsVoiceSelectorOpen} showPlayerConfigModal={setIsPlayerSettingsOpen} />}
+          </div>
+        )}
+        <LogoutModal />
       </div>
-      {documentLoaded && (
-        <div className="audioplayer-container">
-          {selectedVoice.type === 'browser'
-            ? <BrowserPlayer showVoiceSelectorModal={setIsVoiceSelectorOpen} showPlayerConfigModal={setIsPlayerSettingsOpen} />
-            : <AudioPlayer showVoiceSelectorModal={setIsVoiceSelectorOpen} showPlayerConfigModal={setIsPlayerSettingsOpen} />}
-        </div>
-      )}
-      <LogoutModal />
     </main>
   );
 }

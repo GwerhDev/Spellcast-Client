@@ -70,14 +70,12 @@ h1 {
      Layer 2 (fixed): a solid primary fill that ALWAYS covers the text, so it
      never disappears at the sweep extremes. */
   background-image:
-    linear-gradient(
-      105deg,
+    linear-gradient(105deg,
       transparent 0%,
       transparent 44%,
       color-mix(in srgb, var(--color-primary) 50%, white) 50%,
       transparent 56%,
-      transparent 100%
-    ),
+      transparent 100%),
     linear-gradient(var(--color-primary), var(--color-primary));
   background-size: 250% 100%, 100% 100%;
   background-position: 175% 0, 0 0;
@@ -90,8 +88,14 @@ h1 {
 }
 
 @keyframes spellSheen {
-  0%        { background-position: 175% 0, 0 0; }
-  55%, 100% { background-position: -75% 0, 0 0; }
+  0% {
+    background-position: 175% 0, 0 0;
+  }
+
+  55%,
+  100% {
+    background-position: -75% 0, 0 0;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -260,6 +264,16 @@ main {
   flex-direction: column;
 }
 
+.app-container {
+  width: 100%;
+  min-width: 0;
+  flex-grow: 1;
+  padding-inline: .5rem;
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+}
+
 .app-viewer {
   width: 100%;
   min-width: 0;
@@ -267,6 +281,10 @@ main {
   display: flex;
   position: relative;
   flex-direction: column;
+  background: var(--viewer-background);
+  border-top-right-radius: 10px;
+  border-bottom-right-radius: 10px;
+  backdrop-filter: blur(10px);
 }
 
 .header-app {
@@ -346,14 +364,17 @@ a:hover {
 }
 
 .dashboard-container {
-  gap: .5rem;
-  width: 100vw;
+  width: 100%;
   flex-grow: 1;
   display: flex;
   overflow-y: auto;
   margin-bottom: .5rem;
   padding-inline: .5rem;
   position: relative;
+  padding: .5rem;
+  border-radius: 10px;
+  backdrop-filter: blur(10px);
+  border: solid 1px var(--line);
 }
 
 @media (max-width: 1024px) {
@@ -362,9 +383,10 @@ a:hover {
   }
 
   .app-viewer {
-    overflow-y: auto;
     margin: 0;
     padding: 0;
+    border-radius: 10px;
+    overflow-y: auto;
   }
 }
 
@@ -403,7 +425,6 @@ a:hover {
 .dashboard-sections {
   width: 100%;
   flex-grow: 1;
-  border-radius: 10px;
   display: flex;
   overflow: auto;
   flex-direction: column;
@@ -419,14 +440,11 @@ a:hover {
 }
 
 .aside-inner-container {
-  gap: .5rem;
   flex-grow: 1;
-  padding: .5rem;
-  border-radius: 10px;
   display: flex;
-  background: var(--component-background-transparency);
-  backdrop-filter: blur(10px);
-  border: solid 1px var(--line);
+  border-top-left-radius: 10px;
+  border-bottom-left-radius: 10px;
+  background: var(--component-background);
 }
 
 .audioplayer-container {
@@ -441,15 +459,15 @@ a:hover {
   .nav-container {
     width: 100%;
     height: auto;
-    padding-top: 4.3rem;
+    padding-top: 3.7rem;
     padding-inline: 0;
     display: flex;
   }
 
   .aside-container {
+    top: .5rem;
     left: 0;
     margin: 0;
-    top: 1.4rem;
     width: 100%;
     z-index: 99;
     max-height: 90%;
@@ -460,6 +478,7 @@ a:hover {
 
   .aside-inner-container {
     flex-direction: column;
+    border-radius: 10px;
   }
 
   .audioplayer-container {

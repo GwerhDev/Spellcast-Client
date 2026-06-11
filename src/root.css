@@ -26,6 +26,7 @@
   --text-color-accent: #e4e4e4;
   --icon-filter: brightness(0.8);
   --color-options-background: #3a3d48;
+  --viewer-background: #6a6e7a36;
   --component-background: linear-gradient(to right top, var(--color-primary-darker), var(--color-secondary-darker));
   --component-background-transparency: #66656511;
   --color-primary-accent: #84b4d8;
@@ -83,12 +84,12 @@
   --size-12: 48px;
 
   /* Surface depth levels */
-  --surface-base:    #1a1a1c;
-  --surface-raised:  #202026;
+  --surface-base: #1a1a1c;
+  --surface-raised: #202026;
   --surface-overlay: #27272f;
 
   /* Border tokens */
-  --line:      rgba(255, 255, 255, 0.07);
+  --line: rgba(255, 255, 255, 0.07);
   --line-soft: rgba(255, 255, 255, 0.04);
 
   /* Text hierarchy */
@@ -97,8 +98,8 @@
   --text-3: #7b7b7b;
 
   /* Semantic status colors */
-  --color-live:    #e8914a;
-  --color-ok:      #52c99a;
+  --color-live: #e8914a;
+  --color-ok: #52c99a;
   --color-warning: #d4a017;
 
 }
@@ -118,9 +119,10 @@ html.light {
   --icon-filter: brightness(0.38);
   --color-sentence-hover: #cacaca;
   --color-options-background: #ddd6e8;
+  --viewer-background: #ddd6e842;
   --component-background: linear-gradient(to right top, var(--color-primary-lighter), var(--color-secondary-lighter));
   --component-background-transparency: #cecece11;
-  
+
   --color-dark-100: #f5f5f5;
   --color-dark-200: #eeeeee;
   --color-dark-300: #e0e0e0;
@@ -157,13 +159,13 @@ html.light {
   --magic-ruler-shade: rgba(115, 165, 204, 0.15);
 
   /* Surface depth levels — light */
-  --surface-base:    #f5f5f5;
-  --surface-raised:  #eeeeee;
+  --surface-base: #f5f5f5;
+  --surface-raised: #eeeeee;
   --surface-overlay: #e8e8e8;
 
   /* Border tokens — light */
-  --line:      rgba(0, 0, 0, 0.08);
-  --line-soft: rgba(0, 0, 0, 0.04);
+  --line: rgba(180, 180, 180, 0.356);
+  --line-soft: rgba(153, 153, 153, 0.04);
 
   /* Text hierarchy — light */
   --text-1: #212121;

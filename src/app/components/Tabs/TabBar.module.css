@@ -2,13 +2,9 @@
   gap: .5rem;
   padding: 0;
   height: 100%;
-  border-radius: 10px;
   display: flex;
   align-items: center;
   flex-direction: column;
-  padding-top: 1rem;
-  padding-bottom: 1rem;
-  background: var(--component-background);
 }
 
 @media (max-width: 1024px) {
@@ -17,6 +13,7 @@
     height: auto;
     flex-direction: row;
     justify-content: flex-start;
+    border: none;
   }
 }
 
