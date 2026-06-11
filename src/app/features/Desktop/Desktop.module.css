@@ -113,6 +113,8 @@
   flex-shrink: 0;
   position: relative;
   z-index: 1;
+  /* Recolor the (white) app SVG to the theme's icon shade. */
+  filter: var(--icon-filter);
   transition: transform 0.25s ease;
 }
 
