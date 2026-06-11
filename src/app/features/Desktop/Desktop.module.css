@@ -1,0 +1,133 @@
+.desktop {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 9vh;
+  background:
+    radial-gradient(120% 80% at 50% 0%, rgba(115, 165, 204, 0.12), transparent 55%),
+    #0c0e12;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.desktop[data-minimized='true'] {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Centered grid of ecosystem app icons. */
+.launcher {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 1.25rem;
+  max-width: 760px;
+  padding: 0 1rem;
+}
+
+.item {
+  position: relative;
+  overflow: hidden;
+  width: 116px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 1.1rem 0.5rem;
+  background: var(--component-background);
+  border: 1.5px solid transparent;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: border-color 0.18s ease, transform 0.2s ease;
+}
+
+.item::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--app-color);
+  opacity: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  transition: opacity 0.18s ease;
+}
+
+.item::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 35%,
+    rgba(255, 255, 255, 0.2) 50%,
+    transparent 65%
+  );
+  background-size: 300% 100%;
+  background-position: 200% center;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.item:hover {
+  border-color: var(--app-color);
+  transform: translateY(-4px);
+}
+
+.item:hover::before {
+  opacity: 0.12;
+}
+
+.item:hover::after {
+  opacity: 1;
+  animation: appShine 0.5s ease-out forwards;
+}
+
+.item:hover .label {
+  color: var(--app-color);
+}
+
+/* The current app (Spellcast) is highlighted — clicking it restores the window. */
+.current {
+  border-color: var(--app-color);
+}
+
+.current::before {
+  opacity: 0.1;
+}
+
+@keyframes appShine {
+  from { background-position: 200% center; }
+  to   { background-position: -100% center; }
+}
+
+.appIcon {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+  transition: transform 0.25s ease;
+}
+
+.item:hover .appIcon {
+  transform: scale(1.08);
+}
+
+.label {
+  position: relative;
+  z-index: 1;
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: var(--text-color);
+  text-align: center;
+  transition: color 0.18s ease;
+}

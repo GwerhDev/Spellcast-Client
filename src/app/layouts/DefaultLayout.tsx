@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Outlet } from 'react-router-dom';
 import { TabBar } from '../components/Tabs/TabBar';
 import { LogoutModal } from '../components/Modals/LogoutModal';
@@ -20,11 +20,16 @@ import { SoundBackground } from '../components/SoundBackground/SoundBackground';
 import { PdfUploadWorker } from '../components/PdfUploadWorker';
 import { PdfUploadQueue } from '../components/PdfUploadQueue';
 import { NotificationsButton } from '../features/NotificationsButton';
+import { Desktop } from '../features/Desktop';
+import { useAppDispatch } from 'store/hooks';
+import { setMinimized } from 'store/desktopSlice';
 
 export default function DefaultLayout() {
   const shouldHideMenu = location.pathname.startsWith(`/user`);
   const { selectedVoice } = useSelector((state: RootState) => state.voice);
   const { isLoaded: documentLoaded } = useSelector((state: RootState) => state.pdfReader);
+  const minimized = useSelector((state: RootState) => state.desktop.minimized);
+  const dispatch = useAppDispatch();
   const [showMenu, setShowMenu] = useState(shouldHideMenu);
   const [isPlayerSettingsOpen, setIsPlayerSettingsOpen] = useState(false);
   const [isVoiceSelectorOpen, setIsVoiceSelectorOpen] = useState(false);
@@ -55,42 +60,52 @@ export default function DefaultLayout() {
         show={isPlayerSettingsOpen}
         onClose={() => setIsPlayerSettingsOpen(false)}
       />
-      <div className="header-app">
-        <AppSwitcher />
-        <NotificationsButton />
-        <AccountMenu />
-      </div>
-      <div className="outter-border">
-        <div className="app-container">
-          <div className="dashboard-container">
-            <nav className="nav-container" ref={navRef}>
-              <aside className="aside-container">
-                <div className="aside-inner-container">
-                  <TabBar showMenu={showMenu} setShowMenu={setShowMenu} />
-                  <AnimatePresence>
-                    {showMenu && <LateralMenu onNavigate={() => { if (window.matchMedia('(max-width: 1024px)').matches) setShowMenu(false); }} />}
-                  </AnimatePresence>
-                </div>
-              </aside>
-            </nav>
-
-            <div className="app-viewer">
-              <Outlet />
-              <ReaderSettings />
-              <EditorSettings />
-              <PdfUploadQueue />
-            </div>
-          </div>
-          {documentLoaded && (
-            <div className="audioplayer-container">
-              {selectedVoice.type === 'browser'
-                ? <BrowserPlayer showVoiceSelectorModal={setIsVoiceSelectorOpen} showPlayerConfigModal={setIsPlayerSettingsOpen} />
-                : <AudioPlayer showVoiceSelectorModal={setIsVoiceSelectorOpen} showPlayerConfigModal={setIsPlayerSettingsOpen} />}
-            </div>
-          )}
-          <LogoutModal />
+      <Desktop />
+      <motion.div
+        className="app-window"
+        data-minimized={minimized}
+        onClick={minimized ? () => dispatch(setMinimized(false)) : undefined}
+        animate={minimized ? { scale: 0.52, y: '-8%', borderRadius: 16 } : { scale: 1, y: 0, borderRadius: 0 }}
+        transition={{ type: 'spring', stiffness: 260, damping: 30 }}
+        style={{ transformOrigin: 'center' }}
+      >
+        <div className="header-app">
+          <AppSwitcher />
+          <NotificationsButton />
+          <AccountMenu />
         </div>
-      </div>
+        <div className="outter-border">
+          <div className="app-container">
+            <div className="dashboard-container">
+              <nav className="nav-container" ref={navRef}>
+                <aside className="aside-container">
+                  <div className="aside-inner-container">
+                    <TabBar showMenu={showMenu} setShowMenu={setShowMenu} />
+                    <AnimatePresence>
+                      {showMenu && <LateralMenu onNavigate={() => { if (window.matchMedia('(max-width: 1024px)').matches) setShowMenu(false); }} />}
+                    </AnimatePresence>
+                  </div>
+                </aside>
+              </nav>
+
+              <div className="app-viewer">
+                <Outlet />
+                <ReaderSettings />
+                <EditorSettings />
+                <PdfUploadQueue />
+              </div>
+            </div>
+            {documentLoaded && (
+              <div className="audioplayer-container">
+                {selectedVoice.type === 'browser'
+                  ? <BrowserPlayer showVoiceSelectorModal={setIsVoiceSelectorOpen} showPlayerConfigModal={setIsPlayerSettingsOpen} />
+                  : <AudioPlayer showVoiceSelectorModal={setIsVoiceSelectorOpen} showPlayerConfigModal={setIsPlayerSettingsOpen} />}
+              </div>
+            )}
+            <LogoutModal />
+          </div>
+        </div>
+      </motion.div>
     </main>
   );
 }

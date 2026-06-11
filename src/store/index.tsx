@@ -11,9 +11,11 @@ import groupsReducer from './groupsSlice';
 import editorReducer from './editorSlice';
 import userLibraryReducer from './userLibrarySlice';
 import pdfUploadReducer from './pdfUploadSlice';
+import desktopReducer from './desktopSlice';
 
 export const store = configureStore({
   reducer: {
+    desktop: desktopReducer,
     voice: voiceReducer,
     groups: groupsReducer,
     editor: editorReducer,
