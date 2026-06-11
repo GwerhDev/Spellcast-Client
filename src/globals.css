@@ -449,7 +449,6 @@ a:hover {
 
 .audioplayer-container {
   width: 100%;
-  padding-inline: .5rem;
   padding-bottom: .5rem;
   position: relative;
   z-index: 50;
