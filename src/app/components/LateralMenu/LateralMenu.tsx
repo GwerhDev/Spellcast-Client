@@ -1,6 +1,6 @@
 import s from './LateralMenu.module.css';
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBox, faGear, faTableColumns } from '@fortawesome/free-solid-svg-icons';
 import { dashboardDirectoryList, settingsDirectoryList, storageDirectoryList } from '../../../config/consts';
@@ -14,6 +14,7 @@ interface LateralMenuProps {
 
 export const LateralMenu = ({ onNavigate }: LateralMenuProps) => {
   const { t } = useLanguage();
+  const { pathname } = useLocation();
   const isMobile = window.matchMedia('(max-width: 1024px)').matches;
 
   const navName: Record<NavKey, string> = {
@@ -53,11 +54,11 @@ export const LateralMenu = ({ onNavigate }: LateralMenuProps) => {
         <div className={s.menuContainer}>
           <div className={s.mainMenu}>
             <h5>{t.nav.mainMenu}</h5>
-            <span className={`${s.section} ${location.pathname.startsWith(`/user/dashboard`) ? s.activeLink : ''}`}>
+            <span className={`${s.section} ${pathname.startsWith(`/user/dashboard`) ? s.activeLink : ''}`}>
               <Link to={`/user/dashboard`}>
                 <h4>{t.nav.dashboard}</h4>
               </Link>
-              <span className={location.pathname.startsWith(`/user/dashboard`) ? s.magicIcon : s.sectionIcon}>
+              <span className={pathname.startsWith(`/user/dashboard`) ? s.magicIcon : s.sectionIcon}>
                 <FontAwesomeIcon icon={faTableColumns} />
               </span>
             </span>
@@ -66,7 +67,7 @@ export const LateralMenu = ({ onNavigate }: LateralMenuProps) => {
           <ul className={s.menuList}>
             {dashboardDirectoryList.map(({ name, icon, path }, index) => {
               const linkPath = `/user/${path}`;
-              const isActive = location.pathname === linkPath || location.pathname.startsWith(`${linkPath}/`);
+              const isActive = pathname === linkPath || pathname.startsWith(`${linkPath}/`);
               return (
                 <Link key={index} to={linkPath}>
                   <li className={isActive ? s.activeLink : ''}>
@@ -78,18 +79,18 @@ export const LateralMenu = ({ onNavigate }: LateralMenuProps) => {
             })}
           </ul>
 
-          <span className={`${s.section} ${location.pathname.startsWith(`/user/storage`) ? s.activeLink : ''}`}>
+          <span className={`${s.section} ${pathname.startsWith(`/user/storage`) ? s.activeLink : ''}`}>
             <Link to={`/user/storage`}>
               <h4>{t.nav.storage}</h4>
             </Link>
-            <span className={location.pathname.startsWith(`/user/storage`) ? s.magicIcon : s.sectionIcon}>
+            <span className={pathname.startsWith(`/user/storage`) ? s.magicIcon : s.sectionIcon}>
               <FontAwesomeIcon icon={faBox} />
             </span>
           </span>
           <ul className={s.menuList}>
             {storageDirectoryList.map(({ name, icon, path }, index) => {
               const linkPath = `/user/${path}`;
-              const isActive = location.pathname === linkPath || location.pathname.startsWith(`${linkPath}/`);
+              const isActive = pathname === linkPath || pathname.startsWith(`${linkPath}/`);
               return (
                 <Link key={index} to={linkPath}>
                   <li className={isActive ? s.activeLink : ''}>
@@ -101,18 +102,18 @@ export const LateralMenu = ({ onNavigate }: LateralMenuProps) => {
             })}
           </ul>
 
-          <span className={`${s.section} ${location.pathname.startsWith(`/user/settings`) ? s.activeLink : ''}`}>
+          <span className={`${s.section} ${pathname.startsWith(`/user/settings`) ? s.activeLink : ''}`}>
             <Link to={`/user/settings`}>
               <h4>{t.nav.settings}</h4>
             </Link>
-            <span className={location.pathname.startsWith(`/user/settings`) ? s.magicIcon : s.sectionIcon}>
+            <span className={pathname.startsWith(`/user/settings`) ? s.magicIcon : s.sectionIcon}>
               <FontAwesomeIcon icon={faGear} />
             </span>
           </span>
           <ul className={s.menuList}>
             {settingsDirectoryList.map(({ name, icon, path }, index) => {
               const linkPath = `/user/${path}`;
-              const isActive = location.pathname === linkPath || location.pathname.startsWith(`${linkPath}/`);
+              const isActive = pathname === linkPath || pathname.startsWith(`${linkPath}/`);
               return (
                 <Link key={index} to={linkPath}>
                   <li className={isActive ? s.activeLink : ''}>
