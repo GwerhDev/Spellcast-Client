@@ -19,14 +19,14 @@
 
 .cover {
   width: 100%;
-  height: 100px;
+  height: 180px;
   object-fit: cover;
   object-position: top;
   flex-shrink: 0;
 }
 
 .iconWrapper {
-  height: 100px;
+  height: 180px;
   display: flex;
   align-items: center;
   justify-content: center;
