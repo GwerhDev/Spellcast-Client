@@ -6,6 +6,7 @@
   background: var(--component-background-transparency);
   backdrop-filter: blur(10px);
   border: solid .5px var(--color-dark-300);
+  box-shadow: 0 1px 12px rgba(0, 0, 0, 0.212);
 }
 
 .tabButton {
@@ -27,6 +28,7 @@
 
 .tabButton:hover {
   color: var(--color-primary);
+  background: var(--component-background);
 }
 
 .tabButton.left {
