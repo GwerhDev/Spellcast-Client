@@ -163,7 +163,6 @@
   position: relative;
   flex-shrink: 0;
   height: 180px;
-  background-color: var(--component-background);
 }
 
 .uploadOverlay {
@@ -209,7 +208,7 @@
   position: absolute;
   inset: 0;
   background: rgba(0, 0, 0, 0.45);
-  opacity: 0.18;
+  opacity: 0;
   pointer-events: none;
   transition: opacity 0.2s ease;
 }
@@ -225,7 +224,6 @@
   object-position: top;
   display: block;
   flex-shrink: 0;
-  background-color: var(--component-background);
 }
 
 .iconWrapper {

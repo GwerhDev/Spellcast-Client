@@ -30,7 +30,6 @@
   padding: 0;
   flex-grow: 1;
   min-height: 0;
-  border-radius: 10px;
 }
 
 /* Flex row: vertical ruler at far-left (aligned with corner) + paper centered in remaining space */

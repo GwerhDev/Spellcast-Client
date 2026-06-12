@@ -298,6 +298,7 @@ main {
   display: flex;
   flex-direction: column;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: .5rem;
   border-radius: 10px;
   background: var(--component-background-transparency);
@@ -414,6 +415,7 @@ a:hover {
 
 .dashboard-container {
   width: 100%;
+  min-width: 0;
   flex-grow: 1;
   display: flex;
   overflow-y: auto;
@@ -481,6 +483,7 @@ a:hover {
 
 .dashboard-sections {
   width: 100%;
+  min-width: 0;
   flex-grow: 1;
   display: flex;
   overflow: auto;
