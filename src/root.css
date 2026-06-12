@@ -28,7 +28,7 @@
   --color-options-background: #3a3d48;
   --viewer-background: #6a6e7a36;
   --component-background: var(--color-secondary-darker);
-  --component-background-transparency: #d6d6d610;
+  --component-background-transparency: #d6d6d60a;
   --color-primary-accent: #84b4d8;
   --color-secondary-accent: #9b85c8;
 
@@ -121,7 +121,7 @@ html.light {
   --color-options-background: #ddd6e8;
   --viewer-background: #ddd6e842;
   --component-background: var(--color-secondary-lighter);
-  --component-background-transparency: #a4a2b322;
+  --component-background-transparency: #b3b2bb16;
 
   --color-dark-100: #f5f5f5;
   --color-dark-200: #eeeeee;
