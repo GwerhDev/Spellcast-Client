@@ -370,7 +370,7 @@
   flex-direction: column;
   gap: 2rem;
   flex-grow: 1;
-  overflow: auto;
+  overflow-y: auto;
   padding: 1.25rem;
 }
 
