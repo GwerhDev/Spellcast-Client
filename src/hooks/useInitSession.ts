@@ -1,18 +1,17 @@
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { fetchAuth } from '../services/auth';
 import { addApiResponse } from '../store/apiResponsesSlice';
 import { getCredentials } from '../store/credentialsSlice';
 import { useAppDispatch } from '../store/hooks';
 import { setLoader, setSession } from '../store/sessionSlice';
 import { loadVoicePreference } from '../store/voiceSlice';
+import { ACCOUNT_BASE, CLIENT_BASE } from '../config/api';
 
 export function useInitSession(
   onProgress?: (progress: number) => void,
   onMessage?: (message: string) => void,
 ) {
   const dispatch = useAppDispatch();
-  const navigate = useNavigate();
 
   useEffect(() => {
     dispatch(setLoader(true));
