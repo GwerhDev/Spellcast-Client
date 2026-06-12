@@ -2,11 +2,12 @@ import s from './DocumentCard.module.css';
 import { useMemo, useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faFilePdf, faTrash, faPen, faPlay, faPause, faEllipsisVertical, faHourglassHalf, faCheck } from '@fortawesome/free-solid-svg-icons';
+import { faFilePdf, faTrash, faPen, faEllipsisVertical, faHourglassHalf, faCheck } from '@fortawesome/free-solid-svg-icons';
 import { Document } from '../../../interfaces';
 import { useLanguage } from '../../../i18n';
 import { Tag } from '../Tag/Tag';
 import { Waveform } from '../Waveform/Waveform';
+import { PlayButton } from '../PlayButton/PlayButton';
 
 interface UploadJob {
   status: 'queued' | 'processing' | 'done' | 'error';
@@ -115,14 +116,13 @@ export const DocumentCard = ({ doc, isActive, isPlaying, onClick, onDelete, onEd
         document.body
       )}
       {onPlay && (
-        <button
-          className={`${s.playAction} ${isPlaying ? s.playActionPlaying : isActive ? s.playActionActive : ''}`}
-          onClick={(e) => { e.stopPropagation(); onPlay(e); }}
-        >
-          <span className={s.playIcon}>
-            <FontAwesomeIcon icon={isPlaying ? faPause : faPlay} />
-          </span>
-        </button>
+        <div className={`${s.playAction} ${isPlaying ? s.playActionPlaying : isActive ? s.playActionActive : ''}`}>
+          <PlayButton
+            size="sm"
+            isPlaying={!!isPlaying}
+            onClick={(e) => { e.stopPropagation(); onPlay(e); }}
+          />
+        </div>
       )}
       <div className={s.coverWrapper}>
         {coverUrl

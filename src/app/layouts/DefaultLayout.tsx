@@ -70,9 +70,12 @@ export default function DefaultLayout() {
         style={{ transformOrigin: 'center' }}
       >
         <div className="header-app">
+          <span className="header-spacer"></span>
           <AppSwitcher />
-          <NotificationsButton />
-          <AccountMenu />
+          <span className="header-spacer">
+            <NotificationsButton />
+            <AccountMenu />
+          </span>
         </div>
         <div className="outter-border">
           <div className="app-container">

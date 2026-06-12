@@ -1,9 +1,10 @@
 import s from '../../../components/Players/BrowserPlayer/PlaybackControls/PlaybackControls.module.css';
 import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlay, faPause, faStepBackward, faStepForward } from '@fortawesome/free-solid-svg-icons';
+import { faStepBackward, faStepForward } from '@fortawesome/free-solid-svg-icons';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../../../store';
+import { PlayButton } from '../../../components/PlayButton/PlayButton';
 
 interface PlaybackControlsProps {
   handlePrevious: () => void;
@@ -30,10 +31,7 @@ export const PlaybackControls: React.FC<PlaybackControlsProps> = ({
         <button onClick={handlePrevious} disabled={disabled || isPrevDisabled} className={s.controlButton}>
           <FontAwesomeIcon icon={faStepBackward} />
         </button>
-        <button disabled={disabled} onClick={handleTogglePlayPause} className={`${s.playPauseButton}${isPlaying ? ` ${s.playing}` : ''}`}>
-          <span className={s.playIcon}><FontAwesomeIcon icon={isPlaying ? faPause : faPlay} /></span>
-          <span className={s.sheen} aria-hidden="true" />
-        </button>
+        <PlayButton isPlaying={isPlaying} onClick={handleTogglePlayPause} disabled={disabled} />
         <button onClick={handleNext} disabled={disabled || isNextDisabled} className={s.controlButton}>
           <FontAwesomeIcon icon={faStepForward} />
         </button>

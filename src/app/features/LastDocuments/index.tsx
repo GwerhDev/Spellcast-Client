@@ -8,7 +8,7 @@ import { Document } from '../../../interfaces';
 import { DocumentCard } from '../../components/Cards/DocumentCard';
 import { useDispatch } from 'react-redux';
 import { setAutoPlayOnLoad, resetBrowserPlayer, requestTogglePlay } from '../../../store/browserPlayerSlice';
-import { setAutoPlayOnLoad as setAudioAutoPlayOnLoad, resetAudioPlayer } from '../../../store/audioPlayerSlice';
+import { setAutoPlayOnLoad as setAudioAutoPlayOnLoad, resetAudioPlayer, requestTogglePlay as requestAudioTogglePlay } from '../../../store/audioPlayerSlice';
 import { setPdfFile, setPdfDocumentInfo, resetPdfReader } from '../../../store/pdfReaderSlice';
 import { useLanguage } from '../../../i18n';
 import { faArrowRight, faBuildingColumns, faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons';
@@ -20,6 +20,7 @@ export const LastDocuments: React.FC = () => {
   const uploadQueue = useAppSelector((state) => state.pdfUpload.queue);
   const audioPlaying = useAppSelector((state) => state.audioPlayer.isPlaying);
   const browserPlaying = useAppSelector((state) => state.browserPlayer.isPlaying);
+  const selectedVoiceType = useAppSelector((state) => state.voice.selectedVoice.type);
   const { t } = useLanguage();
   const [documents, setDocuments] = useState<Document[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -46,8 +47,12 @@ export const LastDocuments: React.FC = () => {
   };
 
   const handlePlay = (doc: Document) => {
-    if (activeDocId === doc.id && readerLoaded) {
-      dispatch(requestTogglePlay());
+    if (activeDocId === doc.id && (readerLoaded || audioPlaying || browserPlaying)) {
+      if (selectedVoiceType !== 'browser') {
+        dispatch(requestAudioTogglePlay());
+      } else {
+        dispatch(requestTogglePlay());
+      }
       return;
     }
     const totalPages = doc.pagesContent ? (() => { try { return JSON.parse(doc.pagesContent!).length; } catch { return 1; } })() : 1;
