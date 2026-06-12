@@ -1,5 +1,6 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { Session } from '../interfaces';
+import { ACCOUNT_BASE, CLIENT_BASE } from '../config/api';
 
 const initialState: Session = { logged: false, userData: { loader: true } };
 
@@ -8,7 +9,7 @@ export const sessionSlice = createSlice({
   initialState,
   reducers: {
     setSession: (_, action: PayloadAction<Session>) => action.payload,
-    clearSession: () => (window.location.href = '/unauthorized', { logged: false, userData: { loader: true } }),
+    clearSession: () => (window.location.href = `${ACCOUNT_BASE}/login?callback=${encodeURIComponent(CLIENT_BASE)}`, { logged: false, userData: { loader: true } }),
     setLoader: (state, action: PayloadAction<boolean>) => {
       state.userData.loader = action.payload;
     },
