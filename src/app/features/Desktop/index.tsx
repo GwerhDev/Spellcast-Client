@@ -5,6 +5,21 @@ import { App, getAppList } from 'services/apps';
 import { useAppSelector, useAppDispatch } from 'store/hooks';
 import { setMinimized } from 'store/desktopSlice';
 
+const APP_COLORS: Record<string, string> = {
+  spectra:   '#9b59b6',
+  spellcast: '#5086b0',
+  streamby:  '#2ecc71',
+  nhexa:     '#73a5cc',
+};
+
+function colorFor(label: string): string {
+  const key = label.toLowerCase();
+  for (const [name, color] of Object.entries(APP_COLORS)) {
+    if (key.includes(name)) return color;
+  }
+  return '#73a5cc';
+}
+
 /** True when the app URL points to the same host as the current window. */
 const sameHost = (url: string): boolean => {
   try {
@@ -64,7 +79,7 @@ export const Desktop = () => {
                       key={app.url}
                       type="button"
                       className={`${s.item} ${current ? s.current : ''}`}
-                      style={{ '--app-color': app.color ?? 'var(--color-primary)' } as React.CSSProperties}
+                      style={{ '--app-color': colorFor(app.label) } as React.CSSProperties}
                       onClick={() => handleClick(app)}
                       data-testid={current ? 'desktop-app-current' : 'desktop-app-other'}
                     >
