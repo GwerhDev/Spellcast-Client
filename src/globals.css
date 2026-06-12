@@ -285,7 +285,7 @@ main {
 }
 
 /* When minimized, clicks restore the window instead of hitting the inner UI. */
-.app-window[data-minimized="true"] > * {
+.app-window[data-minimized="true"]>* {
   pointer-events: none;
 }
 
@@ -314,6 +314,7 @@ main {
   overflow: auto;
   position: relative;
   border-radius: 10px;
+  gap: .5rem;
 }
 
 .app-viewer {
@@ -323,8 +324,6 @@ main {
   display: flex;
   position: relative;
   flex-direction: column;
-  background: var(--viewer-background);
-  backdrop-filter: blur(10px);
 }
 
 .header-app {
@@ -408,6 +407,8 @@ a:hover {
   flex-grow: 1;
   display: flex;
   overflow-y: auto;
+  border-radius: 10px;
+  background: var(--viewer-background);
 }
 
 @media (max-width: 1024px) {
@@ -484,6 +485,7 @@ a:hover {
   width: 100%;
   position: relative;
   z-index: 50;
+  border-radius: 10px;
   background: var(--component-background);
 }
 
@@ -510,9 +512,7 @@ a:hover {
 
   .aside-inner-container {
     flex-direction: column;
-    border-radius: 0;
-    border-top-left-radius: 10px;
-    border-top-right-radius: 10px;
+    border-radius: 10px;
   }
 
   .audioplayer-container {
