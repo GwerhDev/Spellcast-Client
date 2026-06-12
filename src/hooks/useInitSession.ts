@@ -28,7 +28,8 @@ export function useInitSession(
       onProgress?.(60);
       if (!session.logged) {
         dispatch(addApiResponse({ message: 'Authentication failed.', type: 'error' }));
-        navigate('/unauthorized');
+        window.location.href = `${ACCOUNT_BASE}/login?callback=${encodeURIComponent(CLIENT_BASE)}`;
+        return;
       } else {
         dispatch(addApiResponse({ message: 'Authentication successful.', type: 'success' }));
         dispatch(getCredentials());
@@ -39,6 +40,5 @@ export function useInitSession(
       if (session.userData?.id) dispatch(loadVoicePreference(session.userData.id));
       setTimeout(() => dispatch(setLoader(false)), 400);
     })();
-    //eslint-disable-next-line
   }, [dispatch]);
 }
