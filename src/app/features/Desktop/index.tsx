@@ -49,22 +49,30 @@ export const Desktop = () => {
             transition={{ duration: 0.35, ease: 'easeOut', delay: 0.1 }}
             data-testid="desktop-launcher"
           >
-            {apps.map((app) => {
-              const current = app === currentApp;
-              return (
-                <button
-                  key={app.url}
-                  type="button"
-                  className={`${s.item} ${current ? s.current : ''}`}
-                  style={{ '--app-color': app.color ?? 'var(--color-primary)' } as React.CSSProperties}
-                  onClick={() => handleClick(app)}
-                  data-testid={current ? 'desktop-app-current' : 'desktop-app-other'}
-                >
-                  <img src={app.icon} alt="" className={s.appIcon} />
-                  <span className={s.label}>{app.label.toUpperCase()}</span>
-                </button>
-              );
-            })}
+            {apps.length === 0
+              ? Array.from({ length: 4 }, (_, i) => (
+                  <div key={i} className={s.skeletonItem}>
+                    <div className={s.skeletonIcon} />
+                    <div className={s.skeletonLabel} />
+                    <div className={s.skeletonDesc} />
+                  </div>
+                ))
+              : apps.map((app) => {
+                  const current = app === currentApp;
+                  return (
+                    <button
+                      key={app.url}
+                      type="button"
+                      className={`${s.item} ${current ? s.current : ''}`}
+                      style={{ '--app-color': app.color ?? 'var(--color-primary)' } as React.CSSProperties}
+                      onClick={() => handleClick(app)}
+                      data-testid={current ? 'desktop-app-current' : 'desktop-app-other'}
+                    >
+                      <img src={app.icon} alt="" className={s.appIcon} />
+                      <span className={s.label}>{app.label.toUpperCase()}</span>
+                    </button>
+                  );
+                })}
           </motion.div>
         )}
       </AnimatePresence>
