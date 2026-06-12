@@ -2,7 +2,6 @@ import { useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { RootState } from '../../store';
-import { UnauthorizedForm } from '../components/Forms/UnauthorizedForm';
 import { CLIENT_BASE, ACCOUNT_BASE } from '../../config/api';
 
 export const Unauthorized = () => {
