@@ -154,6 +154,7 @@
 .categoryLabel {
   writing-mode: vertical-rl;
   text-orientation: mixed;
+  transform: rotate(180deg);
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.2em;
