@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import s from './Desktop.module.css';
 import { App, EnvCategory, getNhexaEnv } from 'services/apps';
@@ -56,28 +56,31 @@ export const Desktop = () => {
                     <div className={s.skeletonDesc} />
                   </div>
                 ))
-              : categories.map(cat => (
-                  <div key={cat.id} className={s.category}>
-                    <span className={s.categoryLabel}>{cat.name.toUpperCase()}</span>
-                    <div className={s.categoryApps}>
-                      {cat.apps.map(app => {
-                        const current = app === currentApp;
-                        return (
-                          <button
-                            key={app.url}
-                            type="button"
-                            className={`${s.item} ${current ? s.current : ''}`}
-                            style={{ '--app-color': '#73a5cc' } as React.CSSProperties}
-                            onClick={() => handleClick(app)}
-                            data-testid={current ? 'desktop-app-current' : 'desktop-app-other'}
-                          >
-                            <img src={app.icon} alt="" className={s.appIcon} />
-                            <span className={s.label}>{app.label.toUpperCase()}</span>
-                          </button>
-                        );
-                      })}
+              : categories.map((cat, i) => (
+                  <React.Fragment key={cat.id}>
+                    {i > 0 && <div className={s.categoryDivider} />}
+                    <div className={s.category}>
+                      <span className={s.categoryLabel}>{cat.name}</span>
+                      <div className={s.categoryApps}>
+                        {cat.apps.map(app => {
+                          const current = app === currentApp;
+                          return (
+                            <button
+                              key={app.url}
+                              type="button"
+                              className={`${s.item} ${current ? s.current : ''}`}
+                              style={{ '--app-color': '#73a5cc' } as React.CSSProperties}
+                              onClick={() => handleClick(app)}
+                              data-testid={current ? 'desktop-app-current' : 'desktop-app-other'}
+                            >
+                              <img src={app.icon} alt="" className={s.appIcon} />
+                              <span className={s.label}>{app.label.toUpperCase()}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
+                  </React.Fragment>
                 ))}
           </motion.div>
         )}
