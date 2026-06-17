@@ -368,6 +368,49 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
     //eslint-disable-next-line
   }, [currentPageText]);
 
+  useEffect(() => {
+    if (!('mediaSession' in navigator)) return;
+
+    navigator.mediaSession.setActionHandler('play',          () => handleTogglePlayPauseRef.current());
+    navigator.mediaSession.setActionHandler('pause',         () => handleTogglePlayPauseRef.current());
+    navigator.mediaSession.setActionHandler('nexttrack',     handleNext);
+    navigator.mediaSession.setActionHandler('previoustrack', handlePrevious);
+
+    return () => {
+      navigator.mediaSession.setActionHandler('play',          null);
+      navigator.mediaSession.setActionHandler('pause',         null);
+      navigator.mediaSession.setActionHandler('nexttrack',     null);
+      navigator.mediaSession.setActionHandler('previoustrack', null);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!('mediaSession' in navigator)) return;
+
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title:  documentTitle ?? '',
+      artist: isLoaded ? `${t.document.page} ${currentPage} ${t.document.of} ${totalPages}` : '',
+      album:  'Spellcast',
+      artwork: coverUrl ? [{ src: coverUrl, type: 'image/jpeg' }] : [],
+    });
+  }, [documentTitle, currentPage, totalPages, coverUrl]);
+
+  useEffect(() => {
+    if (!('mediaSession' in navigator)) return;
+    navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
+  }, [isPlaying]);
+
+  useEffect(() => {
+    if (!('mediaSession' in navigator)) return;
+    if (duration <= 0) return;
+
+    navigator.mediaSession.setPositionState({
+      duration,
+      playbackRate: audioRef.current?.playbackRate ?? 1,
+      position: Math.min(currentTime, duration),
+    });
+  }, [currentTime, duration]);
+
   return (
     <>
       <DocumentDetailModal
