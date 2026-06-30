@@ -75,7 +75,6 @@ export const EditorSelectLanding = () => {
     <div data-testid="editor-select" className={s.panel}>
       <div className={s.panelHeader}>
         <IconButton icon={faArrowLeft} variant='transparent' onClick={() => navigate('/editor')} />
-        <h2 className={s.panelTitle}>{t.editor.selectDocument}</h2>
       </div>
 
       <div className={s.controls}>
