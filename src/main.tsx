@@ -1,5 +1,6 @@
-import './root.css';
-import './globals.css';
+import './styles/root.css';
+import './styles/base.css';
+import './styles/globals.css';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
