@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faMusic, faLock, faTrophy, faCheck, faArrowUpRightFromSquare, faMagnifyingGlass, faCube, faStore } from '@fortawesome/free-solid-svg-icons';
+import { faMusic, faLock, faTrophy, faCheck, faMagnifyingGlass, faCube, faStore } from '@fortawesome/free-solid-svg-icons';
 import { SectionHeader } from '../../components/SectionHeader';
 import { useAppSelector, useAppDispatch } from '../../../store/hooks';
 import { unlockAsset, setActiveSoundBg, setActivePageBg } from '../../../store/userLibrarySlice';
 import { soundBackgrounds, pageBackgrounds } from '../../../config/assets';
-import { EXTERNAL_LINKS } from '../../../config/externalLinks';
 import { useLanguage } from '../../../i18n';
 import s from '../../components/HavenStoreLanding/index.module.css';
 
@@ -199,19 +198,7 @@ export const HavenStoreLanding = () => {
 
   return (
     <div data-testid="haven-store" className={s.container}>
-      <div className={s.hero}>
-        <SectionHeader icon={faStore} title={t.havenStore.title} subtitle={t.havenStore.subtitle} />
-
-        <a
-          href={EXTERNAL_LINKS.havenStore}
-          target="_blank"
-          rel="noreferrer"
-          className={s.heroCtaLink}
-        >
-          {t.havenStore.exploreFullStore}
-          <FontAwesomeIcon icon={faArrowUpRightFromSquare} />
-        </a>
-      </div>
+      <SectionHeader icon={faStore} title={t.havenStore.title} subtitle={t.havenStore.subtitle} />
 
       <div className={s.panel}>
         <div className={s.panelHeader}>
