@@ -1,43 +1,15 @@
 import s from '../../components/DocumentReader/ReaderSettings.module.css';
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { faDesktop, faPalette } from '@fortawesome/free-solid-svg-icons';
+import { faDesktop, faPalette, faShieldHalved } from '@fortawesome/free-solid-svg-icons';
 import { RootState } from '../../../store';
-import { setShowReaderSettings, setFitToWidth, setLightningMode } from '../../../store/pdfReaderSlice';
+import { setShowReaderSettings, setFitToWidth, setLightningMode, setAttentionGuardEnabled, setAttentionGuardInterval } from '../../../store/pdfReaderSlice';
 import { setActivePageBg } from '../../../store/userLibrarySlice';
 import { pageBackgrounds } from '../../../config/assets';
 import { TabModal } from '../../components/Modals/TabModal';
+import { NumberStepper } from '../../components/Inputs/NumberStepper';
+import { ToggleRow } from '../../components/Inputs/ToggleRow';
 import { useLanguage } from '../../../i18n';
-
-interface ToggleRowProps {
-  label: string;
-  description: string;
-  value: boolean;
-  onChange: (v: boolean) => void;
-  soon?: boolean;
-}
-
-const ToggleRow: React.FC<ToggleRowProps> = ({ label, description, value, onChange, soon }) => (
-  <div className={`${s.row} ${soon ? s.rowSoon : ''}`}>
-    <div className={s.rowText}>
-      <div className={s.rowLabelRow}>
-        <span className={s.rowLabel}>{label}</span>
-        {soon && <span className={s.soonTag}>soon</span>}
-      </div>
-      <span className={s.rowDesc}>{description}</span>
-    </div>
-    <button
-      type="button"
-      role="switch"
-      aria-checked={value}
-      className={`${s.toggle} ${value ? s.toggleOn : ''}`}
-      onClick={() => !soon && onChange(!value)}
-      tabIndex={soon ? -1 : 0}
-    >
-      <span className={`${s.toggleThumb} ${value ? s.toggleThumbOn : ''}`} />
-    </button>
-  </div>
-);
 
 const DisplayTab: React.FC = () => {
   const dispatch = useDispatch();
@@ -121,6 +93,55 @@ const AppearanceTab: React.FC = () => {
   );
 };
 
+const FocusTab: React.FC = () => {
+  const dispatch = useDispatch();
+  const { attentionGuardEnabled, attentionGuardInterval } = useSelector((state: RootState) => state.pdfReader);
+  const { t } = useLanguage();
+
+  const handleToggle = (value: boolean) => {
+    dispatch(setAttentionGuardEnabled(value));
+    localStorage.setItem('reader:attentionGuard', String(value));
+  };
+
+  const handleInterval = (value: number) => {
+    const clamped = Math.min(30, Math.max(1, value));
+    dispatch(setAttentionGuardInterval(clamped));
+    localStorage.setItem('reader:attentionGuardInterval', String(clamped));
+  };
+
+  return (
+    <div className={s.container}>
+      <div className={s.section}>
+        <p className={s.sectionTitle}>{t.reader.attentionGuardSection}</p>
+        <ToggleRow
+          label={t.reader.attentionGuard}
+          description={t.reader.attentionGuardDesc}
+          value={attentionGuardEnabled}
+          onChange={handleToggle}
+        >
+          {attentionGuardEnabled && (
+            <>
+              <div className={s.rowText}>
+                <div className={s.rowLabelRow}>
+                  <span className={s.rowLabel}>{t.reader.attentionGuardInterval}</span>
+                </div>
+                <span className={s.rowDesc}>{t.reader.attentionGuardIntervalDesc}</span>
+              </div>
+              <NumberStepper
+                value={attentionGuardInterval}
+                min={1}
+                max={30}
+                suffix={t.reader.attentionGuardIntervalMin}
+                onChange={handleInterval}
+              />
+            </>
+          )}
+        </ToggleRow>
+      </div>
+    </div>
+  );
+};
+
 export const ReaderSettings: React.FC = () => {
   const dispatch = useDispatch();
   const { showReaderSettings } = useSelector((state: RootState) => state.pdfReader);
@@ -132,8 +153,9 @@ export const ReaderSettings: React.FC = () => {
       onClose={() => dispatch(setShowReaderSettings(false))}
       title={t.reader.readerSettings}
       tabs={[
-        { icon: faDesktop, label: t.reader.displayTab,    content: <DisplayTab /> },
-        { icon: faPalette, label: t.reader.appearanceTab, content: <AppearanceTab /> },
+        { icon: faDesktop,      label: t.reader.displayTab,         content: <DisplayTab /> },
+        { icon: faPalette,      label: t.reader.appearanceTab,      content: <AppearanceTab /> },
+        { icon: faShieldHalved, label: t.reader.attentionGuard,     content: <FocusTab /> },
       ]}
     />
   );

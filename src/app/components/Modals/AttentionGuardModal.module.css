@@ -1,0 +1,51 @@
+.content {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 1rem;
+  padding: 1rem 1rem 0.5rem;
+}
+
+.cta {
+  align-self: center;
+  width: 100%;
+}
+
+.centered {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 1rem;
+  width: 100%;
+}
+
+.iconWrap {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--color-primary) 15%, transparent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon {
+  font-size: 1.25rem;
+  color: var(--color-primary);
+}
+
+.body {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--text-color);
+  opacity: 0.6;
+  line-height: 1.55;
+}
+
+.intervalLabel {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-light-100);
+}
+

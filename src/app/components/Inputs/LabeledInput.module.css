@@ -10,14 +10,51 @@
 .container label {
   width: 100%;
   display: flex;
+  color: var(--text-color);
+  font-size: small;
+  border-top-left-radius: 5px;
+  border-top-right-radius: 5px;
+  padding-top: .1rem;
+  padding-bottom: .1rem;
+  padding-inline: .5rem;
+  font-weight: bold;
 }
 
-.container input {
+.container input,
+.container select {
   width: 100%;
-  background: transparent;
+  padding-top: .5rem;
+  padding-bottom: .5rem;
+  padding-inline: .5rem;
+  border-bottom-left-radius: 5px;
+  border-bottom-right-radius: 5px;
+  transition-duration: .4s;
+  color: var(--text-color);
+  border: none;
+  border-bottom: 1px solid var(--text-color);
+  background: var(--component-background);
 }
 
-.container input:disabled, .disabled {
+.container input:hover,
+.container input:active,
+.container input:focus,
+.container input:focus-visible,
+.container select:hover,
+.container select:active,
+.container select:focus,
+.container select:focus-visible {
+  outline: none;
+  background: var(--component-background);
+  color: var(--text-color);
+}
+
+.container input:focus,
+.container select:focus {
+  border-bottom: 1px solid var(--color-button-primary);
+}
+
+.container input:disabled,
+.disabled {
   opacity: 0.5;
   border: none;
   background-color: transparent;

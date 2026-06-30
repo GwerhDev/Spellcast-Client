@@ -6,6 +6,7 @@ interface BrowserPlayerState {
   volume: number;
   autoPlayOnLoad: boolean;
   toggleSeq: number;
+  resumeSeq: number;
 }
 
 const initialState: BrowserPlayerState = {
@@ -14,6 +15,7 @@ const initialState: BrowserPlayerState = {
   volume: 1,
   autoPlayOnLoad: false,
   toggleSeq: 0,
+  resumeSeq: 0,
 };
 
 const browserPlayerSlice = createSlice({
@@ -45,6 +47,10 @@ const browserPlayerSlice = createSlice({
     requestTogglePlay: (state) => {
       state.toggleSeq += 1;
     },
+    requestResume: (state) => {
+      state.resumeSeq += 1;
+      state.isPlaying = true;
+    },
   },
 });
 
@@ -57,6 +63,7 @@ export const {
   resetBrowserPlayer,
   setAutoPlayOnLoad,
   requestTogglePlay,
+  requestResume,
 } = browserPlayerSlice.actions;
 
 export default browserPlayerSlice.reducer;

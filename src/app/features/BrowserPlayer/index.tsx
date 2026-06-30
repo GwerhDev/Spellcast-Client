@@ -10,6 +10,7 @@ import {
   setVoice,
   pause,
   setAutoPlayOnLoad,
+  requestResume,
 } from '../../../store/browserPlayerSlice';
 import { setSoundBgVolume, setMasterVolume } from '../../../store/userLibrarySlice';
 import {
@@ -46,6 +47,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
     isPlaying,
     autoPlayOnLoad,
     toggleSeq,
+    resumeSeq,
   } = useSelector((state: RootState) => state.browserPlayer);
   const {
     isLoaded,
@@ -163,6 +165,34 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
     if (!isPlaying) window.speechSynthesis.pause();
   }, [isPlaying]);
 
+  // Dedicated resume path for attention guard: always cancel + relaunch from current index.
+  // speechSynthesis.resume() is unreliable if the utterance was canceled mid-pause.
+  useEffect(() => {
+    if (!resumeSeq) return;
+    window.speechSynthesis.cancel();
+    isSpeechPausedRef.current = false;
+    if (sentences.length === 0 || currentSentenceIndex >= sentences.length) return;
+    speakSentence(
+      sentences[currentSentenceIndex],
+      () => dispatch(setCurrentSentenceIndex(currentSentenceIndex + 1)),
+      () => handlePlay(),
+    );
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resumeSeq]);
+
+  // Workaround for the Chrome SpeechSynthesis bug where the engine silently
+  // freezes after ~15s of continuous speech. Nudging pause/resume keeps it alive.
+  useEffect(() => {
+    if (!isPlaying) return;
+    const id = setInterval(() => {
+      if (window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
+        window.speechSynthesis.pause();
+        window.speechSynthesis.resume();
+      }
+    }, 14_000);
+    return () => clearInterval(id);
+  }, [isPlaying]);
+
   useEffect(() => {
     activeUtteranceRef.current = null;
     isSpeechPausedRef.current = false;
@@ -208,7 +238,9 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
       else handleStop();
       return;
     }
-    if (isSpeechPausedRef.current) {
+    // Resume if the Web Speech API is already paused (including when paused externally
+    // by the attention guard via dispatch(pause()) without going through this handler).
+    if (isSpeechPausedRef.current || window.speechSynthesis.paused) {
       isSpeechPausedRef.current = false;
       window.speechSynthesis.resume();
       dispatch(play());

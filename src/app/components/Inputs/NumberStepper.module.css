@@ -1,0 +1,40 @@
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-shrink: 0;
+  background: var(--color-dark-200);
+  border: 1px solid var(--color-dark-300);
+  border-radius: 8px;
+  padding: 0.15rem 0.25rem;
+}
+
+.value {
+  min-width: 3rem;
+  text-align: center;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-color);
+  user-select: none;
+  cursor: text;
+}
+
+.input {
+  width: 3rem;
+  text-align: center;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-color);
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 0;
+  font-family: inherit;
+  appearance: textfield;
+}
+
+.input::-webkit-outer-spin-button,
+.input::-webkit-inner-spin-button {
+  appearance: none;
+  margin: 0;
+}

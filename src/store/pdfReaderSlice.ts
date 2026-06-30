@@ -17,6 +17,10 @@ interface PdfReaderState {
   showReaderSettings: boolean;
   fitToWidth: boolean;
   lightningMode: boolean;
+  attentionGuardEnabled: boolean;
+  attentionGuardInterval: number;
+  showAttentionGuard: boolean;
+  activitySeq: number;
   contentVersion: number;
   listVersion: number;
 }
@@ -36,6 +40,10 @@ const initialState: PdfReaderState = {
   showReaderSettings: false,
   fitToWidth: localStorage.getItem('reader:fitToWidth') !== 'false',
   lightningMode: localStorage.getItem('reader:lightningMode') !== 'false',
+  attentionGuardEnabled: localStorage.getItem('reader:attentionGuard') !== 'false',
+  attentionGuardInterval: Number(localStorage.getItem('reader:attentionGuardInterval') ?? '15') || 15,
+  showAttentionGuard: false,
+  activitySeq: 0,
   contentVersion: 0,
   listVersion: 0,
   progress: {
@@ -111,6 +119,18 @@ const pdfReaderSlice = createSlice({
     setLightningMode(state, action: PayloadAction<boolean>) {
       state.lightningMode = action.payload;
     },
+    setAttentionGuardEnabled(state, action: PayloadAction<boolean>) {
+      state.attentionGuardEnabled = action.payload;
+    },
+    setAttentionGuardInterval(state, action: PayloadAction<number>) {
+      state.attentionGuardInterval = action.payload;
+    },
+    setShowAttentionGuard(state, action: PayloadAction<boolean>) {
+      state.showAttentionGuard = action.payload;
+    },
+    recordReaderActivity(state) {
+      state.activitySeq += 1;
+    },
     invalidateContent(state) {
       state.contentVersion += 1;
     },
@@ -140,6 +160,10 @@ export const {
   setShowReaderSettings,
   setFitToWidth,
   setLightningMode,
+  setAttentionGuardEnabled,
+  setAttentionGuardInterval,
+  setShowAttentionGuard,
+  recordReaderActivity,
   invalidateContent,
   invalidateDocumentList,
   setReaderTitle,

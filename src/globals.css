@@ -152,60 +152,19 @@ li {
   justify-content: center;
 }
 
-label {
-  color: var(--text-color);
-  font-size: small;
-  border-top-left-radius: 5px;
-  border-top-right-radius: 5px;
-  padding-top: .1rem;
-  padding-bottom: .1rem;
-  padding-inline: .5rem;
-  font-weight: bold;
+input[type="file"] {
+  cursor: pointer;
 }
 
 input,
 select {
-  width: 100%;
-  padding-top: .5rem;
-  padding-bottom: .5rem;
-  padding-inline: .5rem;
-  border-bottom-left-radius: 5px;
-  border-bottom-right-radius: 5px;
-  transition-duration: .4s;
-  color: var(--text-color);
-  border: none;
-  border-bottom: 1px solid var(--text-color);
-  background: var(--component-background);
-}
-
-input[type="file"] {
-  cursor: pointer;
-  background: var(--component-background);
-}
-
-input[type="range"],
-input[type="range"]:active,
-input[type="range"]:focus,
-input[type="range"]:hover {
-  border: none;
-}
-
-input:hover,
-input:active,
-input:focus,
-input:focus-visible,
-select:hover,
-select:active,
-select:focus,
-select:focus-visible {
   outline: none;
-  background: var(--component-background);
   color: var(--text-color);
 }
 
 input:focus,
 select:focus {
-  border-bottom: 1px solid var(--color-button-primary);
+  outline: none;
 }
 
 button {

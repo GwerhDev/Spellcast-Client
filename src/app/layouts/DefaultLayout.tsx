@@ -23,6 +23,8 @@ import { NotificationsButton } from '../features/NotificationsButton';
 import { Desktop } from '../features/Desktop';
 import { useAppDispatch } from 'store/hooks';
 import { setMinimized } from 'store/desktopSlice';
+import { useAttentionGuard } from '../../hooks/useAttentionGuard';
+import { AttentionGuardModal } from '../components/Modals/AttentionGuardModal';
 
 export default function DefaultLayout() {
   const shouldHideMenu = location.pathname.startsWith(`/user`);
@@ -30,6 +32,7 @@ export default function DefaultLayout() {
   const { isLoaded: documentLoaded } = useSelector((state: RootState) => state.pdfReader);
   const minimized = useSelector((state: RootState) => state.desktop.minimized);
   const dispatch = useAppDispatch();
+  const { showModal: showAttentionGuard, handleContinue: handleAttentionGuardContinue } = useAttentionGuard();
   const [showMenu, setShowMenu] = useState(shouldHideMenu);
   const [isPlayerSettingsOpen, setIsPlayerSettingsOpen] = useState(false);
   const [isVoiceSelectorOpen, setIsVoiceSelectorOpen] = useState(false);
@@ -106,6 +109,7 @@ export default function DefaultLayout() {
               </div>
             )}
             <LogoutModal />
+            <AttentionGuardModal show={showAttentionGuard} onContinue={handleAttentionGuardContinue} />
           </div>
         </div>
       </motion.div>

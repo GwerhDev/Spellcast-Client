@@ -8,7 +8,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowLeft, faEdit, faFilePdf, faGear, faExpand, faCompress, faInfoCircle } from '@fortawesome/free-solid-svg-icons';
 import { RootState } from '../../../store';
-import { goToPage, setCurrentSentenceIndex, setShowReaderSettings } from '../../../store/pdfReaderSlice';
+import { goToPage, setCurrentSentenceIndex, setShowReaderSettings, recordReaderActivity } from '../../../store/pdfReaderSlice';
 import { setPendingSeek } from '../../../store/audioPlayerSlice';
 import { pageBackgrounds } from '../../../config/assets';
 import { Spinner } from '../../components/Spinner';
@@ -143,6 +143,7 @@ export const DocumentReader = () => {
 
   const handleEdit = () => { navigate(`/editor/${documentId}/${currentPage}`); };
   const handleSentenceClick = (clickedIndex: number) => {
+    dispatch(recordReaderActivity());
     if (selectedVoice.type === 'browser') {
       dispatch(setCurrentSentenceIndex(clickedIndex));
     } else if (aiTimeline.length > 0 && aiTimeline[clickedIndex]) {
