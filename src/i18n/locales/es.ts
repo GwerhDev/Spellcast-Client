@@ -204,7 +204,7 @@ export const es: Translations = {
     resetZoom: 'Restablecer zoom (100%)',
     pageBackground: 'Fondo de hoja',
     attentionGuardSection: 'Foco',
-    attentionGuard: 'Attention Guard',
+    attentionGuard: 'Guardián de atención',
     attentionGuardDesc: 'Pausa la reproducción automáticamente tras un período de inactividad.',
     attentionGuardInterval: 'Tiempo de inactividad',
     attentionGuardIntervalDesc: 'Minutos de inactividad antes de pausar la reproducción.',
@@ -212,7 +212,7 @@ export const es: Translations = {
     attentionGuardModalTitle: '¿Sigues leyendo?',
     attentionGuardModalBody: 'Se pausó la reproducción por inactividad.',
     attentionGuardCta: 'Seguir leyendo',
-    attentionGuardDisable: 'Desactivar Attention Guard',
+    attentionGuardDisable: 'Desactivar el guardián de atención',
   },
   appearance: {
     title: 'Apariencia',
