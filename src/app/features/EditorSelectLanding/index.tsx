@@ -1,13 +1,12 @@
 import s from '../../components/EditorSelectLanding/index.module.css';
 import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { faArrowLeft, faCloud, faFeatherPointed, faHardDrive, faLayerGroup, faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
+import { faCloud, faFeatherPointed, faHardDrive, faLayerGroup, faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { getDocumentsFromDB } from '../../../db';
 import { useAppSelector } from '../../../store/hooks';
 import { Document } from '../../../interfaces';
 import { EditorPickerCard } from '../../components/Cards/EditorPickerCard';
-import { IconButton } from '../../components/Buttons/IconButton';
 import { Spinner } from '../../components/Spinner';
 import { FilterTabs } from '../../components/Selectors/FilterTabs';
 import { SectionHeader } from '../../components/SectionHeader';
@@ -74,11 +73,8 @@ export const EditorSelectLanding = () => {
 
   return (
     <div data-testid="editor-select" className={s.panel}>
-      <div className={s.panelHeader}>
-        <IconButton icon={faArrowLeft} variant='transparent' onClick={() => navigate('/editor')} />
-      </div>
       <div className={s.sectionHeader}>
-        <SectionHeader icon={faFeatherPointed} title={t.editor.tagline} subtitle={t.editor.selectDocumentSubtitle} align="center" />
+        <SectionHeader icon={faFeatherPointed} title={t.editor.tagline} subtitle={t.editor.selectDocumentSubtitle} align="center" onBack={() => navigate('/editor')} />
       </div>
 
       <div className={s.controls}>
