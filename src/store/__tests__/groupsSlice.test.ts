@@ -9,8 +9,8 @@ vi.mock('../../services/groups', () => ({
 const initial = { groups: [], loading: false, error: null };
 
 const mockGroups: Group[] = [
-  { id: 'g1', name: 'Alpha', members: [] },
-  { id: 'g2', name: 'Beta', members: [] },
+  { id: 'g1', name: 'Alpha' },
+  { id: 'g2', name: 'Beta' },
 ];
 
 describe('groupsSlice', () => {

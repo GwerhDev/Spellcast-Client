@@ -6,7 +6,7 @@ vi.mock('../../db/preferences', () => ({
 }));
 
 const initial = {
-  selectedVoice: { value: 'default', type: 'browser' },
+  selectedVoice: { value: 'default', type: 'browser' as const },
   voices: [{ name: 'Browser', value: 'browser', gender: 'Male' }],
 };
 

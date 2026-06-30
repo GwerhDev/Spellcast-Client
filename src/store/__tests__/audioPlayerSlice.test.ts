@@ -18,16 +18,16 @@ import reducer, {
 } from '../audioPlayerSlice';
 
 const initial = {
-  playlist: [],
-  currentTrackIndex: null,
+  playlist: [] as string[],
+  currentTrackIndex: null as number | null,
   isPlaying: false,
   volume: 1,
   currentTime: 0,
   duration: 0,
-  sourceType: 'playlist',
+  sourceType: 'playlist' as const,
   autoPlayOnLoad: false,
-  timeline: [],
-  pendingSeekMs: null,
+  timeline: [] as never[],
+  pendingSeekMs: null as number | null,
   toggleSeq: 0,
 };
 
