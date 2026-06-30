@@ -22,6 +22,11 @@
   margin: 0;
 }
 
+.sectionHeader {
+  padding: 0 1rem;
+  width: 100%;
+}
+
 .controls {
   width: 100%;
   display: flex;

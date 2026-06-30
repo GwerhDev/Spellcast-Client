@@ -115,6 +115,7 @@ export const en = {
     createDesc: 'Write a new document',
     editDesc: 'Modify existing document',
     selectDocument: 'Select a document',
+    selectDocumentSubtitle: 'Choose a document to continue editing.',
   },
   player: {
     play: 'Play',

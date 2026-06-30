@@ -117,6 +117,7 @@ export const es: Translations = {
     createDesc: 'Escribe un nuevo documento',
     editDesc: 'Modifica un documento existente',
     selectDocument: 'Selecciona un documento',
+    selectDocumentSubtitle: 'Elige un documento para continuar editando.',
   },
   player: {
     play: 'Reproducir',
