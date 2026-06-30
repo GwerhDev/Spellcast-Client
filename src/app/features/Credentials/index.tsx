@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { faPlus } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { TTS_Credential } from '../../../interfaces';
-import { CredentialCard } from '../../components/Cards/CredentialCard';
+import { CredentialCard } from '../CredentialCard';
 import { Spinner } from '../../components/Spinner';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '../../../store';
