@@ -69,15 +69,15 @@ export const NotificationsButton: React.FC = () => {
 
   return (
     <div data-testid="notifications-button" className={s.root} ref={ref}>
-      <button className={s.btn} onClick={handleOpen}>
+      <button data-testid="notifications-toggle-btn" className={s.btn} onClick={handleOpen}>
         <FontAwesomeIcon icon={faBell} />
-        {unread > 0 && <span className={s.badge} />}
+        {unread > 0 && <span data-testid="notifications-badge" className={s.badge} />}
       </button>
 
       {open && (
         <div className={s.popover}>
           <div className={s.popoverHeader}>
-            <span className={s.popoverTitle}>{t.notifications.title}</span>
+            <span data-testid="notifications-title" className={s.popoverTitle}>{t.notifications.title}</span>
             {history.length > 0 && (
               <button className={s.clearBtn} onClick={() => dispatch(clearHistory())}>
                 <FontAwesomeIcon icon={faXmark} />
@@ -86,7 +86,7 @@ export const NotificationsButton: React.FC = () => {
             )}
           </div>
           {history.length === 0
-            ? <div className={s.empty}>
+            ? <div data-testid="notifications-empty" className={s.empty}>
                 <FontAwesomeIcon icon={faBellSlash} className={s.emptyIcon} />
                 <p>{t.notifications.empty}</p>
               </div>

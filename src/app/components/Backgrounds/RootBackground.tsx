@@ -8,8 +8,6 @@ export const RootBackground = () => {
       <span>
         <FontAwesomeIcon icon={faFolderOpen} size="10x" />
       </span>
-      <h2>Root</h2>
-      <small>Watch me freak</small>
     </div>
   );
 };

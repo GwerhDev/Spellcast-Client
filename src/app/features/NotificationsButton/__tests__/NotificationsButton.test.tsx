@@ -12,14 +12,14 @@ describe('NotificationsButton', () => {
 
   it('opens popover on click', () => {
     renderWithProviders(<NotificationsButton />);
-    fireEvent.click(screen.getByTestId('notifications-button').querySelector('button')!);
-    expect(screen.getByText('Notifications')).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('notifications-toggle-btn'));
+    expect(screen.getByTestId('notifications-title')).toBeInTheDocument();
   });
 
   it('shows empty state when no history', () => {
     renderWithProviders(<NotificationsButton />);
-    fireEvent.click(screen.getByTestId('notifications-button').querySelector('button')!);
-    expect(screen.getByText('No notifications yet')).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('notifications-toggle-btn'));
+    expect(screen.getByTestId('notifications-empty')).toBeInTheDocument();
   });
 
   it('shows badge when there are unread notifications', () => {
@@ -28,6 +28,6 @@ describe('NotificationsButton', () => {
     store.dispatch(setQueueUiState('closed'));
     store.dispatch(setUploadDone({ id: 'j1', resultDocId: 'doc-1' }));
     renderWithProviders(<NotificationsButton />, { store });
-    expect(screen.getByTestId('notifications-button').querySelector('button span')).toBeInTheDocument();
+    expect(screen.getByTestId('notifications-badge')).toBeInTheDocument();
   });
 });

@@ -1,5 +1,5 @@
 import s from '../../../components/Start/TextOption/index.module.css';
-import mVoice from '../../../components/Modals/VoiceSelectorModal.module.css';
+import modal from '../../../components/Modals/VoiceSelectorModal.module.css';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../../../store';
@@ -303,35 +303,35 @@ export const TextOption: React.FC = () => {
       </form>
 
       <CustomModal title={t.player.selectVoice} show={showVoiceModal} onClose={() => setShowVoiceModal(false)}>
-        <div className={mVoice.tabContainer}>
+        <div className={modal.tabContainer}>
           <button
-            className={`${mVoice.tabButton} ${mVoice.left} ${modalTab === 'browser' ? mVoice.activeTab : ''}`}
+            className={`${modal.tabButton} ${modal.left} ${modalTab === 'browser' ? modal.activeTab : ''}`}
             onClick={() => setModalTab('browser')}
           >
             <FontAwesomeIcon icon={faDesktop} />
-            <span className={mVoice.title}>{t.player.browserVoices}</span>
+            <span className={modal.title}>{t.player.browserVoices}</span>
           </button>
           <button
-            className={`${mVoice.tabButton} ${mVoice.right} ${modalTab === 'ai' ? mVoice.activeTab : ''}`}
+            className={`${modal.tabButton} ${modal.right} ${modalTab === 'ai' ? modal.activeTab : ''}`}
             onClick={() => setModalTab('ai')}
           >
             <FontAwesomeIcon icon={faBrain} />
-            <span className={mVoice.title}>{t.player.aiVoices}</span>
+            <span className={modal.title}>{t.player.aiVoices}</span>
           </button>
         </div>
-        <ul className={mVoice.voiceList}>
+        <ul className={modal.voiceList}>
           {modalTab === 'browser' ? (
             browserVoices.map((v) => (
               <li
                 key={v.name}
-                className={`${mVoice.voiceOption} ${voiceType === 'browser' && selectedVoiceValue === v.name ? mVoice.activeVoice : ''}`}
+                className={`${modal.voiceOption} ${voiceType === 'browser' && selectedVoiceValue === v.name ? modal.activeVoice : ''}`}
                 onClick={() => handleVoiceSelect('browser', v.name)}
               >
                 <FontAwesomeIcon icon={voiceType === 'browser' && selectedVoiceValue === v.name ? faFilledCircle : faRegCircle} />
                 <span>{v.name}</span>
-                <FontAwesomeIcon icon={faDesktop} className={mVoice.genderIcon} />
+                <FontAwesomeIcon icon={faDesktop} className={modal.genderIcon} />
                 <button
-                  className={mVoice.previewButton}
+                  className={modal.previewButton}
                   onClick={(e) => handleModalPreview(e, v.name)}
                   title={t.player.previewVoice}
                 >
@@ -343,12 +343,12 @@ export const TextOption: React.FC = () => {
             aiVoices.map((v) => (
               <li
                 key={v.value}
-                className={`${mVoice.voiceOption} ${voiceType === 'ai' && selectedVoiceValue === v.value ? mVoice.activeVoice : ''}`}
+                className={`${modal.voiceOption} ${voiceType === 'ai' && selectedVoiceValue === v.value ? modal.activeVoice : ''}`}
                 onClick={() => handleVoiceSelect('ai', v.value)}
               >
                 <FontAwesomeIcon icon={voiceType === 'ai' && selectedVoiceValue === v.value ? faFilledCircle : faRegCircle} />
                 <span>{v.name}</span>
-                <FontAwesomeIcon icon={faBrain} className={mVoice.genderIcon} />
+                <FontAwesomeIcon icon={faBrain} className={modal.genderIcon} />
               </li>
             ))
           )}

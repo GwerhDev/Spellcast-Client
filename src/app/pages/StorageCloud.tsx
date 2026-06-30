@@ -1,6 +1,6 @@
 import React from 'react';
 import s from '../components/BrowserStorage/BrowserStorage.module.css';
-import p from './UserPage.module.css';
+import page from './UserPage.module.css';
 import { PageTransition } from '../components/PageTransition';
 import { SectionHeader } from '../components/SectionHeader';
 import { useLanguage } from '../../i18n';
@@ -19,8 +19,8 @@ export const StorageCloud = () => {
 
   return (
     <PageTransition className="dashboard-sections">
-      <div className={p.page}>
-        <div className={p.content}>
+      <div className={page.page}>
+        <div className={page.content}>
           <SectionHeader icon={faCloud} title={t.nav.cloud} subtitle={t.storage.cloudSubtitle} />
 
           <div className={s.container}>

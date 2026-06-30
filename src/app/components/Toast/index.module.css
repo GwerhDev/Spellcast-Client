@@ -25,5 +25,5 @@
 }
 
 .toast.error {
-  background-color: #93443e;
+  background-color: var(--color-danger-200);
 }

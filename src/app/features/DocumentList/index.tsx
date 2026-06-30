@@ -131,13 +131,13 @@ export const DocumentList: React.FC<DocumentListProps> = ({ query = '', filter =
     </div>
   );
   if (documents.length === 0) return (
-    <div className={s.empty}>
+    <div data-testid="document-list-empty" className={s.empty}>
       <FontAwesomeIcon icon={faBookOpen} className={s.emptyIcon} />
       <p>{t.document.noLocalDocuments}</p>
     </div>
   );
   if (visible.length === 0) return (
-    <div className={s.empty}>
+    <div data-testid="document-list-no-results" className={s.empty}>
       <FontAwesomeIcon icon={faMagnifyingGlass} className={s.emptyIcon} />
       <p>{t.document.noDocuments}</p>
     </div>

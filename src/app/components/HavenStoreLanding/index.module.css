@@ -82,7 +82,7 @@
 
 .tab:hover {
   color: var(--text-color);
-  background: rgba(115, 165, 204, 0.08);
+  background: color-mix(in srgb, var(--color-primary) 8%, transparent);
 }
 
 .tabActive {

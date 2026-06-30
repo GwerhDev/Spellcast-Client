@@ -1,6 +1,6 @@
 .skeleton {
   animation: skeleton-loading 1s linear infinite alternate;
-  background-color: #333;
+  background-color: var(--color-dark-300);
 }
 
 .scan {
@@ -10,11 +10,11 @@
 
 @keyframes skeleton-loading {
   0% {
-    background-color: hsl(0, 0%, 20%);
+    background-color: var(--color-dark-500);
   }
 
   100% {
-    background-color: hsl(0, 0%, 30%);
+    background-color: var(--color-dark-400);
   }
 }
 

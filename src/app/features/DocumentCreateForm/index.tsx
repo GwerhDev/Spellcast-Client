@@ -281,6 +281,7 @@ export const DocumentCreateForm: React.FC = () => {
         <IconButton icon={faArrowLeft} className={s.backButton} variant='transparent' title={t.common.back} onClick={() => navigate(-1)} />
         <span className={s.titleContainer}>
           <input
+            data-testid="document-title-input"
             className={s.documentTitle}
             type="text"
             placeholder={t.document.titlePlaceholder}

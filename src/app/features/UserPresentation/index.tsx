@@ -1,5 +1,5 @@
 import s from '../../components/UserPresentation/UserPresentation.module.css';
-import skeleton from '../../components/Loader/Skeleton.module.css';
+import sk from '../../components/Loader/Skeleton.module.css';
 import { useSelector } from 'react-redux';
 import { UserStats } from '../../components/UserStats/UserStats';
 import { LibraryCharts } from '../../components/LibraryCharts/LibraryCharts';
@@ -27,7 +27,7 @@ export const UserPresentation = () => {
       <div className={s.header}>
         <ul>
           <li className={`${s.imgContainer} ${loader ? s.borderAnimate : ''}`}>
-            <span className={`${s.imageContainer} ${loader ? skeleton.skeleton : ''}`}>
+            <span className={`${s.imageContainer} ${loader ? sk.skeleton : ''}`}>
               {!loader && (
                 profilePic
                   ? <img src={profilePic} alt="User image" className={s.image} />
@@ -38,11 +38,11 @@ export const UserPresentation = () => {
         </ul>
 
         <ul className={s.details}>
-          <li className={`${s.title} ${loader ? skeleton.skeleton : ''}`}>
+          <li className={`${s.title} ${loader ? sk.skeleton : ''}`}>
             {!loader && <h1 className="featured-glow">{username}</h1>}
           </li>
 
-          <li className={`${loader ? skeleton.skeleton : ''}`}>
+          <li className={`${loader ? sk.skeleton : ''}`}>
             {!loader && (
               <div className={s.xpSection}>
                 <div className={s.rankRow}>

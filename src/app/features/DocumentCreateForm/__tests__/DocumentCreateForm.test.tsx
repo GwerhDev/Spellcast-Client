@@ -26,6 +26,6 @@ describe('DocumentCreateForm', () => {
 
   it('renders the title input', () => {
     renderWithProviders(<DocumentCreateForm />);
-    expect(screen.getByPlaceholderText(/title/i)).toBeInTheDocument();
+    expect(screen.getByTestId('document-title-input')).toBeInTheDocument();
   });
 });

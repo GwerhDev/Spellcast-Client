@@ -34,12 +34,12 @@ describe('DocumentList', () => {
   it('shows empty state when no documents', async () => {
     vi.spyOn(db, 'getDocumentsFromDB').mockResolvedValue([]);
     renderWithProviders(<DocumentList />, { store: loggedStore() });
-    expect(await screen.findByText(/no local documents/i)).toBeInTheDocument();
+    expect(await screen.findByTestId('document-list-empty')).toBeInTheDocument();
   });
 
   it('shows no-results message when query matches nothing', async () => {
     vi.spyOn(db, 'getDocumentsFromDB').mockResolvedValue([mockDoc] as never);
     renderWithProviders(<DocumentList query="zzznomatch" />, { store: loggedStore() });
-    expect(await screen.findByText(/no documents found/i)).toBeInTheDocument();
+    expect(await screen.findByTestId('document-list-no-results')).toBeInTheDocument();
   });
 });
