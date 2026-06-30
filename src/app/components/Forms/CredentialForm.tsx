@@ -2,6 +2,7 @@ import s from "./CredentialForm.module.css";
 import { useState, useEffect } from "react";
 import { createCredential, updateCredential } from "../../../services/credentials";
 import { ActionButton } from "../Buttons/ActionButton";
+import { LabeledInput } from "../Inputs/LabeledInput";
 import { TTS_Credential } from "src/interfaces";
 import { faCancel, faSave } from "@fortawesome/free-solid-svg-icons";
 import { useLanguage } from '../../../i18n';
@@ -40,14 +41,8 @@ export const CredentialForm = ({ credential, onClose }: CredentialFormProps) => 
   return (
     <div className={s.container}>
       <form onSubmit={handleSubmit} className={s.form}>
-        <label>
-          {t.credentials.azureKeyLabel}:
-          <input type="text" value={azureKey} onChange={(e) => setAzureKey(e.target.value)} />
-        </label>
-        <label>
-          {t.credentials.regionLabel}:
-          <input type="text" value={region} onChange={(e) => setRegion(e.target.value)} />
-        </label>
+        <LabeledInput label={t.credentials.azureKeyLabel} name="azureKey" value={azureKey} onChange={(e) => setAzureKey(e.target.value)} />
+        <LabeledInput label={t.credentials.regionLabel} name="region" value={region} onChange={(e) => setRegion(e.target.value)} />
         <div className={s.formActions}>
           <ActionButton icon={faSave} text={credential ? t.common.update : t.editor.create} type="submit" />
           <ActionButton icon={faCancel} text={t.common.cancel} onClick={onClose} type="button" />

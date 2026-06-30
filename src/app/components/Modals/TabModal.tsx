@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faXmark } from '@fortawesome/free-solid-svg-icons';
+import { IconButton } from '../Buttons/IconButton';
 
 export interface TabDef {
   icon: IconDefinition;
@@ -27,9 +28,7 @@ export const TabModal: React.FC<TabModalProps> = ({ show, onClose, title, tabs }
       <div className={s.modal} onClick={(e) => e.stopPropagation()}>
         <div className={s.header}>
           <h3 className={s.title}>{title}</h3>
-          <button className={s.closeBtn} onClick={onClose}>
-            <FontAwesomeIcon icon={faXmark} />
-          </button>
+          <IconButton icon={faXmark} variant="transparent" onClick={onClose} title="Close" />
         </div>
         <div className={s.body}>
           <div className={s.sidebar}>

@@ -13,6 +13,7 @@ import { setPdfFile, setPdfDocumentInfo, resetPdfReader } from '../../../store/p
 import { useLanguage } from '../../../i18n';
 import { faArrowRight, faBuildingColumns, faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { IconButton } from '../../components/Buttons/IconButton';
 
 export const LastDocuments: React.FC = () => {
   const { userData } = useAppSelector((state) => state.session);
@@ -163,9 +164,7 @@ export const LastDocuments: React.FC = () => {
         </div>
         <div className={s.carouselWrapper}>
           {canPrev && (
-            <button className={`${s.navBtn} ${s.navBtnPrev}`} onClick={() => scroll('prev')}>
-              <FontAwesomeIcon icon={faChevronLeft} />
-            </button>
+            <IconButton icon={faChevronLeft} variant="transparent" className={`${s.navBtn} ${s.navBtnPrev}`} onClick={() => scroll('prev')} />
           )}
           <div className={s.slider} ref={sliderRef}>
             {visible.map((doc) => {
@@ -192,9 +191,7 @@ export const LastDocuments: React.FC = () => {
             )}
           </div>
           {canNext && (
-            <button className={`${s.navBtn} ${s.navBtnNext}`} onClick={() => scroll('next')}>
-              <FontAwesomeIcon icon={faChevronRight} />
-            </button>
+            <IconButton icon={faChevronRight} variant="transparent" className={`${s.navBtn} ${s.navBtnNext}`} onClick={() => scroll('next')} />
           )}
         </div>
       </div>

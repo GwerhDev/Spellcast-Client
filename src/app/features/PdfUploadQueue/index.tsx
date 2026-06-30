@@ -6,6 +6,7 @@ import { RootState } from '../../../store';
 import { dismissUpload, setQueueUiState, PdfUploadJob } from '../../../store/pdfUploadSlice';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFile, faXmark, faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons';
+import { IconButton } from '../../components/Buttons/IconButton';
 import { useLanguage } from '../../../i18n';
 
 const JobRow: React.FC<{ job: PdfUploadJob }> = ({ job }) => {
@@ -58,14 +59,13 @@ const JobRow: React.FC<{ job: PdfUploadJob }> = ({ job }) => {
         )}
       </div>
       {(job.status === 'done' || job.status === 'error') && (
-        <button
+        <IconButton
           data-testid={`dismiss-job-${job.id}`}
-          className={s.dismissBtn}
-          onClick={(e) => { e.stopPropagation(); dispatch(dismissUpload(job.id)); }}
+          icon={faXmark}
+          variant="transparent"
+          onClick={() => dispatch(dismissUpload(job.id))}
           title={t.common.close}
-        >
-          <FontAwesomeIcon icon={faXmark} />
-        </button>
+        />
       )}
     </div>
   );
@@ -109,12 +109,8 @@ export const PdfUploadQueue: React.FC = () => {
             }
           </span>
           <div className={s.headerActions}>
-            <button data-testid="upload-queue-minimize" className={s.minimizeBtn} onClick={() => dispatch(setQueueUiState('minimized'))} title={t.common.minimize}>
-              <FontAwesomeIcon icon={faChevronDown} />
-            </button>
-            <button data-testid="upload-queue-close" className={s.minimizeBtn} onClick={() => dispatch(setQueueUiState('closed'))} title={t.common.close}>
-              <FontAwesomeIcon icon={faXmark} />
-            </button>
+            <IconButton data-testid="upload-queue-minimize" icon={faChevronDown} variant="transparent" onClick={() => dispatch(setQueueUiState('minimized'))} title={t.common.minimize} />
+            <IconButton data-testid="upload-queue-close" icon={faXmark} variant="transparent" onClick={() => dispatch(setQueueUiState('closed'))} title={t.common.close} />
           </div>
         </div>
         <div className={s.jobList}>
