@@ -350,12 +350,14 @@ body.fullscreen-reader .audioplayer-container {
   pointer-events: none;
   transition: max-height 0.25s ease, opacity 0.25s ease;
   flex-shrink: 0;
+  margin-top: -0.5rem;
 }
 
 body.fullscreen-reader.fullscreen-player-visible .audioplayer-container {
   max-height: 200px;
   opacity: 1;
   pointer-events: auto;
+  margin-top: 0;
 }
 
 body.fullscreen-reader .reader-top-bar {

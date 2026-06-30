@@ -10,7 +10,6 @@ import {
   setVoice,
   pause,
   setAutoPlayOnLoad,
-  requestResume,
 } from '../../../store/browserPlayerSlice';
 import { setSoundBgVolume, setMasterVolume } from '../../../store/userLibrarySlice';
 import {

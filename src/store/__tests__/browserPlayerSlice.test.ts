@@ -10,7 +10,7 @@ import reducer, {
   requestTogglePlay,
 } from '../browserPlayerSlice';
 
-const initial = { isPlaying: false, voice: null, volume: 1, autoPlayOnLoad: false, toggleSeq: 0 };
+const initial = { isPlaying: false, voice: null, volume: 1, autoPlayOnLoad: false, toggleSeq: 0, resumeSeq: 0 };
 
 describe('browserPlayerSlice', () => {
   it('returns initial state', () => {
@@ -57,7 +57,7 @@ describe('browserPlayerSlice', () => {
   });
 
   it('resetBrowserPlayer resets state but preserves autoPlayOnLoad', () => {
-    const playing = { isPlaying: true, voice: { name: 'X' } as SpeechSynthesisVoice, volume: 0.3, autoPlayOnLoad: true, toggleSeq: 5 };
+    const playing = { isPlaying: true, voice: { name: 'X' } as SpeechSynthesisVoice, volume: 0.3, autoPlayOnLoad: true, toggleSeq: 5, resumeSeq: 0 };
     const reset = reducer(playing, resetBrowserPlayer());
     expect(reset.isPlaying).toBe(false);
     expect(reset.voice).toBeNull();
