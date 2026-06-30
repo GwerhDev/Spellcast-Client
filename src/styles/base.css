@@ -116,6 +116,7 @@ input,
 select {
   outline: none;
   color: var(--text-color);
+  background: var(--component-background);
 }
 
 input:focus,
