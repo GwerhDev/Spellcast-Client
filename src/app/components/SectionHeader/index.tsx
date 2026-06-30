@@ -1,6 +1,5 @@
 import s from './index.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowLeft } from '@fortawesome/free-solid-svg-icons';
 import type { IconProp } from '@fortawesome/fontawesome-svg-core';
 import { Tag } from '../Tag/Tag';
 
@@ -11,16 +10,10 @@ interface SectionHeaderProps {
   align?: 'left' | 'center';
   count?: number;
   action?: React.ReactNode;
-  onBack?: () => void;
 }
 
-export const SectionHeader = ({ icon, title, subtitle, align = 'left', count, action, onBack }: SectionHeaderProps) => (
+export const SectionHeader = ({ icon, title, subtitle, align = 'left', count, action }: SectionHeaderProps) => (
   <div className={`${s.header} ${align === 'center' ? s.center : ''}`}>
-    {onBack && (
-      <button type="button" className={s.backBtn} onClick={onBack} aria-label="Go back">
-        <FontAwesomeIcon icon={faArrowLeft} />
-      </button>
-    )}
     <div className={s.titleRow}>
       {icon && (
         <span className={s.iconChip}>
