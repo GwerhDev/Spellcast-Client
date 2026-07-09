@@ -5,7 +5,6 @@
   display: flex;
   position: relative;
   flex-direction: column;
-  padding: .5rem;
 }
 
 .textContainer {
@@ -21,7 +20,7 @@
 }
 
 /* Fit-to-width: center cover images */
-.textContainer > img:first-child:not([title="pdf-graphic"]) {
+.textContainer>img:first-child:not([title="pdf-graphic"]) {
   display: block;
   margin: 0 auto;
 }
@@ -152,6 +151,8 @@
   z-index: 10;
   background: linear-gradient(to bottom, rgba(0, 0, 0, 0.15) 0%, transparent 100%);
   backdrop-filter: blur(5px);
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
 }
 
 
@@ -244,7 +245,7 @@
   box-sizing: border-box;
 }
 
-.paperSheet > img:first-child:not([title="pdf-graphic"]) {
+.paperSheet>img:first-child:not([title="pdf-graphic"]) {
   display: block;
   object-fit: cover;
   height: var(--paper-height, auto);
