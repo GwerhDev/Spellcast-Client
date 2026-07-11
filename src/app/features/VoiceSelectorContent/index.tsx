@@ -6,6 +6,7 @@ import { faCircle as faRegCircle } from '@fortawesome/free-regular-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../../store';
+import { selectCurrentCredential } from '../../../store/credentialsSlice';
 import { setSelectedVoice } from '../../../store/voiceSlice';
 import { stop as stopAudio } from '../../../store/audioPlayerSlice';
 import { stop as stopBrowser } from '../../../store/browserPlayerSlice';
@@ -32,7 +33,8 @@ interface VoiceSelectorContentProps {
 export const VoiceSelectorContent: React.FC<VoiceSelectorContentProps> = ({ onClose }) => {
   const browserVoiceDocs = getBrowserVoiceDocs();
   const dispatch = useDispatch();
-  const { credentials, loading: credentialsLoading } = useSelector((state: RootState) => state.credentials);
+  const { loading: credentialsLoading } = useSelector((state: RootState) => state.credentials);
+  const activeCredential = useSelector(selectCurrentCredential);
   const { selectedVoice } = useSelector((state: RootState) => state.voice);
   const userId = useSelector((state: RootState) => state.session.userData?.id);
   const { t } = useLanguage();
@@ -44,7 +46,7 @@ export const VoiceSelectorContent: React.FC<VoiceSelectorContentProps> = ({ onCl
   }, [selectedVoice.type]);
 
   const voices = window.speechSynthesis.getVoices();
-  const aiVoices = credentials?.[0]?.voices?.map(v => ({ value: v.value, name: v.name, gender: v.gender })) || [];
+  const aiVoices = activeCredential?.voices?.map(v => ({ value: v.value, name: v.name, gender: v.gender })) || [];
   const browserVoices = voices.map(v => ({ value: v.name, name: v.name, gender: 'Unknown', isBrowser: true }));
   const voicesToShow = activeTab === 'browser' ? browserVoices : aiVoices;
   const icon = activeTab === 'browser' ? faDesktop : faBrain;

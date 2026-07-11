@@ -283,6 +283,8 @@ export const es: Translations = {
     azureKeyLabel: 'Clave Azure',
     regionLabel: 'Región',
     subtitle: 'Gestiona claves API y conexiones a servicios externos.',
+    setActive: 'Usar esta credencial',
+    active: 'Credencial activa',
   },
   groups: {
     createNew: 'Crear nuevo grupo',

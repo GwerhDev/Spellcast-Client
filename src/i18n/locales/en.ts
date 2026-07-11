@@ -281,6 +281,8 @@ export const en = {
     azureKeyLabel: 'Azure Key',
     regionLabel: 'Region',
     subtitle: 'Manage API keys and third-party service connections.',
+    setActive: 'Use this credential',
+    active: 'Active credential',
   },
   groups: {
     createNew: 'Create new group',

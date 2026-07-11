@@ -4,6 +4,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import type { JSONContent } from '../../../magictext';
 import { useDispatch } from 'react-redux';
 import { useAppSelector } from '../../../store/hooks';
+import { selectCurrentCredential } from '../../../store/credentialsSlice';
 import { getDocumentById, updateDocumentContent } from '../../../db';
 import { setShowEditorSettings } from '../../../store/editorSlice';
 import { invalidateContent } from '../../../store/pdfReaderSlice';
@@ -36,8 +37,8 @@ export const DocumentEditForm: React.FC = () => {
   const { userData, logged } = useAppSelector((state) => state.session);
   const { t } = useLanguage();
   const autoSave = useAppSelector((state) => state.editor.autoSave);
-  const credentials = useAppSelector((state) => state.credentials.credentials);
-  const aiVoices = credentials[0]?.voices ?? [];
+  const activeCredential = useAppSelector(selectCurrentCredential);
+  const aiVoices = activeCredential?.voices ?? [];
 
   const ttsMarks = aiVoices.map((v) => ({ id: v.value, name: v.name, voices: [v.value] }));
 

@@ -1,14 +1,16 @@
 import s from '../../components/Cards/CredentialCard.module.css';
-import { faEdit, faSave, faTrash, faTimes, faCommentDots } from '@fortawesome/free-solid-svg-icons';
+import { faEdit, faSave, faTrash, faTimes, faCommentDots, faStar } from '@fortawesome/free-solid-svg-icons';
+import { faStar as faStarOutline } from '@fortawesome/free-regular-svg-icons';
 import { IconButton } from '../../components/Buttons/IconButton';
 import { TTS_Credential, Voice } from '../../../interfaces';
 import { LabeledInput } from '../../components/Inputs/LabeledInput';
 import { deleteCredential, createCredential, updateCredential } from '../../../services/credentials';
-import { updateSingleCredential } from '../../../store/credentialsSlice';
+import { updateSingleCredential, updateCurrentCredential } from '../../../store/credentialsSlice';
 import { getVoicesByCredential } from '../../../services/tts';
 import { useState, useEffect } from 'react';
 import { VoiceCheckboxModal } from '../../components/Modals/VoiceCheckboxModal';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState, AppDispatch } from '../../../store';
 import { useLanguage } from '../../../i18n';
 
 interface CredentialCardProps {
@@ -19,9 +21,11 @@ interface CredentialCardProps {
 }
 
 export const CredentialCard = (props: CredentialCardProps) => {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const { credential, fetchCredentials, onSaveNew, onCancelNew } = props;
   const { t } = useLanguage();
+  const currentCredentialId = useSelector((state: RootState) => state.credentials.currentCredentialId);
+  const isActive = !!credential.id && currentCredentialId === credential.id;
   const [key, setKey] = useState(credential.azure_key || '');
   const [region, setRegion] = useState(credential.region || '');
   const [editionActive, setEditionActive] = useState(credential.isNew ? true : false);
@@ -84,8 +88,17 @@ export const CredentialCard = (props: CredentialCardProps) => {
       if (onCancelNew) onCancelNew();
     } else {
       await deleteCredential(credentialId);
+      // If the deleted credential was the active one, clear it in the API + store.
+      if (currentCredentialId && currentCredentialId === credentialId) {
+        dispatch(updateCurrentCredential(null));
+      }
       fetchCredentials();
     }
+  };
+
+  const handleToggleActive = () => {
+    if (!credential.id) return;
+    dispatch(updateCurrentCredential(isActive ? null : credential.id));
   };
 
   const handleOpenVoiceSelector = async () => {
@@ -108,11 +121,20 @@ export const CredentialCard = (props: CredentialCardProps) => {
   };
 
   return (
-    <li data-testid="credential-card" key={credential.id} className={s.container}>
+    <li data-testid="credential-card" key={credential.id} className={`${s.container} ${isActive ? s.active : ''}`}>
       <LabeledInput disabled={!editionActive} label={t.credentials.labelKey} value={key} type="text" placeholder={t.credentials.keyPlaceholder} name="credential_key" id="credential_key" htmlFor="credential_key" onChange={(e) => setKey(e.target.value)} />
       <LabeledInput disabled={!editionActive} label={t.credentials.labelRegion} value={region} type="text" placeholder={t.credentials.regionPlaceholder} name="credential_region" id="credential_region" htmlFor="credential_region" onChange={(e) => setRegion(e.target.value)} />
 
       <div className={s.actions}>
+        {!credential.isNew && !editionActive && (
+          <IconButton
+            variant="transparent"
+            icon={isActive ? faStar : faStarOutline}
+            className={isActive ? s.activeStar : ''}
+            title={isActive ? t.credentials.active : t.credentials.setActive}
+            onClick={handleToggleActive}
+          />
+        )}
         <IconButton variant="transparent" icon={faCommentDots} onClick={handleOpenVoiceSelector} />
 
         {
