@@ -1,15 +1,18 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { getCredentials as getCredentialsService, updateCredential as updateCredentialService } from "../services/credentials";
+import { getCredentials as getCredentialsService, updateCredential as updateCredentialService, setCurrentCredential as setCurrentCredentialService } from "../services/credentials";
 import { TTS_Credential, Voice } from "../interfaces";
+import type { RootState } from ".";
 
 interface CredentialsState {
   credentials: TTS_Credential[];
+  currentCredentialId: string | null;
   loading: boolean;
   error: string | null;
 }
 
 const initialState: CredentialsState = {
   credentials: [],
+  currentCredentialId: null,
   loading: false,
   error: null,
 };
@@ -30,6 +33,14 @@ export const updateCredential = createAsyncThunk(
   }
 );
 
+export const updateCurrentCredential = createAsyncThunk(
+  "credentials/updateCurrent",
+  async (credentialId: string | null) => {
+    await setCurrentCredentialService(credentialId);
+    return credentialId;
+  }
+);
+
 const credentialsSlice = createSlice({
   name: "credentials",
   initialState,
@@ -40,6 +51,9 @@ const credentialsSlice = createSlice({
       if (index !== -1) {
         state.credentials[index] = updatedCredential;
       }
+    },
+    setCurrentCredentialId: (state, action: PayloadAction<string | null>) => {
+      state.currentCredentialId = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -67,9 +81,19 @@ const credentialsSlice = createSlice({
       .addCase(updateCredential.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || "Failed to update credential";
+      })
+      .addCase(updateCurrentCredential.fulfilled, (state, action) => {
+        state.currentCredentialId = action.payload;
+      })
+      .addCase(updateCurrentCredential.rejected, (state, action) => {
+        state.error = action.error.message || "Failed to set current credential";
       });
   },
 });
 
-export const { updateSingleCredential } = credentialsSlice.actions;
+export const { updateSingleCredential, setCurrentCredentialId } = credentialsSlice.actions;
+
+export const selectCurrentCredential = (state: RootState): TTS_Credential | null =>
+  state.credentials.credentials.find(c => c.id === state.credentials.currentCredentialId) ?? null;
+
 export default credentialsSlice.reducer;

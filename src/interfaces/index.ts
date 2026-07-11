@@ -15,6 +15,7 @@ export interface userData {
   role?: string;
   username?: string;
   profilePic?: string;
+  current_credential?: string | null;   // active TTS credential id (from the profile)
 }
 
 export type Session = {

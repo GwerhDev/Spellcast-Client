@@ -70,6 +70,21 @@ export async function updateCredential(credentialId: string | undefined, data: {
   }
 }
 
+export async function setCurrentCredential(credentialId: string | null): Promise<void> {
+  const res = await fetch(`${API_BASE}/user/current_credential`, {
+    method: 'PATCH',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ credential_id: credentialId }),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || `HTTP error! status: ${res.status}`);
+  }
+}
+
 export async function deleteCredential(credentialId: string | undefined) {
   try {
     const res = await fetch(`${API_BASE}/user/credentials/${credentialId}`, {
