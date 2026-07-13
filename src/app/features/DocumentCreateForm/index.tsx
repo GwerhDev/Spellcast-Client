@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useAppSelector } from '../../../store/hooks';
 import { RootState } from '../../../store';
+import { selectCurrentCredential } from '../../../store/credentialsSlice';
 import * as pdfjsLib from 'pdfjs-dist';
 import { PageList } from '../../components/DocumentCreateForm/PageList';
 import { DocumentEditor } from '../../components/Editors/DocumentEditor';
@@ -60,8 +61,8 @@ export const DocumentCreateForm: React.FC = () => {
     };
   };
 
-  const credentials = useAppSelector((state) => state.credentials.credentials);
-  const aiVoices = credentials[0]?.voices ?? [];
+  const activeCredential = useAppSelector(selectCurrentCredential);
+  const aiVoices = activeCredential?.voices ?? [];
   const ttsMarks = aiVoices.map((v) => ({ id: v.value, name: v.name, voices: [v.value] }));
 
   const [processingCollapsed, setProcessingCollapsed] = useState(false);
