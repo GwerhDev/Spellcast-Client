@@ -78,11 +78,18 @@ describe('credentialsSlice', () => {
     expect(state.currentCredentialId).toBe('c1');
   });
 
-  it('selectCurrentCredential returns the active credential or null', () => {
-    const base = { credentials: { credentials: [mockCred], currentCredentialId: 'c1' } } as unknown as RootState;
-    expect(selectCurrentCredential(base)).toEqual(mockCred);
+  it('selectCurrentCredential returns the active credential, else the first, else null', () => {
+    const other = { ...mockCred, id: 'c2' };
 
-    const none = { credentials: { credentials: [mockCred], currentCredentialId: null } } as unknown as RootState;
-    expect(selectCurrentCredential(none)).toBeNull();
+    const active = { credentials: { credentials: [mockCred, other], currentCredentialId: 'c2' } } as unknown as RootState;
+    expect(selectCurrentCredential(active)).toEqual(other);
+
+    // No active credential: fall back to the first so the player keeps working.
+    const fallback = { credentials: { credentials: [mockCred, other], currentCredentialId: null } } as unknown as RootState;
+    expect(selectCurrentCredential(fallback)).toEqual(mockCred);
+
+    // No credentials at all: null.
+    const empty = { credentials: { credentials: [], currentCredentialId: null } } as unknown as RootState;
+    expect(selectCurrentCredential(empty)).toBeNull();
   });
 });

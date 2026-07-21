@@ -93,7 +93,12 @@ const credentialsSlice = createSlice({
 
 export const { updateSingleCredential, setCurrentCredentialId } = credentialsSlice.actions;
 
-export const selectCurrentCredential = (state: RootState): TTS_Credential | null =>
-  state.credentials.credentials.find(c => c.id === state.credentials.currentCredentialId) ?? null;
+// The credential used to source AI voices / TTS. Prefer the explicitly active
+// one, but fall back to the first available credential so the player keeps
+// working when the user hasn't starred one yet (restores pre-TCORE-53 default).
+export const selectCurrentCredential = (state: RootState): TTS_Credential | null => {
+  const { credentials, currentCredentialId } = state.credentials;
+  return credentials.find(c => c.id === currentCredentialId) ?? credentials[0] ?? null;
+};
 
 export default credentialsSlice.reducer;

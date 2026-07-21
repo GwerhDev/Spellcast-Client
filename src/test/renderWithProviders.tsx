@@ -2,7 +2,7 @@ import React from 'react';
 import { render, RenderOptions } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
-import { configureStore, EnhancedStore } from '@reduxjs/toolkit';
+import { configureStore, combineReducers, EnhancedStore } from '@reduxjs/toolkit';
 import { LanguageProvider } from '../i18n';
 import pdfReaderReducer from '../store/pdfReaderSlice';
 import pdfUploadReducer from '../store/pdfUploadSlice';
@@ -17,30 +17,34 @@ import groupsReducer from '../store/groupsSlice';
 import documentReducer from '../store/documentSlice';
 import apiResponsesReducer from '../store/apiResponsesSlice';
 
-export const makeStore = () => configureStore({
-  reducer: {
-    pdfReader: pdfReaderReducer,
-    pdfUpload: pdfUploadReducer,
-    browserPlayer: browserPlayerReducer,
-    audioPlayer: audioPlayerReducer,
-    session: sessionReducer,
-    voice: voiceReducer,
-    userLibrary: userLibraryReducer,
-    editor: editorReducer,
-    credentials: credentialsReducer,
-    groups: groupsReducer,
-    document: documentReducer,
-    apiResponses: apiResponsesReducer,
-  },
+const rootReducer = combineReducers({
+  pdfReader: pdfReaderReducer,
+  pdfUpload: pdfUploadReducer,
+  browserPlayer: browserPlayerReducer,
+  audioPlayer: audioPlayerReducer,
+  session: sessionReducer,
+  voice: voiceReducer,
+  userLibrary: userLibraryReducer,
+  editor: editorReducer,
+  credentials: credentialsReducer,
+  groups: groupsReducer,
+  document: documentReducer,
+  apiResponses: apiResponsesReducer,
 });
+
+type PreloadedState = Partial<ReturnType<typeof rootReducer>>;
+
+export const makeStore = (preloadedState?: PreloadedState) =>
+  configureStore({ reducer: rootReducer, preloadedState });
 
 interface Options extends Omit<RenderOptions, 'wrapper'> {
   store?: EnhancedStore;
   initialPath?: string;
+  preloadedState?: PreloadedState;
 }
 
 export const renderWithProviders = (ui: React.ReactElement, options: Options = {}) => {
-  const { store = makeStore(), initialPath = '/', ...renderOptions } = options;
+  const { store = makeStore(options.preloadedState), initialPath = '/', preloadedState: _ps, ...renderOptions } = options;
 
   const Wrapper = ({ children }: { children: React.ReactNode }) => (
     <Provider store={store}>
