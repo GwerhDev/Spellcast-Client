@@ -1,9 +1,33 @@
 .container {
-  gap: .5rem;
+  width: 100%;
+  gap: .75rem;
   min-height: 50vh;
   display: flex;
-  align-items: center;
+  align-items: stretch;
   flex-direction: column;
+}
+
+.searchInput {
+  width: 100%;
+  box-sizing: border-box;
+  padding: .65rem 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--color-dark-300);
+  background: var(--color-options-background);
+  color: var(--text-color);
+  font-size: .95rem;
+  font-family: inherit;
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+
+.searchInput::placeholder {
+  color: var(--color-light-400, #9a9a9a);
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 25%, transparent);
 }
 
 .voiceList {
@@ -13,48 +37,68 @@
   gap: 0.5rem;
   max-height: 50vh;
   overflow-y: auto;
+  padding-right: .25rem;
 }
 
 .voiceAllOption {
+  width: 100%;
+  box-sizing: border-box;
   gap: 1rem;
   display: flex;
-  justify-content: flex-start;
+  align-items: center;
+  justify-content: space-between;
   background-color: var(--color-options-background);
   color: var(--text-color);
   border: 1px solid transparent;
-  padding: .5rem;
-  padding-inline: 1rem;
+  padding: .5rem 1rem;
   border-radius: 8px;
-  text-align: center;
   transition: all 0.2s ease-in-out;
 }
 
-.voiceAllOption input {
-  width: 25px;
-  cursor: pointer;
+.voiceAllOption small {
+  color: var(--color-light-300);
 }
 
 .voiceOption {
+  width: 100%;
+  box-sizing: border-box;
   gap: 1rem;
   display: flex;
+  align-items: center;
   justify-content: flex-start;
   background-color: var(--color-options-background);
   color: var(--text-color);
   border: 1px solid transparent;
-  padding: 1rem;
+  padding: .85rem 1rem;
   border-radius: 8px;
   cursor: pointer;
-  text-align: center;
   transition: all 0.2s ease-in-out;
 }
 
+.voiceOption:hover {
+  border-color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 12%, var(--color-options-background));
+}
+
+.voiceOption p {
+  margin: 0;
+  flex-grow: 1;
+  text-align: left;
+}
+
+.voiceAllOption input,
 .voiceOption input {
-  width: 50px;
+  width: 1.1rem;
+  height: 1.1rem;
+  flex-shrink: 0;
   cursor: pointer;
+  accent-color: var(--color-primary);
 }
 
 .buttonContainer {
   width: 100%;
   display: flex;
   justify-content: flex-end;
+  margin-top: auto;
+  padding-top: .5rem;
 }

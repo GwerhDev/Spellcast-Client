@@ -17,30 +17,33 @@ import groupsReducer from '../store/groupsSlice';
 import documentReducer from '../store/documentSlice';
 import apiResponsesReducer from '../store/apiResponsesSlice';
 
-export const makeStore = () => configureStore({
-  reducer: {
-    pdfReader: pdfReaderReducer,
-    pdfUpload: pdfUploadReducer,
-    browserPlayer: browserPlayerReducer,
-    audioPlayer: audioPlayerReducer,
-    session: sessionReducer,
-    voice: voiceReducer,
-    userLibrary: userLibraryReducer,
-    editor: editorReducer,
-    credentials: credentialsReducer,
-    groups: groupsReducer,
-    document: documentReducer,
-    apiResponses: apiResponsesReducer,
-  },
-});
+const reducer = {
+  pdfReader: pdfReaderReducer,
+  pdfUpload: pdfUploadReducer,
+  browserPlayer: browserPlayerReducer,
+  audioPlayer: audioPlayerReducer,
+  session: sessionReducer,
+  voice: voiceReducer,
+  userLibrary: userLibraryReducer,
+  editor: editorReducer,
+  credentials: credentialsReducer,
+  groups: groupsReducer,
+  document: documentReducer,
+  apiResponses: apiResponsesReducer,
+};
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const makeStore = (preloadedState?: any) => configureStore({ reducer, preloadedState });
 
 interface Options extends Omit<RenderOptions, 'wrapper'> {
   store?: EnhancedStore;
   initialPath?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  preloadedState?: any;
 }
 
 export const renderWithProviders = (ui: React.ReactElement, options: Options = {}) => {
-  const { store = makeStore(), initialPath = '/', ...renderOptions } = options;
+  const { store = makeStore(options.preloadedState), initialPath = '/', preloadedState: _ps, ...renderOptions } = options;
 
   const Wrapper = ({ children }: { children: React.ReactNode }) => (
     <Provider store={store}>
