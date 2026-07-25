@@ -141,7 +141,7 @@ const cropCanvasRegion = (
     const out = document.createElement('canvas');
     out.width = canvas.width;
     out.height = cropBottom - cropTop;
-    const ctx = out.getContext('2d')!;
+    const ctx = out.getContext('2d', { willReadFrequently: true })!;
     ctx.drawImage(canvas, 0, cropTop, canvas.width, cropBottom - cropTop, 0, 0, canvas.width, cropBottom - cropTop);
 
     // Remove white background and recolor to theme text color
@@ -170,7 +170,7 @@ const detectHorizontalRulesCanvas = (
   scale: number,
   textLines: PdfLine[],
 ): number[] => {
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
   if (!ctx) return [];
   const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
   const w = canvas.width, h = canvas.height;
@@ -228,7 +228,7 @@ const detectDecorativeRegionsFromCanvas = (
   scale: number,
   textLines: PdfLine[],
 ): { yMin: number; yMax: number }[] => {
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
   if (!ctx) return [];
   const w = canvas.width, h = canvas.height;
   const { data } = ctx.getImageData(0, 0, w, h);
@@ -431,7 +431,9 @@ export const extractPdfPages = async (
     const pageCanvas = document.createElement('canvas');
     pageCanvas.width = Math.round(xScale * pageViewport.width);
     pageCanvas.height = Math.round(xScale * pageViewport.height);
-    const pageCtx = pageCanvas.getContext('2d')!;
+    // willReadFrequently: this canvas is read back via getImageData for rule
+    // and decorative-region detection, so hint the browser to keep it CPU-backed.
+    const pageCtx = pageCanvas.getContext('2d', { willReadFrequently: true })!;
     const renderVp = page.getViewport({ scale: xScale });
     await page.render({ canvasContext: pageCtx as CanvasRenderingContext2D, viewport: renderVp, canvas: pageCanvas }).promise;
 
