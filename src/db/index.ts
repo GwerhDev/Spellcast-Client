@@ -139,7 +139,11 @@ export const getDocumentsFromDB = async (userId: string | undefined): Promise<Do
     };
 
     getAllRequest.onsuccess = () => {
-      const exact = getAllRequest.result as Document[];
+      // WebKit/Safari can return null entries from IDBIndex.getAll() for records
+      // deleted concurrently between its key snapshot and value fetch (e.g. a
+      // delete + refetch racing across the components that share this store).
+      // Drop those before anything downstream (e.g. sort by createdAt) touches them.
+      const exact = (getAllRequest.result as (Document | null)[]).filter((d): d is Document => d != null);
       // Fast path: the userId index matched (types agree), or there's no user to
       // filter by. Otherwise fall back to a full scan with a type-tolerant match
       // so documents saved under a differently-typed id (historical data) still
@@ -155,7 +159,9 @@ export const getDocumentsFromDB = async (userId: string | undefined): Promise<Do
         reject(err);
       };
       scanRequest.onsuccess = () => {
-        const matched = (scanRequest.result as Document[]).filter((d) => sameUser(d.userId, userId));
+        const matched = (scanRequest.result as (Document | null)[])
+          .filter((d): d is Document => d != null)
+          .filter((d) => sameUser(d.userId, userId));
         if (matched.length > 0) {
           console.warn(`[IndexedDB] Listed ${matched.length} document(s) via type-tolerant userId fallback (stored id type differs from session id).`);
         }
