@@ -19,6 +19,13 @@ interface DocumentProgress {
   lastReadSentenceIndex: number;
 }
 
+// Loose user match: a document's userId and the session id come from the same
+// source, but historical records may store it in a different type (e.g. number
+// vs string after a backend change). Compare as strings so old documents still
+// resolve, without ever matching a genuinely different user.
+const sameUser = (a: string | undefined, b: string | undefined): boolean =>
+  a != null && b != null && String(a) === String(b);
+
 let dbPromise: Promise<IDBDatabase> | null = null;
 
 export const clearAllData = async (): Promise<void> => {
@@ -75,8 +82,18 @@ const openDB = (): Promise<IDBDatabase> => {
       }
     };
 
+    request.onblocked = () => {
+      // Fires when another open tab still holds an older DB version; without
+      // handling it the open() request hangs indefinitely. Common in Edge with
+      // multiple tabs / restored sessions.
+      console.error('[IndexedDB] open blocked: another tab holds an older version of', DB_NAME);
+      reject(new Error(`IndexedDB open blocked for "${DB_NAME}" (close other tabs of the app).`));
+    };
+
     request.onerror = (event) => {
-      reject((event.target as IDBOpenDBRequest).error);
+      const err = (event.target as IDBOpenDBRequest).error;
+      console.error(`[IndexedDB] open("${DB_NAME}", ${DB_VERSION}) failed:`, err?.name, err?.message);
+      reject(err);
     };
   });
 
@@ -116,11 +133,34 @@ export const getDocumentsFromDB = async (userId: string | undefined): Promise<Do
     const getAllRequest = docIndex.getAll(userId);
 
     getAllRequest.onerror = () => {
-      reject(getAllRequest.error);
+      const err = getAllRequest.error;
+      console.error('[IndexedDB] getDocumentsFromDB getAll(userId) failed:', err?.name, err?.message);
+      reject(err);
     };
 
     getAllRequest.onsuccess = () => {
-      resolve(getAllRequest.result);
+      const exact = getAllRequest.result as Document[];
+      // Fast path: the userId index matched (types agree), or there's no user to
+      // filter by. Otherwise fall back to a full scan with a type-tolerant match
+      // so documents saved under a differently-typed id (historical data) still
+      // list instead of silently disappearing. Only runs when the index is empty.
+      if (exact.length > 0 || userId == null) {
+        resolve(exact);
+        return;
+      }
+      const scanRequest = docStore.getAll();
+      scanRequest.onerror = () => {
+        const err = scanRequest.error;
+        console.error('[IndexedDB] getDocumentsFromDB fallback scan failed:', err?.name, err?.message);
+        reject(err);
+      };
+      scanRequest.onsuccess = () => {
+        const matched = (scanRequest.result as Document[]).filter((d) => sameUser(d.userId, userId));
+        if (matched.length > 0) {
+          console.warn(`[IndexedDB] Listed ${matched.length} document(s) via type-tolerant userId fallback (stored id type differs from session id).`);
+        }
+        resolve(matched);
+      };
     };
   });
 };
@@ -139,7 +179,7 @@ export const getDocumentById = async (id: string, userId: string | undefined): P
 
     docRequest.onsuccess = () => {
       const doc = docRequest.result as Document | undefined;
-      if (!doc || doc.userId !== userId) {
+      if (!doc || !sameUser(doc.userId, userId)) {
         return resolve(undefined);
       }
       resolve(doc);
@@ -159,7 +199,7 @@ export const deleteDocumentFromDB = async (id: string, userId: string | undefine
     const getRequest = docStore.get(id);
     getRequest.onsuccess = () => {
       const doc = getRequest.result as Document | undefined;
-      if (doc?.userId === userId) {
+      if (doc && sameUser(doc.userId, userId)) {
         docStore.delete(id);
       } else {
         transaction.abort();
@@ -178,7 +218,7 @@ export const updateDocumentContent = async (id: string, userId: string, updates:
     const getRequest = store.get(id);
     getRequest.onsuccess = () => {
       const doc = getRequest.result as Document | undefined;
-      if (doc && doc.userId === userId) {
+      if (doc && sameUser(doc.userId, userId)) {
         const putRequest = store.put({ ...doc, title: updates.title, pagesContent: updates.pagesContent });
         putRequest.onsuccess = () => resolve();
         putRequest.onerror = (e) => reject((e.target as IDBRequest).error);
@@ -203,7 +243,7 @@ export const updateDocumentFull = async (
     const getRequest = store.get(id);
     getRequest.onsuccess = () => {
       const doc = getRequest.result as Document | undefined;
-      if (doc && doc.userId === userId) {
+      if (doc && sameUser(doc.userId, userId)) {
         const putRequest = store.put({ ...doc, ...updates });
         putRequest.onsuccess = () => resolve();
         putRequest.onerror = (e) => reject((e.target as IDBRequest).error);
@@ -224,7 +264,7 @@ export const getDocumentOriginalPages = async (id: string, userId: string | unde
     const request = store.get(id);
     request.onsuccess = () => {
       const doc = request.result as Document | undefined;
-      if (!doc || doc.userId !== userId) return resolve(undefined);
+      if (!doc || !sameUser(doc.userId, userId)) return resolve(undefined);
       resolve(doc.originalPagesContent);
     };
     request.onerror = (e) => reject((e.target as IDBRequest).error);
@@ -241,7 +281,7 @@ export const updateDocumentProgress = async (documentId: string, userId: string,
 
         getRequest.onsuccess = () => {
             const document = getRequest.result as Document | undefined;
-            if (document && document.userId === userId) {
+            if (document && sameUser(document.userId, userId)) {
                 const updatedDocument = { ...document, progress };
                 const putRequest = store.put(updatedDocument);
 
