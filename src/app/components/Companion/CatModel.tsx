@@ -8,20 +8,34 @@ interface Props {
   speed?: number;
   // Staggers the wander cycle so multiple instances don't move in lockstep.
   phaseOffset?: number;
-  // Half-extent of the square area the cat wanders within, in scene units.
-  bounds?: number;
+  // Half-extent of the X axis the cat wanders within, in scene units.
+  boundsX?: number;
+  // Half-extent of the Z axis the cat wanders within, in scene units.
+  boundsZ?: number;
 }
 
-const pickTarget = (bounds: number): THREE.Vector3 =>
-  new THREE.Vector3((Math.random() * 2 - 1) * bounds, 0, (Math.random() * 2 - 1) * bounds);
+// Biased toward the perimeter (sqrt-compressed radius) so cats favor the edges of the
+// wander area over the center, where a uniform sample would otherwise look clustered.
+const pickTarget = (boundsX: number, boundsZ: number): THREE.Vector3 => {
+  const angle = Math.random() * Math.PI * 2;
+  const radius = 0.6 + 0.4 * Math.sqrt(Math.random());
+  return new THREE.Vector3(Math.cos(angle) * radius * boundsX, 0, Math.sin(angle) * radius * boundsZ);
+};
 
 // No real .glb model exists yet — a capsule stands in for the cat body so the
 // walk/overlay/unlock system is fully wired and swappable later: once a model file
 // exists, this mesh gets replaced by `<primitive object={scene} />` from useGLTF
 // without touching CompanionOverlay, the reader integration, or the store.
-export const CatModel: React.FC<Props> = ({ color, scale = 1, speed = 0.6, phaseOffset = 0, bounds = 1.5 }) => {
+export const CatModel: React.FC<Props> = ({
+  color,
+  scale = 1,
+  speed = 0.6,
+  phaseOffset = 0,
+  boundsX = 3.2,
+  boundsZ = 1.7,
+}) => {
   const groupRef = useRef<THREE.Group>(null);
-  const target = useRef<THREE.Vector3>(pickTarget(bounds));
+  const target = useRef<THREE.Vector3>(pickTarget(boundsX, boundsZ));
   const idleTimer = useRef(Math.random() * 2 + phaseOffset);
 
   const bobPhase = useMemo(() => Math.random() * Math.PI * 2, []);
@@ -37,7 +51,7 @@ export const CatModel: React.FC<Props> = ({ color, scale = 1, speed = 0.6, phase
     if (distance < 0.05) {
       idleTimer.current -= delta;
       if (idleTimer.current <= 0) {
-        target.current = pickTarget(bounds);
+        target.current = pickTarget(boundsX, boundsZ);
         idleTimer.current = Math.random() * 2 + 1;
       }
     } else {
