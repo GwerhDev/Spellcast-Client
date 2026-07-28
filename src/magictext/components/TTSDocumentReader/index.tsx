@@ -38,7 +38,8 @@ export function TTSDocumentReader({ content, currentSentenceIndex, onSentenceCli
   if (!blocks.length) return null
 
   const renderText = (block: Extract<DocumentBlock, { kind: 'text' }>, key: string): JSX.Element => {
-    const Tag = (block.blockType === 'heading' ? `h${block.headingLevel ?? 1}` : 'p') as keyof JSX.IntrinsicElements
+    const Tag = (block.blockType === 'heading' ? `h${block.headingLevel ?? 1}` : 'p') as
+      | 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'p'
     const style: CSSProperties = {
       ...(block.textAlign ? { textAlign: block.textAlign as CSSProperties['textAlign'] } : {}),
       ...(block.marginLeft ? { marginLeft: `${block.marginLeft}px` } : {}),
