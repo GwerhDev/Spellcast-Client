@@ -26,7 +26,7 @@
   --text-color-accent: #e4e4e4;
   --icon-filter: brightness(0.8);
   --color-options-background: #3a3d48;
-  --viewer-background: #6a6e7a36;
+  --viewer-background: #3f4147;
   --component-background: var(--color-secondary-darker);
   --component-background-transparency: #dbdbf513;
   --color-primary-accent: #84b4d8;
@@ -119,7 +119,7 @@ html.light {
   --icon-filter: brightness(0.38);
   --color-sentence-hover: #cacaca;
   --color-options-background: #ddd6e8;
-  --viewer-background: #ddd6e842;
+  --viewer-background: #efeaf7;
   --component-background: var(--color-secondary-lighter);
   --component-background-transparency: #ddddea0b;
 
