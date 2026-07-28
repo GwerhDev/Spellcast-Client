@@ -1,9 +1,9 @@
-import { VITE_ENV } from '../api';
 import type { Companion } from './types';
 
-// "Cats" is holding for a public launch on 2026-08-11 — gated out of the production
-// catalog (VITE_ENV === 'production') until then, but left enabled in every other
-// environment so it stays testable during development.
+// "Cats" is holding for a public launch on 2026-08-11 — gated out of any built
+// (production) bundle until then. Uses Vite's own import.meta.env.DEV rather than the
+// custom VITE_ENV var, since DEV/PROD are always set correctly by Vite itself at build
+// time and can't leak through a missing or misconfigured deploy env var.
 const allCompanions: Companion[] = [
   {
     id: 'cats',
@@ -23,4 +23,4 @@ const allCompanions: Companion[] = [
   },
 ];
 
-export const companions: Companion[] = allCompanions.filter(c => !c.devOnly || VITE_ENV !== 'production');
+export const companions: Companion[] = allCompanions.filter(c => !c.devOnly || import.meta.env.DEV);
