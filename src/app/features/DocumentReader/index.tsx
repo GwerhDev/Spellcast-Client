@@ -262,6 +262,11 @@ export const DocumentReader = () => {
       </div>
       <div className={s.bodyWrapper}>
         <div className={s.contentArea}>
+          {activeCompanion && (
+            <React.Suspense fallback={null}>
+              <CompanionOverlay companion={activeCompanion} />
+            </React.Suspense>
+          )}
           {renderBody()}
           {!fitToWidth && (
             <ZoomOverlay
@@ -271,11 +276,6 @@ export const DocumentReader = () => {
               onZoomOut={() => adjustZoom(-ZOOM_STEP)}
               onReset={resetZoom}
             />
-          )}
-          {activeCompanion && (
-            <React.Suspense fallback={null}>
-              <CompanionOverlay companion={activeCompanion} />
-            </React.Suspense>
           )}
         </div>
         <AnimatePresence>
