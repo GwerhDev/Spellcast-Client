@@ -6,17 +6,24 @@ import { useZoom } from '../../../hooks/useZoom';
 import { ZoomOverlay } from '../../components/Zoom/ZoomOverlay';
 import { useDispatch, useSelector } from 'react-redux';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowLeft, faEdit, faFilePdf, faGear, faExpand, faCompress, faInfoCircle } from '@fortawesome/free-solid-svg-icons';
+import { faArrowLeft, faCat, faEdit, faFilePdf, faGear, faExpand, faCompress, faInfoCircle } from '@fortawesome/free-solid-svg-icons';
 import { RootState } from '../../../store';
 import { goToPage, setCurrentSentenceIndex, setShowReaderSettings, recordReaderActivity } from '../../../store/pdfReaderSlice';
 import { setPendingSeek } from '../../../store/audioPlayerSlice';
-import { pageBackgrounds } from '../../../config/assets';
+import { setActiveCompanion } from '../../../store/userLibrarySlice';
+import { pageBackgrounds, companions } from '../../../config/assets';
 import { Spinner } from '../../components/Spinner';
 import { IconButton } from '../../components/Buttons/IconButton';
 import { SearcherButton } from '../../components/DocumentReader/Searcher/SearcherButton';
 import { PageList } from '../../components/DocumentCreateForm/PageList';
 import { TTSDocumentReader, type JSONContent } from '../../../magictext';
 import { useLanguage } from '../../../i18n';
+
+// three/@react-three/fiber are only downloaded once a companion is actually active —
+// lazy so the reader's default bundle stays free of the 3D stack.
+const CompanionOverlay = React.lazy(() =>
+  import('../../components/Companion/CompanionOverlay').then(m => ({ default: m.CompanionOverlay }))
+);
 
 const emptyContent: JSONContent = {
   type: 'doc',
@@ -43,9 +50,13 @@ export const DocumentReader = () => {
   const { selectedVoice } = useSelector((state: RootState) => state.voice);
   const { timeline: aiTimeline, currentTime: aiCurrentTime, isPlaying: aiIsPlaying } = useSelector((state: RootState) => state.audioPlayer);
   const { isPlaying } = useSelector((state: RootState) => state.browserPlayer);
-  const { activePageBgId } = useSelector((state: RootState) => state.userLibrary);
+  const { activePageBgId, activeCompanionId, unlockedIds } = useSelector((state: RootState) => state.userLibrary);
   const activeBg = pageBackgrounds.find(b => b.id === activePageBgId) ?? null;
   const activePageBgCss = activeBg?.cssValue ?? null;
+  const activeCompanion = activeCompanionId && unlockedIds.includes(activeCompanionId)
+    ? companions.find(c => c.id === activeCompanionId) ?? null
+    : null;
+  const unlockedCompanion = companions.find(c => unlockedIds.includes(c.id)) ?? null;
   const pageBgVars = {
     ...(activePageBgCss ? { background: activePageBgCss } : {}),
     ...(activeBg?.textColor ? { '--page-text-color': activeBg.textColor } : {}),
@@ -237,6 +248,14 @@ export const DocumentReader = () => {
         <div className={s.controlsContainer}>
           {isLoaded && <IconButton icon={faInfoCircle} variant='transparent' title={t.reader.documentInfo} />}
           {isLoaded && <IconButton icon={faEdit} variant='transparent' title={t.document.editDocument} onClick={handleEdit} />}
+          {isLoaded && unlockedCompanion && (
+            <IconButton
+              icon={faCat}
+              variant='transparent'
+              title={activeCompanion ? t.reader.hideCompanion : t.reader.showCompanion}
+              onClick={() => dispatch(setActiveCompanion(activeCompanion ? null : unlockedCompanion.id))}
+            />
+          )}
           {isLoaded && <IconButton icon={faGear} variant='transparent' title={t.reader.readerSettings} onClick={() => dispatch(setShowReaderSettings(true))} />}
           {isLoaded && <IconButton icon={isFullscreen ? faCompress : faExpand} variant='transparent' title={isFullscreen ? t.reader.exitFullscreen : t.reader.enterFullscreen} onClick={() => setIsFullscreen(prev => !prev)} />}
         </div>
@@ -252,6 +271,11 @@ export const DocumentReader = () => {
               onZoomOut={() => adjustZoom(-ZOOM_STEP)}
               onReset={resetZoom}
             />
+          )}
+          {activeCompanion && (
+            <React.Suspense fallback={null}>
+              <CompanionOverlay companion={activeCompanion} />
+            </React.Suspense>
           )}
         </div>
         <AnimatePresence>

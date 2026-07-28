@@ -1,12 +1,14 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { soundBackgrounds } from '../config/assets/soundBackgrounds';
 import { pageBackgrounds } from '../config/assets/pageBackgrounds';
+import { companions } from '../config/assets/companions';
 
-const STATE_VERSION = 2;
+const STATE_VERSION = 3;
 
 const FREE_IDS = [
   ...soundBackgrounds.filter(a => a.unlockMethod === 'free').map(a => a.id),
   ...pageBackgrounds.filter(a => a.unlockMethod === 'free').map(a => a.id),
+  ...companions.filter(a => a.unlockMethod === 'free').map(a => a.id),
 ];
 
 interface UserLibraryState {
@@ -14,6 +16,7 @@ interface UserLibraryState {
   unlockedIds: string[];
   activeSoundBgId: string | null;
   activePageBgId: string | null;
+  activeCompanionId: string | null;
   soundBgVolume: number;
   masterVolume: number;
 }
@@ -39,6 +42,7 @@ const initialState: UserLibraryState = {
   unlockedIds: persisted.unlockedIds ?? FREE_IDS,
   activeSoundBgId: persisted.activeSoundBgId ?? null,
   activePageBgId: persisted.activePageBgId ?? 'default',
+  activeCompanionId: persisted.activeCompanionId ?? null,
   soundBgVolume: persisted.soundBgVolume ?? 0.35,
   masterVolume: persisted.masterVolume ?? 1,
 };
@@ -58,6 +62,9 @@ const userLibrarySlice = createSlice({
     setActivePageBg(state, action: PayloadAction<string | null>) {
       state.activePageBgId = action.payload;
     },
+    setActiveCompanion(state, action: PayloadAction<string | null>) {
+      state.activeCompanionId = action.payload;
+    },
     setSoundBgVolume(state, action: PayloadAction<number>) {
       state.soundBgVolume = Math.min(1, Math.max(0, action.payload));
     },
@@ -67,5 +74,5 @@ const userLibrarySlice = createSlice({
   },
 });
 
-export const { unlockAsset, setActiveSoundBg, setActivePageBg, setSoundBgVolume, setMasterVolume } = userLibrarySlice.actions;
+export const { unlockAsset, setActiveSoundBg, setActivePageBg, setActiveCompanion, setSoundBgVolume, setMasterVolume } = userLibrarySlice.actions;
 export default userLibrarySlice.reducer;

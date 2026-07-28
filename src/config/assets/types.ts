@@ -1,4 +1,4 @@
-export type AssetCategory = 'sound-background' | 'page-background';
+export type AssetCategory = 'sound-background' | 'page-background' | 'companion';
 export type UnlockMethod = 'free' | 'purchase' | 'achievement';
 
 interface BaseAsset {
@@ -28,4 +28,20 @@ export interface PageBackground extends BaseAsset {
   sentenceHoverColor?: string;
 }
 
-export type Asset = SoundBackground | PageBackground;
+export interface CompanionModel {
+  id: string;
+  color: string;
+  // No real .glb exists yet — models render as simple colored geometry (see CatModel).
+  // Kept here so a future model file can be wired in without touching the catalog shape.
+  modelUrl?: string;
+}
+
+export interface Companion extends BaseAsset {
+  category: 'companion';
+  models: CompanionModel[];
+  thumbnail: string;
+  scale?: number;
+  speed?: number;
+}
+
+export type Asset = SoundBackground | PageBackground | Companion;

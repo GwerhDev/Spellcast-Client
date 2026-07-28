@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faMusic, faLock, faTrophy, faCheck, faMagnifyingGlass, faCube, faStore } from '@fortawesome/free-solid-svg-icons';
+import { faMusic, faLock, faTrophy, faCheck, faMagnifyingGlass, faCat, faStore } from '@fortawesome/free-solid-svg-icons';
 import { SectionHeader } from '../../components/SectionHeader';
 import { useAppSelector, useAppDispatch } from '../../../store/hooks';
-import { unlockAsset, setActiveSoundBg, setActivePageBg } from '../../../store/userLibrarySlice';
-import { soundBackgrounds, pageBackgrounds } from '../../../config/assets';
+import { unlockAsset, setActiveSoundBg, setActivePageBg, setActiveCompanion } from '../../../store/userLibrarySlice';
+import { soundBackgrounds, pageBackgrounds, companions } from '../../../config/assets';
 import { useLanguage } from '../../../i18n';
 import s from '../../components/HavenStoreLanding/index.module.css';
 
@@ -24,7 +24,7 @@ export const HavenStoreLanding = () => {
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<Tab>('assets');
   const [query, setQuery] = useState('');
-  const { unlockedIds, activeSoundBgId, activePageBgId } = useAppSelector(state => state.userLibrary);
+  const { unlockedIds, activeSoundBgId, activePageBgId, activeCompanionId } = useAppSelector(state => state.userLibrary);
 
   const isUnlocked = (id: string) => unlockedIds.includes(id);
 
@@ -52,6 +52,15 @@ export const HavenStoreLanding = () => {
       return;
     }
     dispatch(setActivePageBg(id));
+  };
+
+  const handleCompanionAction = (id: string) => {
+    if (!isUnlocked(id)) {
+      dispatch(unlockAsset(id));
+      dispatch(setActiveCompanion(id));
+      return;
+    }
+    dispatch(setActiveCompanion(activeCompanionId === id ? null : id));
   };
 
   const renderSoundGrid = () => (
@@ -189,10 +198,70 @@ export const HavenStoreLanding = () => {
   );
 
   const renderCompanionsTab = () => (
-    <div className={s.companionsSoon}>
-      <FontAwesomeIcon icon={faCube} className={s.companionsSoonIcon} />
-      <p className={s.companionsSoonTitle}>{t.havenStore.companionsComingSoon}</p>
-      <p className={s.companionsSoonDesc}>{t.havenStore.companionsComingSoonDesc}</p>
+    <div className={s.assetsBody} data-testid="companions-grid">
+      <div className={s.soundGrid}>
+        {companions.map(companion => {
+          const unlocked = isUnlocked(companion.id);
+          const isActive = activeCompanionId === companion.id;
+          const locked = !unlocked;
+          return (
+            <div
+              key={companion.id}
+              data-testid={`companion-card-${companion.id}`}
+              className={`${s.productCard} ${isActive ? s.productCardActive : ''} ${locked ? s.productCardLocked : ''}`}
+            >
+              <div className={s.artwork} style={{ background: companion.thumbnail }}>
+                <FontAwesomeIcon icon={faCat} className={s.artworkIcon} />
+                {locked && (
+                  <div className={s.lockOverlay}>
+                    <FontAwesomeIcon icon={companion.unlockMethod === 'achievement' ? faTrophy : faLock} className={s.lockIcon} />
+                  </div>
+                )}
+                {isActive && (
+                  <span className={s.activePill}>
+                    <FontAwesomeIcon icon={faCheck} /> {t.havenStore.active}
+                  </span>
+                )}
+              </div>
+              <div className={s.productBody}>
+                <span className={s.productName}>{companion.name}</span>
+                <p className={s.productDesc}>{companion.description}</p>
+                <div className={s.productFooter}>
+                  {companion.unlockMethod === 'free' && (
+                    <span className={s.freeBadge}>{t.havenStore.free}</span>
+                  )}
+                  {companion.unlockMethod === 'achievement' && (
+                    <span className={s.achievementBadge}>
+                      <FontAwesomeIcon icon={faTrophy} />
+                    </span>
+                  )}
+                  {locked && companion.unlockMethod === 'free' && (
+                    <button
+                      data-testid={`companion-unlock-${companion.id}`}
+                      className={s.btnBuy}
+                      onClick={() => handleCompanionAction(companion.id)}
+                    >
+                      {t.havenStore.unlock}
+                    </button>
+                  )}
+                  {locked && companion.unlockMethod === 'achievement' && (
+                    <span className={s.achievementLabel}>{t.havenStore.achievementRequired}</span>
+                  )}
+                  {unlocked && (
+                    <button
+                      data-testid={`companion-toggle-${companion.id}`}
+                      className={isActive ? s.btnActive : s.btnSet}
+                      onClick={() => handleCompanionAction(companion.id)}
+                    >
+                      {isActive ? t.havenStore.deactivate : t.havenStore.setActive}
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 

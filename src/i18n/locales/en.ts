@@ -163,6 +163,8 @@ export const en = {
     documentInfo: 'Document info',
     enterFullscreen: 'Enter fullscreen',
     exitFullscreen: 'Exit fullscreen',
+    showCompanion: 'Show companion',
+    hideCompanion: 'Hide companion',
     selectPage: 'Select a Page',
     displayTab: 'Display',
     appearanceTab: 'Appearance',

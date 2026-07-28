@@ -165,6 +165,8 @@ export const es: Translations = {
     documentInfo: 'Información del documento',
     enterFullscreen: 'Pantalla completa',
     exitFullscreen: 'Salir de pantalla completa',
+    showCompanion: 'Mostrar compañero',
+    hideCompanion: 'Ocultar compañero',
     selectPage: 'Seleccionar página',
     displayTab: 'Pantalla',
     appearanceTab: 'Apariencia',

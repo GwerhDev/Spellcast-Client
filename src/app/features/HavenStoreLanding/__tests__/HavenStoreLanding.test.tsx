@@ -32,4 +32,25 @@ describe('HavenStoreLanding', () => {
     fireEvent.click(screen.getByTestId('haven-tab-assets'));
     expect(screen.getByTestId('haven-search')).toBeInTheDocument();
   });
+
+  it('shows the cats companion card, unlocked and inactive by default', () => {
+    renderWithProviders(<HavenStoreLanding />);
+    fireEvent.click(screen.getByTestId('haven-tab-companions'));
+    expect(screen.getByTestId('companions-grid')).toBeInTheDocument();
+    expect(screen.getByTestId('companion-card-cats')).toBeInTheDocument();
+    // 'cats' is unlockMethod: 'free', so it's pre-unlocked via FREE_IDS — the toggle
+    // button renders, not the unlock button.
+    expect(screen.getByTestId('companion-toggle-cats')).toBeInTheDocument();
+  });
+
+  it('activates and deactivates the cats companion on click', () => {
+    renderWithProviders(<HavenStoreLanding />);
+    fireEvent.click(screen.getByTestId('haven-tab-companions'));
+
+    fireEvent.click(screen.getByTestId('companion-toggle-cats'));
+    expect(screen.getByTestId('companion-toggle-cats').textContent).toContain('Deactivate');
+
+    fireEvent.click(screen.getByTestId('companion-toggle-cats'));
+    expect(screen.getByTestId('companion-toggle-cats').textContent).toContain('Set active');
+  });
 });
