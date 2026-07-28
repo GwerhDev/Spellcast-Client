@@ -380,5 +380,6 @@ export const es: Translations = {
     companions: 'Compañeros',
     companionsComingSoon: 'Compañeros próximamente',
     companionsComingSoonDesc: 'Los compañeros 3D interactuarán en tus entornos de lectura y escritura en una actualización futura.',
+    comingSoon: 'Próximamente',
   },
 };

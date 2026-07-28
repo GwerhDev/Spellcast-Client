@@ -8,7 +8,7 @@ const STATE_VERSION = 3;
 const FREE_IDS = [
   ...soundBackgrounds.filter(a => a.unlockMethod === 'free').map(a => a.id),
   ...pageBackgrounds.filter(a => a.unlockMethod === 'free').map(a => a.id),
-  ...companions.filter(a => a.unlockMethod === 'free').map(a => a.id),
+  ...companions.filter(a => a.unlockMethod === 'free' && !a.comingSoon).map(a => a.id),
 ];
 
 interface UserLibraryState {

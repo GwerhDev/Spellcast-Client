@@ -42,9 +42,9 @@ export interface Companion extends BaseAsset {
   thumbnail: string;
   scale?: number;
   speed?: number;
-  // Gates the companion out of the production catalog ahead of its public release
-  // (see companions.ts) while keeping it testable in dev builds.
-  devOnly?: boolean;
+  // Shown as visible-but-locked ("Soon") ahead of its public release (see companions.ts),
+  // instead of following its normal unlockMethod — set per environment, not hand-authored.
+  comingSoon?: boolean;
 }
 
 export type Asset = SoundBackground | PageBackground | Companion;

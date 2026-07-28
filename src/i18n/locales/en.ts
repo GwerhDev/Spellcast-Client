@@ -378,5 +378,6 @@ export const en = {
     companions: 'Companions',
     companionsComingSoon: 'Companions coming soon',
     companionsComingSoonDesc: '3D companions will interact across your reading and writing environments in a future update.',
+    comingSoon: 'Soon',
   },
 } as const;
