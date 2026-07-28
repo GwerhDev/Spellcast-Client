@@ -9,9 +9,9 @@ export const ACCOUNT_BASE = import.meta.env.VITE_ACCOUNT_URL;
 export const REDIRECT_LOGIN = import.meta.env.VITE_REDIRECT_LOGIN_URL;
 export const REDIRECT_SIGNUP = import.meta.env.VITE_REDIRECT_SIGNUP_URL;
 
-export const DB_NAME = import.meta.env.VITE_DB_NAME;
-// indexedDB.open() expects a numeric version; the env var arrives as a string,
-// so coerce it. A non-numeric value would otherwise throw on open().
-export const DB_VERSION = Number(import.meta.env.VITE_DB_VERSION);
-export const DOCUMENTS_STORE_NAME = import.meta.env.VITE_DOCUMENTS_STORE_NAME;
-export const DOCUMENT_PROGRESS_STORE_NAME = import.meta.env.VITE_DOCUMENT_PROGRESS_STORE_NAME;
+export const DB_NAME = import.meta.env.VITE_DB_NAME ?? 'spellcast';
+// indexedDB.open() expects a numeric version; the env var arrives as a string, so coerce it.
+// `|| 1` covers NaN/0/undefined/empty-string alike — indexedDB.open() throws on a non-positive-integer version.
+export const DB_VERSION = Number(import.meta.env.VITE_DB_VERSION) || 1;
+export const DOCUMENTS_STORE_NAME = import.meta.env.VITE_DOCUMENTS_STORE_NAME ?? 'documents';
+export const DOCUMENT_PROGRESS_STORE_NAME = import.meta.env.VITE_DOCUMENT_PROGRESS_STORE_NAME ?? 'documentProgress';
