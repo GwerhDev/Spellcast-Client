@@ -1,5 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import reducer, { unlockAsset, setActiveSoundBg, setActivePageBg, setActiveCompanion, setSoundBgVolume, setMasterVolume } from '../userLibrarySlice';
+import reducer, {
+  unlockAsset,
+  setActiveSoundBg,
+  setActivePageBg,
+  setActiveCompanion,
+  setSoundBgVolume,
+  setMasterVolume,
+  moveCompanionModel,
+  rotateCompanionModel,
+  scaleCompanionModel,
+  type CompanionPlacement,
+} from '../userLibrarySlice';
 
 beforeEach(() => {
   vi.stubGlobal('localStorage', {
@@ -8,6 +19,8 @@ beforeEach(() => {
   });
 });
 
+const basePlacement: CompanionPlacement = { x: 80, y: 80, rotationX: 0, rotationY: 0, scale: 1 };
+
 const baseState = {
   unlockedIds: [] as string[],
   activeSoundBgId: null as string | null,
@@ -15,7 +28,8 @@ const baseState = {
   activeCompanionId: null as string | null,
   soundBgVolume: 0.35,
   masterVolume: 1,
-  version: 3,
+  companionPlacements: {} as Record<string, CompanionPlacement>,
+  version: 4,
 };
 
 describe('userLibrarySlice', () => {
@@ -64,5 +78,29 @@ describe('userLibrarySlice', () => {
     expect(reducer(baseState, setMasterVolume(0.7)).masterVolume).toBe(0.7);
     expect(reducer(baseState, setMasterVolume(5)).masterVolume).toBe(1);
     expect(reducer(baseState, setMasterVolume(-0.5)).masterVolume).toBe(0);
+  });
+
+  it('moveCompanionModel creates a placement from base on first move', () => {
+    const state = reducer(baseState, moveCompanionModel({ key: 'cats:orange', dx: 10, dy: -5, base: basePlacement }));
+    expect(state.companionPlacements['cats:orange']).toEqual({ ...basePlacement, x: 90, y: 75 });
+  });
+
+  it('moveCompanionModel accumulates on top of an existing placement', () => {
+    const withPlacement = { ...baseState, companionPlacements: { 'cats:orange': { ...basePlacement, x: 90, y: 75 } } };
+    const state = reducer(withPlacement, moveCompanionModel({ key: 'cats:orange', dx: 10, dy: 10, base: basePlacement }));
+    expect(state.companionPlacements['cats:orange']).toEqual({ ...basePlacement, x: 100, y: 85 });
+  });
+
+  it('rotateCompanionModel accumulates rotation on both axes', () => {
+    const state = reducer(baseState, rotateCompanionModel({ key: 'cats:orange', dRotationX: 0.1, dRotationY: 0.2, base: basePlacement }));
+    expect(state.companionPlacements['cats:orange']).toEqual({ ...basePlacement, rotationX: 0.1, rotationY: 0.2 });
+  });
+
+  it('scaleCompanionModel clamps to the configured min/max', () => {
+    const grown = reducer(baseState, scaleCompanionModel({ key: 'cats:orange', dScale: 5, base: basePlacement }));
+    expect(grown.companionPlacements['cats:orange'].scale).toBe(2.5);
+
+    const shrunk = reducer(baseState, scaleCompanionModel({ key: 'cats:orange', dScale: -5, base: basePlacement }));
+    expect(shrunk.companionPlacements['cats:orange'].scale).toBe(0.4);
   });
 });

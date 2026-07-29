@@ -12,9 +12,11 @@ export const companions: Companion[] = [
     description: 'A pair of cats that wander around while you read.',
     category: 'companion',
     unlockMethod: 'free',
+    // Both models point at the black cat .glb as a shared placeholder while an
+    // orange-specific model is sourced — swap `orange`'s modelUrl once it lands.
     models: [
-      { id: 'orange', color: '#e0793c' },
-      { id: 'black', color: '#2b2b2b' },
+      { id: 'orange', color: '#e0793c', modelUrl: '/models/cats/black/scene.gltf' },
+      { id: 'black', color: '#2b2b2b', modelUrl: '/models/cats/black/scene.gltf' },
     ],
     thumbnail: '#3a2a1e',
     scale: 1,

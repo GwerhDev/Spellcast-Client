@@ -10,7 +10,7 @@ import { faArrowLeft, faCat, faEdit, faFilePdf, faGear, faExpand, faCompress, fa
 import { RootState } from '../../../store';
 import { goToPage, setCurrentSentenceIndex, setShowReaderSettings, recordReaderActivity } from '../../../store/pdfReaderSlice';
 import { setPendingSeek } from '../../../store/audioPlayerSlice';
-import { setActiveCompanion } from '../../../store/userLibrarySlice';
+import { setActiveCompanion, moveCompanionModel, rotateCompanionModel, scaleCompanionModel, type CompanionPlacement } from '../../../store/userLibrarySlice';
 import { pageBackgrounds, companions } from '../../../config/assets';
 import { Spinner } from '../../components/Spinner';
 import { IconButton } from '../../components/Buttons/IconButton';
@@ -50,13 +50,45 @@ export const DocumentReader = () => {
   const { selectedVoice } = useSelector((state: RootState) => state.voice);
   const { timeline: aiTimeline, currentTime: aiCurrentTime, isPlaying: aiIsPlaying } = useSelector((state: RootState) => state.audioPlayer);
   const { isPlaying } = useSelector((state: RootState) => state.browserPlayer);
-  const { activePageBgId, activeCompanionId, unlockedIds } = useSelector((state: RootState) => state.userLibrary);
+  const { activePageBgId, activeCompanionId, unlockedIds, companionPlacements } = useSelector((state: RootState) => state.userLibrary);
   const activeBg = pageBackgrounds.find(b => b.id === activePageBgId) ?? null;
   const activePageBgCss = activeBg?.cssValue ?? null;
   const activeCompanion = activeCompanionId && unlockedIds.includes(activeCompanionId)
     ? companions.find(c => c.id === activeCompanionId) ?? null
     : null;
   const unlockedCompanion = companions.find(c => unlockedIds.includes(c.id)) ?? null;
+
+  const defaultCompanionPlacement = (index: number): CompanionPlacement => ({
+    x: 80 + index * 140,
+    y: 80,
+    rotationX: 0,
+    rotationY: 0,
+    scale: 1,
+  });
+  const companionPlacementKey = (modelId: string) => `${activeCompanion?.id}:${modelId}`;
+  const handleCompanionMove = (modelId: string, dx: number, dy: number) => {
+    if (!activeCompanion) return;
+    const index = activeCompanion.models.findIndex(m => m.id === modelId);
+    dispatch(moveCompanionModel({ key: companionPlacementKey(modelId), dx, dy, base: defaultCompanionPlacement(index) }));
+  };
+  const handleCompanionRotate = (modelId: string, dRotationX: number, dRotationY: number) => {
+    if (!activeCompanion) return;
+    const index = activeCompanion.models.findIndex(m => m.id === modelId);
+    dispatch(rotateCompanionModel({ key: companionPlacementKey(modelId), dRotationX, dRotationY, base: defaultCompanionPlacement(index) }));
+  };
+  const handleCompanionScale = (modelId: string, dScale: number) => {
+    if (!activeCompanion) return;
+    const index = activeCompanion.models.findIndex(m => m.id === modelId);
+    dispatch(scaleCompanionModel({ key: companionPlacementKey(modelId), dScale, base: defaultCompanionPlacement(index) }));
+  };
+  const activeCompanionPlacements: Record<string, CompanionPlacement> = activeCompanion
+    ? Object.fromEntries(
+        activeCompanion.models.map((model, index) => [
+          model.id,
+          companionPlacements[companionPlacementKey(model.id)] ?? defaultCompanionPlacement(index),
+        ])
+      )
+    : {};
   const pageBgVars = {
     ...(activePageBgCss ? { background: activePageBgCss } : {}),
     ...(activeBg?.textColor ? { '--page-text-color': activeBg.textColor } : {}),
@@ -262,12 +294,18 @@ export const DocumentReader = () => {
       </div>
       <div className={s.bodyWrapper}>
         <div className={s.contentArea}>
+          {renderBody()}
           {activeCompanion && (
             <React.Suspense fallback={null}>
-              <CompanionOverlay companion={activeCompanion} />
+              <CompanionOverlay
+                companion={activeCompanion}
+                placements={activeCompanionPlacements}
+                onMove={handleCompanionMove}
+                onRotate={handleCompanionRotate}
+                onScale={handleCompanionScale}
+              />
             </React.Suspense>
           )}
-          {renderBody()}
           {!fitToWidth && (
             <ZoomOverlay
               zoom={zoom}
