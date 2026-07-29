@@ -1,5 +1,6 @@
 import React, { Suspense, useEffect, useMemo, useRef } from 'react';
-import { useGLTF, useAnimations } from '@react-three/drei';
+import { useFrame } from '@react-three/fiber';
+import { useGLTF, useAnimations, Sparkles } from '@react-three/drei';
 import { SkeletonUtils } from 'three-stdlib';
 import * as THREE from 'three';
 
@@ -14,8 +15,9 @@ interface Props {
   highlighted?: boolean;
 }
 
-// Outline color for the Ctrl-hover highlight, matching --color-primary from root.css.
-const HIGHLIGHT_COLOR = '#73a5cc';
+// Matches --color-primary from root.css — used for the Ctrl-hover outline and the loading
+// spinner, both UI accents rather than the companion's own body color.
+const PRIMARY_COLOR = '#73a5cc';
 
 const ModelOutline: React.FC<{ size: THREE.Vector3; center: THREE.Vector3 }> = ({ size, center }) => {
   const edges = useMemo(
@@ -24,13 +26,14 @@ const ModelOutline: React.FC<{ size: THREE.Vector3; center: THREE.Vector3 }> = (
   );
   return (
     <lineSegments position={center} geometry={edges}>
-      <lineBasicMaterial color={HIGHLIGHT_COLOR} />
+      <lineBasicMaterial color={PRIMARY_COLOR} />
     </lineSegments>
   );
 };
 
-// Placeholder body used until a real model is assigned — keeps the overlay/unlock system
-// fully wired and swappable without touching CompanionOverlay or the store.
+// Placeholder body used only when no modelUrl is configured at all — keeps the
+// overlay/unlock system fully wired and swappable without touching CompanionOverlay or
+// the store.
 const CatCapsule: React.FC<{ color: string; highlighted?: boolean }> = ({ color, highlighted }) => (
   <>
     <mesh castShadow>
@@ -38,6 +41,42 @@ const CatCapsule: React.FC<{ color: string; highlighted?: boolean }> = ({ color,
       <meshStandardMaterial color={color} />
     </mesh>
     {highlighted && <ModelOutline size={new THREE.Vector3(0.36, 0.68, 0.36)} center={new THREE.Vector3(0, 0, 0)} />}
+  </>
+);
+
+const ORBIT_COUNT = 4;
+const ORBIT_RADIUS = 0.22;
+
+// A few small motes circling the summon point, on top of drei's Sparkles for the ambient
+// glimmer — together read as a "conjuring" effect rather than a generic spinner.
+const OrbitingMotes: React.FC = () => {
+  const groupRef = useRef<THREE.Group>(null);
+  useFrame((_, delta) => {
+    if (groupRef.current) groupRef.current.rotation.y += delta * 2;
+  });
+  return (
+    <group ref={groupRef}>
+      {Array.from({ length: ORBIT_COUNT }, (_, i) => {
+        const angle = (i / ORBIT_COUNT) * Math.PI * 2;
+        return (
+          <mesh key={i} position={[Math.cos(angle) * ORBIT_RADIUS, 0, Math.sin(angle) * ORBIT_RADIUS]}>
+            <sphereGeometry args={[0.02, 8, 8]} />
+            <meshStandardMaterial color={PRIMARY_COLOR} emissive={PRIMARY_COLOR} emissiveIntensity={1.5} />
+          </mesh>
+        );
+      })}
+    </group>
+  );
+};
+
+// In-scene loading indicator shown as the Suspense fallback while a real .glb/.gltf model is
+// being fetched — Suspense boundaries inside a <Canvas> must render three.js elements, not
+// HTML, so the project's HTML Spinner component can't be reused here. Always uses the app's
+// primary color (not the companion's own color) as a neutral "summoning" cue.
+const CatModelLoader: React.FC = () => (
+  <>
+    <OrbitingMotes />
+    <Sparkles count={20} scale={0.5} size={2.5} speed={0.4} color={PRIMARY_COLOR} />
   </>
 );
 
@@ -97,7 +136,7 @@ const CatGltfBody: React.FC<{ url: string; highlighted?: boolean }> = ({ url, hi
 export const CatModel: React.FC<Props> = ({ color, scale = 1, modelUrl, highlighted }) => (
   <group scale={scale}>
     {modelUrl ? (
-      <Suspense fallback={<CatCapsule color={color} highlighted={highlighted} />}>
+      <Suspense fallback={<CatModelLoader />}>
         <CatGltfBody url={modelUrl} highlighted={highlighted} />
       </Suspense>
     ) : (
