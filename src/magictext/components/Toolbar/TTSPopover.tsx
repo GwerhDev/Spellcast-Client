@@ -125,7 +125,17 @@ export function TTSPopover({ editor, characters = [], inflections = [], onPlay, 
   // ── Hover over selection → show floating TTS icon ────────────────────────────
 
   useEffect(() => {
-    const editorDom = editor.view.dom
+    if (!editor || editor.isDestroyed) return
+    // editor.view returns a stub Proxy (not the real ProseMirror view) until the editor is
+    // actually mounted, and that proxy throws on any access it doesn't stub out — including
+    // 'dom'. There's no public flag for "is the real view ready yet", so the safe way to
+    // probe it is to try and fall back on failure rather than rely on the proxy's key list.
+    let editorDom: HTMLElement
+    try {
+      editorDom = editor.view.dom
+    } catch {
+      return
+    }
 
     const handleMouseMove = (e: MouseEvent) => {
       if (!editor.isEditable || open) {
@@ -163,7 +173,13 @@ export function TTSPopover({ editor, characters = [], inflections = [], onPlay, 
   // ── Click on existing TTS mark ────────────────────────────────────────────────
 
   useEffect(() => {
-    const editorDom = editor.view.dom
+    if (!editor || editor.isDestroyed) return
+    let editorDom: HTMLElement
+    try {
+      editorDom = editor.view.dom
+    } catch {
+      return
+    }
     const handleClick = (e: MouseEvent) => {
       if (!editor.isEditable) return
       const target = (e.target as HTMLElement).closest('span[data-type="tts"]')
