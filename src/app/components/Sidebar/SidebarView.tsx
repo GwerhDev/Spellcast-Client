@@ -1,8 +1,10 @@
+import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faChevronLeft, faChevronRight, faChevronDown } from '@fortawesome/free-solid-svg-icons';
+import { faChevronLeft, faChevronRight, faChevronDown, faBars } from '@fortawesome/free-solid-svg-icons';
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import type { SidebarSectionKey } from '../../../store/layoutSlice';
+import { useMediaQuery } from '../../../hooks/useMediaQuery';
 import s from './SidebarView.module.css';
 
 export interface SidebarDirectLink {
@@ -128,83 +130,99 @@ const SidebarAccordion = ({
   );
 };
 
-export const SidebarView = ({
+// Desktop: rail (icon rail) and panel (accordion list) — both always mounted, cross-fading
+// via CSS opacity as the outer shell's width animates. Each list's items stagger in/out
+// (fade + slide) via Framer Motion so the swap reads as a real transition, not an instant one.
+const railItemVariants = {
+  hidden: { opacity: 0, x: -6 },
+  visible: { opacity: 1, x: 0 },
+};
+
+const panelItemVariants = {
+  hidden: { opacity: 0, x: 8 },
+  visible: { opacity: 1, x: 0 },
+};
+
+const DesktopSidebar = ({
   collapsed,
   openSections,
   activePathname,
   directLinks,
   accordionSections,
-  onToggleCollapsed,
   onToggleSection,
   onNavigate,
-}: SidebarViewProps) => {
-  const toggleButton = (
-    <button
-      type="button"
-      className={s.toggleBtn}
-      data-testid="sidebar-toggle-btn"
-      onClick={onToggleCollapsed}
-    >
-      <FontAwesomeIcon icon={collapsed ? faChevronRight : faChevronLeft} />
-    </button>
-  );
-
-  return (
-    <div className={`${s.sidebar} ${collapsed ? s.sidebarCollapsed : s.sidebarExpanded}`}>
-      <nav className={s.rail} data-testid="sidebar-rail" aria-hidden={!collapsed}>
-        <ul className={s.railList}>
-          {directLinks.map(link => (
-            <li key={link.key}>
-              <Link
-                to={link.path}
-                title={link.label}
-                data-testid={`sidebar-rail-icon-${link.key}`}
-                className={`${s.railIcon} ${isActive(activePathname, link.path) ? s.railIconActive : ''}`}
-                onClick={onNavigate}
-                tabIndex={collapsed ? undefined : -1}
-              >
-                <FontAwesomeIcon icon={link.icon} />
-              </Link>
-            </li>
-          ))}
-          {accordionSections.map(section => (
-            <li key={section.key}>
-              <Link
-                to={section.path}
-                title={section.label}
-                data-testid={`sidebar-rail-icon-${section.key}`}
-                className={`${s.railIcon} ${isActive(activePathname, section.path) ? s.railIconActive : ''}`}
-                onClick={onNavigate}
-                tabIndex={collapsed ? undefined : -1}
-              >
-                <FontAwesomeIcon icon={section.icon} />
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </nav>
-
-      <nav className={s.panel} data-testid="sidebar-panel" aria-hidden={collapsed}>
-        <ul className={s.directLinkList}>
-          {directLinks.map(link => (
-            <li key={link.key}>
-              <Link
-                to={link.path}
-                data-testid={`sidebar-nav-item-${link.key}`}
-                className={`${s.navItem} ${isActive(activePathname, link.path) ? s.activeLink : ''}`}
-                onClick={onNavigate}
-                tabIndex={collapsed ? -1 : undefined}
-              >
-                <FontAwesomeIcon icon={link.icon} />
-                <span>{link.label}</span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-
+}: Omit<SidebarViewProps, 'onToggleCollapsed'>) => (
+  <>
+    <nav className={s.rail} data-testid="sidebar-rail" aria-hidden={!collapsed}>
+      <motion.ul
+        className={s.railList}
+        initial={false}
+        animate={collapsed ? 'visible' : 'hidden'}
+        transition={{ staggerChildren: 0.03 }}
+      >
+        {directLinks.map(link => (
+          <motion.li key={link.key} variants={railItemVariants}>
+            <Link
+              to={link.path}
+              title={link.label}
+              data-testid={`sidebar-rail-icon-${link.key}`}
+              className={`${s.railIcon} ${isActive(activePathname, link.path) ? s.railIconActive : ''}`}
+              onClick={onNavigate}
+              tabIndex={collapsed ? undefined : -1}
+            >
+              <FontAwesomeIcon icon={link.icon} />
+            </Link>
+          </motion.li>
+        ))}
         {accordionSections.map(section => (
+          <motion.li key={section.key} variants={railItemVariants}>
+            <Link
+              to={section.path}
+              title={section.label}
+              data-testid={`sidebar-rail-icon-${section.key}`}
+              className={`${s.railIcon} ${isActive(activePathname, section.path) ? s.railIconActive : ''}`}
+              onClick={onNavigate}
+              tabIndex={collapsed ? undefined : -1}
+            >
+              <FontAwesomeIcon icon={section.icon} />
+            </Link>
+          </motion.li>
+        ))}
+      </motion.ul>
+    </nav>
+
+    <nav className={s.panel} data-testid="sidebar-panel" aria-hidden={collapsed}>
+      <motion.ul
+        className={s.directLinkList}
+        initial={false}
+        animate={collapsed ? 'hidden' : 'visible'}
+        transition={{ staggerChildren: 0.03 }}
+      >
+        {directLinks.map(link => (
+          <motion.li key={link.key} variants={panelItemVariants}>
+            <Link
+              to={link.path}
+              data-testid={`sidebar-nav-item-${link.key}`}
+              className={`${s.navItem} ${isActive(activePathname, link.path) ? s.activeLink : ''}`}
+              onClick={onNavigate}
+              tabIndex={collapsed ? -1 : undefined}
+            >
+              <FontAwesomeIcon icon={link.icon} />
+              <span>{link.label}</span>
+            </Link>
+          </motion.li>
+        ))}
+      </motion.ul>
+
+      {accordionSections.map((section, index) => (
+        <motion.div
+          key={section.key}
+          initial={false}
+          animate={collapsed ? 'hidden' : 'visible'}
+          variants={panelItemVariants}
+          transition={{ delay: (directLinks.length + index) * 0.03 }}
+        >
           <SidebarAccordion
-            key={section.key}
             section={section}
             depth={0}
             openSections={openSections}
@@ -213,9 +231,140 @@ export const SidebarView = ({
             onToggleSection={onToggleSection}
             onNavigate={onNavigate}
           />
-        ))}
-      </nav>
+        </motion.div>
+      ))}
+    </nav>
+  </>
+);
 
+// Mobile: only ONE of {row, list} is ever mounted at a time. Framer Motion's layoutId
+// connects the same logical item across that mount/unmount boundary — when the row
+// unmounts and the list mounts (or vice versa), each shared-id element animates its own
+// position/size change instead of being replaced instantly. "user" (no rail icon at all)
+// only exists in the list and just fades in/out normally.
+const MobileSidebar = ({
+  collapsed,
+  openSections,
+  activePathname,
+  directLinks,
+  accordionSections,
+  onToggleSection,
+  onNavigate,
+}: Omit<SidebarViewProps, 'onToggleCollapsed'>) => {
+  const morphId = (key: string) => `sidebar-morph-${key}`;
+  const morphableSections = accordionSections.filter(section => !section.subSections?.length);
+  const nonMorphableSections = accordionSections.filter(section => section.subSections?.length);
+
+  return (
+    <LayoutGroup>
+      <AnimatePresence initial={false} mode="popLayout">
+        {collapsed ? (
+          <motion.nav key="row" className={s.mobileRow} data-testid="sidebar-rail" exit={{ opacity: 0 }}>
+            {directLinks.map(link => (
+              <motion.div key={link.key} className={s.mobileRowItem} layoutId={morphId(link.key)}>
+                <Link
+                  to={link.path}
+                  title={link.label}
+                  data-testid={`sidebar-rail-icon-${link.key}`}
+                  className={`${s.railIcon} ${isActive(activePathname, link.path) ? s.railIconActive : ''}`}
+                  onClick={onNavigate}
+                >
+                  <FontAwesomeIcon icon={link.icon} />
+                </Link>
+              </motion.div>
+            ))}
+            {morphableSections.map(section => (
+              <motion.div key={section.key} className={s.mobileRowItem} layoutId={morphId(section.key)}>
+                <Link
+                  to={section.path}
+                  title={section.label}
+                  data-testid={`sidebar-rail-icon-${section.key}`}
+                  className={`${s.railIcon} ${isActive(activePathname, section.path) ? s.railIconActive : ''}`}
+                  onClick={onNavigate}
+                >
+                  <FontAwesomeIcon icon={section.icon} />
+                </Link>
+              </motion.div>
+            ))}
+          </motion.nav>
+        ) : (
+          <motion.nav
+            key="list"
+            className={s.panel}
+            data-testid="sidebar-panel"
+            exit={{ opacity: 0 }}
+          >
+            <ul className={s.directLinkList}>
+              {directLinks.map(link => (
+                <motion.li key={link.key} layoutId={morphId(link.key)}>
+                  <Link
+                    to={link.path}
+                    data-testid={`sidebar-nav-item-${link.key}`}
+                    className={`${s.navItem} ${isActive(activePathname, link.path) ? s.activeLink : ''}`}
+                    onClick={onNavigate}
+                  >
+                    <FontAwesomeIcon icon={link.icon} />
+                    <span>{link.label}</span>
+                  </Link>
+                </motion.li>
+              ))}
+              {morphableSections.map(section => (
+                <motion.li key={section.key} layoutId={morphId(section.key)}>
+                  <Link
+                    to={section.path}
+                    data-testid={`sidebar-nav-item-${section.key}`}
+                    className={`${s.navItem} ${isActive(activePathname, section.path) ? s.activeLink : ''}`}
+                    onClick={onNavigate}
+                  >
+                    <FontAwesomeIcon icon={section.icon} />
+                    <span>{section.label}</span>
+                  </Link>
+                </motion.li>
+              ))}
+            </ul>
+
+            {nonMorphableSections.map(section => (
+              <motion.div key={section.key} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                <SidebarAccordion
+                  section={section}
+                  depth={0}
+                  openSections={openSections}
+                  activePathname={activePathname}
+                  collapsed={collapsed}
+                  onToggleSection={onToggleSection}
+                  onNavigate={onNavigate}
+                />
+              </motion.div>
+            ))}
+          </motion.nav>
+        )}
+      </AnimatePresence>
+    </LayoutGroup>
+  );
+};
+
+export const SidebarView = (props: SidebarViewProps) => {
+  const { collapsed, onToggleCollapsed } = props;
+  const isMobile = useMediaQuery('(max-width: 1024px)');
+
+  const toggleButton = (
+    <button
+      type="button"
+      className={s.toggleBtn}
+      data-testid="sidebar-toggle-btn"
+      onClick={onToggleCollapsed}
+    >
+      {/* Desktop shows a chevron reflecting collapse state; mobile always shows the
+          classic burger icon instead. The burger stays fixed in place on mobile; it does
+          not participate in the row-to-list morph. */}
+      <FontAwesomeIcon icon={collapsed ? faChevronRight : faChevronLeft} className={s.toggleIconDesktop} />
+      <FontAwesomeIcon icon={faBars} className={s.toggleIconMobile} />
+    </button>
+  );
+
+  return (
+    <div className={`${s.sidebar} ${collapsed ? s.sidebarCollapsed : s.sidebarExpanded}`}>
+      {isMobile ? <MobileSidebar {...props} /> : <DesktopSidebar {...props} />}
       {toggleButton}
     </div>
   );

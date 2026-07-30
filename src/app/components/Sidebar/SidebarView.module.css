@@ -40,6 +40,10 @@
   color: var(--text-1);
 }
 
+.toggleIconMobile {
+  display: none;
+}
+
 /* ── Collapsed rail ── */
 .rail {
   position: absolute;
@@ -68,7 +72,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--size-1);
+  gap: var(--size-4);
   overflow-y: auto;
 }
 
@@ -290,6 +294,62 @@
   gap: var(--size-1);
   padding-left: var(--size-4);
   padding-top: var(--size-1);
+}
+
+/* ── Mobile — the DOM structure itself differs from desktop (see MobileSidebar in
+   SidebarView.tsx): only one of {row, list} is ever mounted at a time, and Framer
+   Motion's layoutId animates each shared item's position/size across that mount/unmount
+   boundary. .aside-container (globals.css) is already position:fixed with
+   .aside-inner-container stacking children in a column, so the row sits on top and the
+   list stacks below it in normal flow — no absolute positioning of our own is needed. ── */
+@media (max-width: 1024px) {
+  .sidebar {
+    position: static;
+    width: 100% !important;
+    height: auto;
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    overflow: visible;
+    transition: none;
+  }
+
+  .toggleBtn {
+    position: static;
+    order: 2;
+    flex-shrink: 0;
+    align-self: flex-start;
+  }
+
+  .toggleIconDesktop {
+    display: none;
+  }
+
+  .toggleIconMobile {
+    display: block;
+  }
+
+  .mobileRow {
+    order: 1;
+    flex: 1;
+    min-height: 44px;
+    width: auto;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-around;
+  }
+
+  .panel {
+    order: 1;
+    position: static;
+    width: 100%;
+    max-height: 70vh;
+    padding: var(--size-3) var(--size-2);
+    overflow-y: auto;
+    opacity: 1;
+    pointer-events: auto;
+  }
 }
 
 @keyframes sidebar-orbit {

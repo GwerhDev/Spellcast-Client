@@ -45,7 +45,7 @@ export const en = {
     account: 'Account',
     accountsCenter: 'Accounts center',
     nhexaInterface: 'Nhexa Interface',
-    havenStore: 'Havenstore',
+    havenstore: 'Havenstore',
     lastDocuments: 'Last Documents',
     home: 'Home',
     local: 'Local',

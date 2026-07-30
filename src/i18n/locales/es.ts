@@ -47,7 +47,7 @@ export const es: Translations = {
     account: 'Cuenta',
     accountsCenter: 'Centro de cuentas',
     nhexaInterface: 'Nhexa Interface',
-    havenStore: 'Havenstore',
+    havenstore: 'Havenstore',
     lastDocuments: 'Últimos documentos',
     home: 'Inicio',
     local: 'Local',
