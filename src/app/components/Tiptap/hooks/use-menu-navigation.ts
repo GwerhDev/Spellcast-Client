@@ -152,9 +152,18 @@ export function useMenuNavigation<T>({
 
     let targetElement: HTMLElement | null = null
 
-    if (editor) {
-      targetElement = editor.view.dom
-    } else if (containerRef?.current) {
+    // editor.view returns a stub Proxy (not the real ProseMirror view) until the editor is
+    // actually mounted, and that proxy throws on any access it doesn't stub out — including
+    // 'dom'. There's no public flag for "is the real view ready yet", so the safe way to
+    // probe it is to try and fall back on failure rather than rely on the proxy's key list.
+    if (editor && !editor.isDestroyed) {
+      try {
+        targetElement = editor.view.dom
+      } catch {
+        targetElement = null
+      }
+    }
+    if (!targetElement && containerRef?.current) {
       targetElement = containerRef.current
     }
 
