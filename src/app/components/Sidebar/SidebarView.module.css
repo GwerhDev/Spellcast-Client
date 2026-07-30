@@ -1,0 +1,303 @@
+/* ── Outer shell — animates width between rail and panel; rail/panel are both always
+   mounted, stacked on top of each other, and cross-fade via opacity so collapsing/
+   expanding is a smooth transition instead of an instant swap. ── */
+.sidebar {
+  position: relative;
+  height: 100%;
+  flex-shrink: 0;
+  overflow: hidden;
+  transition: width 0.22s ease;
+}
+
+.sidebarCollapsed {
+  width: 44px;
+}
+
+.sidebarExpanded {
+  width: 250px;
+}
+
+/* ── Shared toggle button (fixed slot at the bottom, icon swaps) ── */
+.toggleBtn {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--text-2);
+  cursor: pointer;
+  font-size: 0.85rem;
+  border-radius: var(--size-2);
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.toggleBtn:hover {
+  color: var(--text-1);
+}
+
+/* ── Collapsed rail ── */
+.rail {
+  position: absolute;
+  inset: 0;
+  width: 44px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+.sidebarCollapsed .rail {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.railList {
+  flex: 1;
+  width: 100%;
+  padding: var(--size-2) 0;
+  padding-bottom: 44px;
+  margin: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--size-1);
+  overflow-y: auto;
+}
+
+.railIcon {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--size-2);
+  color: var(--text-2);
+  text-decoration: none;
+  font-size: 1.05rem;
+  position: relative;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.railIcon:hover {
+  color: var(--text-1);
+}
+
+.railIconActive {
+  color: var(--color-primary);
+  filter: drop-shadow(0 0 1px var(--color-secondary));
+}
+
+.railIconActive::before,
+.railIconActive::after {
+  content: '';
+  position: absolute;
+  top: calc(50% - 1px);
+  left: calc(50% - 7.5px);
+  width: 15px;
+  height: 2px;
+  background: linear-gradient(to left, transparent 0%, var(--color-primary) 100%);
+  border-radius: 2px;
+  box-shadow: 0 0 5px var(--color-primary);
+  animation: sidebar-orbit 4s linear infinite;
+}
+
+.railIconActive::after {
+  animation-delay: -2s;
+}
+
+/* ── Expanded panel ── */
+.panel {
+  position: absolute;
+  inset: 0;
+  width: 250px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-4);
+  padding: var(--size-3) var(--size-2);
+  padding-bottom: 44px;
+  overflow-y: auto;
+  backdrop-filter: blur(14px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+.sidebarExpanded .panel {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.directLinkList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-3);
+}
+
+.navItem,
+.subItem {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--size-3);
+  padding: var(--size-1) var(--size-2);
+  border-radius: var(--size-1);
+  color: var(--text-2);
+  text-decoration: none;
+  font-weight: 400;
+  transition: color 0.15s ease;
+  box-sizing: border-box;
+}
+
+.navItem:hover,
+.subItem:hover {
+  color: var(--text-1);
+}
+
+.navItem {
+  font-size: 0.95rem;
+}
+
+.navItem svg {
+  font-size: 1.05rem;
+}
+
+.subItem {
+  font-size: 0.8rem;
+}
+
+.subItem svg {
+  font-size: 0.85rem;
+}
+
+.activeLink {
+  background-color: color-mix(in srgb, var(--color-primary) 16%, transparent);
+  color: var(--color-primary);
+  position: relative;
+}
+
+.activeLink::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 20%;
+  height: 60%;
+  width: 2.5px;
+  background: var(--color-primary);
+  border-radius: 0 2px 2px 0;
+}
+
+/* ── Accordion sections ── */
+.accordionSection {
+  display: flex;
+  flex-direction: column;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: var(--size-1);
+}
+
+.sectionLabel {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--size-3);
+  padding: var(--size-1) var(--size-2);
+  color: var(--text-2);
+  text-decoration: none;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: color 0.15s ease;
+}
+
+.sectionLabel svg {
+  font-size: 1.05rem;
+}
+
+.sectionLabel:hover {
+  color: var(--text-1);
+}
+
+.sectionHeaderActive .sectionLabel {
+  color: var(--color-primary);
+}
+
+.subSectionLabel {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--size-3);
+  padding: var(--size-1) var(--size-2);
+  color: var(--text-2);
+  text-decoration: none;
+  font-size: 0.8rem;
+  font-weight: 400;
+  transition: color 0.15s ease;
+}
+
+.subSectionLabel svg {
+  font-size: 0.85rem;
+}
+
+.subSectionLabel:hover {
+  color: var(--text-1);
+}
+
+.sectionHeaderActive .subSectionLabel {
+  color: var(--color-primary);
+}
+
+.sectionChevronWrap {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--text-2);
+}
+
+.sectionChevronArrow {
+  font-size: 0.65rem;
+  transform: rotate(-90deg);
+  transition: transform 0.15s ease;
+}
+
+.sectionChevronArrowOpen {
+  transform: rotate(0deg);
+}
+
+.sectionBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-1);
+  padding-left: var(--size-4);
+  padding-top: var(--size-1);
+}
+
+@keyframes sidebar-orbit {
+  from {
+    transform: rotate(0deg) translateX(18px) rotate(-90deg);
+  }
+
+  to {
+    transform: rotate(360deg) translateX(18px) rotate(-90deg);
+  }
+}

@@ -34,8 +34,8 @@ export const es: Translations = {
   nav: {
     mainMenu: 'MENÚ PRINCIPAL',
     dashboard: 'PANEL',
-    storage: 'ALMACENAMIENTO',
-    settings: 'AJUSTES',
+    storage: 'Almacenamiento',
+    settings: 'Ajustes',
     overview: 'Resumen',
     groups: 'Grupos',
     shared: 'Compartido',
@@ -52,6 +52,10 @@ export const es: Translations = {
     home: 'Inicio',
     local: 'Local',
     cloud: 'Nube',
+    editor: 'Editor',
+    select: 'Seleccionar',
+    create: 'Crear',
+    user: 'Usuario',
   },
   document: {
     untitled: 'Sin título',

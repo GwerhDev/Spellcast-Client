@@ -32,8 +32,8 @@ export const en = {
   nav: {
     mainMenu: 'MAIN MENU',
     dashboard: 'DASHBOARD',
-    storage: 'STORAGE',
-    settings: 'SETTINGS',
+    storage: 'Storage',
+    settings: 'Settings',
     overview: 'Overview',
     groups: 'Groups',
     shared: 'Shared',
@@ -50,6 +50,10 @@ export const en = {
     home: 'Home',
     local: 'Local',
     cloud: 'Cloud',
+    editor: 'Editor',
+    select: 'Select',
+    create: 'Create',
+    user: 'User',
   },
   document: {
     untitled: 'Untitled',

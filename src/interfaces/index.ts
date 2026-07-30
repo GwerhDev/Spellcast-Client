@@ -1,13 +1,3 @@
-import { IconProp } from "@fortawesome/fontawesome-svg-core";
-
-export interface Tab {
-  title: string;
-  type?: "menu";
-  icon?: IconProp;
-  route?: string | null;
-  showMenu: boolean;
-}
-
 export interface userData {
   loader: boolean;
   email?: string;

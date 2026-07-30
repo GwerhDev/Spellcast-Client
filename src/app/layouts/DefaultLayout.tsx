@@ -1,10 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Outlet } from 'react-router-dom';
-import { TabBar } from '../components/Tabs/TabBar';
+import { Sidebar } from '../features/Sidebar/Sidebar';
 import { LogoutModal } from '../components/Modals/LogoutModal';
 import { AudioPlayer } from '../features/AudioPlayer';
-import { LateralMenu } from '../components/LateralMenu/LateralMenu';
 import { PdfProcessor } from '../components/PdfProcessor/PdfProcessor';
 import { BrowserPlayer } from '../features/BrowserPlayer';
 import { RootState } from 'store/index';
@@ -23,17 +22,16 @@ import { NotificationsButton } from '../features/NotificationsButton';
 import { Desktop } from '../features/Desktop';
 import { useAppDispatch } from 'store/hooks';
 import { setMinimized } from 'store/desktopSlice';
+import { setSidebarCollapsed } from 'store/layoutSlice';
 import { useAttentionGuard } from '../../hooks/useAttentionGuard';
 import { AttentionGuardModal } from '../components/Modals/AttentionGuardModal';
 
 export default function DefaultLayout() {
-  const shouldHideMenu = location.pathname.startsWith(`/user`);
   const { selectedVoice } = useSelector((state: RootState) => state.voice);
   const { isLoaded: documentLoaded } = useSelector((state: RootState) => state.pdfReader);
   const minimized = useSelector((state: RootState) => state.desktop.minimized);
   const dispatch = useAppDispatch();
   const { showModal: showAttentionGuard, handleContinue: handleAttentionGuardContinue } = useAttentionGuard();
-  const [showMenu, setShowMenu] = useState(shouldHideMenu);
   const [isPlayerSettingsOpen, setIsPlayerSettingsOpen] = useState(false);
   const [isVoiceSelectorOpen, setIsVoiceSelectorOpen] = useState(false);
   const navRef = useRef<HTMLElement>(null);
@@ -42,12 +40,12 @@ export default function DefaultLayout() {
     const handleClickOutside = (e: MouseEvent) => {
       if (!window.matchMedia('(max-width: 1024px)').matches) return;
       if (navRef.current && !navRef.current.contains(e.target as Node)) {
-        setShowMenu(false);
+        dispatch(setSidebarCollapsed(true));
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [dispatch]);
 
   return (
     <main>
@@ -86,10 +84,7 @@ export default function DefaultLayout() {
               <nav className="nav-container" ref={navRef}>
                 <aside className="aside-container">
                   <div className="aside-inner-container">
-                    <TabBar showMenu={showMenu} setShowMenu={setShowMenu} />
-                    <AnimatePresence>
-                      {showMenu && <LateralMenu onNavigate={() => { if (window.matchMedia('(max-width: 1024px)').matches) setShowMenu(false); }} />}
-                    </AnimatePresence>
+                    <Sidebar onNavigate={() => { if (window.matchMedia('(max-width: 1024px)').matches) dispatch(setSidebarCollapsed(true)); }} />
                   </div>
                 </aside>
               </nav>

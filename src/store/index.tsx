@@ -12,6 +12,7 @@ import editorReducer from './editorSlice';
 import userLibraryReducer from './userLibrarySlice';
 import pdfUploadReducer from './pdfUploadSlice';
 import desktopReducer from './desktopSlice';
+import layoutReducer from './layoutSlice';
 
 export const store = configureStore({
   reducer: {
@@ -28,6 +29,7 @@ export const store = configureStore({
     apiResponses: apiResponsesReducer,
     userLibrary: userLibraryReducer,
     pdfUpload: pdfUploadReducer,
+    layout: layoutReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
@@ -41,6 +43,12 @@ export const store = configureStore({
 store.subscribe(() => {
   try {
     localStorage.setItem('userLibrary', JSON.stringify(store.getState().userLibrary));
+  } catch {}
+});
+
+store.subscribe(() => {
+  try {
+    localStorage.setItem('layout', JSON.stringify(store.getState().layout));
   } catch {}
 });
 

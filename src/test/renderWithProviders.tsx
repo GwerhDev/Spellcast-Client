@@ -16,6 +16,7 @@ import credentialsReducer from '../store/credentialsSlice';
 import groupsReducer from '../store/groupsSlice';
 import documentReducer from '../store/documentSlice';
 import apiResponsesReducer from '../store/apiResponsesSlice';
+import layoutReducer from '../store/layoutSlice';
 
 const rootReducer = combineReducers({
   pdfReader: pdfReaderReducer,
@@ -30,6 +31,7 @@ const rootReducer = combineReducers({
   groups: groupsReducer,
   document: documentReducer,
   apiResponses: apiResponsesReducer,
+  layout: layoutReducer,
 });
 
 type PreloadedState = Partial<ReturnType<typeof rootReducer>>;
