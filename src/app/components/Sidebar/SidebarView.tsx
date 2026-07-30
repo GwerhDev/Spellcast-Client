@@ -350,13 +350,14 @@ export const SidebarView = (props: SidebarViewProps) => {
   const toggleButton = (
     <button
       type="button"
-      className={s.toggleBtn}
+      className={`${s.toggleBtn} ${isMobile && !collapsed ? s.toggleBtnActive : ''}`}
       data-testid="sidebar-toggle-btn"
       onClick={onToggleCollapsed}
     >
       {/* Desktop shows a chevron reflecting collapse state; mobile always shows the
           classic burger icon instead. The burger stays fixed in place on mobile; it does
-          not participate in the row-to-list morph. */}
+          not participate in the row-to-list morph, but gets the same orbit accent as an
+          active nav icon while the menu it controls is open. */}
       <FontAwesomeIcon icon={collapsed ? faChevronRight : faChevronLeft} className={s.toggleIconDesktop} />
       <FontAwesomeIcon icon={faBars} className={s.toggleIconMobile} />
     </button>
