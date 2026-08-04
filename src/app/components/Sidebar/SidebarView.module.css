@@ -141,7 +141,13 @@
   animation-delay: -2s;
 }
 
-/* ── Expanded panel ── */
+/* ── Expanded panel ──
+   border-top-left-radius/border-bottom-left-radius matches .dashboard-container's own
+   10px radius (globals.css): backdrop-filter is composited in its own layer and, in
+   Chromium/WebKit, is not reliably clipped to an ANCESTOR's border-radius — it bleeds
+   past the curve as a rectangle, making dashboard-container's left corner look square
+   whenever this panel (the only sidebar state with backdrop-filter) is visible. Giving
+   the blurred element its own matching radius clips its own blur correctly instead. */
 .panel {
   position: absolute;
   inset: 0;
@@ -152,6 +158,8 @@
   padding: var(--size-3) var(--size-2);
   padding-bottom: 44px;
   overflow-y: auto;
+  border-top-left-radius: 10px;
+  border-bottom-left-radius: 10px;
   backdrop-filter: blur(14px);
   opacity: 0;
   pointer-events: none;
