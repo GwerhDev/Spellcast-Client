@@ -1,7 +1,7 @@
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faChevronLeft, faChevronRight, faChevronDown, faBars } from '@fortawesome/free-solid-svg-icons';
+import { faChevronDown, faBars } from '@fortawesome/free-solid-svg-icons';
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import type { SidebarSectionKey } from '../../../store/layoutSlice';
 import { useMediaQuery } from '../../../hooks/useMediaQuery';
@@ -252,8 +252,10 @@ const MobileSidebar = ({
   onNavigate,
 }: Omit<SidebarViewProps, 'onToggleCollapsed'>) => {
   const morphId = (key: string) => `sidebar-morph-${key}`;
-  const morphableSections = accordionSections.filter(section => !section.subSections?.length);
-  const nonMorphableSections = accordionSections.filter(section => section.subSections?.length);
+  const hasExpandableBody = (section: SidebarAccordionSection): boolean =>
+    section.items.length > 0 || !!section.subSections?.length;
+  const morphableSections = accordionSections.filter(section => !hasExpandableBody(section));
+  const nonMorphableSections = accordionSections.filter(hasExpandableBody);
 
   return (
     <LayoutGroup>
@@ -354,11 +356,20 @@ export const SidebarView = (props: SidebarViewProps) => {
       data-testid="sidebar-toggle-btn"
       onClick={onToggleCollapsed}
     >
-      {/* Desktop shows a chevron reflecting collapse state; mobile always shows the
-          classic burger icon instead. The burger stays fixed in place on mobile; it does
-          not participate in the row-to-list morph, but gets the same orbit accent as an
+      {/* Desktop: three bars, not a FontAwesome glyph — full-width bars when collapsed,
+          shrunk to dots when expanded. The width change is transitioned (see .toggleBar),
+          so toggling morphs the bars into dots (or back) once, no hover effect or loop.
+          Mobile always shows the classic burger icon instead, fixed in place; it does not
+          participate in the row-to-list morph, but gets the same orbit accent as an
           active nav icon while the menu it controls is open. */}
-      <FontAwesomeIcon icon={collapsed ? faChevronRight : faChevronLeft} className={s.toggleIconDesktop} />
+      <span
+        className={`${s.toggleIconDesktop} ${collapsed ? s.toggleIconBars : s.toggleIconDots}`}
+        aria-hidden="true"
+      >
+        <span className={s.toggleBar} />
+        <span className={s.toggleBar} />
+        <span className={s.toggleBar} />
+      </span>
       <FontAwesomeIcon icon={faBars} className={s.toggleIconMobile} />
     </button>
   );
