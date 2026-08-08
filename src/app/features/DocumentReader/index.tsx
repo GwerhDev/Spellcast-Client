@@ -14,6 +14,7 @@ import { setActiveCompanion, moveCompanionModel, rotateCompanionModel, scaleComp
 import { pageBackgrounds, companions } from '../../../config/assets';
 import { Spinner } from '../../components/Spinner';
 import { IconButton } from '../../components/Buttons/IconButton';
+import { CompanionSelectorModal } from '../../components/Modals/CompanionSelectorModal';
 import { SearcherButton } from '../../components/DocumentReader/Searcher/SearcherButton';
 import { PageList } from '../../components/DocumentCreateForm/PageList';
 import { TTSDocumentReader, type JSONContent } from '../../../magictext';
@@ -97,6 +98,7 @@ export const DocumentReader = () => {
   } as React.CSSProperties;
   const [editedText, setEditedText] = useState<JSONContent>(emptyContent);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showCompanionSelector, setShowCompanionSelector] = useState(false);
   const [sheetHeight, setSheetHeight] = useState(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const paperBgRef = useRef<HTMLDivElement>(null);
@@ -268,6 +270,7 @@ export const DocumentReader = () => {
 
   return (
     <div data-testid="document-reader" className={s.pdfReaderContainer}>
+      <CompanionSelectorModal show={showCompanionSelector} onClose={() => setShowCompanionSelector(false)} />
       <div className={`${s.pageInfoContainer} reader-top-bar`}>
         <span className={s.headerControls}>
           <IconButton variant='transparent' icon={faArrowLeft} title={t.common.back} onClick={() => documentId ? navigate(`/document/${documentId}`) : navigate(-1)} />
@@ -284,8 +287,8 @@ export const DocumentReader = () => {
             <IconButton
               icon={faCat}
               variant='transparent'
-              title={activeCompanion ? t.reader.hideCompanion : t.reader.showCompanion}
-              onClick={() => dispatch(setActiveCompanion(activeCompanion ? null : unlockedCompanion.id))}
+              title={t.reader.companions}
+              onClick={() => setShowCompanionSelector(true)}
             />
           )}
           {isLoaded && <IconButton icon={faGear} variant='transparent' title={t.reader.readerSettings} onClick={() => dispatch(setShowReaderSettings(true))} />}

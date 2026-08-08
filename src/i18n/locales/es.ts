@@ -169,8 +169,9 @@ export const es: Translations = {
     documentInfo: 'Información del documento',
     enterFullscreen: 'Pantalla completa',
     exitFullscreen: 'Salir de pantalla completa',
-    showCompanion: 'Mostrar compañero',
-    hideCompanion: 'Ocultar compañero',
+    companions: 'Compañeros',
+    noCompanion: 'Ninguno',
+    noCompanionsUnlocked: 'Aún no desbloqueaste compañeros — revisa el Havenstore.',
     selectPage: 'Seleccionar página',
     displayTab: 'Pantalla',
     appearanceTab: 'Apariencia',
@@ -385,5 +386,11 @@ export const es: Translations = {
     companionsComingSoon: 'Compañeros próximamente',
     companionsComingSoonDesc: 'Los compañeros 3D interactuarán en tus entornos de lectura y escritura en una actualización futura.',
     comingSoon: 'Próximamente',
+  },
+  companionGift: {
+    title: 'Un regalo para ti',
+    body: 'Los gatos ya llegaron — un par de compañeros que rondan mientras lees. Actívalos ahora, o encuéntralos más tarde en el Havenstore.',
+    cta: 'Activar',
+    dismiss: 'Más tarde',
   },
 };

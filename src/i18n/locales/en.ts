@@ -167,8 +167,9 @@ export const en = {
     documentInfo: 'Document info',
     enterFullscreen: 'Enter fullscreen',
     exitFullscreen: 'Exit fullscreen',
-    showCompanion: 'Show companion',
-    hideCompanion: 'Hide companion',
+    companions: 'Companions',
+    noCompanion: 'None',
+    noCompanionsUnlocked: 'No companions unlocked yet — check the Havenstore.',
     selectPage: 'Select a Page',
     displayTab: 'Display',
     appearanceTab: 'Appearance',
@@ -383,5 +384,11 @@ export const en = {
     companionsComingSoon: 'Companions coming soon',
     companionsComingSoonDesc: '3D companions will interact across your reading and writing environments in a future update.',
     comingSoon: 'Soon',
+  },
+  companionGift: {
+    title: 'A gift for you',
+    body: 'Cats have arrived — a pair of companions that wander around while you read. Activate them now, or find them later in the Havenstore.',
+    cta: 'Activate',
+    dismiss: 'Maybe later',
   },
 } as const;

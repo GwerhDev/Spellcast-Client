@@ -25,6 +25,8 @@ import { setMinimized } from 'store/desktopSlice';
 import { setSidebarCollapsed } from 'store/layoutSlice';
 import { useAttentionGuard } from '../../hooks/useAttentionGuard';
 import { AttentionGuardModal } from '../components/Modals/AttentionGuardModal';
+import { useCompanionGiftAnnouncement } from '../../hooks/useCompanionGiftAnnouncement';
+import { CompanionGiftModal } from '../components/Modals/CompanionGiftModal';
 
 export default function DefaultLayout() {
   const { selectedVoice } = useSelector((state: RootState) => state.voice);
@@ -32,6 +34,7 @@ export default function DefaultLayout() {
   const minimized = useSelector((state: RootState) => state.desktop.minimized);
   const dispatch = useAppDispatch();
   const { showModal: showAttentionGuard, handleContinue: handleAttentionGuardContinue } = useAttentionGuard();
+  const { showModal: showCompanionGift, handleActivate: handleCompanionGiftActivate, handleDismiss: handleCompanionGiftDismiss } = useCompanionGiftAnnouncement();
   const [isPlayerSettingsOpen, setIsPlayerSettingsOpen] = useState(false);
   const [isVoiceSelectorOpen, setIsVoiceSelectorOpen] = useState(false);
   const navRef = useRef<HTMLElement>(null);
@@ -105,6 +108,11 @@ export default function DefaultLayout() {
             )}
             <LogoutModal />
             <AttentionGuardModal show={showAttentionGuard} onContinue={handleAttentionGuardContinue} />
+            <CompanionGiftModal
+              show={showCompanionGift}
+              onActivate={handleCompanionGiftActivate}
+              onDismiss={handleCompanionGiftDismiss}
+            />
           </div>
         </div>
       </motion.div>
