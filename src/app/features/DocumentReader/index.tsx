@@ -6,15 +6,14 @@ import { useZoom } from '../../../hooks/useZoom';
 import { ZoomOverlay } from '../../components/Zoom/ZoomOverlay';
 import { useDispatch, useSelector } from 'react-redux';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowLeft, faCat, faEdit, faFilePdf, faGear, faExpand, faCompress, faInfoCircle } from '@fortawesome/free-solid-svg-icons';
+import { faArrowLeft, faEdit, faFilePdf, faGear, faExpand, faCompress, faInfoCircle } from '@fortawesome/free-solid-svg-icons';
 import { RootState } from '../../../store';
 import { goToPage, setCurrentSentenceIndex, setShowReaderSettings, recordReaderActivity } from '../../../store/pdfReaderSlice';
 import { setPendingSeek } from '../../../store/audioPlayerSlice';
-import { setActiveCompanion, moveCompanionModel, rotateCompanionModel, scaleCompanionModel, type CompanionPlacement } from '../../../store/userLibrarySlice';
+import { moveCompanionModel, rotateCompanionModel, scaleCompanionModel, type CompanionPlacement } from '../../../store/userLibrarySlice';
 import { pageBackgrounds, companions } from '../../../config/assets';
 import { Spinner } from '../../components/Spinner';
 import { IconButton } from '../../components/Buttons/IconButton';
-import { CompanionSelectorModal } from '../../components/Modals/CompanionSelectorModal';
 import { SearcherButton } from '../../components/DocumentReader/Searcher/SearcherButton';
 import { PageList } from '../../components/DocumentCreateForm/PageList';
 import { TTSDocumentReader, type JSONContent } from '../../../magictext';
@@ -57,7 +56,6 @@ export const DocumentReader = () => {
   const activeCompanion = activeCompanionId && unlockedIds.includes(activeCompanionId)
     ? companions.find(c => c.id === activeCompanionId) ?? null
     : null;
-  const unlockedCompanion = companions.find(c => unlockedIds.includes(c.id)) ?? null;
 
   const defaultCompanionPlacement = (index: number): CompanionPlacement => ({
     x: 80 + index * 140,
@@ -98,7 +96,6 @@ export const DocumentReader = () => {
   } as React.CSSProperties;
   const [editedText, setEditedText] = useState<JSONContent>(emptyContent);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [showCompanionSelector, setShowCompanionSelector] = useState(false);
   const [sheetHeight, setSheetHeight] = useState(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const paperBgRef = useRef<HTMLDivElement>(null);
@@ -270,7 +267,6 @@ export const DocumentReader = () => {
 
   return (
     <div data-testid="document-reader" className={s.pdfReaderContainer}>
-      <CompanionSelectorModal show={showCompanionSelector} onClose={() => setShowCompanionSelector(false)} />
       <div className={`${s.pageInfoContainer} reader-top-bar`}>
         <span className={s.headerControls}>
           <IconButton variant='transparent' icon={faArrowLeft} title={t.common.back} onClick={() => documentId ? navigate(`/document/${documentId}`) : navigate(-1)} />
@@ -283,14 +279,6 @@ export const DocumentReader = () => {
         <div className={s.controlsContainer}>
           {isLoaded && <IconButton icon={faInfoCircle} variant='transparent' title={t.reader.documentInfo} />}
           {isLoaded && <IconButton icon={faEdit} variant='transparent' title={t.document.editDocument} onClick={handleEdit} />}
-          {isLoaded && unlockedCompanion && (
-            <IconButton
-              icon={faCat}
-              variant='transparent'
-              title={t.reader.companions}
-              onClick={() => setShowCompanionSelector(true)}
-            />
-          )}
           {isLoaded && <IconButton icon={faGear} variant='transparent' title={t.reader.readerSettings} onClick={() => dispatch(setShowReaderSettings(true))} />}
           {isLoaded && <IconButton icon={isFullscreen ? faCompress : faExpand} variant='transparent' title={isFullscreen ? t.reader.exitFullscreen : t.reader.enterFullscreen} onClick={() => setIsFullscreen(prev => !prev)} />}
         </div>

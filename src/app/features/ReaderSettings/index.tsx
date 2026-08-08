@@ -1,11 +1,12 @@
 import s from '../../components/DocumentReader/ReaderSettings.module.css';
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { faDesktop, faPalette, faShieldHalved } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faDesktop, faPalette, faShieldHalved, faCat, faBan } from '@fortawesome/free-solid-svg-icons';
 import { RootState } from '../../../store';
 import { setShowReaderSettings, setFitToWidth, setLightningMode, setAttentionGuardEnabled, setAttentionGuardInterval } from '../../../store/pdfReaderSlice';
-import { setActivePageBg } from '../../../store/userLibrarySlice';
-import { pageBackgrounds } from '../../../config/assets';
+import { setActivePageBg, setActiveCompanion } from '../../../store/userLibrarySlice';
+import { pageBackgrounds, companions } from '../../../config/assets';
 import { TabModal } from '../../components/Modals/TabModal';
 import { NumberStepper } from '../../components/Inputs/NumberStepper';
 import { ToggleRow } from '../../components/Inputs/ToggleRow';
@@ -53,9 +54,10 @@ const AppearanceTab: React.FC = () => {
   const [invertColors, setInvertColors] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
   const { t } = useLanguage();
-  const { activePageBgId, unlockedIds } = useSelector((state: RootState) => state.userLibrary);
+  const { activePageBgId, activeCompanionId, unlockedIds } = useSelector((state: RootState) => state.userLibrary);
 
   const unlockedPageBgs = pageBackgrounds.filter(bg => unlockedIds.includes(bg.id));
+  const unlockedCompanions = companions.filter(c => unlockedIds.includes(c.id));
 
   return (
     <div className={s.container}>
@@ -79,6 +81,30 @@ const AppearanceTab: React.FC = () => {
           })}
         </div>
       </div>
+      {unlockedCompanions.length > 0 && (
+        <div className={s.section}>
+          <p className={s.sectionTitle}>{t.reader.companions}</p>
+          <ul className={s.optionList}>
+            <li
+              className={!activeCompanionId ? s.optionActive : s.option}
+              onClick={() => dispatch(setActiveCompanion(null))}
+            >
+              <FontAwesomeIcon icon={faBan} />
+              <span>{t.reader.noCompanion}</span>
+            </li>
+            {unlockedCompanions.map(companion => (
+              <li
+                key={companion.id}
+                className={activeCompanionId === companion.id ? s.optionActive : s.option}
+                onClick={() => dispatch(setActiveCompanion(companion.id))}
+              >
+                <FontAwesomeIcon icon={faCat} />
+                <span>{companion.name}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       <div className={s.section}>
         <p className={s.sectionTitle}>{t.reader.filters}</p>
         <ToggleRow soon label={t.reader.sepiaMode} description={t.reader.sepiaModeDesc} value={sepiaMode} onChange={setSepiaMode} />

@@ -171,7 +171,6 @@ export const es: Translations = {
     exitFullscreen: 'Salir de pantalla completa',
     companions: 'Compañeros',
     noCompanion: 'Ninguno',
-    noCompanionsUnlocked: 'Aún no desbloqueaste compañeros — revisa el Havenstore.',
     selectPage: 'Seleccionar página',
     displayTab: 'Pantalla',
     appearanceTab: 'Apariencia',

@@ -169,7 +169,6 @@ export const en = {
     exitFullscreen: 'Exit fullscreen',
     companions: 'Companions',
     noCompanion: 'None',
-    noCompanionsUnlocked: 'No companions unlocked yet — check the Havenstore.',
     selectPage: 'Select a Page',
     displayTab: 'Display',
     appearanceTab: 'Appearance',
