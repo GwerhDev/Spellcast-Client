@@ -25,26 +25,28 @@ export const TabModal: React.FC<TabModalProps> = ({ show, onClose, title, tabs }
 
   return (
     <div className={s.overlay} onClick={onClose}>
-      <div className={s.modal} onClick={(e) => e.stopPropagation()}>
-        <div className={s.header}>
-          <h3 className={s.title}>{title}</h3>
-          <IconButton icon={faXmark} variant="transparent" onClick={onClose} title="Close" />
-        </div>
-        <div className={s.body}>
-          <div className={s.sidebar}>
-            {tabs.map((tab, i) => (
-              <button
-                key={i}
-                className={`${s.tabBtn} ${activeTab === i ? s.activeTabBtn : ''}`}
-                onClick={() => setActiveTab(i)}
-                title={tab.label}
-              >
-                <FontAwesomeIcon icon={tab.icon} />
-              </button>
-            ))}
+      <div className={s.outterBorder}>
+        <div className={s.modal} onClick={(e) => e.stopPropagation()}>
+          <div className={s.header}>
+            <h3 className={s.title}>{title}</h3>
+            <IconButton icon={faXmark} variant="transparent" onClick={onClose} title="Close" />
           </div>
-          <div className={s.content}>
-            {tabs[activeTab]?.content}
+          <div className={s.body}>
+            <div className={s.sidebar}>
+              {tabs.map((tab, i) => (
+                <button
+                  key={i}
+                  className={`${s.tabBtn} ${activeTab === i ? s.activeTabBtn : ''}`}
+                  onClick={() => setActiveTab(i)}
+                  title={tab.label}
+                >
+                  <FontAwesomeIcon icon={tab.icon} />
+                </button>
+              ))}
+            </div>
+            <div className={s.content}>
+              {tabs[activeTab]?.content}
+            </div>
           </div>
         </div>
       </div>

@@ -111,7 +111,7 @@ html.light {
   --color-button-primary-glass: color-mix(in srgb, var(--color-button-primary) 72%, transparent);
   --color-button-primary-hover: #8469bb;
   --color-primary-lighter: #dce8f3;
-  --color-secondary-lighter: #e0e0f1;
+  --color-secondary-lighter: #e6e6ef;
 
   --color-highlight: #b7d7f0;
 
@@ -119,7 +119,7 @@ html.light {
   --icon-filter: brightness(0.38);
   --color-sentence-hover: #cacaca;
   --color-options-background: #ddd6e8;
-  --viewer-background: #efeaf7;
+  --viewer-background: #f2f2f6;
   --component-background: var(--color-secondary-lighter);
   --component-background-transparency: #ddddea0b;
 

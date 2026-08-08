@@ -18,12 +18,14 @@ export const CustomModal: React.FC<ModalProps> = ({ show, onClose, title, childr
 
   return (
     <div className={s.container} onClick={onClose}>
-      <div className={`${s.modalContent} ${compact ? s.compact : ''}`} onClick={(e) => e.stopPropagation()}>
-        <span className={s.closeButtonContainer}>
-          <IconButton className={s.closeButton} icon={faXmark} onClick={onClose} />
-        </span>
-        <h3>{title}</h3>
-        {children}
+      <div className={`${s.outterBorder} ${compact ? s.compact : ''}`}>
+        <div className={s.modalContent} onClick={(e) => e.stopPropagation()}>
+          <span className={s.closeButtonContainer}>
+            <IconButton className={s.closeButton} icon={faXmark} onClick={onClose} />
+          </span>
+          <h3>{title}</h3>
+          {children}
+        </div>
       </div>
     </div>
   );

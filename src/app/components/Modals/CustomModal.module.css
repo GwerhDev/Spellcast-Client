@@ -14,6 +14,22 @@
     backdrop-filter: blur(10px);
 }
 
+.outterBorder {
+    display: flex;
+    padding: .5rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    background: var(--component-background-transparency);
+    backdrop-filter: blur(10px);
+    border: solid .5px var(--line);
+    box-shadow: 0 1px 12px rgba(0, 0, 0, 0.212);
+    gap: 1.5rem;
+    width: 90%;
+    max-width: 800px;
+    flex-grow: 1;
+    max-height: 90%;
+}
+
 .closeButtonContainer {
     top: 0;
     right: 0;
@@ -35,17 +51,13 @@
 }
 
 .modalContent {
+    width: 100%;
     gap: 1.5rem;
-    width: 90%;
     padding: 1rem;
-    max-width: 800px;
     flex-grow: 1;
-    max-height: 90%;
     background: var(--component-background);
-    border-radius: 12px;
-    outline-offset: .5rem;
+    border-radius: 8px;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-    outline: solid .5px var(--color-dark-300);
     display: flex;
     position: relative;
     overflow-y: auto;
