@@ -1,0 +1,188 @@
+.productCard {
+  display: flex;
+  flex-direction: column;
+  border-radius: 10px;
+  border: 1.5px solid var(--color-dark-300);
+  overflow: hidden;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.productCard:hover {
+  border-color: var(--color-dark-200);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+}
+
+.productCardActive {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 1px var(--color-primary);
+}
+
+.productCardLocked {
+  opacity: 0.82;
+}
+
+.artwork {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.artworkIcon {
+  font-size: 2rem;
+  color: rgba(255, 255, 255, 0.646);
+}
+
+.lockOverlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lockIcon {
+  font-size: 1.4rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.activePill {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--app-white);
+  background: var(--color-primary);
+  padding: 3px 7px;
+  border-radius: 999px;
+}
+
+.productBody {
+  padding: 0.65rem 0.75rem 0.75rem;
+  background: var(--component-background);
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  flex: 1;
+}
+
+.productName {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.productDesc {
+  font-size: 0.7rem;
+  color: var(--color-light-400);
+  margin: 0;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.productFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+  margin-top: auto;
+  flex-wrap: wrap;
+}
+
+.freeBadge {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #4caf7d;
+  background: color-mix(in srgb, #4caf7d 14%, transparent);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.soonBadge {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #f5b342;
+  background: color-mix(in srgb, #f5b342 14%, transparent);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.achievementBadge {
+  font-size: 0.72rem;
+  color: #f5b342;
+}
+
+.achievementLabel {
+  font-size: 0.6rem;
+  color: var(--color-light-400);
+  line-height: 1.3;
+}
+
+.btnBuy {
+  padding: 0.28rem 0.65rem;
+  border-radius: 6px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  background: var(--color-primary);
+  color: var(--app-white);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.15s;
+  margin-left: auto;
+}
+
+.btnBuy:hover {
+  opacity: 0.85;
+}
+
+.btnActive {
+  padding: 0.28rem 0.65rem;
+  border-radius: 6px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  background: color-mix(in srgb, var(--color-primary) 16%, transparent);
+  color: var(--color-primary);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+  margin-left: auto;
+}
+
+.btnActive:hover {
+  background: color-mix(in srgb, var(--color-primary) 26%, transparent);
+}
+
+.btnSet {
+  padding: 0.28rem 0.65rem;
+  border-radius: 6px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  background: transparent;
+  color: var(--color-light-300);
+  border: 1px solid var(--color-dark-200);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+  margin-left: auto;
+}
+
+.btnSet:hover {
+  background: var(--color-dark-300);
+  color: var(--text-color);
+}

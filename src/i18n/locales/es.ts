@@ -170,7 +170,6 @@ export const es: Translations = {
     enterFullscreen: 'Pantalla completa',
     exitFullscreen: 'Salir de pantalla completa',
     companions: 'Compañeros',
-    noCompanion: 'Ninguno',
     selectPage: 'Seleccionar página',
     displayTab: 'Pantalla',
     appearanceTab: 'Apariencia',

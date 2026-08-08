@@ -1,13 +1,13 @@
 import s from '../../components/DocumentReader/ReaderSettings.module.css';
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faDesktop, faPalette, faShieldHalved, faCat, faBan } from '@fortawesome/free-solid-svg-icons';
+import { faDesktop, faPalette, faShieldHalved, faCat } from '@fortawesome/free-solid-svg-icons';
 import { RootState } from '../../../store';
 import { setShowReaderSettings, setFitToWidth, setLightningMode, setAttentionGuardEnabled, setAttentionGuardInterval } from '../../../store/pdfReaderSlice';
-import { setActivePageBg, setActiveCompanion } from '../../../store/userLibrarySlice';
+import { setActivePageBg, setActiveCompanion, unlockAsset } from '../../../store/userLibrarySlice';
 import { pageBackgrounds, companions } from '../../../config/assets';
 import { TabModal } from '../../components/Modals/TabModal';
+import { CompanionCard } from '../../components/Cards/CompanionCard';
 import { NumberStepper } from '../../components/Inputs/NumberStepper';
 import { ToggleRow } from '../../components/Inputs/ToggleRow';
 import { useLanguage } from '../../../i18n';
@@ -54,10 +54,9 @@ const AppearanceTab: React.FC = () => {
   const [invertColors, setInvertColors] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
   const { t } = useLanguage();
-  const { activePageBgId, activeCompanionId, unlockedIds } = useSelector((state: RootState) => state.userLibrary);
+  const { activePageBgId, unlockedIds } = useSelector((state: RootState) => state.userLibrary);
 
   const unlockedPageBgs = pageBackgrounds.filter(bg => unlockedIds.includes(bg.id));
-  const unlockedCompanions = companions.filter(c => unlockedIds.includes(c.id));
 
   return (
     <div className={s.container}>
@@ -81,30 +80,6 @@ const AppearanceTab: React.FC = () => {
           })}
         </div>
       </div>
-      {unlockedCompanions.length > 0 && (
-        <div className={s.section}>
-          <p className={s.sectionTitle}>{t.reader.companions}</p>
-          <ul className={s.optionList}>
-            <li
-              className={!activeCompanionId ? s.optionActive : s.option}
-              onClick={() => dispatch(setActiveCompanion(null))}
-            >
-              <FontAwesomeIcon icon={faBan} />
-              <span>{t.reader.noCompanion}</span>
-            </li>
-            {unlockedCompanions.map(companion => (
-              <li
-                key={companion.id}
-                className={activeCompanionId === companion.id ? s.optionActive : s.option}
-                onClick={() => dispatch(setActiveCompanion(companion.id))}
-              >
-                <FontAwesomeIcon icon={faCat} />
-                <span>{companion.name}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
       <div className={s.section}>
         <p className={s.sectionTitle}>{t.reader.filters}</p>
         <ToggleRow soon label={t.reader.sepiaMode} description={t.reader.sepiaModeDesc} value={sepiaMode} onChange={setSepiaMode} />
@@ -114,6 +89,49 @@ const AppearanceTab: React.FC = () => {
       <div className={s.section}>
         <p className={s.sectionTitle}>{t.reader.motion}</p>
         <ToggleRow soon label={t.reader.reduceMotion} description={t.reader.reduceMotionDesc} value={reducedMotion} onChange={setReducedMotion} />
+      </div>
+    </div>
+  );
+};
+
+const CompanionsTab: React.FC = () => {
+  const dispatch = useDispatch();
+  const { t } = useLanguage();
+  const { unlockedIds, activeCompanionId } = useSelector((state: RootState) => state.userLibrary);
+
+  const isUnlocked = (id: string) => unlockedIds.includes(id);
+
+  // Same gating as the Havenstore "Companions" tab: comingSoon companions never count
+  // as unlocked/active regardless of unlockedIds, so the release-date gate in
+  // companions.ts is respected identically on both surfaces.
+  const handleCompanionAction = (id: string) => {
+    if (!isUnlocked(id)) {
+      dispatch(unlockAsset(id));
+      dispatch(setActiveCompanion(id));
+      return;
+    }
+    dispatch(setActiveCompanion(activeCompanionId === id ? null : id));
+  };
+
+  return (
+    <div className={s.container}>
+      <div className={s.section}>
+        <div className={s.companionGrid}>
+          {companions.map(companion => {
+            const comingSoon = !!companion.comingSoon;
+            const unlocked = !comingSoon && isUnlocked(companion.id);
+            const isActive = !comingSoon && activeCompanionId === companion.id;
+            return (
+              <CompanionCard
+                key={companion.id}
+                companion={companion}
+                unlocked={unlocked}
+                isActive={isActive}
+                onAction={handleCompanionAction}
+              />
+            );
+          })}
+        </div>
       </div>
     </div>
   );
@@ -181,6 +199,7 @@ export const ReaderSettings: React.FC = () => {
       tabs={[
         { icon: faDesktop,      label: t.reader.displayTab,         content: <DisplayTab /> },
         { icon: faPalette,      label: t.reader.appearanceTab,      content: <AppearanceTab /> },
+        { icon: faCat,          label: t.reader.companions,         content: <CompanionsTab /> },
         { icon: faShieldHalved, label: t.reader.attentionGuard,     content: <FocusTab /> },
       ]}
     />

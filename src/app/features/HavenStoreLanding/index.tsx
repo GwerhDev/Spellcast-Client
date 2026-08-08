@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faMusic, faLock, faTrophy, faCheck, faMagnifyingGlass, faCat, faStore } from '@fortawesome/free-solid-svg-icons';
+import { faMusic, faLock, faTrophy, faCheck, faMagnifyingGlass, faStore } from '@fortawesome/free-solid-svg-icons';
 import { SectionHeader } from '../../components/SectionHeader';
+import { CompanionCard } from '../../components/Cards/CompanionCard';
 import { useAppSelector, useAppDispatch } from '../../../store/hooks';
 import { unlockAsset, setActiveSoundBg, setActivePageBg, setActiveCompanion } from '../../../store/userLibrarySlice';
 import { soundBackgrounds, pageBackgrounds, companions } from '../../../config/assets';
@@ -204,70 +205,14 @@ export const HavenStoreLanding = () => {
           const comingSoon = !!companion.comingSoon;
           const unlocked = !comingSoon && isUnlocked(companion.id);
           const isActive = !comingSoon && activeCompanionId === companion.id;
-          const locked = !unlocked;
           return (
-            <div
+            <CompanionCard
               key={companion.id}
-              data-testid={`companion-card-${companion.id}`}
-              className={`${s.productCard} ${isActive ? s.productCardActive : ''} ${locked ? s.productCardLocked : ''}`}
-            >
-              <div className={s.artwork} style={{ background: companion.thumbnail }}>
-                <FontAwesomeIcon icon={faCat} className={s.artworkIcon} />
-                {locked && (
-                  <div className={s.lockOverlay}>
-                    <FontAwesomeIcon icon={companion.unlockMethod === 'achievement' ? faTrophy : faLock} className={s.lockIcon} />
-                  </div>
-                )}
-                {isActive && (
-                  <span className={s.activePill}>
-                    <FontAwesomeIcon icon={faCheck} /> {t.havenStore.active}
-                  </span>
-                )}
-              </div>
-              <div className={s.productBody}>
-                <span className={s.productName}>{companion.name}</span>
-                <p className={s.productDesc}>{companion.description}</p>
-                <div className={s.productFooter}>
-                  {comingSoon ? (
-                    <span className={s.soonBadge} data-testid={`companion-soon-${companion.id}`}>
-                      {t.havenStore.comingSoon}
-                    </span>
-                  ) : (
-                    <>
-                      {companion.unlockMethod === 'free' && (
-                        <span className={s.freeBadge}>{t.havenStore.free}</span>
-                      )}
-                      {companion.unlockMethod === 'achievement' && (
-                        <span className={s.achievementBadge}>
-                          <FontAwesomeIcon icon={faTrophy} />
-                        </span>
-                      )}
-                      {locked && companion.unlockMethod === 'free' && (
-                        <button
-                          data-testid={`companion-unlock-${companion.id}`}
-                          className={s.btnBuy}
-                          onClick={() => handleCompanionAction(companion.id)}
-                        >
-                          {t.havenStore.unlock}
-                        </button>
-                      )}
-                      {locked && companion.unlockMethod === 'achievement' && (
-                        <span className={s.achievementLabel}>{t.havenStore.achievementRequired}</span>
-                      )}
-                      {unlocked && (
-                        <button
-                          data-testid={`companion-toggle-${companion.id}`}
-                          className={isActive ? s.btnActive : s.btnSet}
-                          onClick={() => handleCompanionAction(companion.id)}
-                        >
-                          {isActive ? t.havenStore.deactivate : t.havenStore.setActive}
-                        </button>
-                      )}
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
+              companion={companion}
+              unlocked={unlocked}
+              isActive={isActive}
+              onAction={handleCompanionAction}
+            />
           );
         })}
       </div>

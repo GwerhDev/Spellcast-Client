@@ -168,7 +168,6 @@ export const en = {
     enterFullscreen: 'Enter fullscreen',
     exitFullscreen: 'Exit fullscreen',
     companions: 'Companions',
-    noCompanion: 'None',
     selectPage: 'Select a Page',
     displayTab: 'Display',
     appearanceTab: 'Appearance',
