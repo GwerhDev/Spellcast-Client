@@ -387,7 +387,7 @@ export const es: Translations = {
   },
   companionGift: {
     title: 'Un regalo para ti',
-    body: 'Los gatos ya llegaron — un par de compañeros que rondan mientras lees. Actívalos ahora, o encuéntralos más tarde en el Havenstore.',
+    body: 'Kuro & Sunny ya llegaron — un par de gatos que rondan mientras lees. Actívalos ahora, o encuéntralos más tarde en el Havenstore.',
     cta: 'Activar',
     dismiss: 'Más tarde',
   },

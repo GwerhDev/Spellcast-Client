@@ -385,7 +385,7 @@ export const en = {
   },
   companionGift: {
     title: 'A gift for you',
-    body: 'Cats have arrived — a pair of companions that wander around while you read. Activate them now, or find them later in the Havenstore.',
+    body: 'Kuro & Sunny have arrived — a pair of cats that wander around while you read. Activate them now, or find them later in the Havenstore.',
     cta: 'Activate',
     dismiss: 'Maybe later',
   },
