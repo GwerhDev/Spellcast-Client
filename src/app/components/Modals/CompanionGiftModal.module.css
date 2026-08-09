@@ -15,19 +15,88 @@
   width: 100%;
 }
 
+/* Wrapper for the icon + its decorative gifts + confetti burst, all centered on the
+   same point so the confetti/gift icons read as "coming from" the main icon. */
+.iconCluster {
+  position: relative;
+  width: 7rem;
+  height: 7rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .iconWrap {
-  width: 3rem;
-  height: 3rem;
+  position: relative;
+  z-index: 2;
+  width: 7rem;
+  height: 7rem;
   border-radius: 50%;
-  background: color-mix(in srgb, var(--color-primary) 15%, transparent);
+  background: radial-gradient(circle at 35% 30%,
+    color-mix(in srgb, var(--color-primary) 28%, transparent),
+    color-mix(in srgb, var(--color-primary) 12%, transparent));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-primary) 20%, transparent);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .icon {
-  font-size: 1.25rem;
+  font-size: 2.9rem;
   color: var(--color-primary);
+}
+
+/* Small gift icons flanking the main circle, tilted outward for a "scattered" look. */
+.decorGift {
+  position: absolute;
+  z-index: 1;
+  font-size: 1.3rem;
+  color: color-mix(in srgb, var(--color-primary) 55%, transparent);
+  opacity: 0.8;
+}
+
+.decorGiftLeft {
+  top: 0;
+  left: -0.9rem;
+  transform: rotate(-22deg);
+}
+
+.decorGiftRight {
+  bottom: 0.05rem;
+  right: -1rem;
+  transform: rotate(18deg);
+  font-size: 0.9rem;
+}
+
+/* Confetti burst — pieces animate outward from dead center via framer-motion (see
+   CompanionGiftModal.tsx); this layer just anchors them to that center point without
+   clipping or affecting layout of anything else in the cluster. */
+.confettiLayer {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.confettiSquare {
+  position: absolute;
+  top: -3px;
+  left: -3px;
+  width: 6px;
+  height: 6px;
+  border-radius: 1px;
+}
+
+.confettiDot {
+  position: absolute;
+  top: -3px;
+  left: -3px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
 }
 
 .body {
