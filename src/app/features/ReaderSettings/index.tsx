@@ -96,7 +96,6 @@ const AppearanceTab: React.FC = () => {
 
 const CompanionsTab: React.FC = () => {
   const dispatch = useDispatch();
-  const { t } = useLanguage();
   const { unlockedIds, activeCompanionId } = useSelector((state: RootState) => state.userLibrary);
 
   const isUnlocked = (id: string) => unlockedIds.includes(id);
