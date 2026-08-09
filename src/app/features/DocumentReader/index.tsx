@@ -14,6 +14,8 @@ import { moveCompanionModel, rotateCompanionModel, scaleCompanionModel, type Com
 import { pageBackgrounds, companions } from '../../../config/assets';
 import { Spinner } from '../../components/Spinner';
 import { IconButton } from '../../components/Buttons/IconButton';
+import { CompanionGiftModal } from '../../components/Modals/CompanionGiftModal';
+import { useCompanionGiftAnnouncement } from '../../../hooks/useCompanionGiftAnnouncement';
 import { SearcherButton } from '../../components/DocumentReader/Searcher/SearcherButton';
 import { PageList } from '../../components/DocumentCreateForm/PageList';
 import { TTSDocumentReader, type JSONContent } from '../../../magictext';
@@ -97,6 +99,7 @@ export const DocumentReader = () => {
   const [editedText, setEditedText] = useState<JSONContent>(emptyContent);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [sheetHeight, setSheetHeight] = useState(0);
+  const { showModal: showCompanionGift, handleActivate: handleCompanionGiftActivate, handleDismiss: handleCompanionGiftDismiss } = useCompanionGiftAnnouncement();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const paperBgRef = useRef<HTMLDivElement>(null);
   const paperSheetRef = useRef<HTMLDivElement>(null);
@@ -267,6 +270,13 @@ export const DocumentReader = () => {
 
   return (
     <div data-testid="document-reader" className={s.pdfReaderContainer}>
+      {isLoaded && (
+        <CompanionGiftModal
+          show={showCompanionGift}
+          onActivate={handleCompanionGiftActivate}
+          onDismiss={handleCompanionGiftDismiss}
+        />
+      )}
       <div className={`${s.pageInfoContainer} reader-top-bar`}>
         <span className={s.headerControls}>
           <IconButton variant='transparent' icon={faArrowLeft} title={t.common.back} onClick={() => documentId ? navigate(`/document/${documentId}`) : navigate(-1)} />
