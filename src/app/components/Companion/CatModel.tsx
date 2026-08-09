@@ -90,13 +90,40 @@ const TARGET_MODEL_SIZE = 0.6;
 // its baked-in animation clip in place (bone motion only — CompanionOverlay owns the
 // group's position/rotation from drag and scroll input, so this never translates itself).
 // useGLTF caches by URL, so both cats sharing a placeholder model only fetch it once.
-const CatGltfBody: React.FC<{ url: string; highlighted?: boolean }> = ({ url, highlighted }) => {
+const CatGltfBody: React.FC<{ url: string; color: string; highlighted?: boolean }> = ({ url, color, highlighted }) => {
   const groupRef = useRef<THREE.Group>(null);
   const { scene, animations } = useGLTF(url);
   // Plain Object3D.clone(true) does not rebind SkinnedMesh bones to the cloned skeleton —
   // it leaves them pointing at the original bones, which corrupts vertex positions into a
   // huge, malformed shape. SkeletonUtils.clone rebinds bones correctly for skinned models.
-  const clonedScene = useMemo(() => SkeletonUtils.clone(scene), [scene]);
+  //
+  // useGLTF caches the source scene by URL, so both cats (sharing the same placeholder
+  // model) get the SAME cached materials by reference. Cloning the object hierarchy alone
+  // doesn't clone materials — mutating one instance's material color would tint both cats
+  // at once. Each mesh's material is explicitly cloned here so tinting one is isolated to
+  // this instance, letting a single shared model render as different companion colors
+  // (e.g. "orange" and "black") without needing a distinct asset per color.
+  const clonedScene = useMemo(() => {
+    const cloned = SkeletonUtils.clone(scene) as THREE.Object3D;
+    // material.color is MULTIPLIED against any existing diffuse map — on a model whose
+    // baked texture is already near-black, that multiply crushes toward black regardless
+    // of the tint hue (a near-zero value times anything is still near-zero), which is why
+    // an early version of this looked like a dark, muddy silhouette instead of the actual
+    // tint color. Dropping the map makes `color` the sole, fully-controllable source.
+    const tint = (material: THREE.Material) => {
+      const material_ = material.clone();
+      if ('map' in material_) (material_ as THREE.MeshStandardMaterial).map = null;
+      if ('color' in material_) (material_ as THREE.MeshStandardMaterial).color.set(color);
+      material_.needsUpdate = true;
+      return material_;
+    };
+    cloned.traverse(child => {
+      if (child instanceof THREE.Mesh) {
+        child.material = Array.isArray(child.material) ? child.material.map(tint) : tint(child.material);
+      }
+    });
+    return cloned;
+  }, [scene, color]);
   const { actions, names } = useAnimations(animations, groupRef);
 
   const { normalizedScale, outlineSize, outlineCenter } = useMemo(() => {
@@ -137,7 +164,7 @@ export const CatModel: React.FC<Props> = ({ color, scale = 1, modelUrl, highligh
   <group scale={scale}>
     {modelUrl ? (
       <Suspense fallback={<CatModelLoader />}>
-        <CatGltfBody url={modelUrl} highlighted={highlighted} />
+        <CatGltfBody url={modelUrl} color={color} highlighted={highlighted} />
       </Suspense>
     ) : (
       <CatCapsule color={color} highlighted={highlighted} />
