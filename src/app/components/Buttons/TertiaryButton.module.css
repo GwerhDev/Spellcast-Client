@@ -10,8 +10,7 @@
   transition-duration: .4s;
   border-radius: var(--size-4);
   color: var(--text-color);
-  background: transparent;
-  border: solid 1px var(--text-color);
+  background: var(--component-background);
 }
 
 .container:hover {

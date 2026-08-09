@@ -29,7 +29,7 @@ export const CompanionGiftModal: React.FC<CompanionGiftModalProps> = ({ show, on
             SecondaryButton, both with icons, equal-width instead of right-aligned. */}
         <div className={s.actions}>
           <PrimaryButton icon={faCat} onClick={onActivate}>{t.companionGift.cta}</PrimaryButton>
-          <SecondaryButton icon={faClock} onClick={onDismiss}>{t.companionGift.dismiss}</SecondaryButton>
+          <SecondaryButton icon={faClock} onClick={onDismiss} className={s.dismissButton}>{t.companionGift.dismiss}</SecondaryButton>
         </div>
       </div>
     </CustomModal>
