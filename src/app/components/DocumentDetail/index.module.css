@@ -98,9 +98,9 @@
 }
 
 .actions > * {
-  width: 100% !important;
-  max-width: none !important;
-  padding-inline: 1rem !important;
+  width: 100%;
+  max-width: none;
+  padding-inline: 1rem;
 }
 
 @media (max-width: 700px) {
@@ -110,11 +110,11 @@
 }
 
 .solid {
-  background: var(--color-options-background) !important;
-  border-color: transparent !important;
+  background: var(--color-options-background);
+  border-color: transparent;
 }
 
 .solid:hover {
-  background: var(--color-light-200) !important;
-  color: var(--color-dark-100) !important;
+  background: var(--color-light-200);
+  color: var(--color-dark-100);
 }
