@@ -38,8 +38,21 @@
   line-height: 1.55;
 }
 
-.buttons {
+/* Same pattern as DocumentDetailModal.module.css's .actions — equal-width buttons
+   filling the row, instead of right-aligned natural-width buttons. */
+.actions {
   display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.actions > * {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 480px) {
+  .actions {
+    flex-direction: column;
+  }
 }

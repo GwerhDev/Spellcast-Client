@@ -1,6 +1,6 @@
 import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCat } from '@fortawesome/free-solid-svg-icons';
+import { faCat, faClock } from '@fortawesome/free-solid-svg-icons';
 import { CustomModal } from './CustomModal';
 import { PrimaryButton } from '../Buttons/PrimaryButton';
 import { SecondaryButton } from '../Buttons/SecondaryButton';
@@ -25,9 +25,11 @@ export const CompanionGiftModal: React.FC<CompanionGiftModalProps> = ({ show, on
           </div>
           <p className={s.body}>{t.companionGift.body}</p>
         </div>
-        <div className={s.buttons}>
-          <SecondaryButton onClick={onDismiss}>{t.companionGift.dismiss}</SecondaryButton>
-          <PrimaryButton text={t.companionGift.cta} onClick={onActivate} />
+        {/* Same action-row pattern as DocumentDetailModal's .actions: PrimaryButton/
+            SecondaryButton, both with icons, equal-width instead of right-aligned. */}
+        <div className={s.actions}>
+          <PrimaryButton icon={faCat} onClick={onActivate}>{t.companionGift.cta}</PrimaryButton>
+          <SecondaryButton icon={faClock} onClick={onDismiss}>{t.companionGift.dismiss}</SecondaryButton>
         </div>
       </div>
     </CustomModal>

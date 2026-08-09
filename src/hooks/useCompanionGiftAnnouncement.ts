@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAppDispatch, useAppSelector } from 'store/hooks';
 import { unlockAsset, setActiveCompanion } from 'store/userLibrarySlice';
 import { companions } from '../config/assets/companions';
@@ -6,26 +6,51 @@ import { companions } from '../config/assets/companions';
 const GIFT_COMPANION_ID = 'cats';
 const ACTIVATED_KEY = `companionGift:${GIFT_COMPANION_ID}:activated`;
 
-export function useCompanionGiftAnnouncement() {
+// Module-level, NOT component state — survives client-side navigation between readers
+// (the module stays loaded) and only resets on an actual browser reload (fresh module
+// evaluation). Caps the dev-only bypass below to one appearance per page load, so
+// opening a second/third document in the same session doesn't force it open again —
+// only reloading the page does.
+let devBypassShownThisPageLoad = false;
+
+// `enabled` should reflect whether the caller is actually able to RENDER the modal
+// right now (e.g. DocumentReader's `isLoaded`) — not just whether the hook is mounted.
+export function useCompanionGiftAnnouncement(enabled: boolean) {
   const dispatch = useAppDispatch();
   const unlockedIds = useAppSelector(s => s.userLibrary.unlockedIds);
-  // Tracks a user-initiated close (Activate/Dismiss) for THIS mount — without it, the
-  // dev bypass below would force showModal back to true on every render, even right
-  // after a click, so the modal could never actually close during testing.
+  // Tracks a user-initiated close (Activate/Dismiss) for THIS mount.
   const [closedLocally, setClosedLocally] = useState(false);
+  // Latches to true the first time `eligible` below is met, then STAYS true regardless
+  // of later re-renders. While a document finishes loading, DocumentReader fires several
+  // effects back-to-back and re-renders more than once in quick succession — deriving
+  // "show" fresh every render straight off enabled/devBypass/realCondition is racy (it
+  // can flip true→false before ever being painted, or even after, if `enabled` itself
+  // flickers). Latching into state means once eligible, it stays open until the user
+  // actually closes it, independent of how those inputs move afterward.
+  const [hasAppeared, setHasAppeared] = useState(false);
 
   const companion = companions.find(c => c.id === GIFT_COMPANION_ID);
   const hasActivated = localStorage.getItem(ACTIVATED_KEY) === 'true';
   const isUnlocked = unlockedIds.includes(GIFT_COMPANION_ID);
 
-  // TODO(paso 3): quitar este bypass antes de producción — fuerza el modal a
-  // aparecer al montar la app durante desarrollo, sin importar fecha/unlock/activated,
-  // para poder revisar el diseño antes de comprometerse a la condición real. Solo
-  // gobierna la apertura inicial: closedLocally sigue permitiendo cerrarlo al clickear.
-  const devBypass = import.meta.env.DEV;
+  // TODO(paso 3): quitar este bypass antes de producción — fuerza el modal a aparecer
+  // al abrir un reader durante desarrollo, sin importar fecha/unlock/activated, para
+  // poder revisar el diseño antes de comprometerse a la condición real. Limitado a una
+  // vez por carga de página (ver el flag de módulo arriba) — así navegar entre
+  // documentos ya no lo vuelve a forzar, solo un reload real lo hace.
+  const devBypass = import.meta.env.DEV && !devBypassShownThisPageLoad;
 
   const realCondition = !!companion && !companion.comingSoon && !isUnlocked && !hasActivated;
-  const showModal = !closedLocally && (devBypass || realCondition);
+  const eligible = enabled && (devBypass || realCondition);
+
+  useEffect(() => {
+    if (eligible && !hasAppeared) {
+      devBypassShownThisPageLoad = true;
+      setHasAppeared(true);
+    }
+  }, [eligible, hasAppeared]);
+
+  const showModal = hasAppeared && !closedLocally;
 
   const markActivated = () => localStorage.setItem(ACTIVATED_KEY, 'true');
 
