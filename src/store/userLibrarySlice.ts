@@ -11,7 +11,9 @@ const MAX_COMPANION_SCALE = 2.5;
 const FREE_IDS = [
   ...soundBackgrounds.filter(a => a.unlockMethod === 'free').map(a => a.id),
   ...pageBackgrounds.filter(a => a.unlockMethod === 'free').map(a => a.id),
-  ...companions.filter(a => a.unlockMethod === 'free' && !a.comingSoon).map(a => a.id),
+  // requiresExplicitUnlock companions (e.g. the gift-announcement cats) are deliberately
+  // excluded here even once !comingSoon — see that field's comment in config/assets/types.
+  ...companions.filter(a => a.unlockMethod === 'free' && !a.comingSoon && !a.requiresExplicitUnlock).map(a => a.id),
 ];
 
 export interface CompanionPlacement {

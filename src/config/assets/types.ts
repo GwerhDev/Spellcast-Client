@@ -45,6 +45,13 @@ export interface Companion extends BaseAsset {
   // Shown as visible-but-locked ("Soon") ahead of its public release (see companions.ts),
   // instead of following its normal unlockMethod — set per environment, not hand-authored.
   comingSoon?: boolean;
+  // Excludes this companion from FREE_IDS' auto-unlock (userLibrarySlice.ts), even though
+  // unlockMethod is 'free' — without this, the moment comingSoon flips false, EVERY fresh
+  // session (no persisted unlockedIds yet) silently starts with it already unlocked via
+  // FREE_IDS, which then blocks the gift-announcement modal's own `!isUnlocked` check
+  // before it ever gets a chance to show. Set on companions meant to be handed out through
+  // an explicit unlock flow (a gift modal, an in-app claim) rather than silently defaulted.
+  requiresExplicitUnlock?: boolean;
 }
 
 export type Asset = SoundBackground | PageBackground | Companion;

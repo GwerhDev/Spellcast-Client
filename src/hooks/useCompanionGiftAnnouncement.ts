@@ -5,6 +5,11 @@ import { companions } from '../config/assets/companions';
 
 const GIFT_COMPANION_ID = 'cats';
 const ACTIVATED_KEY = `companionGift:${GIFT_COMPANION_ID}:activated`;
+// The announcement itself is only offered 2026-08-10 through 2026-08-30 (inclusive) —
+// separate from companions.ts's CATS_RELEASE_DATE, which just gates when the companion
+// becomes unlockable at all (and stays unlockable forever after via Havenstore). Past
+// this window the gift modal stops appearing even for someone who never saw it.
+const GIFT_WINDOW_END = new Date('2026-08-30T23:59:59');
 
 // Module-level, NOT component state — survives client-side navigation between readers
 // (the module stays loaded) and only resets on an actual browser reload (fresh module
@@ -40,7 +45,8 @@ export function useCompanionGiftAnnouncement(enabled: boolean) {
   // documentos ya no lo vuelve a forzar, solo un reload real lo hace.
   const devBypass = import.meta.env.DEV && !devBypassShownThisPageLoad;
 
-  const realCondition = !!companion && !companion.comingSoon && !isUnlocked && !hasActivated;
+  const withinGiftWindow = new Date() <= GIFT_WINDOW_END;
+  const realCondition = !!companion && !companion.comingSoon && !isUnlocked && !hasActivated && withinGiftWindow;
   const eligible = enabled && (devBypass || realCondition);
 
   useEffect(() => {

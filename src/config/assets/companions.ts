@@ -36,5 +36,12 @@ export const companions: Companion[] = [
     speed: 0.6,
     tags: ['cats', 'companion', 'pet'],
     comingSoon: !import.meta.env.DEV && new Date() < CATS_RELEASE_DATE,
+    // Must go through an explicit unlock (the gift modal's Activate button, or
+    // Havenstore's own Unlock button) — never silently auto-granted via FREE_IDS the
+    // moment comingSoon flips false. Without this, every session with no prior
+    // unlockedIds (i.e. any first-time visitor after 2026-08-10) would start with
+    // 'cats' already unlocked, which blocks the gift modal's own `!isUnlocked` check
+    // before it ever gets a chance to show — exactly the bug that shipped.
+    requiresExplicitUnlock: true,
   },
 ];
