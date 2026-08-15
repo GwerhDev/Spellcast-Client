@@ -133,7 +133,6 @@
 | `.dashboard-container` | Full-width layout wrapper |
 | `.nav-container` | Sidebar navigation wrapper |
 | `.audioplayer-container` | Audio player bar (collapsible in fullscreen) |
-| `.outter-border` | Outer border frame |
 | `.app-window` | App frame wrapper |
 | `.loader` | Full-screen centered spinner wrapper |
 | `.featured` | Gradient text color (primary → secondary) |

@@ -104,36 +104,20 @@
 }
 
 /* When minimized, clicks restore the window instead of hitting the inner UI. */
-.app-window[data-minimized="true"] > * {
+.app-window[data-minimized="true"]>* {
   pointer-events: none;
 }
 
-.outter-border {
-  width: 100%;
-  min-width: 0;
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding: .5rem;
-  border-radius: 10px;
-  background: var(--component-background-transparency);
-  backdrop-filter: blur(10px);
-  border: solid .5px var(--line);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.55);
-}
-
 .app-container {
+  gap: .5rem;
   width: 100%;
   min-width: 0;
   flex-grow: 1;
   display: flex;
-  flex-direction: column;
   overflow: auto;
   position: relative;
+  flex-direction: column;
   border-radius: 10px;
-  gap: .5rem;
 }
 
 .app-viewer {
@@ -234,10 +218,6 @@
 
 @media (max-width: 1024px) {
   main {
-    padding: 0;
-  }
-
-  .outter-border {
     padding: 0;
   }
 

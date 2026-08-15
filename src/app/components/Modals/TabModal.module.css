@@ -14,12 +14,10 @@
    .modal card, same radius/border/backdrop so every modal shell reads as one system. */
 .outterBorder {
   display: flex;
-  padding: .5rem;
   border-radius: 8px;
   margin-bottom: 1.5rem;
   background: var(--component-background-transparency);
   backdrop-filter: blur(10px);
-  border: solid .5px var(--line);
   box-shadow: 0 1px 12px rgba(0, 0, 0, 0.212);
   gap: 1.5rem;
   width: 90%;

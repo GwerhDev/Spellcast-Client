@@ -78,34 +78,32 @@ export default function DefaultLayout() {
             <AccountMenu />
           </span>
         </div>
-        <div className="outter-border">
-          <div className="app-container">
-            <div className="dashboard-container">
-              <nav className="nav-container" ref={navRef}>
-                <aside className="aside-container">
-                  <div className="aside-inner-container">
-                    <Sidebar onNavigate={() => { if (window.matchMedia('(max-width: 1024px)').matches) dispatch(setSidebarCollapsed(true)); }} />
-                  </div>
-                </aside>
-              </nav>
+        <div className="app-container">
+          <div className="dashboard-container">
+            <nav className="nav-container" ref={navRef}>
+              <aside className="aside-container">
+                <div className="aside-inner-container">
+                  <Sidebar onNavigate={() => { if (window.matchMedia('(max-width: 1024px)').matches) dispatch(setSidebarCollapsed(true)); }} />
+                </div>
+              </aside>
+            </nav>
 
-              <div className="app-viewer">
-                <Outlet />
-                <ReaderSettings />
-                <EditorSettings />
-                <PdfUploadQueue />
-              </div>
+            <div className="app-viewer">
+              <Outlet />
+              <ReaderSettings />
+              <EditorSettings />
+              <PdfUploadQueue />
             </div>
-            {documentLoaded && (
-              <div className="audioplayer-container">
-                {selectedVoice.type === 'browser'
-                  ? <BrowserPlayer showVoiceSelectorModal={setIsVoiceSelectorOpen} showPlayerConfigModal={setIsPlayerSettingsOpen} />
-                  : <AudioPlayer showVoiceSelectorModal={setIsVoiceSelectorOpen} showPlayerConfigModal={setIsPlayerSettingsOpen} />}
-              </div>
-            )}
-            <LogoutModal />
-            <AttentionGuardModal show={showAttentionGuard} onContinue={handleAttentionGuardContinue} />
           </div>
+          {documentLoaded && (
+            <div className="audioplayer-container">
+              {selectedVoice.type === 'browser'
+                ? <BrowserPlayer showVoiceSelectorModal={setIsVoiceSelectorOpen} showPlayerConfigModal={setIsPlayerSettingsOpen} />
+                : <AudioPlayer showVoiceSelectorModal={setIsVoiceSelectorOpen} showPlayerConfigModal={setIsPlayerSettingsOpen} />}
+            </div>
+          )}
+          <LogoutModal />
+          <AttentionGuardModal show={showAttentionGuard} onContinue={handleAttentionGuardContinue} />
         </div>
       </motion.div>
     </main>
