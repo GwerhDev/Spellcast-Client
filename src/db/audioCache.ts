@@ -16,7 +16,12 @@ const STORE_NAME = 'audio_pages';
 // Node tree instead of a flattened segment list — see TCORE-77), which can shift how the
 // backend parses text into timeline entries. Invalidates all previously cached audio+timeline
 // pairs on rollout rather than risking a stale timeline that no longer lines up with the doc.
-export const AUDIO_CACHE_VERSION = 3;
+//
+// Bumped 3 → 4: the backend's sentence splitting itself changed after the above shipped (per-
+// text-node → per-paragraph-merged, fixing sentences fragmenting at inline marks/line breaks
+// — Spellcast-API commit 0acfb87). Any audio cached under version 3 was already synthesized
+// with the old, broken segmentation and would otherwise keep being served as "valid".
+export const AUDIO_CACHE_VERSION = 4;
 
 let dbPromise: Promise<IDBDatabase> | null = null;
 
