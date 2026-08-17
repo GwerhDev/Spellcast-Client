@@ -4,10 +4,12 @@ import type { TTSAttrs, TTSSegment, TextRun, DocumentBlock } from '../types'
 /**
  * Sentence splitter — kept identical to PdfProcessor.extractSentencesFromJSON (browser-voice
  * `sentences`) and, as of TCORE-77, to the backend's own app.utils.parser.split_sentences
- * (Spellcast-API), which now applies the same regex inside each text node before building the
- * AI-voice `timeline` — so a paragraph with multiple sentences in a single unmarked text run
- * still produces one timeline entry per sentence, matching this function's indices. Splits
- * after .!? that is not followed by another dot, then trims.
+ * (Spellcast-API). Both this file's buildCharInfo() (below) and the backend's
+ * _build_char_info() apply this same regex to a whole paragraph's *merged* inline text (not
+ * per text node) — Tiptap represents any inline mark spanning only part of a sentence (bold,
+ * a `tts` mark on one character) as multiple adjacent text nodes, so splitting node-by-node
+ * would fragment normal sentences instead of matching the AI-voice `timeline`'s entries to
+ * this function's indices. Splits after .!? that is not followed by another dot, then trims.
  */
 function splitSentences(text: string): string[] {
   return text.split(/(?<=[.!?])(?!\s*\.)/).map(s => s.trim()).filter(Boolean)
