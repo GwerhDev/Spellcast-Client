@@ -1,25 +1,6 @@
 import { API_BASE } from '../config/api';
 import { Voice } from '../interfaces';
-
-
-interface TiptapMark {
-  type: string;
-  attrs?: Record<string, unknown>;
-}
-
-interface TiptapNode {
-  type: string;
-  text?: string;
-  marks?: TiptapMark[];
-  content?: TiptapNode[];
-  attrs?: Record<string, unknown>;
-}
-
-export interface TtsSegment {
-  text: string;
-  voice: string;
-  inflection: string;
-}
+import type { JSONContent } from '@tiptap/core';
 
 export interface TimelineEntry {
   text: string;
@@ -27,69 +8,45 @@ export interface TimelineEntry {
   end: number;
 }
 
-const getNodeText = (node: TiptapNode): string => {
-  if (node.type === 'text') return node.text ?? '';
-  if (node.type === 'hardBreak') return ' ';
-  return (node.content ?? []).map(getNodeText).join('');
-};
+// Wraps a plain string (no Tiptap editor behind it — e.g. Start/TextOption's free-text box,
+// or a JSON.parse fallback when a stored page turns out not to be valid JSON) into the
+// minimal doc/paragraph/text tree the backend's Node contract expects.
+export const wrapPlainText = (text: string): JSONContent => ({
+  type: 'doc',
+  content: [{ type: 'paragraph', content: [{ type: 'text', text }] }],
+});
 
-const getNodeVoice = (node: TiptapNode, defaultVoice: string): string => {
-  if (node.type === 'text') {
-    const mark = node.marks?.find(m => m.type === 'tts');
-    const v = mark?.attrs?.voice as string | undefined;
-    if (v && v !== 'default') return v;
-  }
-  for (const child of node.content ?? []) {
-    const v = getNodeVoice(child, defaultVoice);
-    if (v !== defaultVoice) return v;
-  }
-  return defaultVoice;
-};
-
-const getNodeInflection = (node: TiptapNode): string => {
-  if (node.type === 'text') {
-    const mark = node.marks?.find(m => m.type === 'tts');
-    const inf = mark?.attrs?.inflection as string | undefined;
-    if (inf && inf !== 'default') return inf;
-  }
-  for (const child of node.content ?? []) {
-    const inf = getNodeInflection(child);
-    if (inf !== 'default') return inf;
-  }
-  return 'default';
-};
-
-export function buildSegments(docText: string, defaultVoice: string): TtsSegment[] {
-  let doc: TiptapNode;
-  try {
-    doc = JSON.parse(docText);
-  } catch {
-    doc = { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: docText }] }] };
-  }
-
-  const segments: TtsSegment[] = [];
-
-  for (const node of doc.content ?? []) {
-    if (node.type !== 'paragraph' && node.type !== 'heading') continue;
-    const rawText = getNodeText(node).trim();
-    if (!rawText) continue;
-
-    const voice = getNodeVoice(node, defaultVoice);
-    const inflection = getNodeInflection(node);
-
-    const sentences = rawText.split(/(?<=[.!?])(?!\s*\.)/).map(s => s.trim()).filter(Boolean);
-    for (const text of sentences) {
-      segments.push({ text, voice, inflection });
-    }
-  }
-
-  if (segments.length === 0) {
-    const fallback = (doc.content ?? []).map(getNodeText).join(' ').trim();
-    if (fallback) segments.push({ text: fallback, voice: defaultVoice, inflection: 'default' });
-  }
-
-  return segments;
+interface TiptapMarkLike {
+  type: string;
+  attrs?: Record<string, unknown>;
 }
+
+// Stamps `voice` onto every text node that doesn't already carry an explicit voice choice —
+// i.e. no `tts` mark at all, or one whose voice is unset/'default'. Mirrors the old
+// pre-TCORE-77 injectDefaultVoice(): most content (raw PDF extraction, plain paragraphs) has
+// no `tts` marks at all, so without this the backend would never learn which voice the user
+// picked in the UI dropdown and would always fall back to the provider's static configured
+// default voice — silently ignoring the user's actual selection. A node with an explicit,
+// non-default voice (e.g. a character assigned a specific voice in the editor) is left alone.
+const injectDefaultVoice = (node: JSONContent, voice: string): JSONContent => {
+  if (node.type === 'text') {
+    const marks = (node.marks ?? []) as TiptapMarkLike[];
+    const ttsIndex = marks.findIndex(m => m.type === 'tts');
+    if (ttsIndex === -1) {
+      return { ...node, marks: [...marks, { type: 'tts', attrs: { voice } }] };
+    }
+    const ttsMark = marks[ttsIndex];
+    const currentVoice = ttsMark.attrs?.voice;
+    if (currentVoice && currentVoice !== 'default') return node;
+    const newMarks = [...marks];
+    newMarks[ttsIndex] = { ...ttsMark, attrs: { ...ttsMark.attrs, voice } };
+    return { ...node, marks: newMarks };
+  }
+  if (node.content) {
+    return { ...node, content: node.content.map(child => injectDefaultVoice(child, voice)) };
+  }
+  return node;
+};
 
 export async function getVoicesByCredential(credentialId: string): Promise<Voice[]> {
   try {
@@ -116,19 +73,24 @@ export class TtsError extends Error {
   }
 }
 
+// The backend parses the raw Tiptap doc tree itself (provider-aware synthesis) instead of the
+// client flattening it into segments — this either forwards an already-built JSONContent tree
+// (`doc`) or wraps a plain string into a minimal one (`text`), then stamps the caller's
+// selected `voice` onto every node that doesn't already carry its own explicit voice choice.
 export async function textToSpeechService(
-  data: { text: string; voice: string },
+  data: { doc: JSONContent; voice: string } | { text: string; voice: string },
   signal?: AbortSignal,
 ): Promise<{ blob: Blob; timeline: TimelineEntry[] }> {
   try {
-    const segments = buildSegments(data.text, data.voice);
+    const rawDoc = 'doc' in data ? data.doc : wrapPlainText(data.text);
+    const doc = injectDefaultVoice(rawDoc, data.voice);
     const url = `${API_BASE}/tts/?with_timeline=true`;
 
     const response = await fetch(url, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(segments),
+      body: JSON.stringify(doc),
       signal,
     });
 

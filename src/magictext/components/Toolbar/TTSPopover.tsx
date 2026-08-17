@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import type { Editor } from '@tiptap/react'
+import type { JSONContent } from '@tiptap/core'
 import type { TTSMark, TTSPlayPayload } from '../../types'
 import { TTSIcon, PlayIcon, StopIcon, CheckIcon, TrashIcon, SpeakerIcon, WavesIcon } from './icons'
 import { useTranslations } from '../../i18n'
@@ -229,7 +230,11 @@ export function TTSPopover({ editor, characters = [], inflections = [], onPlay, 
     const id = markId || name.toLowerCase().replace(/\s+/g, '-')
     const { from, to } = editor.state.selection
     const text = editor.state.doc.textBetween(from, to, ' ')
-    onPlay({ text, characterId: id, characterName: name, voice: voice || null, inflection: inflection || null, color })
+    // slice(from, to).toJSON() would return a ProseMirror Slice's own shape
+    // ({content, openStart, openEnd}), not a Node — wrap its Fragment content in a doc node so
+    // it matches the {type, content} tree the backend's Node contract expects.
+    const doc: JSONContent = { type: 'doc', content: editor.state.doc.slice(from, to).content.toJSON() ?? [] }
+    onPlay({ text, doc, characterId: id, characterName: name, voice: voice || null, inflection: inflection || null, color })
   }
 
   const apply = () => {

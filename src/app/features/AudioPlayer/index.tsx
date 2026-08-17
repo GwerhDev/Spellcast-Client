@@ -21,7 +21,8 @@ import { PlaybackControls } from '../../components/Players/AudioPlayer/PlaybackC
 import { VolumeControls } from '../../components/Players/AudioPlayer/VolumeControls/VolumeControls';
 import { VoiceSelectorButton } from '../../components/Players/shared/VoiceSelectorButton/VoiceSelectorButton';
 import { PlayerConfigButton } from '../../components/Players/shared/PlayerConfigButton/PlayerConfigButton';
-import { textToSpeechService, buildSegments, TtsError, type TimelineEntry } from '../../../services/tts';
+import { textToSpeechService, wrapPlainText, TtsError, type TimelineEntry } from '../../../services/tts';
+import type { JSONContent } from '@tiptap/core';
 import { addApiResponse } from '../../../store/apiResponsesSlice';
 import type { CredentialError } from '../../components/Players/shared/VoiceSelectorButton/VoiceSelectorButton';
 import { getCachedAudio, setCachedAudio, AUDIO_CACHE_VERSION } from '../../../db/audioCache';
@@ -232,11 +233,11 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
     try {
       const doc = await getDocumentById(documentId, userData.id);
       if (controller.signal.aborted || !doc?.pagesContent) return;
-      const pages = JSON.parse(doc.pagesContent) as unknown[];
-      const pageText = pages[nextPage - 1];
-      if (!pageText) return;
+      const pages = JSON.parse(doc.pagesContent) as JSONContent[];
+      const pageDoc = pages[nextPage - 1];
+      if (!pageDoc) return;
       const { blob, timeline } = await textToSpeechService(
-        { text: JSON.stringify(pageText), voice: selectedVoice.value },
+        { doc: pageDoc, voice: selectedVoice.value },
         controller.signal,
       );
       if (!controller.signal.aborted) {
@@ -275,17 +276,24 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
 
       if (controller.signal.aborted) return;
 
-      const expectedSegments = buildSegments(text, selectedVoice.value).length;
+      // No more client-side segment count to compare against the cached timeline length —
+      // the backend now parses the doc tree itself. AUDIO_CACHE_VERSION alone gates
+      // invalidation (bumped whenever the request/parsing contract changes).
       const cacheValid = cachedResult &&
         cachedResult.cacheVersion === AUDIO_CACHE_VERSION &&
-        cachedResult.timeline.length > 0 &&
-        cachedResult.timeline.length === expectedSegments;
+        cachedResult.timeline.length > 0;
 
       if (cacheValid) {
         aiTimelineRef.current = cachedResult.timeline;
         dispatch(setAiTimeline(cachedResult.timeline));
       } else {
-        const result = await textToSpeechService({ text, voice: selectedVoice.value }, controller.signal);
+        let doc: JSONContent;
+        try {
+          doc = JSON.parse(text) as JSONContent;
+        } catch {
+          doc = wrapPlainText(text);
+        }
+        const result = await textToSpeechService({ doc, voice: selectedVoice.value }, controller.signal);
         if (controller.signal.aborted) return;
         blob = result.blob;
         aiTimelineRef.current = result.timeline;

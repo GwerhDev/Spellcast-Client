@@ -12,7 +12,11 @@ const DB_NAME = 'spellcast-audio-cache';
 const DB_VERSION = 2;
 const STORE_NAME = 'audio_pages';
 
-export const AUDIO_CACHE_VERSION = 2;
+// Bumped 2 → 3: the backend TTS request contract changed (client now sends the raw Tiptap
+// Node tree instead of a flattened segment list — see TCORE-77), which can shift how the
+// backend parses text into timeline entries. Invalidates all previously cached audio+timeline
+// pairs on rollout rather than risking a stale timeline that no longer lines up with the doc.
+export const AUDIO_CACHE_VERSION = 3;
 
 let dbPromise: Promise<IDBDatabase> | null = null;
 

@@ -20,6 +20,11 @@ export interface TTSMark {
 
 export interface TTSPlayPayload {
   text: string
+  // Real Tiptap tree of the selection (`editor.state.doc.slice(from, to).toJSON()`), used for
+  // the AI-voice TTS request so its marks survive instead of a synthetic one-mark
+  // reconstruction. `text` stays required — it's also used for the browser-voice
+  // (speechSynthesis) fallback, which only needs plain text.
+  doc: JSONContent
   characterId: string
   characterName: string
   voice: string | null

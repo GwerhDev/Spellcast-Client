@@ -110,7 +110,7 @@ export const DocumentEditForm: React.FC = () => {
     const isAIVoice = payload.voice ? aiVoices.some((v) => v.value === payload.voice) : false;
     if (isAIVoice && payload.voice) {
       setTtsPlaying(true);
-      textToSpeechService({ text: payload.text, voice: payload.voice })
+      textToSpeechService({ doc: payload.doc, voice: payload.voice })
         .then(({ blob }) => {
           const url = URL.createObjectURL(blob);
           const audio = new Audio(url);

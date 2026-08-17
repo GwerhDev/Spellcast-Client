@@ -2,11 +2,12 @@ import type { JSONContent } from '@tiptap/core'
 import type { TTSAttrs, TTSSegment, TextRun, DocumentBlock } from '../types'
 
 /**
- * Sentence splitter — kept identical to the host app's TTS pipeline
- * (PdfProcessor.extractSentencesFromJSON and services/tts.buildSegments) so that
- * the reader's sentence indices line up exactly with the browser-voice
- * `sentences` array and the AI-voice `timeline`. Splits after .!? that is not
- * followed by another dot, then trims.
+ * Sentence splitter — kept identical to PdfProcessor.extractSentencesFromJSON (browser-voice
+ * `sentences`) and, as of TCORE-77, to the backend's own app.utils.parser.split_sentences
+ * (Spellcast-API), which now applies the same regex inside each text node before building the
+ * AI-voice `timeline` — so a paragraph with multiple sentences in a single unmarked text run
+ * still produces one timeline entry per sentence, matching this function's indices. Splits
+ * after .!? that is not followed by another dot, then trims.
  */
 function splitSentences(text: string): string[] {
   return text.split(/(?<=[.!?])(?!\s*\.)/).map(s => s.trim()).filter(Boolean)
