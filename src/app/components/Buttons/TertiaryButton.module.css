@@ -1,14 +1,7 @@
 .container {
-  gap: .5rem;
-  width: 100%;
-  max-width: 500px;
+  composes: base from './buttonBase.module.css';
   font-weight: 600;
-  display: flex;
-  text-wrap: nowrap;
-  align-items: center;
-  justify-content: center;
   transition-duration: .4s;
-  border-radius: var(--size-4);
   color: var(--text-color);
   background: var(--component-background);
 }

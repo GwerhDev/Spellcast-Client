@@ -2,7 +2,7 @@ import s from './TertiaryButton.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { IconProp } from '@fortawesome/fontawesome-svg-core';
 
-interface TertiaryButtonProps {
+interface TertiaryButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "onClick" | "type" | "disabled" | "children" | "className"> {
   text?: string;
   icon?: IconProp;
   onClick?: () => void;
@@ -13,14 +13,14 @@ interface TertiaryButtonProps {
 };
 
 export const TertiaryButton = (props: TertiaryButtonProps) => {
-  const { text, icon, onClick, type, disabled, children, className } = props || {};
+  const { text, icon, onClick, type, disabled, children, className, ...rest } = props || {};
 
   const handleOnClick = () => {
     return onClick && onClick();
   };
 
   return (
-    <button disabled={disabled} className={`${s.container} ${className}`} onClick={handleOnClick} type={type || "button"} >
+    <button disabled={disabled} className={`${s.container} ${className ?? ""}`} onClick={handleOnClick} type={type || "button"} {...rest}>
       {icon && <FontAwesomeIcon icon={icon} />}
       <span>
         {text || children}

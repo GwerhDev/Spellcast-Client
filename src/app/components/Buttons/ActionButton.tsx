@@ -3,7 +3,7 @@ import s from './ActionButton.module.css';
 import { IconProp } from '@fortawesome/fontawesome-svg-core';
 import { ReactNode } from 'react';
 
-interface ActionButtonProps {
+interface ActionButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement> & React.AnchorHTMLAttributes<HTMLAnchorElement>, "onClick" | "type" | "disabled" | "children" | "href" | "className"> {
     text?: string;
     onClick?: () => void;
     icon?: IconProp;
@@ -11,10 +11,11 @@ interface ActionButtonProps {
     href?: string;
     children?: ReactNode;
     type?: "button" | "submit" | "reset";
+    className?: string;
 }
 
 export const ActionButton = (props: ActionButtonProps) => {
-  const { text, onClick, icon, disabled, href, children, type } = props;
+  const { text, onClick, icon, disabled, href, children, type, className, ...rest } = props;
 
   const handleOnClick = () => {
     return onClick && onClick();
@@ -24,12 +25,12 @@ export const ActionButton = (props: ActionButtonProps) => {
     <>
       {
         href
-          ? <a href={href} className={s.container} onClick={handleOnClick}>
+          ? <a href={href} className={`${s.container} ${className ?? ""}`} onClick={handleOnClick} {...rest}>
             {icon && <FontAwesomeIcon icon={icon} />}
             {text}
           </a>
           :
-          <button disabled={disabled} className={s.container} onClick={handleOnClick} type={type}>
+          <button disabled={disabled} className={`${s.container} ${className ?? ""}`} onClick={handleOnClick} type={type} {...rest}>
             {icon && <FontAwesomeIcon icon={icon} />}
             {text || children}
           </button>

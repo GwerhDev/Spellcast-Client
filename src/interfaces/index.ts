@@ -99,3 +99,9 @@ export interface DocumentState {
   fileContent: string | null;
   isLoaded: boolean;
 }
+
+// Shared across PrimaryButton (and future Button consumers) so risk/emphasis level stays
+// consistent app-wide. IconButton's "primary" | "transparent" is a different axis (visual
+// treatment, not risk level) and intentionally keeps its own inline union instead.
+export type ButtonVariant = 'default' | 'danger' | 'accent';
+export type ButtonSize = 'sm' | 'md';

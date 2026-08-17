@@ -1,0 +1,14 @@
+/* Shared base layout for PrimaryButton/SecondaryButton/TertiaryButton/ActionButton —
+   deduplicates the near-identical rules each of the four independently redeclared.
+   IconButton is intentionally excluded: it's auto-sized (icon-only), not full-width like
+   these four, so it doesn't share this shape. */
+.base {
+  width: 100%;
+  max-width: 500px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  text-wrap: nowrap;
+  border-radius: var(--size-4);
+}

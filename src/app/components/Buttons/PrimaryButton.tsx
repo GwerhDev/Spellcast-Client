@@ -1,6 +1,7 @@
 import s from './PrimaryButton.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { IconProp } from '@fortawesome/fontawesome-svg-core';
+import type { ButtonVariant } from '../../../interfaces';
 
 interface PrimaryButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "onClick" | "type" | "disabled" | "children" | "className"> {
   text?: string;
@@ -10,7 +11,7 @@ interface PrimaryButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonE
   disabled?: boolean;
   children?: React.ReactNode;
   className?: string;
-  variant?: "default" | "danger" | "accent";
+  variant?: ButtonVariant;
 };
 
 export const PrimaryButton = (props: PrimaryButtonProps) => {
