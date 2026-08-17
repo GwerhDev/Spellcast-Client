@@ -20,8 +20,8 @@ import {
 } from '../../../store/pdfReaderSlice';
 import { PlaybackControls } from './PlaybackControls';
 import { VolumeControls } from '../../components/Players/BrowserPlayer/VolumeControls/VolumeControls';
-import { VoiceSelectorButton } from '../../components/Players/BrowserPlayer/VoiceSelectorButton/VoiceSelectorButton';
-import { PlayerConfigButton } from '../../components/Players/BrowserPlayer/PlayerConfigButton/PlayerConfigButton';
+import { VoiceSelectorButton } from '../../components/Players/shared/VoiceSelectorButton/VoiceSelectorButton';
+import { PlayerConfigButton } from '../../components/Players/shared/PlayerConfigButton/PlayerConfigButton';
 import { useNavigate } from 'react-router-dom';
 import { setSelectedVoice } from '../../../store/voiceSlice';
 import { getDocumentById } from '../../../db';

@@ -19,11 +19,11 @@ import { setSoundBgVolume, setMasterVolume } from '../../../store/userLibrarySli
 import { goToNextPage, goToPreviousPage, setShowSearcher } from '../../../store/pdfReaderSlice';
 import { PlaybackControls } from '../../components/Players/AudioPlayer/PlaybackControls/PlaybackControls';
 import { VolumeControls } from '../../components/Players/AudioPlayer/VolumeControls/VolumeControls';
-import { VoiceSelectorButton } from '../../components/Players/AudioPlayer/VoiceSelectorButton/VoiceSelectorButton';
-import { PlayerConfigButton } from '../../components/Players/AudioPlayer/PlayerConfigButton/PlayerConfigButton';
+import { VoiceSelectorButton } from '../../components/Players/shared/VoiceSelectorButton/VoiceSelectorButton';
+import { PlayerConfigButton } from '../../components/Players/shared/PlayerConfigButton/PlayerConfigButton';
 import { textToSpeechService, buildSegments, TtsError, type TimelineEntry } from '../../../services/tts';
 import { addApiResponse } from '../../../store/apiResponsesSlice';
-import type { CredentialError } from '../../components/Players/AudioPlayer/VoiceSelectorButton/VoiceSelectorButton';
+import type { CredentialError } from '../../components/Players/shared/VoiceSelectorButton/VoiceSelectorButton';
 import { getCachedAudio, setCachedAudio, AUDIO_CACHE_VERSION } from '../../../db/audioCache';
 import { getDocumentById } from '../../../db';
 import { useNavigate } from 'react-router-dom';
