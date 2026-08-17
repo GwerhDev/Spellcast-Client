@@ -157,10 +157,15 @@ describe('SidebarView on mobile', () => {
     expect(screen.queryByTestId('sidebar-rail')).not.toBeInTheDocument();
   });
 
-  it('collapsed row renders direct links and top-level section icons only', () => {
-    render(<SidebarView {...baseProps} collapsed />);
+  it('collapsed row renders direct links and only sections with no expandable body (no items, no sub-sections)', () => {
+    // A section morphs into a plain row icon only if it has nothing to expand. Any section
+    // with items and/or nested subSections — "editor" and "user" in the real config — always
+    // renders as a full accordion in the expanded panel instead, and gets no rail icon here.
+    const bareSection: SidebarAccordionSection = { key: 'editor', icon: faBox, path: '/editor', label: 'Editor', items: [] };
+    render(<SidebarView {...baseProps} collapsed accordionSections={[bareSection, ...accordionSections]} />);
     expect(screen.getByTestId('sidebar-rail-icon-home')).toBeInTheDocument();
-    expect(screen.getByTestId('sidebar-rail-icon-user')).toBeInTheDocument();
+    expect(screen.getByTestId('sidebar-rail-icon-editor')).toBeInTheDocument();
+    expect(screen.queryByTestId('sidebar-rail-icon-user')).not.toBeInTheDocument();
   });
 
   it('expanded panel renders the direct links and accordion sections, including nested ones', () => {

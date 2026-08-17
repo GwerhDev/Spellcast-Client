@@ -33,21 +33,23 @@ describe('HavenStoreLanding', () => {
     expect(screen.getByTestId('haven-search')).toBeInTheDocument();
   });
 
-  it('shows the cats companion card, unlocked and inactive by default', () => {
+  it('shows the cats companion card, locked by default', () => {
     renderWithProviders(<HavenStoreLanding />);
     fireEvent.click(screen.getByTestId('haven-tab-companions'));
     expect(screen.getByTestId('companions-grid')).toBeInTheDocument();
     expect(screen.getByTestId('companion-card-cats')).toBeInTheDocument();
-    // 'cats' is unlockMethod: 'free', so it's pre-unlocked via FREE_IDS — the toggle
-    // button renders, not the unlock button.
-    expect(screen.getByTestId('companion-toggle-cats')).toBeInTheDocument();
+    // 'cats' is unlockMethod: 'free' but requiresExplicitUnlock — it's never silently
+    // pre-unlocked via FREE_IDS, so the unlock button renders, not the toggle button,
+    // until the user explicitly clicks it.
+    expect(screen.getByTestId('companion-unlock-cats')).toBeInTheDocument();
   });
 
-  it('activates and deactivates the cats companion on click', () => {
+  it('unlocks, activates, and deactivates the cats companion on click', () => {
     renderWithProviders(<HavenStoreLanding />);
     fireEvent.click(screen.getByTestId('haven-tab-companions'));
 
-    fireEvent.click(screen.getByTestId('companion-toggle-cats'));
+    // First click unlocks it and activates it in the same action (see handleCompanionAction).
+    fireEvent.click(screen.getByTestId('companion-unlock-cats'));
     expect(screen.getByTestId('companion-toggle-cats').textContent).toContain('Deactivate');
 
     fireEvent.click(screen.getByTestId('companion-toggle-cats'));
