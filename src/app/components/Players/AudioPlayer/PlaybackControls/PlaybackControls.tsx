@@ -2,6 +2,7 @@ import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faStepBackward, faStepForward, faSpinner } from '@fortawesome/free-solid-svg-icons';
 import { PlayButton } from '../../../PlayButton/PlayButton';
+import { IconButton } from '../../../Buttons/IconButton';
 import s from './PlaybackControls.module.css';
 
 interface PlaybackControlsProps {
@@ -74,13 +75,21 @@ export const PlaybackControls: React.FC<PlaybackControlsProps> = ({
         </div>
       </div>
       <div className={s.controls}>
-        <button onClick={handlePrevious} disabled={disabled || isPrevDisabled} className={s.controlButton}>
-          <FontAwesomeIcon icon={faStepBackward} />
-        </button>
+        <IconButton
+          data-testid="playback-previous-btn"
+          icon={faStepBackward}
+          onClick={handlePrevious}
+          disabled={disabled || isPrevDisabled}
+          className={s.controlButton}
+        />
         <PlayButton isPlaying={isPlaying} onClick={togglePlayPause} disabled={disabled} />
-        <button onClick={handleNext} disabled={disabled || isNextDisabled} className={s.controlButton}>
-          <FontAwesomeIcon icon={faStepForward} />
-        </button>
+        <IconButton
+          data-testid="playback-next-btn"
+          icon={faStepForward}
+          onClick={handleNext}
+          disabled={disabled || isNextDisabled}
+          className={s.controlButton}
+        />
       </div>
     </section>
   );

@@ -12,6 +12,7 @@ interface PlayButtonProps {
 
 export const PlayButton: React.FC<PlayButtonProps> = ({ isPlaying, onClick, disabled, size = 'md' }) => (
   <button
+    data-testid="play-button"
     className={`${s.btn} ${s[size]} ${isPlaying ? s.playing : ''}`}
     onClick={onClick}
     disabled={disabled}
