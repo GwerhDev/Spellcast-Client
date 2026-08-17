@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import s from './index.module.css';
 import { useLanguage } from '../../../i18n';
-import { FilterTabs } from '../../components/Selectors/FilterTabs';
+import { SegmentedTabs } from '../../components/Tabs/SegmentedTabs';
 import { DocumentList, LibraryFilter } from '../DocumentList';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCloud, faHardDrive, faLayerGroup, faMagnifyingGlass, faPlus, faCheckSquare, faTrash, faXmark, faBuildingColumns } from '@fortawesome/free-solid-svg-icons';
@@ -64,7 +64,7 @@ export const LibraryLanding = () => {
     <div className={s.container} data-testid="library-landing">
       <SectionHeader icon={faBuildingColumns} title={t.nav.library} subtitle={t.library.subtitle} align="center" />
 
-      <FilterTabs tabs={tabs} active={filter} onChange={handleFilterChange} />
+      <SegmentedTabs tabs={tabs} active={filter} onChange={handleFilterChange} />
 
       <CustomModal show={showImport} onClose={() => setShowImport(false)} title={t.library.addDocuments} compact>
         <ImportOption />

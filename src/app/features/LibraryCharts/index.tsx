@@ -14,7 +14,7 @@ import { Line } from 'react-chartjs-2';
 import { getDocumentsFromDB } from '../../../db';
 import { useAppSelector } from '../../../store/hooks';
 import { Document } from '../../../interfaces';
-import { FilterTabs } from '../../components/Selectors/FilterTabs';
+import { SegmentedTabs } from '../../components/Tabs/SegmentedTabs';
 import { useLanguage } from '../../../i18n';
 
 ChartJS.register(CategoryScale, LinearScale, LineElement, PointElement, Filler, Tooltip);
@@ -170,7 +170,7 @@ export const LibraryCharts: React.FC = () => {
       <div className={s.chartCard}>
         <div className={s.cardHeader}>
           <span className={s.cardTitle}>{t.overview.activity}</span>
-          <FilterTabs tabs={periodTabs} active={period} onChange={id => setPeriod(id as Period)} compact />
+          <SegmentedTabs tabs={periodTabs} active={period} onChange={id => setPeriod(id as Period)} compact />
         </div>
 
         <div className={s.graphContainer}>

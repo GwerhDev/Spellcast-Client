@@ -8,7 +8,7 @@ import { useAppSelector } from '../../../store/hooks';
 import { Document } from '../../../interfaces';
 import { EditorPickerCard } from '../../components/Cards/EditorPickerCard';
 import { Spinner } from '../../components/Spinner';
-import { FilterTabs } from '../../components/Selectors/FilterTabs';
+import { SegmentedTabs } from '../../components/Tabs/SegmentedTabs';
 import { SectionHeader } from '../../components/SectionHeader';
 import { IconButton } from '../../components/Buttons/IconButton';
 import { useLanguage } from '../../../i18n';
@@ -83,7 +83,7 @@ export const EditorSelectLanding = () => {
       </div>
 
       <div className={s.controls}>
-        <FilterTabs tabs={tabs} active={filter} onChange={handleFilterChange} compact />
+        <SegmentedTabs tabs={tabs} active={filter} onChange={handleFilterChange} compact />
         <div className={s.searchWrapper}>
           <FontAwesomeIcon icon={faMagnifyingGlass} className={s.searchIcon} />
           <input
