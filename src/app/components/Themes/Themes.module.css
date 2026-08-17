@@ -72,7 +72,7 @@
 
 .themeBox.active {
     border-color: var(--color-primary);
-    box-shadow: 0 0 15px rgba(215, 171, 109, 0.3);
+    box-shadow: 0 0 15px color-mix(in srgb, var(--color-accent-bronze) 30%, transparent);
 }
 
 .themeBox svg {
@@ -114,5 +114,5 @@
 
 .langBox.active {
     border-color: var(--color-primary);
-    box-shadow: 0 0 15px rgba(215, 171, 109, 0.3);
+    box-shadow: 0 0 15px color-mix(in srgb, var(--color-accent-bronze) 30%, transparent);
 }

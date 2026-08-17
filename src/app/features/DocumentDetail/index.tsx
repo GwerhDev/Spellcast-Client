@@ -6,12 +6,13 @@ import { useAppSelector } from '../../../store/hooks';
 import { getDocumentById, deleteDocumentFromDB } from '../../../db';
 import { setAutoPlayOnLoad, resetBrowserPlayer } from '../../../store/browserPlayerSlice';
 import { setAutoPlayOnLoad as setAudioAutoPlayOnLoad } from '../../../store/audioPlayerSlice';
-import { resetPdfReader } from '../../../store/pdfReaderSlice';
+import { invalidateDocumentList, resetPdfReader } from '../../../store/pdfReaderSlice';
 import { Spinner } from '../../components/Spinner';
 import { PrimaryButton } from '../../components/Buttons/PrimaryButton';
 import { SecondaryButton } from '../../components/Buttons/SecondaryButton';
 import { IconButton } from '../../components/Buttons/IconButton';
 import { DeleteConfirmModal } from '../../components/Modals/DeleteConfirmModal';
+import { Tag } from '../../components/Tag/Tag';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFilePdf, faBookOpen, faPen, faArrowLeft, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { useLanguage } from '../../../i18n';
@@ -70,6 +71,7 @@ export const DocumentDetail: React.FC = () => {
         dispatch(resetBrowserPlayer());
         dispatch(resetPdfReader());
       }
+      dispatch(invalidateDocumentList());
       navigate('/');
     } catch {
       setError('Failed to delete document.');
@@ -108,6 +110,13 @@ export const DocumentDetail: React.FC = () => {
           }
           <div className={s.info}>
             <h1 data-testid="document-detail-title" className={s.title}>{doc.title}</h1>
+            <div className={s.tags}>
+              {doc.pdf && <Tag tone="default" size="sm">PDF</Tag>}
+              {currentPage > 0 && progressPct !== null && (
+                <Tag tone={progressPct === 100 ? 'ok' : 'primary'} size="sm">{progressPct}%</Tag>
+              )}
+              {!doc.pagesContent && <Tag tone="warning" size="sm">Unprocessed</Tag>}
+            </div>
             <p className={s.meta}>{t.document.created} {new Date(doc.createdAt).toLocaleDateString()}</p>
             {pagesCount && <p className={s.meta}>{pagesCount} {pagesCount === 1 ? t.document.pageSingular : t.document.pagePlural}</p>}
             {progressPct !== null && (
@@ -115,19 +124,17 @@ export const DocumentDetail: React.FC = () => {
                 <div className={s.progressBarFill} style={{ width: `${progressPct}%` }} />
               </div>
             )}
-            {currentPage > 0 && (
-              <p className={s.meta}>
-                {t.document.page} {currentPage}{pagesCount ? ` ${t.document.of} ${pagesCount}` : ''} — {progressPct}% {t.document.complete}
-              </p>
+            {currentPage > 0 && pagesCount && (
+              <p className={s.meta}>{t.document.page} {currentPage} {t.document.of} {pagesCount}</p>
             )}
           </div>
         </div>
         <div className={s.actions}>
-          <PrimaryButton icon={faBookOpen} onClick={currentPage > 0 ? handleContinueReading : handlePlay}>
+          <PrimaryButton data-testid="document-detail-continue-btn" icon={faBookOpen} onClick={currentPage > 0 ? handleContinueReading : handlePlay}>
             {currentPage > 0 ? t.document.continueReading : t.document.startReading}
           </PrimaryButton>
-          <SecondaryButton className={s.solid} icon={faPen} onClick={handleEdit}>{t.document.editDocument}</SecondaryButton>
-          <PrimaryButton variant="danger" icon={faTrash} onClick={() => setShowDeleteModal(true)}>{t.common.delete}</PrimaryButton>
+          <SecondaryButton data-testid="document-detail-edit-btn" icon={faPen} onClick={handleEdit}>{t.document.editDocument}</SecondaryButton>
+          <PrimaryButton data-testid="document-detail-delete-btn" variant="danger" icon={faTrash} onClick={() => setShowDeleteModal(true)}>{t.common.delete}</PrimaryButton>
         </div>
       </div>
       <DeleteConfirmModal

@@ -33,3 +33,11 @@
   border-color: var(--color-danger);
   color: var(--app-white);
 }
+
+.accent {
+  background: var(--color-accent-bronze);
+}
+
+.accent:hover {
+  background: var(--color-accent-bronze-hover);
+}

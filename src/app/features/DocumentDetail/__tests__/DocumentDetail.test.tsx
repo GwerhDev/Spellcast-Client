@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { screen } from '@testing-library/react';
+import { screen, fireEvent, waitFor } from '@testing-library/react';
 import { Routes, Route } from 'react-router-dom';
 import { renderWithProviders, makeStore } from '../../../../test/renderWithProviders';
 import { DocumentDetail } from '../index';
@@ -48,5 +48,28 @@ describe('DocumentDetail', () => {
     vi.spyOn(db, 'getDocumentById').mockResolvedValue(mockDoc as never);
     renderDetail();
     expect(await screen.findByTestId('document-detail-title')).toBeInTheDocument();
+  });
+
+  it('renders the continue/edit/delete action buttons', async () => {
+    vi.spyOn(db, 'getDocumentById').mockResolvedValue(mockDoc as never);
+    renderDetail();
+    await screen.findByTestId('document-detail-title');
+    expect(screen.getByTestId('document-detail-continue-btn')).toBeInTheDocument();
+    expect(screen.getByTestId('document-detail-edit-btn')).toBeInTheDocument();
+    expect(screen.getByTestId('document-detail-delete-btn')).toBeInTheDocument();
+  });
+
+  it('dispatches invalidateDocumentList after confirming delete, so DocumentList/LastDocuments refresh', async () => {
+    vi.spyOn(db, 'getDocumentById').mockResolvedValue(mockDoc as never);
+    vi.spyOn(db, 'deleteDocumentFromDB').mockResolvedValue(undefined);
+    const store = loggedStore();
+    renderDetail(store);
+    await screen.findByTestId('document-detail-title');
+    expect(store.getState().pdfReader.listVersion).toBe(0);
+
+    fireEvent.click(screen.getByTestId('document-detail-delete-btn'));
+    fireEvent.click(await screen.findByTestId('delete-confirm-confirm-btn'));
+
+    await waitFor(() => expect(store.getState().pdfReader.listVersion).toBe(1));
   });
 });

@@ -302,7 +302,7 @@
 
 .achievementBadge {
   font-size: 0.72rem;
-  color: #f5b342;
+  color: var(--color-accent-bronze);
 }
 
 .achievementLabel {

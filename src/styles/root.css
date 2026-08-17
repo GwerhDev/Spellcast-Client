@@ -14,9 +14,9 @@
 
   --color-primary: #73a5cc;
   --color-secondary: #8469bb;
-  --color-button-primary: #73a5cc;
+  --color-button-primary: var(--color-primary);
   --color-button-primary-glass: color-mix(in srgb, var(--color-button-primary) 72%, transparent);
-  --color-button-primary-hover: #8469bb;
+  --color-button-primary-hover: var(--color-secondary);
   --color-primary-darker: #2d3134;
   --color-secondary-darker: #2b2a2e;
 
@@ -102,16 +102,29 @@
   --color-ok: #52c99a;
   --color-warning: #d4a017;
 
+  /* Bronze accent — the app's original primary/secondary brand color (commit db6f552,
+     2025-08-19 through 66c3bef, 2025-12-05) before it was replaced by the current blue/
+     purple. Reintroduced here as a punctual accent, not a full theme. */
+  --color-accent-bronze: #D7AB6D;
+  --color-accent-bronze-hover: #d69f51;
+  --color-accent-bronze-muted: #9B7644;
+
 }
 
 html.light {
   --color-primary: #73a5cc;
   --color-secondary: #8469bb;
-  --color-button-primary: #73a5cc;
+  --color-button-primary: var(--color-primary);
   --color-button-primary-glass: color-mix(in srgb, var(--color-button-primary) 72%, transparent);
-  --color-button-primary-hover: #8469bb;
+  --color-button-primary-hover: var(--color-secondary);
   --color-primary-lighter: #dce8f3;
   --color-secondary-lighter: #e6e6ef;
+
+  /* Bronze accent — darkened from the dark-theme value for AA-comfortable contrast on
+     light surfaces; --color-accent-bronze-muted is already dark enough for both themes. */
+  --color-accent-bronze: #c9944f;
+  --color-accent-bronze-hover: #b8823d;
+  --color-accent-bronze-muted: #9B7644;
 
   --color-highlight: #b7d7f0;
 

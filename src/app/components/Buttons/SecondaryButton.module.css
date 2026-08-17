@@ -13,6 +13,6 @@
 }
 
 .container:hover {
-  color: black;
+  color: var(--color-dark-100);
   background-color: var(--color-light-200);
 }

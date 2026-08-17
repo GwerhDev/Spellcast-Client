@@ -118,11 +118,11 @@ export const DocumentDetailModal: React.FC<DocumentDetailModalProps> = ({ docume
               </div>
             </div>
             <div className={s.actions}>
-              <PrimaryButton icon={faBookOpen} onClick={handleRead}>
+              <PrimaryButton data-testid="document-detail-modal-continue-btn" icon={faBookOpen} onClick={handleRead}>
                 {currentPage > 0 ? t.document.continueReading : t.document.startReading}
               </PrimaryButton>
-              <SecondaryButton icon={faPen} onClick={handleEdit}>{t.document.editDocument}</SecondaryButton>
-              <PrimaryButton variant="danger" icon={faTrash} onClick={() => setShowDeleteModal(true)}>
+              <SecondaryButton data-testid="document-detail-modal-edit-btn" icon={faPen} onClick={handleEdit}>{t.document.editDocument}</SecondaryButton>
+              <PrimaryButton data-testid="document-detail-modal-delete-btn" variant="danger" icon={faTrash} onClick={() => setShowDeleteModal(true)}>
                 {t.common.delete}
               </PrimaryButton>
             </div>
