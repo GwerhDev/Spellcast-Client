@@ -62,8 +62,16 @@ const buildBuckets = (docs: Document[], period: Period): Bucket[] => {
   });
 };
 
-const countIDB = (dbName: string, store: string): Promise<number> =>
-  new Promise(resolve => {
+const countIDB = async (dbName: string, store: string): Promise<number> => {
+  // See the identical comment in BrowserStorage.tsx's countIDBStore — indexedDB.open(dbName)
+  // with no version always creates the database if it's missing, with no object stores,
+  // which then permanently blocks the real owning module's own store from ever being
+  // created (onupgradeneeded won't fire again once the version already matches).
+  if (indexedDB.databases) {
+    const existing = await indexedDB.databases();
+    if (!existing.some(d => d.name === dbName)) return 0;
+  }
+  return new Promise(resolve => {
     const req = indexedDB.open(dbName);
     req.onsuccess = e => {
       const db = (e.target as IDBOpenDBRequest).result;
@@ -74,6 +82,7 @@ const countIDB = (dbName: string, store: string): Promise<number> =>
     };
     req.onerror = () => resolve(0);
   });
+};
 
 export const LibraryCharts: React.FC = () => {
   const { t } = useLanguage();

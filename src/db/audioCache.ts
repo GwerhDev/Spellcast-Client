@@ -1,7 +1,15 @@
 import type { TimelineEntry } from '../services/tts';
 
 const DB_NAME = 'spellcast-audio-cache';
-const DB_VERSION = 1;
+// Bumped from 1 → 2: some browsers ended up with this DB already created at version 1 but
+// missing the audio_pages object store — a bare `indexedDB.open(dbName)` call elsewhere in
+// the app (the storage-usage counters in BrowserStorage.tsx/LibraryCharts, now fixed) could
+// create this database with no store before this module ever opened it itself, and once a
+// database exists at a given version, onupgradeneeded never fires again for that same
+// version — so the store was permanently missing for anyone who hit that race. Bumping the
+// version forces onupgradeneeded to run again for every existing browser, creating the
+// store if it's missing (the existence check inside is already idempotent).
+const DB_VERSION = 2;
 const STORE_NAME = 'audio_pages';
 
 export const AUDIO_CACHE_VERSION = 2;

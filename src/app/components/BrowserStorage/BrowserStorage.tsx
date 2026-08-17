@@ -48,8 +48,20 @@ const getLocalStorageSize = (): number => {
   return size;
 };
 
-const countIDBStore = (dbName: string, storeName: string): Promise<number> =>
-  new Promise((resolve) => {
+const countIDBStore = async (dbName: string, storeName: string): Promise<number> => {
+  // indexedDB.open(dbName) with no explicit version ALWAYS creates the database (at
+  // version 1) if it doesn't exist yet, with zero object stores since there's no
+  // onupgradeneeded handler here. That silently "poisons" it for the module that actually
+  // owns it: when that module later opens the same name at its own real version (also 1),
+  // onupgradeneeded never fires again — the version already matches — so its object store
+  // never gets created, and its own reads/writes start throwing NotFoundError. Checking
+  // existence via indexedDB.databases() first means this read-only counter never creates a
+  // database that its owner hasn't created yet.
+  if (indexedDB.databases) {
+    const existing = await indexedDB.databases();
+    if (!existing.some((d) => d.name === dbName)) return 0;
+  }
+  return new Promise((resolve) => {
     const req = indexedDB.open(dbName);
     req.onsuccess = (e) => {
       const db = (e.target as IDBOpenDBRequest).result;
@@ -60,6 +72,7 @@ const countIDBStore = (dbName: string, storeName: string): Promise<number> =>
     };
     req.onerror = () => resolve(0);
   });
+};
 
 export const BrowserStorage: React.FC = () => {
   const { t } = useLanguage();
