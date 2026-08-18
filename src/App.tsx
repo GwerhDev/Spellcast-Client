@@ -24,11 +24,11 @@ import { Appearance } from './app/pages/Appearance';
 import { UserArchive } from './app/pages/UserArchive';
 import { Unauthorized } from './app/pages/Unauthorized';
 import { EditorSelect } from './app/pages/EditorSelect';
-import { DocumentEdit } from './app/pages/DocumentEdit';
-import { DocumentCreate } from './app/pages/DocumentCreate';
+import { SpellEdit } from './app/pages/SpellEdit';
+import { SpellCreate } from './app/pages/SpellCreate';
 import { UserCredentials } from './app/pages/UserCredentials';
-import { DocumentDetailPage } from './app/pages/DocumentDetail';
-import { LocalDocumentReader } from './app/pages/LocalDocumentReader';
+import { SpellDetailPage } from './app/pages/SpellDetail';
+import { LocalSpellReader } from './app/pages/LocalSpellReader';
 import { HavenStore } from './app/pages/HavenStore';
 
 import DefaultLayout from './app/layouts/DefaultLayout';
@@ -58,11 +58,11 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/editor" element={<Editor />} />
           <Route path="/editor/select" element={<EditorSelect />} />
-          <Route path="/editor/create" element={<DocumentCreate />} />
-          <Route path="/editor/:id" element={<DocumentEdit />} />
-          <Route path="/editor/:id/:page" element={<DocumentEdit />} />
-          <Route path="/document/:id" element={<DocumentDetailPage />} />
-          <Route path="/document/:id/reader" element={<LocalDocumentReader />} />
+          <Route path="/editor/create" element={<SpellCreate />} />
+          <Route path="/editor/:id" element={<SpellEdit />} />
+          <Route path="/editor/:id/:page" element={<SpellEdit />} />
+          <Route path="/spell/:id" element={<SpellDetailPage />} />
+          <Route path="/spell/:id/reader" element={<LocalSpellReader />} />
           <Route path="/user/archive" element={<UserArchive />} />
 
           <Route path="/user/dashboard" element={<Overview />} />

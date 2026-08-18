@@ -102,10 +102,10 @@ const CompanionModelHitArea: React.FC<HitAreaProps> = ({ model, companionScale, 
 };
 
 // Presentational only (Layer 4) — receives the resolved companion and its persisted
-// placements by props, no Redux; DocumentReader owns the store round-trip. Companions are
+// placements by props, no Redux; SpellReader owns the store round-trip. Companions are
 // static, user-placed props: plain drag repositions, Ctrl+drag rotates in place, Ctrl+wheel
 // resizes (with a Ctrl-hover border highlight as a hint), all relative deltas reported
-// upward, never local position state. Rendered above the document (see DocumentReader mount
+// upward, never local position state. Rendered above the document (see SpellReader mount
 // order) rather than as an ambient background, since there's no walk animation to justify
 // hiding them behind the page.
 export const CompanionOverlay: React.FC<Props> = ({ companion, placements, onMove, onRotate, onScale }) => {

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import reducer, {
   setPdfFile,
-  setPdfDocumentInfo,
+  setPdfSpellInfo,
   setPdfLoaded,
   goToNextPage,
   goToPreviousPage,
@@ -9,7 +9,7 @@ import reducer, {
   resetPdfReader,
   setCurrentSentenceIndex,
   setSentences,
-  invalidateDocumentList,
+  invalidateSpellList,
   invalidateContent,
   setFitToWidth,
   setLightningMode,
@@ -19,10 +19,10 @@ const initial = reducer(undefined, { type: '@@INIT' });
 
 describe('pdfReaderSlice', () => {
   describe('setPdfFile', () => {
-    it('sets documentId and title', () => {
+    it('sets spellId and title', () => {
       const state = reducer(initial, setPdfFile({ id: 'doc-1', title: 'My Doc' }));
-      expect(state.documentId).toBe('doc-1');
-      expect(state.documentTitle).toBe('My Doc');
+      expect(state.spellId).toBe('doc-1');
+      expect(state.spellTitle).toBe('My Doc');
     });
 
     it('restores currentPage and sentenceIndex from progress', () => {
@@ -38,7 +38,7 @@ describe('pdfReaderSlice', () => {
 
   describe('pagination', () => {
     const withPages = reducer(
-      reducer(initial, setPdfDocumentInfo({ totalPages: 5 })),
+      reducer(initial, setPdfSpellInfo({ totalPages: 5 })),
       goToPage(3)
     );
 
@@ -85,9 +85,9 @@ describe('pdfReaderSlice', () => {
   });
 
   describe('invalidation counters', () => {
-    it('invalidateDocumentList increments listVersion', () => {
-      const s1 = reducer(initial, invalidateDocumentList());
-      const s2 = reducer(s1, invalidateDocumentList());
+    it('invalidateSpellList increments listVersion', () => {
+      const s1 = reducer(initial, invalidateSpellList());
+      const s2 = reducer(s1, invalidateSpellList());
       expect(s2.listVersion).toBe(2);
     });
 
@@ -116,7 +116,7 @@ describe('pdfReaderSlice', () => {
         setPdfLoaded(true)
       );
       const reset = reducer(loaded, resetPdfReader());
-      expect(reset.documentId).toBeNull();
+      expect(reset.spellId).toBeNull();
       expect(reset.isLoaded).toBe(false);
     });
   });

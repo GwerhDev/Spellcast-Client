@@ -19,14 +19,14 @@ const GIFT_WINDOW_END = new Date('2026-08-30T23:59:59');
 let devBypassShownThisPageLoad = false;
 
 // `enabled` should reflect whether the caller is actually able to RENDER the modal
-// right now (e.g. DocumentReader's `isLoaded`) — not just whether the hook is mounted.
+// right now (e.g. SpellReader's `isLoaded`) — not just whether the hook is mounted.
 export function useCompanionGiftAnnouncement(enabled: boolean) {
   const dispatch = useAppDispatch();
   const unlockedIds = useAppSelector(s => s.userLibrary.unlockedIds);
   // Tracks a user-initiated close (Activate/Dismiss) for THIS mount.
   const [closedLocally, setClosedLocally] = useState(false);
   // Latches to true the first time `eligible` below is met, then STAYS true regardless
-  // of later re-renders. While a document finishes loading, DocumentReader fires several
+  // of later re-renders. While a spell finishes loading, SpellReader fires several
   // effects back-to-back and re-renders more than once in quick succession — deriving
   // "show" fresh every render straight off enabled/devBypass/realCondition is racy (it
   // can flip true→false before ever being painted, or even after, if `enabled` itself

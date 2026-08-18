@@ -89,7 +89,7 @@ export const PlayerPreferences: React.FC = () => {
   const [continueOnPageTurn, setContinueOnPageTurn] = useState(true);
   const [rememberPosition, setRememberPosition] = useState(true);
   const [skipBlankPages, setSkipBlankPages] = useState(false);
-  const [loopDocument, setLoopDocument] = useState(false);
+  const [loopSpell, setLoopSpell] = useState(false);
   const [speed, setSpeed] = useState(1);
   const { t } = useLanguage();
   const dispatch = useAppDispatch();
@@ -147,12 +147,12 @@ export const PlayerPreferences: React.FC = () => {
         <p className={s.sectionTitle}>{t.player.playback}</p>
         <ToggleRow soon label={t.player.autoplay} description={t.player.autoplayDesc} value={autoplay} onChange={setAutoplay} />
         <ToggleRow soon label={t.player.continueOnPageTurn} description={t.player.continueOnPageTurnDesc} value={continueOnPageTurn} onChange={setContinueOnPageTurn} />
-        <ToggleRow soon label={t.player.loopDocument} description={t.player.loopDocumentDesc} value={loopDocument} onChange={setLoopDocument} />
+        <ToggleRow soon label={t.player.loopSpell} description={t.player.loopSpellDesc} value={loopSpell} onChange={setLoopSpell} />
         <SliderRow soon label={t.player.readingSpeed} description={t.player.readingSpeedDesc} value={speed} min={0.5} max={2} step={0.25} format={(v) => `${v}×`} onChange={setSpeed} />
       </div>
 
       <div className={s.section}>
-        <p className={s.sectionTitle}>{t.player.document}</p>
+        <p className={s.sectionTitle}>{t.player.spell}</p>
         <ToggleRow soon label={t.player.rememberPosition} description={t.player.rememberPositionDesc} value={rememberPosition} onChange={setRememberPosition} />
         <ToggleRow soon label={t.player.skipBlankPages} description={t.player.skipBlankPagesDesc} value={skipBlankPages} onChange={setSkipBlankPages} />
       </div>

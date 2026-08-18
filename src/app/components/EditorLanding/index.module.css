@@ -76,7 +76,7 @@
   padding: 0;
 }
 
-/* ── Edit-list step (mirrors DocumentDetail panel pattern) ── */
+/* ── Edit-list step (mirrors SpellDetail panel pattern) ── */
 .panel {
   width: 100%;
   flex-grow: 1;

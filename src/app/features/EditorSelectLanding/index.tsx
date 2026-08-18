@@ -3,9 +3,9 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { faArrowLeft, faCloud, faFeatherPointed, faHardDrive, faLayerGroup, faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { getDocumentsFromDB } from '../../../db';
+import { getSpellsFromDB } from '../../../db';
 import { useAppSelector } from '../../../store/hooks';
-import { Document } from '../../../interfaces';
+import { Spell } from '../../../interfaces';
 import { EditorPickerCard } from '../../components/Cards/EditorPickerCard';
 import { Spinner } from '../../components/Spinner';
 import { SegmentedTabs } from '../../components/Tabs/SegmentedTabs';
@@ -21,15 +21,15 @@ export const EditorSelectLanding = () => {
   const { userData } = useAppSelector((state) => state.session);
   const { t } = useLanguage();
 
-  const [documents, setDocuments] = useState<Document[]>([]);
+  const [documents, setDocuments] = useState<Spell[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<EditorFilter>('all');
   const [query, setQuery] = useState('');
 
   useEffect(() => {
-    getDocumentsFromDB(userData.id)
+    getSpellsFromDB(userData.id)
       .then((docs) =>
-        setDocuments(docs.sort((a: Document, b: Document) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()))
+        setDocuments(docs.sort((a: Spell, b: Spell) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()))
       )
       .catch(console.error)
       .finally(() => setIsLoading(false));
@@ -57,8 +57,8 @@ export const EditorSelectLanding = () => {
       </div>
     );
     if (isLoading) return <Spinner isLoading />;
-    if (documents.length === 0) return <p data-testid="editor-select-empty" className={s.empty}>{t.document.noLocalDocuments}</p>;
-    if (visible.length === 0) return <p data-testid="editor-select-no-results" className={s.empty}>{t.document.noDocuments}</p>;
+    if (documents.length === 0) return <p data-testid="editor-select-empty" className={s.empty}>{t.spell.noLocalSpells}</p>;
+    if (visible.length === 0) return <p data-testid="editor-select-no-results" className={s.empty}>{t.spell.noSpells}</p>;
     return (
       <div className={s.docGrid}>
         {visible.map((doc) => (
@@ -79,7 +79,7 @@ export const EditorSelectLanding = () => {
       </div>
 
       <div className={s.sectionHeader}>
-        <SectionHeader icon={faFeatherPointed} title={t.editor.tagline} subtitle={t.editor.selectDocumentSubtitle} align="center" />
+        <SectionHeader icon={faFeatherPointed} title={t.editor.tagline} subtitle={t.editor.selectSpellSubtitle} align="center" />
       </div>
 
       <div className={s.controls}>

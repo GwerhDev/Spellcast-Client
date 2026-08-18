@@ -11,7 +11,7 @@ export const StorageCloud = () => {
   const { t } = useLanguage();
 
   const detailItems = [
-    { label: t.storage.documents,    value: 0 },
+    { label: t.storage.spells,    value: 0 },
     { label: t.storage.audioCache,   value: 0 },
     { label: t.storage.voiceProfile, value: 0 },
     { label: t.storage.appSettings,  value: 0 },

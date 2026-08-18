@@ -24,12 +24,12 @@ import { VoiceSelectorButton } from '../../components/Players/shared/VoiceSelect
 import { PlayerConfigButton } from '../../components/Players/shared/PlayerConfigButton/PlayerConfigButton';
 import { useNavigate } from 'react-router-dom';
 import { setSelectedVoice } from '../../../store/voiceSlice';
-import { getDocumentById } from '../../../db';
+import { getSpellById } from '../../../db';
 import { useAppSelector } from '../../../store/hooks';
 import { faFilePdf } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Waveform } from '../../components/Waveform/Waveform';
-import { DocumentDetailModal } from '../../components/Modals/DocumentDetailModal';
+import { SpellDetailModal } from '../../components/Modals/SpellDetailModal';
 
 interface PlayerProps {
   showVoiceSelectorModal: React.Dispatch<SetStateAction<boolean>>;
@@ -52,8 +52,8 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
     isLoaded,
     totalPages,
     currentPage,
-    documentId,
-    documentTitle,
+    spellId,
+    spellTitle,
     sentences,
     currentSentenceIndex,
   } = useSelector((state: RootState) => state.pdfReader);
@@ -82,7 +82,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
   const volumePercentage = volume * 100;
 
   const handleTitle = () => {
-    navigate(`/document/${documentId}/reader`);
+    navigate(`/spell/${spellId}/reader`);
   };
 
   const handleSearcher = () => {
@@ -107,8 +107,8 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
 
   useEffect(() => {
     let url: string | null = null;
-    if (documentId && userData?.id) {
-      getDocumentById(documentId, userData.id).then(doc => {
+    if (spellId && userData?.id) {
+      getSpellById(spellId, userData.id).then(doc => {
         if (doc?.cover) {
           url = URL.createObjectURL(doc.cover);
           setCoverUrl(url);
@@ -120,7 +120,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
       setCoverUrl(null);
     }
     return () => { if (url) URL.revokeObjectURL(url); };
-  }, [documentId, userData?.id]);
+  }, [spellId, userData?.id]);
 
   const speakSentence = (text: string, onEnd: () => void, onStart?: () => void, isRetry = false) => {
     const utterance = new SpeechSynthesisUtterance(text);
@@ -323,8 +323,8 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
 
   return (
     <>
-      <DocumentDetailModal
-        documentId={documentId ?? null}
+      <SpellDetailModal
+        spellId={spellId ?? null}
         show={showDocDetail}
         onClose={() => setShowDocDetail(false)}
       />
@@ -333,8 +333,8 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
           <section className={s.leftSection}>
             <div
               className={s.coverWrap}
-              onClick={documentId ? () => setShowDocDetail(true) : undefined}
-              style={documentId ? { cursor: 'pointer' } : undefined}
+              onClick={spellId ? () => setShowDocDetail(true) : undefined}
+              style={spellId ? { cursor: 'pointer' } : undefined}
             >
               {coverUrl
                 ? <img src={coverUrl} alt="" className={s.cover} />
@@ -347,9 +347,9 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
               )}
             </div>
             {isLoaded && (
-              <div className={s.documentDetails}>
-                <p title={documentTitle || ''} onClick={documentId ? handleTitle : undefined} style={documentId ? undefined : { cursor: 'default' }}>{documentTitle}</p>
-                {documentId && <small onClick={handleSearcher}>{t.document.page} {currentPage} {t.document.of} {totalPages}</small>}
+              <div className={s.spellDetails}>
+                <p title={spellTitle || ''} onClick={spellId ? handleTitle : undefined} style={spellId ? undefined : { cursor: 'default' }}>{spellTitle}</p>
+                {spellId && <small onClick={handleSearcher}>{t.spell.page} {currentPage} {t.spell.of} {totalPages}</small>}
               </div>
             )}
             <VoiceSelectorButton onClick={() => showVoiceSelectorModal(true)} />

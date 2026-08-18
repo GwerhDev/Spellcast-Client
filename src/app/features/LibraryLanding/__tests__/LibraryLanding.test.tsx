@@ -18,7 +18,7 @@ const loggedStore = () => {
 describe('LibraryLanding', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
-    vi.spyOn(db, 'getDocumentsFromDB').mockResolvedValue([]);
+    vi.spyOn(db, 'getSpellsFromDB').mockResolvedValue([]);
   });
 
   it('renders the library container', () => {
@@ -33,7 +33,7 @@ describe('LibraryLanding', () => {
 
   it('add-documents button is present', () => {
     renderWithProviders(<LibraryLanding />, { store: loggedStore() });
-    expect(screen.getByTestId('add-documents-btn')).toBeInTheDocument();
+    expect(screen.getByTestId('add-spells-btn')).toBeInTheDocument();
   });
 
   it('select-mode button is present', () => {
@@ -54,7 +54,7 @@ describe('LibraryLanding', () => {
 
   it('clicking add-documents twice toggles import visibility', () => {
     renderWithProviders(<LibraryLanding />, { store: loggedStore() });
-    const btn = screen.getByTestId('add-documents-btn');
+    const btn = screen.getByTestId('add-spells-btn');
     fireEvent.click(btn);
     fireEvent.click(btn);
     expect(btn).toBeInTheDocument();

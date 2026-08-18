@@ -50,7 +50,7 @@
   --mte-danger-border: var(--color-danger-100, #fca5a5);
 
   /* Document typography tokens — shared by the editor content and the read-only
-     TTSDocumentReader so both render identical vertical rhythm. */
+     TTSSpellReader so both render identical vertical rhythm. */
   --mte-doc-line-height: 1.6;
   --mte-doc-para-gap: 0.9em;
   --mte-doc-heading-gap-top: 1.2em;
@@ -152,7 +152,7 @@
   border-radius: 4px;
 }
 
-/* ─── Document typography (shared rhythm with TTSDocumentReader) ─────────────── */
+/* ─── Document typography (shared rhythm with TTSSpellReader) ─────────────── */
 .magic-text-editor .ProseMirror p {
   margin: 0 0 var(--mte-doc-para-gap);
   line-height: var(--mte-doc-line-height);

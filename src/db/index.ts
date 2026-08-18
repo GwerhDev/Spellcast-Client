@@ -1,27 +1,9 @@
-import { DB_NAME, DB_VERSION, DOCUMENTS_STORE_NAME } from "../config/api";
+import { DB_NAME, DB_VERSION, SPELLS_STORE_NAME } from "../config/api";
+import { Spell, SpellProgress } from "../interfaces";
 
-interface Document {
-  id: string;
-  title: string;
-  pdf?: Blob;
-  cover?: Blob;
-  createdAt: Date;
-  userId: string | undefined;
-  progress?: DocumentProgress;
-  pagesContent?: string;
-  originalPdf?: Blob;
-  originalPagesContent?: string;
-}
-
-interface DocumentProgress {
-  currentPage: number;
-  pagesProgress: number[];
-  lastReadSentenceIndex: number;
-}
-
-// Loose user match: a document's userId and the session id come from the same
+// Loose user match: a spell's userId and the session id come from the same
 // source, but historical records may store it in a different type (e.g. number
-// vs string after a backend change). Compare as strings so old documents still
+// vs string after a backend change). Compare as strings so old spells still
 // resolve, without ever matching a genuinely different user.
 const sameUser = (a: string | undefined, b: string | undefined): boolean =>
   a != null && b != null && String(a) === String(b);
@@ -30,8 +12,8 @@ let dbPromise: Promise<IDBDatabase> | null = null;
 
 export const clearAllData = async (): Promise<void> => {
   const db = await openDB();
-  const transaction = db.transaction(DOCUMENTS_STORE_NAME, 'readwrite');
-  const store = transaction.objectStore(DOCUMENTS_STORE_NAME);
+  const transaction = db.transaction(SPELLS_STORE_NAME, 'readwrite');
+  const store = transaction.objectStore(SPELLS_STORE_NAME);
 
   return new Promise((resolve, reject) => {
     const request = store.clear();
@@ -59,7 +41,7 @@ const openDB = (): Promise<IDBDatabase> => {
         });
       }
 
-      const store = db.createObjectStore(DOCUMENTS_STORE_NAME, { keyPath: 'id' });
+      const store = db.createObjectStore(SPELLS_STORE_NAME, { keyPath: 'id' });
       store.createIndex('title', 'title', { unique: false });
       store.createIndex('createdAt', 'createdAt', { unique: false });
       store.createIndex('userId', 'userId', { unique: false });
@@ -67,7 +49,7 @@ const openDB = (): Promise<IDBDatabase> => {
 
     request.onsuccess = (event) => {
       const db = (event.target as IDBOpenDBRequest).result;
-      if (!db.objectStoreNames.contains(DOCUMENTS_STORE_NAME)) {
+      if (!db.objectStoreNames.contains(SPELLS_STORE_NAME)) {
         db.close();
         const deleteRequest = indexedDB.deleteDatabase(DB_NAME);
         deleteRequest.onsuccess = () => {
@@ -100,13 +82,13 @@ const openDB = (): Promise<IDBDatabase> => {
   return dbPromise;
 };
 
-export const saveDocumentToDB = async (document: Omit<Document, 'id' | 'createdAt' | 'progress'>): Promise<string> => {
+export const saveSpellToDB = async (spell: Omit<Spell, 'id' | 'createdAt' | 'progress'>): Promise<string> => {
   const db = await openDB();
-  const transaction = db.transaction(DOCUMENTS_STORE_NAME, 'readwrite');
-  const store = transaction.objectStore(DOCUMENTS_STORE_NAME);
+  const transaction = db.transaction(SPELLS_STORE_NAME, 'readwrite');
+  const store = transaction.objectStore(SPELLS_STORE_NAME);
 
-  const newDocument: Document = {
-    ...document,
+  const newSpell: Spell = {
+    ...spell,
     id: crypto.randomUUID(),
     createdAt: new Date(),
     progress: {
@@ -117,24 +99,24 @@ export const saveDocumentToDB = async (document: Omit<Document, 'id' | 'createdA
   };
 
   return new Promise((resolve, reject) => {
-    const request = store.add(newDocument);
-    request.onsuccess = () => resolve(newDocument.id);
+    const request = store.add(newSpell);
+    request.onsuccess = () => resolve(newSpell.id);
     request.onerror = (event) => reject((event.target as IDBRequest).error);
   });
 };
 
-export const getDocumentsFromDB = async (userId: string | undefined): Promise<Document[]> => {
+export const getSpellsFromDB = async (userId: string | undefined): Promise<Spell[]> => {
   const db = await openDB();
-  const transaction = db.transaction(DOCUMENTS_STORE_NAME, 'readonly');
-  const docStore = transaction.objectStore(DOCUMENTS_STORE_NAME);
-  const docIndex = docStore.index('userId');
+  const transaction = db.transaction(SPELLS_STORE_NAME, 'readonly');
+  const spellStore = transaction.objectStore(SPELLS_STORE_NAME);
+  const spellIndex = spellStore.index('userId');
 
   return new Promise((resolve, reject) => {
-    const getAllRequest = docIndex.getAll(userId);
+    const getAllRequest = spellIndex.getAll(userId);
 
     getAllRequest.onerror = () => {
       const err = getAllRequest.error;
-      console.error('[IndexedDB] getDocumentsFromDB getAll(userId) failed:', err?.name, err?.message);
+      console.error('[IndexedDB] getSpellsFromDB getAll(userId) failed:', err?.name, err?.message);
       reject(err);
     };
 
@@ -143,27 +125,27 @@ export const getDocumentsFromDB = async (userId: string | undefined): Promise<Do
       // deleted concurrently between its key snapshot and value fetch (e.g. a
       // delete + refetch racing across the components that share this store).
       // Drop those before anything downstream (e.g. sort by createdAt) touches them.
-      const exact = (getAllRequest.result as (Document | null)[]).filter((d): d is Document => d != null);
+      const exact = (getAllRequest.result as (Spell | null)[]).filter((s): s is Spell => s != null);
       // Fast path: the userId index matched (types agree), or there's no user to
       // filter by. Otherwise fall back to a full scan with a type-tolerant match
-      // so documents saved under a differently-typed id (historical data) still
+      // so spells saved under a differently-typed id (historical data) still
       // list instead of silently disappearing. Only runs when the index is empty.
       if (exact.length > 0 || userId == null) {
         resolve(exact);
         return;
       }
-      const scanRequest = docStore.getAll();
+      const scanRequest = spellStore.getAll();
       scanRequest.onerror = () => {
         const err = scanRequest.error;
-        console.error('[IndexedDB] getDocumentsFromDB fallback scan failed:', err?.name, err?.message);
+        console.error('[IndexedDB] getSpellsFromDB fallback scan failed:', err?.name, err?.message);
         reject(err);
       };
       scanRequest.onsuccess = () => {
-        const matched = (scanRequest.result as (Document | null)[])
-          .filter((d): d is Document => d != null)
-          .filter((d) => sameUser(d.userId, userId));
+        const matched = (scanRequest.result as (Spell | null)[])
+          .filter((s): s is Spell => s != null)
+          .filter((s) => sameUser(s.userId, userId));
         if (matched.length > 0) {
-          console.warn(`[IndexedDB] Listed ${matched.length} document(s) via type-tolerant userId fallback (stored id type differs from session id).`);
+          console.warn(`[IndexedDB] Listed ${matched.length} spell(s) via type-tolerant userId fallback (stored id type differs from session id).`);
         }
         resolve(matched);
       };
@@ -171,130 +153,130 @@ export const getDocumentsFromDB = async (userId: string | undefined): Promise<Do
   });
 };
 
-export const getDocumentById = async (id: string, userId: string | undefined): Promise<Document | undefined> => {
+export const getSpellById = async (id: string, userId: string | undefined): Promise<Spell | undefined> => {
   const db = await openDB();
-  const transaction = db.transaction(DOCUMENTS_STORE_NAME, 'readonly');
-  const docStore = transaction.objectStore(DOCUMENTS_STORE_NAME);
+  const transaction = db.transaction(SPELLS_STORE_NAME, 'readonly');
+  const spellStore = transaction.objectStore(SPELLS_STORE_NAME);
 
   return new Promise((resolve, reject) => {
-    const docRequest = docStore.get(id);
+    const spellRequest = spellStore.get(id);
 
-    docRequest.onerror = () => {
-      reject(docRequest.error);
+    spellRequest.onerror = () => {
+      reject(spellRequest.error);
     };
 
-    docRequest.onsuccess = () => {
-      const doc = docRequest.result as Document | undefined;
-      if (!doc || !sameUser(doc.userId, userId)) {
+    spellRequest.onsuccess = () => {
+      const spell = spellRequest.result as Spell | undefined;
+      if (!spell || !sameUser(spell.userId, userId)) {
         return resolve(undefined);
       }
-      resolve(doc);
+      resolve(spell);
     };
   });
 };
 
-export const deleteDocumentFromDB = async (id: string, userId: string | undefined): Promise<void> => {
+export const deleteSpellFromDB = async (id: string, userId: string | undefined): Promise<void> => {
   const db = await openDB();
-  const transaction = db.transaction(DOCUMENTS_STORE_NAME, 'readwrite');
-  const docStore = transaction.objectStore(DOCUMENTS_STORE_NAME);
+  const transaction = db.transaction(SPELLS_STORE_NAME, 'readwrite');
+  const spellStore = transaction.objectStore(SPELLS_STORE_NAME);
 
   return new Promise((resolve, reject) => {
     transaction.oncomplete = () => resolve();
     transaction.onerror = () => reject(transaction.error);
 
-    const getRequest = docStore.get(id);
+    const getRequest = spellStore.get(id);
     getRequest.onsuccess = () => {
-      const doc = getRequest.result as Document | undefined;
-      if (doc && sameUser(doc.userId, userId)) {
-        docStore.delete(id);
+      const spell = getRequest.result as Spell | undefined;
+      if (spell && sameUser(spell.userId, userId)) {
+        spellStore.delete(id);
       } else {
         transaction.abort();
-        reject('Document not found or you do not have permission to delete it.');
+        reject('Spell not found or you do not have permission to delete it.');
       }
     };
   });
 };
 
-export const updateDocumentContent = async (id: string, userId: string, updates: { title: string; pagesContent: string }): Promise<void> => {
+export const updateSpellContent = async (id: string, userId: string, updates: { title: string; pagesContent: string }): Promise<void> => {
   const db = await openDB();
-  const transaction = db.transaction(DOCUMENTS_STORE_NAME, 'readwrite');
-  const store = transaction.objectStore(DOCUMENTS_STORE_NAME);
+  const transaction = db.transaction(SPELLS_STORE_NAME, 'readwrite');
+  const store = transaction.objectStore(SPELLS_STORE_NAME);
 
   return new Promise((resolve, reject) => {
     const getRequest = store.get(id);
     getRequest.onsuccess = () => {
-      const doc = getRequest.result as Document | undefined;
-      if (doc && sameUser(doc.userId, userId)) {
-        const putRequest = store.put({ ...doc, title: updates.title, pagesContent: updates.pagesContent });
+      const spell = getRequest.result as Spell | undefined;
+      if (spell && sameUser(spell.userId, userId)) {
+        const putRequest = store.put({ ...spell, title: updates.title, pagesContent: updates.pagesContent });
         putRequest.onsuccess = () => resolve();
         putRequest.onerror = (e) => reject((e.target as IDBRequest).error);
       } else {
-        reject(new Error('Document not found or user mismatch.'));
+        reject(new Error('Spell not found or user mismatch.'));
       }
     };
     getRequest.onerror = (e) => reject((e.target as IDBRequest).error);
   });
 };
 
-export const updateDocumentFull = async (
+export const updateSpellFull = async (
   id: string,
   userId: string,
   updates: { title: string; pagesContent: string; pdf: Blob; cover?: Blob; originalPdf?: Blob; originalPagesContent?: string }
 ): Promise<void> => {
   const db = await openDB();
-  const transaction = db.transaction(DOCUMENTS_STORE_NAME, 'readwrite');
-  const store = transaction.objectStore(DOCUMENTS_STORE_NAME);
+  const transaction = db.transaction(SPELLS_STORE_NAME, 'readwrite');
+  const store = transaction.objectStore(SPELLS_STORE_NAME);
 
   return new Promise((resolve, reject) => {
     const getRequest = store.get(id);
     getRequest.onsuccess = () => {
-      const doc = getRequest.result as Document | undefined;
-      if (doc && sameUser(doc.userId, userId)) {
-        const putRequest = store.put({ ...doc, ...updates });
+      const spell = getRequest.result as Spell | undefined;
+      if (spell && sameUser(spell.userId, userId)) {
+        const putRequest = store.put({ ...spell, ...updates });
         putRequest.onsuccess = () => resolve();
         putRequest.onerror = (e) => reject((e.target as IDBRequest).error);
       } else {
-        reject(new Error('Document not found or user mismatch.'));
+        reject(new Error('Spell not found or user mismatch.'));
       }
     };
     getRequest.onerror = (e) => reject((e.target as IDBRequest).error);
   });
 };
 
-export const getDocumentOriginalPages = async (id: string, userId: string | undefined): Promise<string | undefined> => {
+export const getSpellOriginalPages = async (id: string, userId: string | undefined): Promise<string | undefined> => {
   const db = await openDB();
-  const transaction = db.transaction(DOCUMENTS_STORE_NAME, 'readonly');
-  const store = transaction.objectStore(DOCUMENTS_STORE_NAME);
+  const transaction = db.transaction(SPELLS_STORE_NAME, 'readonly');
+  const store = transaction.objectStore(SPELLS_STORE_NAME);
 
   return new Promise((resolve, reject) => {
     const request = store.get(id);
     request.onsuccess = () => {
-      const doc = request.result as Document | undefined;
-      if (!doc || !sameUser(doc.userId, userId)) return resolve(undefined);
-      resolve(doc.originalPagesContent);
+      const spell = request.result as Spell | undefined;
+      if (!spell || !sameUser(spell.userId, userId)) return resolve(undefined);
+      resolve(spell.originalPagesContent);
     };
     request.onerror = (e) => reject((e.target as IDBRequest).error);
   });
 };
 
-export const updateDocumentProgress = async (documentId: string, userId: string, progress: DocumentProgress): Promise<void> => {
+export const updateSpellProgress = async (spellId: string, userId: string, progress: SpellProgress): Promise<void> => {
     const db = await openDB();
-    const transaction = db.transaction(DOCUMENTS_STORE_NAME, 'readwrite');
-    const store = transaction.objectStore(DOCUMENTS_STORE_NAME);
+    const transaction = db.transaction(SPELLS_STORE_NAME, 'readwrite');
+    const store = transaction.objectStore(SPELLS_STORE_NAME);
 
     return new Promise((resolve, reject) => {
-        const getRequest = store.get(documentId);
+        const getRequest = store.get(spellId);
 
         getRequest.onsuccess = () => {
-            const document = getRequest.result as Document | undefined;
-            if (document && sameUser(document.userId, userId)) {
-                const updatedDocument = { ...document, progress };
-                const putRequest = store.put(updatedDocument);
+            const spell = getRequest.result as Spell | undefined;
+            if (spell && sameUser(spell.userId, userId)) {
+                const updatedSpell = { ...spell, progress };
+                const putRequest = store.put(updatedSpell);
 
                 putRequest.onsuccess = () => resolve();
                 putRequest.onerror = (event) => reject((event.target as IDBRequest).error);
             } else {
-                reject(new Error('Document not found or user mismatch.'));
+                reject(new Error('Spell not found or user mismatch.'));
             }
         };
 

@@ -11,9 +11,9 @@ import {
   type ChartOptions,
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
-import { getDocumentsFromDB } from '../../../db';
+import { getSpellsFromDB } from '../../../db';
 import { useAppSelector } from '../../../store/hooks';
-import { Document } from '../../../interfaces';
+import { Spell } from '../../../interfaces';
 import { SegmentedTabs } from '../../components/Tabs/SegmentedTabs';
 import { useLanguage } from '../../../i18n';
 
@@ -28,7 +28,7 @@ const DAY = 86_400_000;
 const fmt = (d: Date) => d.toLocaleDateString('en', { month: 'short', day: 'numeric' });
 const fmtMonth = (d: Date) => d.toLocaleDateString('en', { month: 'short', year: '2-digit' });
 
-const buildBuckets = (docs: Document[], period: Period): Bucket[] => {
+const buildBuckets = (docs: Spell[], period: Period): Bucket[] => {
   const now = Date.now();
 
   if (period === 'all') {
@@ -87,14 +87,14 @@ const countIDB = async (dbName: string, store: string): Promise<number> => {
 export const LibraryCharts: React.FC = () => {
   const { t } = useLanguage();
   const { userData, logged } = useAppSelector(s => s.session);
-  const [docs, setDocs] = useState<Document[]>([]);
+  const [docs, setDocs] = useState<Spell[]>([]);
   const [audioCount, setAudioCount] = useState<number | null>(null);
   const [period, setPeriod] = useState<Period>('30d');
   const chartRef = useRef<ChartJS<'line'>>(null);
 
   useEffect(() => {
     if (!logged) return;
-    getDocumentsFromDB(userData.id).then(setDocs).catch(() => {});
+    getSpellsFromDB(userData.id).then(setDocs).catch(() => {});
     countIDB('spellcast-audio-cache', 'audio_pages').then(setAudioCount);
   }, [logged, userData.id]);
 

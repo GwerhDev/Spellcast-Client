@@ -2,16 +2,16 @@ import { useState } from 'react';
 import s from './index.module.css';
 import { useLanguage } from '../../../i18n';
 import { SegmentedTabs } from '../../components/Tabs/SegmentedTabs';
-import { DocumentList, LibraryFilter } from '../DocumentList';
+import { SpellList, LibraryFilter } from '../SpellList';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCloud, faHardDrive, faLayerGroup, faMagnifyingGlass, faPlus, faCheckSquare, faTrash, faXmark, faBuildingColumns } from '@fortawesome/free-solid-svg-icons';
 import { SectionHeader } from '../../components/SectionHeader';
 import { ImportOption } from '../../components/Start/ImportOption';
 import { CustomModal } from '../../components/Modals/CustomModal';
 import { DeleteConfirmModal } from '../../components/Modals/DeleteConfirmModal';
-import { deleteDocumentFromDB } from '../../../db';
+import { deleteSpellFromDB } from '../../../db';
 import { useAppSelector, useAppDispatch } from '../../../store/hooks';
-import { invalidateDocumentList } from '../../../store/pdfReaderSlice';
+import { invalidateSpellList } from '../../../store/pdfReaderSlice';
 
 export const LibraryLanding = () => {
   const { t } = useLanguage();
@@ -53,8 +53,8 @@ export const LibraryLanding = () => {
 
   const handleBulkDeleteConfirm = async () => {
     if (!userData?.id) return;
-    await Promise.all(selectedIds.map(id => deleteDocumentFromDB(id, userData.id)));
-    dispatch(invalidateDocumentList());
+    await Promise.all(selectedIds.map(id => deleteSpellFromDB(id, userData.id)));
+    dispatch(invalidateSpellList());
     setSelectedIds([]);
     setSelectionMode(false);
     setShowBulkDeleteModal(false);
@@ -66,7 +66,7 @@ export const LibraryLanding = () => {
 
       <SegmentedTabs tabs={tabs} active={filter} onChange={handleFilterChange} />
 
-      <CustomModal show={showImport} onClose={() => setShowImport(false)} title={t.library.addDocuments} compact>
+      <CustomModal show={showImport} onClose={() => setShowImport(false)} title={t.library.addSpells} compact>
         <ImportOption />
       </CustomModal>
 
@@ -84,13 +84,13 @@ export const LibraryLanding = () => {
 
       <div className={s.actionsRow}>
         <button
-          data-testid="add-documents-btn"
+          data-testid="add-spells-btn"
           className={`${s.toolbarBtn} ${showImport ? s.toolbarBtnActive : ''}`}
           onClick={() => { setShowImport(v => !v); if (selectionMode) toggleSelectionMode(); }}
-          title={t.library.addDocuments}
+          title={t.library.addSpells}
         >
           <FontAwesomeIcon icon={faPlus} />
-          {t.library.addDocuments}
+          {t.library.addSpells}
         </button>
         <button
           data-testid="select-mode-btn"
@@ -109,7 +109,7 @@ export const LibraryLanding = () => {
           <p>{t.storage.cloudSyncDesc}</p>
         </div>
       ) : (
-        <DocumentList
+        <SpellList
           query={query}
           filter={filter}
           selectionMode={selectionMode}
@@ -135,7 +135,7 @@ export const LibraryLanding = () => {
           show={showBulkDeleteModal}
           onClose={() => setShowBulkDeleteModal(false)}
           onConfirm={handleBulkDeleteConfirm}
-          title={t.document.deleteTitle}
+          title={t.spell.deleteTitle}
           message={t.library.deleteSelectedConfirm.replace('{n}', String(selectedIds.length))}
         />
       )}

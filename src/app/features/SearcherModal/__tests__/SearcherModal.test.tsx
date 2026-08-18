@@ -3,7 +3,7 @@ import { renderWithProviders } from '../../../../test/renderWithProviders';
 import { SearcherModal } from '../index';
 
 vi.mock('../../../../db', () => ({
-  getDocumentById: vi.fn().mockResolvedValue(null),
+  getSpellById: vi.fn().mockResolvedValue(null),
 }));
 
 describe('SearcherModal', () => {

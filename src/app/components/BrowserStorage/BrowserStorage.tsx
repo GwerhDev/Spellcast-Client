@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import s from './BrowserStorage.module.css';
 import { useLanguage } from '../../../i18n';
-import { DB_NAME, DOCUMENTS_STORE_NAME } from '../../../config/api';
+import { DB_NAME, SPELLS_STORE_NAME } from '../../../config/api';
 
 interface StorageBreakdown {
   indexedDB?: number;
@@ -18,7 +18,7 @@ interface StorageData {
 }
 
 interface ItemCounts {
-  documents: number;
+  spells: number;
   audioPages: number;
   voiceProfiles: number;
 }
@@ -93,12 +93,12 @@ export const BrowserStorage: React.FC = () => {
     });
 
     Promise.all([
-      countIDBStore(DB_NAME, DOCUMENTS_STORE_NAME),
+      countIDBStore(DB_NAME, SPELLS_STORE_NAME),
       countIDBStore('spellcast-audio-cache', 'audio_pages'),
       countIDBStore('spellcast-preferences', 'user_voice'),
-    ]).then(([documents, audioPages, voiceProfiles]) => {
-      setCounts({ documents, audioPages, voiceProfiles });
-    }).catch(() => setCounts({ documents: 0, audioPages: 0, voiceProfiles: 0 }));
+    ]).then(([spells, audioPages, voiceProfiles]) => {
+      setCounts({ spells, audioPages, voiceProfiles });
+    }).catch(() => setCounts({ spells: 0, audioPages: 0, voiceProfiles: 0 }));
 
     setSettings(
       KNOWN_LS_KEYS
@@ -125,7 +125,7 @@ export const BrowserStorage: React.FC = () => {
   }
 
   const detailItems = [
-    { label: t.storage.documents,  value: counts?.documents  ?? '—' },
+    { label: t.storage.spells,  value: counts?.spells  ?? '—' },
     { label: t.storage.audioCache, value: counts?.audioPages ?? '—' },
     { label: t.storage.voiceProfile, value: counts?.voiceProfiles ?? '—' },
     { label: t.storage.appSettings, value: settings.length || '—' },

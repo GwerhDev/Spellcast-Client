@@ -7,10 +7,10 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { RootState } from '../../../../store';
-import { resetDocumentState, setDocumentDetails } from '../../../../store/documentSlice';
+import { resetSpellState, setSpellDetails } from '../../../../store/spellSlice';
 import { enqueueUpload } from '../../../../store/pdfUploadSlice';
 import { useAppSelector } from '../../../../store/hooks';
-import { DocumentCreateInput } from '../../../components/Inputs/DocumentCreateInput';
+import { SpellCreateInput } from '../../../components/Inputs/SpellCreateInput';
 import { useLanguage } from '../../../../i18n';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
@@ -24,7 +24,7 @@ interface PendingFile {
 }
 
 export const ImportOption: React.FC = () => {
-  const document = useSelector((state: RootState) => state.document);
+  const spell = useSelector((state: RootState) => state.spell);
   const [isDragging, setIsDragging] = useState(false);
   const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([]);
   const [createAllTriggered, setCreateAllTriggered] = useState(false);
@@ -59,7 +59,7 @@ export const ImportOption: React.FC = () => {
 
     setIsProcessing(true);
     try {
-      if (arr.length === 1 && pendingFiles.length === 0 && !document.isLoaded) {
+      if (arr.length === 1 && pendingFiles.length === 0 && !spell.isLoaded) {
         const f = arr[0];
         const fileType = f.type.split('/').at(-1);
         const fileName = f.name.split('.').filter(e => e !== fileType).join(' ');
@@ -70,7 +70,7 @@ export const ImportOption: React.FC = () => {
               const fileContent = ev.target?.result as string;
               const pdfData = atob(fileContent.substring(fileContent.indexOf(',') + 1));
               const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
-              dispatch(setDocumentDetails({ fileContent, size: f.size, type: fileType, title: fileName, totalPages: pdf.numPages }));
+              dispatch(setSpellDetails({ fileContent, size: f.size, type: fileType, title: fileName, totalPages: pdf.numPages }));
               resolve();
             } catch (err) { reject(err); }
           };
@@ -87,7 +87,7 @@ export const ImportOption: React.FC = () => {
     } finally {
       setIsProcessing(false);
     }
-  }, [dispatch, document.isLoaded, pendingFiles.length]);
+  }, [dispatch, spell.isLoaded, pendingFiles.length]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) handleFiles(e.target.files);
@@ -108,14 +108,14 @@ export const ImportOption: React.FC = () => {
   const removePending = (index: number) =>
     setPendingFiles(prev => prev.filter((_, i) => i !== index));
 
-  const hasSingleReduxFile = document.isLoaded;
+  const hasSingleReduxFile = spell.isLoaded;
   const hasAnyFile = hasSingleReduxFile || pendingFiles.length > 0;
-  const hasMultiple = pendingFiles.length > 1 || (pendingFiles.length > 0 && document.isLoaded);
+  const hasMultiple = pendingFiles.length > 1 || (pendingFiles.length > 0 && spell.isLoaded);
   const totalCards = pendingFiles.length + (hasSingleReduxFile ? 1 : 0);
   const allDone = totalCards > 0 && doneCount >= totalCards;
 
   const resetAll = () => {
-    dispatch(resetDocumentState());
+    dispatch(resetSpellState());
     setPendingFiles([]);
     setDoneCount(0);
     setCreateAllTriggered(false);
@@ -123,15 +123,15 @@ export const ImportOption: React.FC = () => {
 
   const handleCreateAll = () => {
     if (!userData?.id) return;
-    if (document.isLoaded && document.fileContent && pendingFiles.length > 0) {
+    if (spell.isLoaded && spell.fileContent && pendingFiles.length > 0) {
       dispatch(enqueueUpload({
         id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-        title: document.title || t.document.untitled,
-        fileContent: document.fileContent,
+        title: spell.title || t.spell.untitled,
+        fileContent: spell.fileContent,
         saveOriginal: true,
         userId: userData.id,
       }));
-      dispatch(resetDocumentState());
+      dispatch(resetSpellState());
     }
     setCreateAllTriggered(true);
   };
@@ -139,26 +139,26 @@ export const ImportOption: React.FC = () => {
   if (isProcessing) return (
     <div className={s.processing}>
       <div className={s.processingSpinner} />
-      <span>{t.document.processingPdf}</span>
+      <span>{t.spell.processingPdf}</span>
     </div>
   );
 
   return hasAnyFile ? (
     <div data-testid="import-option-files" className={s.container}>
       {hasSingleReduxFile && (
-        <DocumentCreateInput
-          document={document}
-          onRemove={() => dispatch(resetDocumentState())}
+        <SpellCreateInput
+          spell={spell}
+          onRemove={() => dispatch(resetSpellState())}
           onDone={(resultDocId) => {
             setDoneCount(prev => prev + 1);
-            if (resultDocId) navigate(`/document/${resultDocId}`);
+            if (resultDocId) navigate(`/spell/${resultDocId}`);
           }}
         />
       )}
       {pendingFiles.map((f, i) => (
-        <DocumentCreateInput
+        <SpellCreateInput
           key={i}
-          document={{ ...f, currentPage: 0, isLoaded: true }}
+          spell={{ ...f, currentPage: 0, isLoaded: true }}
           onRemove={() => removePending(i)}
           autoCreate={createAllTriggered}
           onDone={() => setDoneCount(prev => prev + 1)}

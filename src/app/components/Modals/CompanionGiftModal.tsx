@@ -63,7 +63,7 @@ export const CompanionGiftModal: React.FC<CompanionGiftModalProps> = ({ show, on
           </div>
           <p className={s.body}>{t.companionGift.body}</p>
         </div>
-        {/* Same action-row pattern as DocumentDetailModal's .actions: PrimaryButton/
+        {/* Same action-row pattern as SpellDetailModal's .actions: PrimaryButton/
             SecondaryButton, both with icons, equal-width instead of right-aligned. */}
         <div className={s.actions}>
           <PrimaryButton icon={faCat} onClick={onActivate}>{t.companionGift.cta}</PrimaryButton>

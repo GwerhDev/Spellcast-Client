@@ -24,25 +24,25 @@ describe('EditorSelectLanding', () => {
   beforeEach(() => { vi.restoreAllMocks(); });
 
   it('renders the panel', () => {
-    vi.spyOn(db, 'getDocumentsFromDB').mockResolvedValue([]);
+    vi.spyOn(db, 'getSpellsFromDB').mockResolvedValue([]);
     renderWithProviders(<EditorSelectLanding />, { store: loggedStore() });
     expect(screen.getByTestId('editor-select')).toBeInTheDocument();
   });
 
   it('shows search input', () => {
-    vi.spyOn(db, 'getDocumentsFromDB').mockResolvedValue([]);
+    vi.spyOn(db, 'getSpellsFromDB').mockResolvedValue([]);
     renderWithProviders(<EditorSelectLanding />, { store: loggedStore() });
     expect(screen.getByTestId('editor-select-search')).toBeInTheDocument();
   });
 
   it('shows empty state when no documents', async () => {
-    vi.spyOn(db, 'getDocumentsFromDB').mockResolvedValue([]);
+    vi.spyOn(db, 'getSpellsFromDB').mockResolvedValue([]);
     renderWithProviders(<EditorSelectLanding />, { store: loggedStore() });
     expect(await screen.findByTestId('editor-select-empty')).toBeInTheDocument();
   });
 
   it('shows no-results when query matches nothing', async () => {
-    vi.spyOn(db, 'getDocumentsFromDB').mockResolvedValue([mockDoc] as never);
+    vi.spyOn(db, 'getSpellsFromDB').mockResolvedValue([mockDoc] as never);
     renderWithProviders(<EditorSelectLanding />, { store: loggedStore() });
     await screen.findByTestId('editor-select-search');
     fireEvent.change(screen.getByTestId('editor-select-search'), { target: { value: 'zzznomatch' } });

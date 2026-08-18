@@ -2,10 +2,10 @@ import s from './EditorPickerCard.module.css';
 import { useMemo, useEffect, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFilePdf } from '@fortawesome/free-solid-svg-icons';
-import { Document } from 'src/interfaces';
+import { Spell } from 'src/interfaces';
 
 interface EditorPickerCardProps {
-  doc: Document;
+  doc: Spell;
   onClick: () => void;
 }
 

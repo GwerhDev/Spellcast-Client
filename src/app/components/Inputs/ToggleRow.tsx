@@ -1,5 +1,5 @@
 import React from 'react';
-import s from '../../components/DocumentReader/ReaderSettings.module.css';
+import s from '../../components/SpellReader/ReaderSettings.module.css';
 
 interface ToggleRowProps {
   label: string;

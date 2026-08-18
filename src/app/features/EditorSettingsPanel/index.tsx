@@ -1,4 +1,4 @@
-import s from '../../components/DocumentReader/ReaderSettingsPanel.module.css';
+import s from '../../components/SpellReader/ReaderSettingsPanel.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFloppyDisk, faPenToSquare, faXmark } from '@fortawesome/free-solid-svg-icons';
 import { useDispatch, useSelector } from 'react-redux';

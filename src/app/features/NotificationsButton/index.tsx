@@ -22,7 +22,7 @@ const HistoryRow: React.FC<{ entry: UploadHistoryEntry; t: ReturnType<typeof use
 
   const handleClick = () => {
     if (isDone && entry.resultDocId) {
-      navigate(`/document/${entry.resultDocId}`);
+      navigate(`/spell/${entry.resultDocId}`);
     }
   };
 
@@ -30,7 +30,7 @@ const HistoryRow: React.FC<{ entry: UploadHistoryEntry; t: ReturnType<typeof use
     <div
       className={`${s.row} ${isDone && entry.resultDocId ? s.rowClickable : ''}`}
       onClick={handleClick}
-      title={isDone && entry.resultDocId ? t.document.continueReading : undefined}
+      title={isDone && entry.resultDocId ? t.spell.continueReading : undefined}
     >
       <div className={`${s.rowIcon} ${isDone ? s.rowIconDone : s.rowIconError}`}>
         <FontAwesomeIcon icon={faFile} />
@@ -38,7 +38,7 @@ const HistoryRow: React.FC<{ entry: UploadHistoryEntry; t: ReturnType<typeof use
       <div className={s.rowInfo}>
         <span className={s.rowTitle}>{entry.title}</span>
         <span className={`${s.rowStatus} ${isDone ? s.rowStatusDone : s.rowStatusError}`}>
-          {isDone ? t.document.created : (entry.errorMessage ?? 'Error')}
+          {isDone ? t.spell.created : (entry.errorMessage ?? 'Error')}
         </span>
       </div>
       <span className={s.rowTime}>{timeAgo(entry.completedAt, t.notifications)}</span>

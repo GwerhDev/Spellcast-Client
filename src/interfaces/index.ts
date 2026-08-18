@@ -73,24 +73,26 @@ export interface FieldDefinition {
   required?: boolean;
 }
 
-export interface DocumentProgress {
+export interface SpellProgress {
   currentPage: number;
   pagesProgress: number[];
   lastReadSentenceIndex: number;
 }
 
-export interface Document {
+export interface Spell {
   id: string;
   title: string;
   pdf?: Blob;
   cover?: Blob;
   createdAt: Date;
   userId: string | undefined;
-  progress?: DocumentProgress;
+  progress?: SpellProgress;
   pagesContent?: string;
+  originalPdf?: Blob;
+  originalPagesContent?: string;
 }
 
-export interface DocumentState {
+export interface SpellState {
   size: number | null;
   type?: string;
   title: string;

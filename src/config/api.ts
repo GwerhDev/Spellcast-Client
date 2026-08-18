@@ -13,5 +13,7 @@ export const DB_NAME = import.meta.env.VITE_DB_NAME ?? 'spellcast';
 // indexedDB.open() expects a numeric version; the env var arrives as a string, so coerce it.
 // `|| 1` covers NaN/0/undefined/empty-string alike — indexedDB.open() throws on a non-positive-integer version.
 export const DB_VERSION = Number(import.meta.env.VITE_DB_VERSION) || 1;
-export const DOCUMENTS_STORE_NAME = import.meta.env.VITE_DOCUMENTS_STORE_NAME ?? 'documents';
-export const DOCUMENT_PROGRESS_STORE_NAME = import.meta.env.VITE_DOCUMENT_PROGRESS_STORE_NAME ?? 'documentProgress';
+export const SPELLS_STORE_NAME = import.meta.env.VITE_SPELLS_STORE_NAME ?? 'spells';
+// Unused: progress travels embedded on each Spell record (see SpellProgress), not in a
+// separate store. Kept only for env-var back-compat with any deploy config that still sets it.
+export const SPELL_PROGRESS_STORE_NAME = import.meta.env.VITE_SPELL_PROGRESS_STORE_NAME ?? 'spellProgress';

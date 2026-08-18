@@ -10,7 +10,7 @@ import { RootState } from 'store/index';
 import { useSelector } from 'react-redux';
 import { SearcherModal } from '../components/Modals/SearcherModal';
 import { PlayerSettings } from '../components/Modals/PlayerSettings';
-import { ReaderSettings } from '../components/DocumentReader/ReaderSettings';
+import { ReaderSettings } from '../components/SpellReader/ReaderSettings';
 import { EditorSettings } from '../components/EditorSettingsPanel/EditorSettings';
 import { AccountMenu } from '../components/AccountMenu/AccountMenu';
 import { AppSwitcher } from '../components/AppSwitcher/AppSwitcher';

@@ -1,9 +1,9 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { DocumentProgress } from '../interfaces';
+import { SpellProgress } from '../interfaces';
 
 interface PdfReaderState {
-  documentId: string | null;
-  documentTitle: string | null;
+  spellId: string | null;
+  spellTitle: string | null;
   totalPages: number;
   currentPage: number;
   isLoaded: boolean;
@@ -11,7 +11,7 @@ interface PdfReaderState {
   isContinuousPlayActive: boolean;
   showSearcher: boolean;
   currentPageText: string;
-  progress?: DocumentProgress; // Add progress to state
+  progress?: SpellProgress; // Add progress to state
   currentSentenceIndex: number;
   sentences: string[];
   showReaderSettings: boolean;
@@ -26,8 +26,8 @@ interface PdfReaderState {
 }
 
 const initialState: PdfReaderState = {
-  documentId: null,
-  documentTitle: null,
+  spellId: null,
+  spellTitle: null,
   totalPages: 1,
   currentPage: 1,
   isLoaded: false,
@@ -57,9 +57,9 @@ const pdfReaderSlice = createSlice({
   name: 'pdfReader',
   initialState,
   reducers: {
-    setPdfFile(state, action: PayloadAction<{ id: string, title: string, progress?: DocumentProgress }>) {
-      state.documentId = action.payload.id;
-      state.documentTitle = action.payload.title;
+    setPdfFile(state, action: PayloadAction<{ id: string, title: string, progress?: SpellProgress }>) {
+      state.spellId = action.payload.id;
+      state.spellTitle = action.payload.title;
       state.progress = action.payload.progress;
       if (action.payload.progress) {
         state.currentPage = action.payload.progress.currentPage || 1;
@@ -75,7 +75,7 @@ const pdfReaderSlice = createSlice({
     setPdfLoaded(state, action: PayloadAction<boolean>) {
       state.isLoaded = action.payload;
     },
-    setPdfDocumentInfo(state, action: PayloadAction<{ totalPages: number }>) {
+    setPdfSpellInfo(state, action: PayloadAction<{ totalPages: number }>) {
       state.totalPages = action.payload.totalPages;
     },
     setShowSearcher(state, action: PayloadAction<boolean>) {
@@ -134,18 +134,18 @@ const pdfReaderSlice = createSlice({
     invalidateContent(state) {
       state.contentVersion += 1;
     },
-    invalidateDocumentList(state) {
+    invalidateSpellList(state) {
       state.listVersion += 1;
     },
     setReaderTitle(state, action: PayloadAction<string>) {
-      state.documentTitle = action.payload;
+      state.spellTitle = action.payload;
     },
   },
 });
 
 export const {
   setPdfFile,
-  setPdfDocumentInfo,
+  setPdfSpellInfo,
   goToNextPage,
   goToPreviousPage,
   goToPage,
@@ -165,7 +165,7 @@ export const {
   setShowAttentionGuard,
   recordReaderActivity,
   invalidateContent,
-  invalidateDocumentList,
+  invalidateSpellList,
   setReaderTitle,
 } = pdfReaderSlice.actions;
 

@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import type { JSONContent } from '../../../magictext';
 import { RootState } from '../../../store';
 import { goToPage, setShowSearcher } from '../../../store/pdfReaderSlice';
-import { getDocumentById } from '../../../db';
+import { getSpellById } from '../../../db';
 import { useAppSelector } from '../../../store/hooks';
 import { CustomModal } from '../../components/Modals/CustomModal';
 import { useLanguage } from '../../../i18n';
@@ -43,7 +43,7 @@ export const SearcherModal: React.FC = () => {
   const { t } = useLanguage();
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { currentPage, totalPages, showSearcher, documentId } = useSelector(
+  const { currentPage, totalPages, showSearcher, spellId } = useSelector(
     (state: RootState) => state.pdfReader
   );
   const { userData } = useAppSelector((state) => state.session);
@@ -65,15 +65,15 @@ export const SearcherModal: React.FC = () => {
   }, [showSearcher, mode]);
 
   useEffect(() => {
-    if (!showSearcher || !documentId) return;
-    getDocumentById(documentId, userData.id).then((doc) => {
+    if (!showSearcher || !spellId) return;
+    getSpellById(spellId, userData.id).then((doc) => {
       if (!doc?.pagesContent) return;
       const pages = JSON.parse(doc.pagesContent) as JSONContent[];
       const texts = pages.map((p) => extractFullText(JSON.stringify(p)));
       setFullTexts(texts);
       setSnippets(texts.map((t) => getSnippet(t)));
     });
-  }, [showSearcher, documentId, userData.id]);
+  }, [showSearcher, spellId, userData.id]);
 
   if (!showSearcher) return null;
 
@@ -85,7 +85,7 @@ export const SearcherModal: React.FC = () => {
   const handlePageSelection = (page: number) => {
     dispatch(goToPage(page));
     dispatch(setShowSearcher(false));
-    if (documentId) navigate(`/document/${documentId}/reader`);
+    if (spellId) navigate(`/spell/${spellId}/reader`);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {

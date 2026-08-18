@@ -1,4 +1,4 @@
-import s from '../../components/DocumentReader/ReaderSettings.module.css';
+import s from '../../components/SpellReader/ReaderSettings.module.css';
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { faDesktop, faPalette, faShieldHalved, faCat } from '@fortawesome/free-solid-svg-icons';

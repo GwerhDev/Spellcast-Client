@@ -3,9 +3,9 @@ import { useDispatch, useSelector } from 'react-redux';
 import type { JSONContent } from '../../../magictext';
 import { RootState } from '../../../store';
 import { setPageText, setPdfLoaded, setSentences } from '../../../store/pdfReaderSlice';
-import { getDocumentById, updateDocumentProgress } from '../../../db';
+import { getSpellById, updateSpellProgress } from '../../../db';
 import { useAppSelector } from '../../../store/hooks';
-import { DocumentProgress } from '../../../interfaces/index';
+import { SpellProgress } from '../../../interfaces/index';
 import { injectCoverIntoPages } from '../../../utils/pdfUtils';
 
 const extractSentencesFromJSON = (text: string): string[] => {
@@ -39,16 +39,16 @@ const extractSentencesFromJSON = (text: string): string[] => {
 export const PdfProcessor = () => {
   const dispatch = useDispatch();
   const { userData } = useAppSelector((state) => state.session);
-  const { currentPage, documentId, isLoaded, currentSentenceIndex, contentVersion } = useSelector((state: RootState) => state.pdfReader);
+  const { currentPage, spellId, isLoaded, currentSentenceIndex, contentVersion } = useSelector((state: RootState) => state.pdfReader);
 
   const [pages, setPages] = useState<string[]>([]);
   const [docLoaded, setDocLoaded] = useState(false);
 
   useEffect(() => {
-    if (!documentId) return;
+    if (!spellId) return;
     setDocLoaded(false);
     setPages([]);
-    getDocumentById(documentId, userData.id).then(async (doc) => {
+    getSpellById(spellId, userData.id).then(async (doc) => {
       if (doc?.pagesContent) {
         const parsed = JSON.parse(doc.pagesContent) as JSONContent[];
         const withCover = await injectCoverIntoPages(parsed, doc.cover ?? null);
@@ -58,7 +58,7 @@ export const PdfProcessor = () => {
       }
       setDocLoaded(true);
     });
-  }, [documentId, userData.id, contentVersion]);
+  }, [spellId, userData.id, contentVersion]);
 
   useEffect(() => {
     if (!docLoaded) return;
@@ -69,14 +69,14 @@ export const PdfProcessor = () => {
   }, [currentPage, docLoaded, pages, dispatch]);
 
   useEffect(() => {
-    if (!isLoaded || currentSentenceIndex < 0 || !documentId) return;
-    const progress: DocumentProgress = {
+    if (!isLoaded || currentSentenceIndex < 0 || !spellId) return;
+    const progress: SpellProgress = {
       currentPage,
       pagesProgress: [],
       lastReadSentenceIndex: currentSentenceIndex < 0 ? 0 : currentSentenceIndex,
     };
-    updateDocumentProgress(documentId, userData.id || '', progress);
-  }, [currentPage, documentId, isLoaded, currentSentenceIndex, userData.id]);
+    updateSpellProgress(spellId, userData.id || '', progress);
+  }, [currentPage, spellId, isLoaded, currentSentenceIndex, userData.id]);
 
   return null;
 };

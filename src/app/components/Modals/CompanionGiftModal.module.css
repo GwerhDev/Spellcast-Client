@@ -107,7 +107,7 @@
   line-height: 1.55;
 }
 
-/* Same pattern as DocumentDetailModal.module.css's .actions — equal-width buttons
+/* Same pattern as SpellDetailModal.module.css's .actions — equal-width buttons
    filling the row, instead of right-aligned natural-width buttons. */
 .actions {
   display: flex;

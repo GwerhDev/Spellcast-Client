@@ -26,13 +26,13 @@ import type { JSONContent } from '@tiptap/core';
 import { addApiResponse } from '../../../store/apiResponsesSlice';
 import type { CredentialError } from '../../components/Players/shared/VoiceSelectorButton/VoiceSelectorButton';
 import { getCachedAudio, setCachedAudio, AUDIO_CACHE_VERSION } from '../../../db/audioCache';
-import { getDocumentById } from '../../../db';
+import { getSpellById } from '../../../db';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '../../../store/hooks';
 import { faFilePdf } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Waveform } from '../../components/Waveform/Waveform';
-import { DocumentDetailModal } from '../../components/Modals/DocumentDetailModal';
+import { SpellDetailModal } from '../../components/Modals/SpellDetailModal';
 
 interface PlayerProps {
   showVoiceSelectorModal: React.Dispatch<SetStateAction<boolean>>;
@@ -58,10 +58,10 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
   } = useSelector((state: RootState) => state.audioPlayer);
   const {
     isLoaded,
-    documentId,
+    spellId,
     totalPages,
     currentPage,
-    documentTitle,
+    spellTitle,
     currentPageText,
   } = useSelector((state: RootState) => state.pdfReader);
   const { selectedVoice } = useSelector((state: RootState) => state.voice);
@@ -115,8 +115,8 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
 
   useEffect(() => {
     let url: string | null = null;
-    if (documentId && userData?.id) {
-      getDocumentById(documentId, userData.id).then(doc => {
+    if (spellId && userData?.id) {
+      getSpellById(spellId, userData.id).then(doc => {
         if (doc?.cover) {
           url = URL.createObjectURL(doc.cover);
           setCoverUrl(url);
@@ -128,7 +128,7 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
       setCoverUrl(null);
     }
     return () => { if (url) URL.revokeObjectURL(url); };
-  }, [documentId, userData?.id]);
+  }, [spellId, userData?.id]);
 
   useEffect(() => {
     if (audioRef.current) {
@@ -224,14 +224,14 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
   };
 
   const prefetchNextPage = async (nextPage: number) => {
-    if (!documentId || !userData?.id) return;
-    const cached = await getCachedAudio(documentId, nextPage, selectedVoice.value);
+    if (!spellId || !userData?.id) return;
+    const cached = await getCachedAudio(spellId, nextPage, selectedVoice.value);
     if (cached?.timeline.length) return;
 
     const controller = new AbortController();
     prefetchAbortRef.current = controller;
     try {
-      const doc = await getDocumentById(documentId, userData.id);
+      const doc = await getSpellById(spellId, userData.id);
       if (controller.signal.aborted || !doc?.pagesContent) return;
       const pages = JSON.parse(doc.pagesContent) as JSONContent[];
       const pageDoc = pages[nextPage - 1];
@@ -241,7 +241,7 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
         controller.signal,
       );
       if (!controller.signal.aborted) {
-        setCachedAudio(documentId, nextPage, selectedVoice.value, blob, timeline);
+        setCachedAudio(spellId, nextPage, selectedVoice.value, blob, timeline);
       }
     } catch (e) {
       if (e instanceof Error && e.name === 'AbortError') return;
@@ -269,8 +269,8 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
     dispatch(setDuration(0));
 
     try {
-      const cachedResult = documentId
-        ? await getCachedAudio(documentId, currentPage, selectedVoice.value)
+      const cachedResult = spellId
+        ? await getCachedAudio(spellId, currentPage, selectedVoice.value)
         : null;
       let blob: Blob | null = cachedResult?.blob ?? null;
 
@@ -298,7 +298,7 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
         blob = result.blob;
         aiTimelineRef.current = result.timeline;
         dispatch(setAiTimeline(result.timeline));
-        if (documentId) setCachedAudio(documentId, currentPage, selectedVoice.value, blob, result.timeline);
+        if (spellId) setCachedAudio(spellId, currentPage, selectedVoice.value, blob, result.timeline);
       }
       if (!controller.signal.aborted) {
         loadAudio(blob!);
@@ -355,7 +355,7 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
   };
 
   const handleTitle = () => {
-    navigate(`/document/${documentId}/reader`);
+    navigate(`/spell/${spellId}/reader`);
   };
 
   const handleSearcher = () => {
@@ -396,12 +396,12 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
     if (!('mediaSession' in navigator)) return;
 
     navigator.mediaSession.metadata = new MediaMetadata({
-      title:  documentTitle ?? '',
-      artist: isLoaded ? `${t.document.page} ${currentPage} ${t.document.of} ${totalPages}` : '',
+      title:  spellTitle ?? '',
+      artist: isLoaded ? `${t.spell.page} ${currentPage} ${t.spell.of} ${totalPages}` : '',
       album:  'Spellcast',
       artwork: coverUrl ? [{ src: coverUrl, type: 'image/jpeg' }] : [],
     });
-  }, [documentTitle, currentPage, totalPages, coverUrl]);
+  }, [spellTitle, currentPage, totalPages, coverUrl]);
 
   useEffect(() => {
     if (!('mediaSession' in navigator)) return;
@@ -421,8 +421,8 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
 
   return (
     <>
-      <DocumentDetailModal
-        documentId={documentId ?? null}
+      <SpellDetailModal
+        spellId={spellId ?? null}
         show={showDocDetail}
         onClose={() => setShowDocDetail(false)}
       />
@@ -437,8 +437,8 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
           <section className={s.leftSection}>
             <div
               className={s.coverWrap}
-              onClick={documentId ? () => setShowDocDetail(true) : undefined}
-              style={documentId ? { cursor: 'pointer' } : undefined}
+              onClick={spellId ? () => setShowDocDetail(true) : undefined}
+              style={spellId ? { cursor: 'pointer' } : undefined}
             >
               {coverUrl
                 ? <img src={coverUrl} alt="" className={s.cover} />
@@ -451,9 +451,9 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
               )}
             </div>
             {isLoaded && (
-              <div className={s.documentDetails}>
-                <p title={documentTitle || ''} onClick={documentId ? handleTitle : undefined} style={documentId ? undefined : { cursor: 'default' }}>{documentTitle}</p>
-                {documentId && <small onClick={handleSearcher}>{t.document.page} {currentPage} {t.document.of} {totalPages}</small>}
+              <div className={s.spellDetails}>
+                <p title={spellTitle || ''} onClick={spellId ? handleTitle : undefined} style={spellId ? undefined : { cursor: 'default' }}>{spellTitle}</p>
+                {spellId && <small onClick={handleSearcher}>{t.spell.page} {currentPage} {t.spell.of} {totalPages}</small>}
               </div>
             )}
             <VoiceSelectorButton onClick={() => showVoiceSelectorModal(true)} credentialError={credentialError} />

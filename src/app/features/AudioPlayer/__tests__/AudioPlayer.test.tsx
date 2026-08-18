@@ -4,7 +4,7 @@ import { renderWithProviders } from '../../../../test/renderWithProviders';
 import { AudioPlayer } from '../index';
 
 vi.mock('../../../../db', () => ({
-  getDocumentById: vi.fn().mockResolvedValue(null),
+  getSpellById: vi.fn().mockResolvedValue(null),
 }));
 
 vi.mock('../../../../db/audioCache', () => ({

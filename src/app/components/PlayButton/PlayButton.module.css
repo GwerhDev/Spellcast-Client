@@ -4,7 +4,7 @@
      landed AFTER .btn's own in the compiled CSS, silently turning this circular button into
      a rounded rectangle. Declared in full instead; PlayButton stays its own <button> (see
      PlayButton.tsx) rather than a literal IconButton wrapper, since its swap-icon glow
-     animation, .sheen sweep, and DocumentCard's stopPropagation-dependent onClick event
+     animation, .sheen sweep, and SpellCard's stopPropagation-dependent onClick event
      don't fit IconButton's generic API without widening it for this one animated consumer. */
   border-radius: 50%;
   border: none;

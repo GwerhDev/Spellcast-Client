@@ -4,7 +4,7 @@ import { renderWithProviders } from '../../../../test/renderWithProviders';
 import { LibraryCharts } from '../index';
 
 vi.mock('../../../../db', () => ({
-  getDocumentsFromDB: vi.fn().mockResolvedValue([]),
+  getSpellsFromDB: vi.fn().mockResolvedValue([]),
 }));
 
 vi.mock('react-chartjs-2', () => ({

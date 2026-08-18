@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFile, faPenToSquare, faFeatherPointed } from '@fortawesome/free-solid-svg-icons';
-import { resetDocumentState } from '../../../store/documentSlice';
+import { resetSpellState } from '../../../store/spellSlice';
 import { SectionHeader } from '../../components/SectionHeader';
 import { useLanguage } from '../../../i18n';
 
@@ -13,7 +13,7 @@ export const EditorLanding = () => {
   const { t } = useLanguage();
 
   const handleCreateNew = () => {
-    dispatch(resetDocumentState());
+    dispatch(resetSpellState());
     navigate('/editor/create');
   };
 

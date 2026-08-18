@@ -41,17 +41,17 @@ const openDB = (): Promise<IDBDatabase> => {
   return dbPromise;
 };
 
-const makeKey = (documentId: string, page: number, voice: string) =>
-  `${documentId}_${page}_${voice}`;
+const makeKey = (spellId: string, page: number, voice: string) =>
+  `${spellId}_${page}_${voice}`;
 
 export const getCachedAudio = async (
-  documentId: string,
+  spellId: string,
   page: number,
   voice: string,
 ): Promise<{ blob: Blob; timeline: TimelineEntry[]; cacheVersion?: number } | null> => {
   const db = await openDB();
   return new Promise((resolve, reject) => {
-    const request = db.transaction(STORE_NAME, 'readonly').objectStore(STORE_NAME).get(makeKey(documentId, page, voice));
+    const request = db.transaction(STORE_NAME, 'readonly').objectStore(STORE_NAME).get(makeKey(spellId, page, voice));
     request.onsuccess = () => {
       const record = request.result as { id: string; blob: Blob; timeline?: TimelineEntry[]; cacheVersion?: number } | undefined;
       if (!record) { resolve(null); return; }
@@ -62,7 +62,7 @@ export const getCachedAudio = async (
 };
 
 export const setCachedAudio = async (
-  documentId: string,
+  spellId: string,
   page: number,
   voice: string,
   blob: Blob,
@@ -70,13 +70,13 @@ export const setCachedAudio = async (
 ): Promise<void> => {
   const db = await openDB();
   return new Promise((resolve, reject) => {
-    const request = db.transaction(STORE_NAME, 'readwrite').objectStore(STORE_NAME).put({ id: makeKey(documentId, page, voice), blob, timeline, cacheVersion: AUDIO_CACHE_VERSION });
+    const request = db.transaction(STORE_NAME, 'readwrite').objectStore(STORE_NAME).put({ id: makeKey(spellId, page, voice), blob, timeline, cacheVersion: AUDIO_CACHE_VERSION });
     request.onsuccess = () => resolve();
     request.onerror = (e) => reject((e.target as IDBRequest).error);
   });
 };
 
-export const clearDocumentAudioCache = async (documentId: string): Promise<void> => {
+export const clearSpellAudioCache = async (spellId: string): Promise<void> => {
   const db = await openDB();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, 'readwrite');
@@ -85,7 +85,7 @@ export const clearDocumentAudioCache = async (documentId: string): Promise<void>
     req.onsuccess = (e) => {
       const cursor = (e.target as IDBRequest<IDBCursorWithValue | null>).result;
       if (cursor) {
-        if ((cursor.key as string).startsWith(`${documentId}_`)) cursor.delete();
+        if ((cursor.key as string).startsWith(`${spellId}_`)) cursor.delete();
         cursor.continue();
       }
     };

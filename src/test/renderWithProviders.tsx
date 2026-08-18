@@ -14,7 +14,7 @@ import userLibraryReducer from '../store/userLibrarySlice';
 import editorReducer from '../store/editorSlice';
 import credentialsReducer from '../store/credentialsSlice';
 import groupsReducer from '../store/groupsSlice';
-import documentReducer from '../store/documentSlice';
+import spellReducer from '../store/spellSlice';
 import apiResponsesReducer from '../store/apiResponsesSlice';
 import layoutReducer from '../store/layoutSlice';
 
@@ -29,7 +29,7 @@ const rootReducer = combineReducers({
   editor: editorReducer,
   credentials: credentialsReducer,
   groups: groupsReducer,
-  document: documentReducer,
+  spell: spellReducer,
   apiResponses: apiResponsesReducer,
   layout: layoutReducer,
 });

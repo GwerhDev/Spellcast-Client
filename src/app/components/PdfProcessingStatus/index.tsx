@@ -8,7 +8,7 @@ interface PdfProcessingStatusProps {
   variant: 'overlay' | 'compact';
   progress: { current: number; total: number } | null;
   coverUrl: string | null;
-  documentTitle: string;
+  spellTitle: string;
   onCollapse?: () => void;
   onExpand?: () => void;
 }
@@ -17,7 +17,7 @@ export const PdfProcessingStatus: React.FC<PdfProcessingStatusProps> = ({
   variant,
   progress,
   coverUrl,
-  documentTitle,
+  spellTitle,
   onCollapse,
   onExpand,
 }) => {
@@ -25,8 +25,8 @@ export const PdfProcessingStatus: React.FC<PdfProcessingStatusProps> = ({
   const progressPct = progress ? (progress.current / progress.total) * 100 : 0;
   const progressLabel = progress ? `${progress.current}/${progress.total}` : null;
   const label = progressLabel
-    ? `${t.document.processingPdf} (${progressLabel})`
-    : t.document.processingPdf;
+    ? `${t.spell.processingPdf} (${progressLabel})`
+    : t.spell.processingPdf;
 
   if (variant === 'compact') {
     return (
@@ -51,7 +51,7 @@ export const PdfProcessingStatus: React.FC<PdfProcessingStatusProps> = ({
           ? <img src={coverUrl} alt="" className={s.cover} />
           : <FontAwesomeIcon icon={faFile} className={s.fallback} />
         }
-        {documentTitle && <span className={s.title}>{documentTitle}</span>}
+        {spellTitle && <span className={s.title}>{spellTitle}</span>}
         <span className={s.processingLabel}>{label}</span>
         <div className={s.track}>
           <div className={s.fill} style={{ width: `${progressPct}%` }} />

@@ -4,7 +4,7 @@ import { TextOption } from './TextOption';
 import { SegmentedTabs } from '../../components/Tabs/SegmentedTabs';
 import { ImportOption } from './ImportOption';
 import { useDispatch } from 'react-redux';
-import { resetDocumentState } from '../../../store/documentSlice';
+import { resetSpellState } from '../../../store/spellSlice';
 import { useLanguage } from '../../../i18n';
 import { faPen, faUpload } from '@fortawesome/free-solid-svg-icons';
 
@@ -15,7 +15,7 @@ export const Start = () => {
 
   const handleInputTypeChange = (type: string) => {
     setInputType(type);
-    dispatch(resetDocumentState());
+    dispatch(resetSpellState());
   };
 
   const getSubtitle = () => {

@@ -1,4 +1,4 @@
-import s from '../../components/DocumentReader/Searcher/SearcherButton.module.css';
+import s from '../../components/SpellReader/Searcher/SearcherButton.module.css';
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../../store';
@@ -14,7 +14,7 @@ export const SearcherButton: React.FC = () => {
   return (
     <div data-testid="searcher-button" className={s.searcherButtonContainer}>
       <TertiaryButton onClick={() => dispatch(setShowSearcher(true))}>
-        {`${t.document.page} ${currentPage} ${t.document.of} ${totalPages}`}
+        {`${t.spell.page} ${currentPage} ${t.spell.of} ${totalPages}`}
       </TertiaryButton>
     </div>
   );

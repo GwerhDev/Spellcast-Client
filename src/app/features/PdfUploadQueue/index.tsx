@@ -20,18 +20,18 @@ const JobRow: React.FC<{ job: PdfUploadJob }> = ({ job }) => {
 
   const handleClick = () => {
     if (job.status === 'done' && job.resultDocId) {
-      navigate(`/document/${job.resultDocId}`);
+      navigate(`/spell/${job.resultDocId}`);
       dispatch(dismissUpload(job.id));
     }
   };
 
   const statusLabel = () => {
     switch (job.status) {
-      case 'queued':     return t.document.creating;
+      case 'queued':     return t.spell.creating;
       case 'processing': return job.progress
-        ? `${t.document.processingPdf} ${job.progress.current}/${job.progress.total}`
-        : t.document.processingPdf;
-      case 'done':       return job.resultDocId ? t.document.created : t.common.saved;
+        ? `${t.spell.processingPdf} ${job.progress.current}/${job.progress.total}`
+        : t.spell.processingPdf;
+      case 'done':       return job.resultDocId ? t.spell.created : t.common.saved;
       case 'error':      return job.errorMessage ?? 'Error';
     }
   };
@@ -41,7 +41,7 @@ const JobRow: React.FC<{ job: PdfUploadJob }> = ({ job }) => {
       data-testid={`upload-job-${job.id}`}
       className={`${s.job} ${job.status === 'done' ? s.jobDone : ''}`}
       onClick={handleClick}
-      title={job.status === 'done' && job.resultDocId ? t.document.continueReading : undefined}
+      title={job.status === 'done' && job.resultDocId ? t.spell.continueReading : undefined}
     >
       {job.coverUrl
         ? <img src={job.coverUrl} className={s.jobThumb} alt="" />
@@ -88,7 +88,7 @@ export const PdfUploadQueue: React.FC = () => {
           {activeCount > 0 && <span className={s.chipDot} />}
           <span>
             {activeCount > 0
-              ? `${activeCount} PDF${activeCount > 1 ? 's' : ''} ${t.document.processingPdf.toLowerCase()}`
+              ? `${activeCount} PDF${activeCount > 1 ? 's' : ''} ${t.spell.processingPdf.toLowerCase()}`
               : `${queue.length} PDF${queue.length > 1 ? 's' : ''}`
             }
           </span>
@@ -104,7 +104,7 @@ export const PdfUploadQueue: React.FC = () => {
         <div className={s.panelHeader}>
           <span className={s.panelTitle}>
             {activeCount > 0
-              ? `${t.document.processingPdf} (${activeCount})`
+              ? `${t.spell.processingPdf} (${activeCount})`
               : `${queue.length} PDF${queue.length > 1 ? 's' : ''}`
             }
           </span>

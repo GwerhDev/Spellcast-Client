@@ -3,8 +3,8 @@ import { renderWithProviders } from '../../../../test/renderWithProviders';
 import { PdfProcessor } from '../index';
 
 vi.mock('../../../../db', () => ({
-  getDocumentById: vi.fn().mockResolvedValue(null),
-  updateDocumentProgress: vi.fn(),
+  getSpellById: vi.fn().mockResolvedValue(null),
+  updateSpellProgress: vi.fn(),
 }));
 
 vi.mock('../../../../utils/pdfUtils', () => ({

@@ -10,9 +10,9 @@ import {
   setUploadDone,
   setUploadError,
 } from '../../../store/pdfUploadSlice';
-import { saveDocumentToDB, updateDocumentFull } from '../../../db';
+import { saveSpellToDB, updateSpellFull } from '../../../db';
 import { renderPageToCover, extractPdfPages, injectCoverIntoPages, blobToDataUrl } from '../../../utils/pdfUtils';
-import { invalidateContent, invalidateDocumentList } from '../../../store/pdfReaderSlice';
+import { invalidateContent, invalidateSpellList } from '../../../store/pdfReaderSlice';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
@@ -55,7 +55,7 @@ export const PdfUploadWorker: React.FC = () => {
         const pdfBlob = new Blob([byteArray], { type: 'application/pdf' });
 
         if (next.targetDocId) {
-          await updateDocumentFull(next.targetDocId, next.userId, {
+          await updateSpellFull(next.targetDocId, next.userId, {
             title: next.title,
             pagesContent: JSON.stringify(pagesContent),
             pdf: pdfBlob,
@@ -66,7 +66,7 @@ export const PdfUploadWorker: React.FC = () => {
           dispatch(invalidateContent());
           dispatch(setUploadDone({ id: next.id }));
         } else {
-          const resultDocId = await saveDocumentToDB({
+          const resultDocId = await saveSpellToDB({
             title: next.title,
             pdf: pdfBlob,
             originalPdf: next.saveOriginal ? pdfBlob : undefined,
@@ -76,7 +76,7 @@ export const PdfUploadWorker: React.FC = () => {
             originalPagesContent: next.saveOriginal ? JSON.stringify(pagesContent) : undefined,
           });
           dispatch(setUploadDone({ id: next.id, resultDocId }));
-          dispatch(invalidateDocumentList());
+          dispatch(invalidateSpellList());
         }
       } catch (err) {
         console.error('PdfUploadWorker error:', err);
