@@ -9,7 +9,7 @@ export const ACCOUNT_BASE = import.meta.env.VITE_ACCOUNT_URL;
 export const REDIRECT_LOGIN = import.meta.env.VITE_REDIRECT_LOGIN_URL;
 export const REDIRECT_SIGNUP = import.meta.env.VITE_REDIRECT_SIGNUP_URL;
 
-export const DB_NAME = import.meta.env.VITE_DB_NAME ?? 'spellcast';
+export const DB_NAME = import.meta.env.VITE_DB_NAME;
 // indexedDB.open() expects a numeric version; the env var arrives as a string, so coerce it.
 // `|| 3` covers NaN/0/undefined/empty-string alike — indexedDB.open() throws on a non-positive-integer version.
 // Bumped 1 -> 2 (TCORE-78): triggers onupgradeneeded to additively create the `spells` store
