@@ -23,8 +23,10 @@ import { Desktop } from '../features/Desktop';
 import { useAppDispatch } from 'store/hooks';
 import { setMinimized } from 'store/desktopSlice';
 import { setSidebarCollapsed } from 'store/layoutSlice';
+import { invalidateSpellList } from 'store/pdfReaderSlice';
 import { useAttentionGuard } from '../../hooks/useAttentionGuard';
 import { AttentionGuardModal } from '../components/Modals/AttentionGuardModal';
+import { onSpellsMigrated } from '../../db';
 
 export default function DefaultLayout() {
   const { selectedVoice } = useSelector((state: RootState) => state.voice);
@@ -35,6 +37,16 @@ export default function DefaultLayout() {
   const [isPlayerSettingsOpen, setIsPlayerSettingsOpen] = useState(false);
   const [isVoiceSelectorOpen, setIsVoiceSelectorOpen] = useState(false);
   const navRef = useRef<HTMLElement>(null);
+
+  // TCORE-78: the documents->spells IndexedDB migration runs silently in the
+  // background after the DB opens. If a spell list already rendered (empty or
+  // stale) before the copy landed, this is what tells it to refetch — otherwise
+  // it would keep showing whatever it fetched first until an unrelated action
+  // happened to invalidate it, which would look like data loss even though
+  // nothing was lost. Mounted once here since DefaultLayout wraps every route.
+  useEffect(() => {
+    onSpellsMigrated(() => dispatch(invalidateSpellList()));
+  }, [dispatch]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {

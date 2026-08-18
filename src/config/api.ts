@@ -11,8 +11,10 @@ export const REDIRECT_SIGNUP = import.meta.env.VITE_REDIRECT_SIGNUP_URL;
 
 export const DB_NAME = import.meta.env.VITE_DB_NAME ?? 'spellcast';
 // indexedDB.open() expects a numeric version; the env var arrives as a string, so coerce it.
-// `|| 1` covers NaN/0/undefined/empty-string alike — indexedDB.open() throws on a non-positive-integer version.
-export const DB_VERSION = Number(import.meta.env.VITE_DB_VERSION) || 1;
+// `|| 2` covers NaN/0/undefined/empty-string alike — indexedDB.open() throws on a non-positive-integer version.
+// Bumped 1 -> 2 (TCORE-78): triggers onupgradeneeded to additively create the `spells` store
+// (see db/index.ts) without deleting the legacy `documents` store it migrates from.
+export const DB_VERSION = Number(import.meta.env.VITE_DB_VERSION) || 2;
 export const SPELLS_STORE_NAME = import.meta.env.VITE_SPELLS_STORE_NAME ?? 'spells';
 // Unused: progress travels embedded on each Spell record (see SpellProgress), not in a
 // separate store. Kept only for env-var back-compat with any deploy config that still sets it.

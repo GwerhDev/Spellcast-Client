@@ -1,6 +1,12 @@
 import { DB_NAME, DB_VERSION, SPELLS_STORE_NAME } from "../config/api";
 import { Spell, SpellProgress } from "../interfaces";
 
+// The pre-rename (TCORE-78) store name, frozen on purpose: it names whatever a
+// browser already has on disk from before this migration shipped, so it must never
+// change even though SPELLS_STORE_NAME's env-configurable default did.
+const LEGACY_DOCUMENTS_STORE_NAME = 'documents';
+const MIGRATION_COMPLETE_KEY = 'spellcast:migration:documentsToSpells:complete';
+
 // Loose user match: a spell's userId and the session id come from the same
 // source, but historical records may store it in a different type (e.g. number
 // vs string after a backend change). Compare as strings so old spells still
@@ -22,6 +28,87 @@ export const clearAllData = async (): Promise<void> => {
   });
 };
 
+// Silent, resumable background migration of pre-existing `documents` records into
+// `spells` (TCORE-78). Runs fire-and-forget after openDB() resolves — never blocks
+// the app's first read/write, which already target `spells` exclusively from the
+// moment this store exists (see onupgradeneeded below). `put` is idempotent on `id`,
+// so re-running this after an interrupted previous attempt (tab closed mid-copy) is
+// safe: it just re-copies, no duplicates, no partial state. Only sets the completion
+// flag once source/destination counts verifiably match. Deleting the legacy store is
+// intentionally NOT done here or in this ticket — that's a later, separate version
+// bump (see db/index.ts's onupgradeneeded comment) once this rollout has had time to
+// reach the active user base, gated on a defensive re-check at that time rather than
+// blindly trusting this flag (a cleared localStorage without a cleared IndexedDB, or
+// a synced-but-inconsistent browser profile, could otherwise cause data loss).
+let migrationAttempted = false;
+
+// Lets an app-level component (mounted once, e.g. DefaultLayout) refetch the spell
+// list after a background migration actually copies something — without this, a
+// component that already called getSpellsFromDB() in the same tick as openDB()
+// resolving (i.e. before the copy below lands) would keep showing an empty/stale
+// list until something else happens to trigger a refetch, which would look
+// indistinguishable from data loss even though nothing was lost. This module
+// intentionally has no Redux/store import (db/ stays a leaf per the app's layering
+// rules) — callers decide what "refetch" means.
+type MigrationListener = () => void;
+const migrationListeners: MigrationListener[] = [];
+export const onSpellsMigrated = (listener: MigrationListener): void => {
+  migrationListeners.push(listener);
+};
+
+const migrateLegacyDocumentsStore = async (db: IDBDatabase): Promise<void> => {
+  if (migrationAttempted) return;
+  migrationAttempted = true;
+
+  if (!db.objectStoreNames.contains(LEGACY_DOCUMENTS_STORE_NAME)) return;
+  if (localStorage.getItem(MIGRATION_COMPLETE_KEY) === '1') return;
+
+  try {
+    const legacyRecords = await new Promise<Spell[]>((resolve, reject) => {
+      const tx = db.transaction(LEGACY_DOCUMENTS_STORE_NAME, 'readonly');
+      const req = tx.objectStore(LEGACY_DOCUMENTS_STORE_NAME).getAll();
+      req.onsuccess = () => resolve((req.result as Spell[]) ?? []);
+      req.onerror = () => reject(req.error);
+    });
+
+    if (legacyRecords.length > 0) {
+      await new Promise<void>((resolve, reject) => {
+        const tx = db.transaction(SPELLS_STORE_NAME, 'readwrite');
+        const store = tx.objectStore(SPELLS_STORE_NAME);
+        legacyRecords.forEach((record) => store.put(record));
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+    }
+
+    const [legacyCount, spellsCount] = await Promise.all([
+      new Promise<number>((resolve, reject) => {
+        const req = db.transaction(LEGACY_DOCUMENTS_STORE_NAME, 'readonly').objectStore(LEGACY_DOCUMENTS_STORE_NAME).count();
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      }),
+      new Promise<number>((resolve, reject) => {
+        const req = db.transaction(SPELLS_STORE_NAME, 'readonly').objectStore(SPELLS_STORE_NAME).count();
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      }),
+    ]);
+
+    if (legacyCount === spellsCount) {
+      localStorage.setItem(MIGRATION_COMPLETE_KEY, '1');
+      if (legacyRecords.length > 0) {
+        migrationListeners.forEach((listener) => listener());
+      }
+    } else {
+      // Leave the flag unset — the next app open re-attempts (migrationAttempted is
+      // per-session, not persisted), and `put` being idempotent makes that safe.
+      console.warn(`[IndexedDB] documents->spells migration count mismatch (legacy=${legacyCount}, spells=${spellsCount}); will retry on next open.`);
+    }
+  } catch (err) {
+    console.error('[IndexedDB] documents->spells background migration failed, will retry on next open:', err);
+  }
+};
+
 const openDB = (): Promise<IDBDatabase> => {
   if (dbPromise) {
     return dbPromise;
@@ -32,19 +119,19 @@ const openDB = (): Promise<IDBDatabase> => {
 
     request.onupgradeneeded = (event) => {
       const db = (event.target as IDBOpenDBRequest).result;
-      const oldVersion = event.oldVersion;
 
-      if (oldVersion > 0) {
-        const storeNames = Array.from(db.objectStoreNames);
-        storeNames.forEach(name => {
-          db.deleteObjectStore(name);
-        });
+      // Purely additive (TCORE-78): never delete an existing store here, regardless
+      // of oldVersion. The legacy `documents` store (if present) is left fully intact
+      // and queryable — migrateLegacyDocumentsStore() backfills it into `spells` in
+      // the background after open, and only a LATER version bump (not part of this
+      // rollout) drops `documents`, defensively re-verifying record counts itself
+      // rather than trusting any flag set here.
+      if (!db.objectStoreNames.contains(SPELLS_STORE_NAME)) {
+        const store = db.createObjectStore(SPELLS_STORE_NAME, { keyPath: 'id' });
+        store.createIndex('title', 'title', { unique: false });
+        store.createIndex('createdAt', 'createdAt', { unique: false });
+        store.createIndex('userId', 'userId', { unique: false });
       }
-
-      const store = db.createObjectStore(SPELLS_STORE_NAME, { keyPath: 'id' });
-      store.createIndex('title', 'title', { unique: false });
-      store.createIndex('createdAt', 'createdAt', { unique: false });
-      store.createIndex('userId', 'userId', { unique: false });
     };
 
     request.onsuccess = (event) => {
@@ -61,6 +148,7 @@ const openDB = (): Promise<IDBDatabase> => {
         };
       } else {
         resolve(db);
+        void migrateLegacyDocumentsStore(db);
       }
     };
 
