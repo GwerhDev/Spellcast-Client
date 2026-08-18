@@ -34,12 +34,14 @@ export const clearAllData = async (): Promise<void> => {
 // moment this store exists (see onupgradeneeded below). `put` is idempotent on `id`,
 // so re-running this after an interrupted previous attempt (tab closed mid-copy) is
 // safe: it just re-copies, no duplicates, no partial state. Only sets the completion
-// flag once source/destination counts verifiably match. Deleting the legacy store is
-// intentionally NOT done here or in this ticket — that's a later, separate version
-// bump (see db/index.ts's onupgradeneeded comment) once this rollout has had time to
-// reach the active user base, gated on a defensive re-check at that time rather than
-// blindly trusting this flag (a cleared localStorage without a cleared IndexedDB, or
-// a synced-but-inconsistent browser profile, could otherwise cause data loss).
+// flag once source/destination counts verifiably match. This flag is NOT what gates
+// deleting the legacy store, though — see onupgradeneeded's version-3 step below, which
+// re-verifies counts itself inside the versionchange transaction rather than trusting
+// this flag (a cleared localStorage without a cleared IndexedDB, or a synced-but-
+// inconsistent browser profile, could otherwise turn a stale flag into data loss). This
+// background copy stays useful even after that cleanup ships: it's what keeps `spells`
+// caught up in the (self-correcting) case where the version-3 step found a count
+// mismatch and skipped the delete.
 let migrationAttempted = false;
 
 // Lets an app-level component (mounted once, e.g. DefaultLayout) refetch the spell
@@ -120,17 +122,43 @@ const openDB = (): Promise<IDBDatabase> => {
     request.onupgradeneeded = (event) => {
       const db = (event.target as IDBOpenDBRequest).result;
 
-      // Purely additive (TCORE-78): never delete an existing store here, regardless
-      // of oldVersion. The legacy `documents` store (if present) is left fully intact
-      // and queryable — migrateLegacyDocumentsStore() backfills it into `spells` in
-      // the background after open, and only a LATER version bump (not part of this
-      // rollout) drops `documents`, defensively re-verifying record counts itself
-      // rather than trusting any flag set here.
+      // Additive step (TCORE-78, version 2): create `spells` if it's missing, never
+      // delete anything here. migrateLegacyDocumentsStore() backfills any pre-existing
+      // `documents` records into it in the background after open.
       if (!db.objectStoreNames.contains(SPELLS_STORE_NAME)) {
         const store = db.createObjectStore(SPELLS_STORE_NAME, { keyPath: 'id' });
         store.createIndex('title', 'title', { unique: false });
         store.createIndex('createdAt', 'createdAt', { unique: false });
         store.createIndex('userId', 'userId', { unique: false });
+      }
+
+      // Cleanup step (TCORE-78, version 3): drop the legacy `documents` store, but only
+      // after re-verifying record counts match INSIDE this same versionchange
+      // transaction — never trust the localStorage completion flag alone here, since a
+      // cleared localStorage without a cleared IndexedDB (or an inconsistent synced
+      // browser profile) could otherwise turn this into data loss. If counts don't
+      // match, skip the delete this time; migrateLegacyDocumentsStore() keeps `spells`
+      // caught up in the background regardless, so a future version bump (or a retry of
+      // this same check, if this version number is ever revisited) can clean up then.
+      // Gated on newVersion >= 3 so this never runs (and never logs a spurious mismatch)
+      // during an earlier transition, e.g. a fresh 1->2 upgrade where `spells` was just
+      // created moments ago in the branch above and legitimately has 0 records so far.
+      if ((event.newVersion ?? 0) >= 3 && db.objectStoreNames.contains(LEGACY_DOCUMENTS_STORE_NAME) && db.objectStoreNames.contains(SPELLS_STORE_NAME)) {
+        const tx = (event.target as IDBOpenDBRequest).transaction;
+        if (tx) {
+          const legacyCountReq = tx.objectStore(LEGACY_DOCUMENTS_STORE_NAME).count();
+          legacyCountReq.onsuccess = () => {
+            const legacyCount = legacyCountReq.result;
+            const spellsCountReq = tx.objectStore(SPELLS_STORE_NAME).count();
+            spellsCountReq.onsuccess = () => {
+              if (legacyCount === spellsCountReq.result) {
+                db.deleteObjectStore(LEGACY_DOCUMENTS_STORE_NAME);
+              } else {
+                console.warn(`[IndexedDB] Skipped dropping legacy 'documents' store: count mismatch (legacy=${legacyCount}, spells=${spellsCountReq.result}).`);
+              }
+            };
+          };
+        }
       }
     };
 
