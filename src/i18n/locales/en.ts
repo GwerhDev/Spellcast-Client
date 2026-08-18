@@ -280,6 +280,7 @@ export const en = {
   },
   errors: {
     notFound: '404 — Trapped under code',
+    backToHome: 'Back to home',
     empty: 'Emptiness is filling me',
     unauthorized: 'Unauthorized',
     unauthorizedDesc: 'You are not authenticated. Please, login with {name} to continue.',

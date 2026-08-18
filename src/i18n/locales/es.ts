@@ -282,6 +282,7 @@ export const es: Translations = {
   },
   errors: {
     notFound: '404 — Página no encontrada',
+    backToHome: 'Volver al inicio',
     empty: 'El vacío me llena',
     unauthorized: 'No autorizado',
     unauthorizedDesc: 'No estás autenticado. Por favor, inicia sesión con {name} para continuar.',
