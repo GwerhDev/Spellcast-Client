@@ -12,12 +12,12 @@ import { PrimaryButton } from '../../components/Buttons/PrimaryButton';
 import { SecondaryButton } from '../../components/Buttons/SecondaryButton';
 import { IconButton } from '../../components/Buttons/IconButton';
 import { DeleteConfirmModal } from '../../components/Modals/DeleteConfirmModal';
-import { SpellExportModal } from '../../components/Modals/SpellExportModal';
+// import { SpellExportModal } from '../../components/Modals/SpellExportModal'; // .spell export: future
 import { Tag } from '../../components/Tag/Tag';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faFilePdf, faBookOpen, faPen, faArrowLeft, faTrash, faFileExport } from '@fortawesome/free-solid-svg-icons';
+import { faFilePdf, faBookOpen, faPen, faArrowLeft, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { useLanguage } from '../../../i18n';
-import { useSpellExport } from '../../../hooks/useSpellExport';
+// import { useSpellExport } from '../../../hooks/useSpellExport'; // .spell export: future
 
 export const SpellDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -32,7 +32,10 @@ export const SpellDetail: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
-  const { exportTarget, openExportModal, closeExportModal, handleExport, isExporting } = useSpellExport();
+  // .spell export UI is hidden for now (not ready to ship this phase) — kept wired but
+  // commented out so it's a one-line re-enable later. See the export button below and
+  // the SpellExportModal render near the end of this file.
+  // const { exportTarget, openExportModal, closeExportModal, handleExport, isExporting } = useSpellExport();
 
   useEffect(() => {
     const load = async () => {
@@ -137,7 +140,9 @@ export const SpellDetail: React.FC = () => {
             {currentPage > 0 ? t.spell.continueReading : t.spell.startReading}
           </PrimaryButton>
           <SecondaryButton data-testid="spell-detail-edit-btn" icon={faPen} onClick={handleEdit}>{t.spell.editSpell}</SecondaryButton>
+          {/* .spell export: future
           <SecondaryButton data-testid="spell-detail-export-btn" icon={faFileExport} onClick={() => openExportModal({ id: doc.id, title: doc.title })}>{t.spell.exportSpell}</SecondaryButton>
+          */}
           <PrimaryButton data-testid="spell-detail-delete-btn" variant="danger" icon={faTrash} onClick={() => setShowDeleteModal(true)}>{t.common.delete}</PrimaryButton>
         </div>
       </div>
@@ -148,6 +153,7 @@ export const SpellDetail: React.FC = () => {
         title={t.spell.deleteTitle}
         message={t.spell.deleteConfirm.replace('{title}', doc.title)}
       />
+      {/* .spell export: future — re-enable the useSpellExport() hook above and this block.
       {exportTarget && (
         <SpellExportModal
           show={!!exportTarget}
@@ -156,7 +162,7 @@ export const SpellDetail: React.FC = () => {
           onClose={closeExportModal}
           onExport={handleExport}
         />
-      )}
+      )} */}
     </div>
   );
 };

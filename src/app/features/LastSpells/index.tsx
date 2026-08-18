@@ -3,11 +3,11 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { getSpellsFromDB, deleteSpellFromDB } from '../../../db';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { DeleteConfirmModal } from '../../components/Modals/DeleteConfirmModal';
-import { SpellExportModal } from '../../components/Modals/SpellExportModal';
+// import { SpellExportModal } from '../../components/Modals/SpellExportModal'; // .spell export: future
 import { useAppSelector } from '../../../store/hooks';
 import { Spell } from '../../../interfaces';
 import { SpellCard } from '../../components/Cards/SpellCard';
-import { useSpellExport } from '../../../hooks/useSpellExport';
+// import { useSpellExport } from '../../../hooks/useSpellExport'; // .spell export: future
 import { useDispatch } from 'react-redux';
 import { setAutoPlayOnLoad, resetBrowserPlayer, requestTogglePlay } from '../../../store/browserPlayerSlice';
 import { setAutoPlayOnLoad as setAudioAutoPlayOnLoad, resetAudioPlayer, requestTogglePlay as requestAudioTogglePlay } from '../../../store/audioPlayerSlice';
@@ -29,7 +29,10 @@ export const LastSpells: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState<{ id: string, title: string } | null>(null);
-  const { exportTarget, openExportModal, closeExportModal, handleExport, isExporting } = useSpellExport();
+  // .spell export UI is hidden for now (not ready to ship this phase) — kept wired but
+  // commented out so it's a one-line re-enable later. See onExport below and the
+  // SpellExportModal render at the bottom of this file.
+  // const { exportTarget, openExportModal, closeExportModal, handleExport, isExporting } = useSpellExport();
   const [canPrev, setCanPrev] = useState(false);
   const [canNext, setCanNext] = useState(false);
   const sliderRef = useRef<HTMLDivElement>(null);
@@ -181,7 +184,7 @@ export const LastSpells: React.FC = () => {
                   onClick={() => navigate(`/spell/${doc.id}`)}
                   onEdit={(e) => { e.stopPropagation(); navigate(`/editor/${doc.id}`, { state: { from: location.pathname } }); }}
                   onDelete={(e) => openDeleteModal(doc.id, doc.title, e)}
-                  onExport={(e) => { e.stopPropagation(); openExportModal({ id: doc.id, title: doc.title }); }}
+                  // onExport={(e) => { e.stopPropagation(); openExportModal({ id: doc.id, title: doc.title }); }} // .spell export: future
                   onPlay={() => handlePlay(doc)}
                   uploadJob={uploadJob}
                 />
@@ -208,6 +211,7 @@ export const LastSpells: React.FC = () => {
           message={t.spell.deleteConfirm.replace('{title}', selectedDoc.title)}
         />
       )}
+      {/* .spell export: future — re-enable the useSpellExport() hook above and this block.
       {exportTarget && (
         <SpellExportModal
           show={!!exportTarget}
@@ -216,7 +220,7 @@ export const LastSpells: React.FC = () => {
           onClose={closeExportModal}
           onExport={handleExport}
         />
-      )}
+      )} */}
     </>
   );
 };
