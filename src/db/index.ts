@@ -111,6 +111,18 @@ const migrateLegacyDocumentsStore = async (db: IDBDatabase): Promise<void> => {
   }
 };
 
+// Additive: create `spells` if missing, never delete anything. Shared by the normal
+// onupgradeneeded path and by the recovery path below, so both go through the exact
+// same non-destructive logic.
+const ensureSpellsStore = (db: IDBDatabase): void => {
+  if (!db.objectStoreNames.contains(SPELLS_STORE_NAME)) {
+    const store = db.createObjectStore(SPELLS_STORE_NAME, { keyPath: 'id' });
+    store.createIndex('title', 'title', { unique: false });
+    store.createIndex('createdAt', 'createdAt', { unique: false });
+    store.createIndex('userId', 'userId', { unique: false });
+  }
+};
+
 const openDB = (): Promise<IDBDatabase> => {
   if (dbPromise) {
     return dbPromise;
@@ -122,15 +134,7 @@ const openDB = (): Promise<IDBDatabase> => {
     request.onupgradeneeded = (event) => {
       const db = (event.target as IDBOpenDBRequest).result;
 
-      // Additive step (TCORE-78, version 2): create `spells` if it's missing, never
-      // delete anything here. migrateLegacyDocumentsStore() backfills any pre-existing
-      // `documents` records into it in the background after open.
-      if (!db.objectStoreNames.contains(SPELLS_STORE_NAME)) {
-        const store = db.createObjectStore(SPELLS_STORE_NAME, { keyPath: 'id' });
-        store.createIndex('title', 'title', { unique: false });
-        store.createIndex('createdAt', 'createdAt', { unique: false });
-        store.createIndex('userId', 'userId', { unique: false });
-      }
+      ensureSpellsStore(db);
 
       // Cleanup step (TCORE-78, version 3): drop the legacy `documents` store, but only
       // after re-verifying record counts match INSIDE this same versionchange
@@ -165,14 +169,33 @@ const openDB = (): Promise<IDBDatabase> => {
     request.onsuccess = (event) => {
       const db = (event.target as IDBOpenDBRequest).result;
       if (!db.objectStoreNames.contains(SPELLS_STORE_NAME)) {
+        // `spells` is missing even though the open succeeded without an upgrade — this
+        // means the database on this browser is ALREADY at a version >= DB_VERSION
+        // (e.g. a much older schema, from before `spells` existed, that had already
+        // been bumped past this version number for unrelated reasons in the past).
+        // Because the requested version wasn't higher than what's on disk,
+        // onupgradeneeded above never got a chance to run.
+        //
+        // This used to delete the entire database here ("broken database detected and
+        // deleted") and reload — which is exactly what destroyed real user data in
+        // production: a pre-existing database's records aren't corruption just because
+        // it predates `spells`, and deleting it is irreversible. NEVER do that. Instead,
+        // force a real upgrade by reopening with a version guaranteed to be higher than
+        // whatever is already on disk, so onupgradeneeded gets a chance to add `spells`
+        // (and only ever add — nothing here ever deletes a store with data in it).
+        const currentVersion = db.version;
         db.close();
-        const deleteRequest = indexedDB.deleteDatabase(DB_NAME);
-        deleteRequest.onsuccess = () => {
-          console.warn("Broken database detected and deleted. Reloading the page to fix the issue.");
-          window.location.reload();
+        const bumpRequest = indexedDB.open(DB_NAME, currentVersion + 1);
+        bumpRequest.onupgradeneeded = (bumpEvent) => {
+          ensureSpellsStore((bumpEvent.target as IDBOpenDBRequest).result);
         };
-        deleteRequest.onerror = () => {
-          reject(new Error("Failed to delete corrupt database."));
+        bumpRequest.onsuccess = (bumpEvent) => {
+          const bumpedDb = (bumpEvent.target as IDBOpenDBRequest).result;
+          resolve(bumpedDb);
+          void migrateLegacyDocumentsStore(bumpedDb);
+        };
+        bumpRequest.onerror = (bumpEvent) => {
+          reject((bumpEvent.target as IDBOpenDBRequest).error ?? new Error('Failed to add the spells store to an existing database.'));
         };
       } else {
         resolve(db);

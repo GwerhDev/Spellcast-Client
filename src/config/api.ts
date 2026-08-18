@@ -11,13 +11,20 @@ export const REDIRECT_SIGNUP = import.meta.env.VITE_REDIRECT_SIGNUP_URL;
 
 export const DB_NAME = import.meta.env.VITE_DB_NAME;
 // indexedDB.open() expects a numeric version; the env var arrives as a string, so coerce it.
-// `|| 3` covers NaN/0/undefined/empty-string alike — indexedDB.open() throws on a non-positive-integer version.
+// `|| 10` covers NaN/0/undefined/empty-string alike — indexedDB.open() throws on a non-positive-integer version.
 // Bumped 1 -> 2 (TCORE-78): triggers onupgradeneeded to additively create the `spells` store
 // (see db/index.ts) without deleting the legacy `documents` store it migrates from.
 // Bumped 2 -> 3 (TCORE-78): triggers onupgradeneeded to drop the legacy `documents` store,
 // after re-verifying (inside that same versionchange transaction) that every record already
 // made it into `spells`.
-export const DB_VERSION = Number(import.meta.env.VITE_DB_VERSION) || 3;
+// Bumped 3 -> 10: a real production database (predating this env-driven DB_NAME, back when
+// it was hardcoded per commit history) had already been bumped as high as version 5 for
+// unrelated reasons years ago. Opening with a version LOWER than what's already on disk
+// throws VersionError and fails outright; opening with a version EQUAL to what's on disk
+// skips onupgradeneeded entirely (see db/index.ts's recovery path for why that used to be
+// destructive). 10 is comfortably above every known historical version so onupgradeneeded
+// always gets a chance to run and add `spells` non-destructively, for any such database.
+export const DB_VERSION = Number(import.meta.env.VITE_DB_VERSION) || 10;
 export const SPELLS_STORE_NAME = import.meta.env.VITE_SPELLS_STORE_NAME ?? 'spells';
 // Unused: progress travels embedded on each Spell record (see SpellProgress), not in a
 // separate store. Kept only for env-var back-compat with any deploy config that still sets it.
