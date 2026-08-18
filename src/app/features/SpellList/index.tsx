@@ -3,9 +3,11 @@ import React, { useEffect, useState } from 'react';
 import { getSpellsFromDB, deleteSpellFromDB } from '../../../db';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { DeleteConfirmModal } from '../../components/Modals/DeleteConfirmModal';
+import { SpellExportModal } from '../../components/Modals/SpellExportModal';
 import { useAppSelector } from '../../../store/hooks';
 import { Spell } from '../../../interfaces';
 import { SpellCard } from '../../components/Cards/SpellCard';
+import { useSpellExport } from '../../../hooks/useSpellExport';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBookOpen, faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
 import { useDispatch } from 'react-redux';
@@ -41,6 +43,7 @@ export const SpellList: React.FC<SpellListProps> = ({ query = '', filter = 'loca
   const [isLoading, setIsLoading] = useState(true);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState<{ id: string, title: string } | null>(null);
+  const { exportTarget, openExportModal, closeExportModal, handleExport, isExporting } = useSpellExport();
 
   const handlePlay = (doc: Spell) => {
     if (activeDocId === doc.id && (readerLoaded || audioPlaying || browserPlaying)) {
@@ -156,6 +159,7 @@ export const SpellList: React.FC<SpellListProps> = ({ query = '', filter = 'loca
                 onClick={() => navigate(`/spell/${doc.id}`)}
                 onEdit={(e) => { e.stopPropagation(); navigate(`/editor/${doc.id}`, { state: { from: location.pathname } }); }}
                 onDelete={(e) => openDeleteModal(doc.id, doc.title, e)}
+                onExport={(e) => { e.stopPropagation(); openExportModal({ id: doc.id, title: doc.title }); }}
                 isActive={activeDocId === doc.id && (readerLoaded || audioPlaying || browserPlaying)}
                 isPlaying={activeDocId === doc.id && (audioPlaying || browserPlaying)}
                 onPlay={() => handlePlay(doc)}
@@ -175,6 +179,15 @@ export const SpellList: React.FC<SpellListProps> = ({ query = '', filter = 'loca
           onConfirm={handleDeleteConfirm}
           title={t.spell.deleteTitle}
           message={t.spell.deleteConfirm.replace('{title}', selectedDoc.title)}
+        />
+      )}
+      {exportTarget && (
+        <SpellExportModal
+          show={!!exportTarget}
+          title={exportTarget.title}
+          isExporting={isExporting}
+          onClose={closeExportModal}
+          onExport={handleExport}
         />
       )}
     </>

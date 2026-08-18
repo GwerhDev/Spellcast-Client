@@ -3,9 +3,11 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { getSpellsFromDB, deleteSpellFromDB } from '../../../db';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { DeleteConfirmModal } from '../../components/Modals/DeleteConfirmModal';
+import { SpellExportModal } from '../../components/Modals/SpellExportModal';
 import { useAppSelector } from '../../../store/hooks';
 import { Spell } from '../../../interfaces';
 import { SpellCard } from '../../components/Cards/SpellCard';
+import { useSpellExport } from '../../../hooks/useSpellExport';
 import { useDispatch } from 'react-redux';
 import { setAutoPlayOnLoad, resetBrowserPlayer, requestTogglePlay } from '../../../store/browserPlayerSlice';
 import { setAutoPlayOnLoad as setAudioAutoPlayOnLoad, resetAudioPlayer, requestTogglePlay as requestAudioTogglePlay } from '../../../store/audioPlayerSlice';
@@ -27,6 +29,7 @@ export const LastSpells: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState<{ id: string, title: string } | null>(null);
+  const { exportTarget, openExportModal, closeExportModal, handleExport, isExporting } = useSpellExport();
   const [canPrev, setCanPrev] = useState(false);
   const [canNext, setCanNext] = useState(false);
   const sliderRef = useRef<HTMLDivElement>(null);
@@ -178,6 +181,7 @@ export const LastSpells: React.FC = () => {
                   onClick={() => navigate(`/spell/${doc.id}`)}
                   onEdit={(e) => { e.stopPropagation(); navigate(`/editor/${doc.id}`, { state: { from: location.pathname } }); }}
                   onDelete={(e) => openDeleteModal(doc.id, doc.title, e)}
+                  onExport={(e) => { e.stopPropagation(); openExportModal({ id: doc.id, title: doc.title }); }}
                   onPlay={() => handlePlay(doc)}
                   uploadJob={uploadJob}
                 />
@@ -202,6 +206,15 @@ export const LastSpells: React.FC = () => {
           onConfirm={handleDeleteConfirm}
           title={t.spell.deleteTitle}
           message={t.spell.deleteConfirm.replace('{title}', selectedDoc.title)}
+        />
+      )}
+      {exportTarget && (
+        <SpellExportModal
+          show={!!exportTarget}
+          title={exportTarget.title}
+          isExporting={isExporting}
+          onClose={closeExportModal}
+          onExport={handleExport}
         />
       )}
     </>

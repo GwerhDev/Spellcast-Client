@@ -76,6 +76,49 @@ export const setCachedAudio = async (
   });
 };
 
+export interface CachedAudioEntry {
+  page: number;
+  voice: string;
+  blob: Blob;
+  timeline: TimelineEntry[];
+}
+
+// Enumerates every cached audio+timeline pair for a spell, grouped by voice — used by the
+// .spell export flow (TCORE-78) to bundle renders/<voice>/ without needing to know in
+// advance which voices/pages happen to be cached. Keys are `${spellId}_${page}_${voice}`;
+// splitting on the first two `_` is safe because spellId is a UUID (hyphens, no
+// underscores) and page is numeric, so whatever remains is the voice id verbatim even if a
+// future voice id itself contained an underscore.
+export const getCachedAudioEntriesForSpell = async (spellId: string): Promise<CachedAudioEntry[]> => {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const entries: CachedAudioEntry[] = [];
+    const req = db.transaction(STORE_NAME, 'readonly').objectStore(STORE_NAME).openCursor();
+    req.onsuccess = (e) => {
+      const cursor = (e.target as IDBRequest<IDBCursorWithValue | null>).result;
+      if (!cursor) { resolve(entries); return; }
+      const key = cursor.key as string;
+      const prefix = `${spellId}_`;
+      if (key.startsWith(prefix)) {
+        const rest = key.slice(prefix.length);
+        const sep = rest.indexOf('_');
+        if (sep !== -1) {
+          const page = Number(rest.slice(0, sep));
+          const voice = rest.slice(sep + 1);
+          const record = cursor.value as { blob: Blob; timeline?: TimelineEntry[] };
+          if (!Number.isNaN(page) && record.timeline && record.timeline.length > 0) {
+            // Only export pairs that actually have a timeline — audio without its timeline
+            // (or vice versa) is never packaged, per the .spell renders/ co-location rule.
+            entries.push({ page, voice, blob: record.blob, timeline: record.timeline });
+          }
+        }
+      }
+      cursor.continue();
+    };
+    req.onerror = (e) => reject((e.target as IDBRequest).error);
+  });
+};
+
 export const clearSpellAudioCache = async (spellId: string): Promise<void> => {
   const db = await openDB();
   return new Promise((resolve, reject) => {

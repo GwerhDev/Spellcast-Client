@@ -12,10 +12,12 @@ import { PrimaryButton } from '../../components/Buttons/PrimaryButton';
 import { SecondaryButton } from '../../components/Buttons/SecondaryButton';
 import { IconButton } from '../../components/Buttons/IconButton';
 import { DeleteConfirmModal } from '../../components/Modals/DeleteConfirmModal';
+import { SpellExportModal } from '../../components/Modals/SpellExportModal';
 import { Tag } from '../../components/Tag/Tag';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faFilePdf, faBookOpen, faPen, faArrowLeft, faTrash } from '@fortawesome/free-solid-svg-icons';
+import { faFilePdf, faBookOpen, faPen, faArrowLeft, faTrash, faFileExport } from '@fortawesome/free-solid-svg-icons';
 import { useLanguage } from '../../../i18n';
+import { useSpellExport } from '../../../hooks/useSpellExport';
 
 export const SpellDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -30,6 +32,7 @@ export const SpellDetail: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
+  const { exportTarget, openExportModal, closeExportModal, handleExport, isExporting } = useSpellExport();
 
   useEffect(() => {
     const load = async () => {
@@ -134,6 +137,7 @@ export const SpellDetail: React.FC = () => {
             {currentPage > 0 ? t.spell.continueReading : t.spell.startReading}
           </PrimaryButton>
           <SecondaryButton data-testid="spell-detail-edit-btn" icon={faPen} onClick={handleEdit}>{t.spell.editSpell}</SecondaryButton>
+          <SecondaryButton data-testid="spell-detail-export-btn" icon={faFileExport} onClick={() => openExportModal({ id: doc.id, title: doc.title })}>{t.spell.exportSpell}</SecondaryButton>
           <PrimaryButton data-testid="spell-detail-delete-btn" variant="danger" icon={faTrash} onClick={() => setShowDeleteModal(true)}>{t.common.delete}</PrimaryButton>
         </div>
       </div>
@@ -144,6 +148,15 @@ export const SpellDetail: React.FC = () => {
         title={t.spell.deleteTitle}
         message={t.spell.deleteConfirm.replace('{title}', doc.title)}
       />
+      {exportTarget && (
+        <SpellExportModal
+          show={!!exportTarget}
+          title={exportTarget.title}
+          isExporting={isExporting}
+          onClose={closeExportModal}
+          onExport={handleExport}
+        />
+      )}
     </div>
   );
 };

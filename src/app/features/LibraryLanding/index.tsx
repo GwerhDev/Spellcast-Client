@@ -4,7 +4,7 @@ import { useLanguage } from '../../../i18n';
 import { SegmentedTabs } from '../../components/Tabs/SegmentedTabs';
 import { SpellList, LibraryFilter } from '../SpellList';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCloud, faHardDrive, faLayerGroup, faMagnifyingGlass, faPlus, faCheckSquare, faTrash, faXmark, faBuildingColumns } from '@fortawesome/free-solid-svg-icons';
+import { faCloud, faHardDrive, faLayerGroup, faMagnifyingGlass, faPlus, faCheckSquare, faTrash, faXmark, faBuildingColumns, faFileImport } from '@fortawesome/free-solid-svg-icons';
 import { SectionHeader } from '../../components/SectionHeader';
 import { ImportOption } from '../../components/Start/ImportOption';
 import { CustomModal } from '../../components/Modals/CustomModal';
@@ -12,6 +12,7 @@ import { DeleteConfirmModal } from '../../components/Modals/DeleteConfirmModal';
 import { deleteSpellFromDB } from '../../../db';
 import { useAppSelector, useAppDispatch } from '../../../store/hooks';
 import { invalidateSpellList } from '../../../store/pdfReaderSlice';
+import { useSpellImport } from '../../../hooks/useSpellImport';
 
 export const LibraryLanding = () => {
   const { t } = useLanguage();
@@ -23,6 +24,7 @@ export const LibraryLanding = () => {
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
+  const { inputRef: spellFileInputRef, triggerImport, handleFileSelected, isImporting } = useSpellImport();
 
   const tabs = [
     { id: 'all',   label: t.common.all,  icon: faLayerGroup },
@@ -101,6 +103,24 @@ export const LibraryLanding = () => {
           <FontAwesomeIcon icon={selectionMode ? faXmark : faCheckSquare} />
           {selectionMode ? t.library.cancelSelection : t.library.selectMode}
         </button>
+        <button
+          data-testid="import-spell-btn"
+          className={s.toolbarBtn}
+          onClick={triggerImport}
+          disabled={isImporting}
+          title={t.spell.importSpell}
+        >
+          <FontAwesomeIcon icon={faFileImport} />
+          {isImporting ? `${t.spell.importSpell}…` : t.spell.importSpell}
+        </button>
+        <input
+          ref={spellFileInputRef}
+          type="file"
+          accept=".spell"
+          onChange={handleFileSelected}
+          style={{ display: 'none' }}
+          data-testid="import-spell-input"
+        />
       </div>
 
       {filter === 'cloud' ? (

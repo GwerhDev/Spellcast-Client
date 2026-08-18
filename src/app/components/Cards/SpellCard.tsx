@@ -2,7 +2,7 @@ import s from './SpellCard.module.css';
 import { useMemo, useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faFilePdf, faTrash, faPen, faEllipsisVertical, faHourglassHalf, faCheck } from '@fortawesome/free-solid-svg-icons';
+import { faFilePdf, faTrash, faPen, faEllipsisVertical, faHourglassHalf, faCheck, faFileExport } from '@fortawesome/free-solid-svg-icons';
 import { Spell } from '../../../interfaces';
 import { useLanguage } from '../../../i18n';
 import { Tag } from '../Tag/Tag';
@@ -21,6 +21,7 @@ interface SpellCardProps {
   onClick: () => void;
   onDelete: (e: React.MouseEvent) => void;
   onEdit: (e: React.MouseEvent) => void;
+  onExport?: (e: React.MouseEvent) => void;
   onPlay?: (e: React.MouseEvent) => void;
   uploadJob?: UploadJob | null;
   selectionMode?: boolean;
@@ -28,7 +29,7 @@ interface SpellCardProps {
   onToggleSelect?: () => void;
 }
 
-export const SpellCard = ({ doc, isActive, isPlaying, onClick, onDelete, onEdit, onPlay, uploadJob, selectionMode, selected, onToggleSelect }: SpellCardProps) => {
+export const SpellCard = ({ doc, isActive, isPlaying, onClick, onDelete, onEdit, onExport, onPlay, uploadJob, selectionMode, selected, onToggleSelect }: SpellCardProps) => {
   const { t } = useLanguage();
   const totalPages = useMemo(() => {
     if (!doc.pagesContent) return null;
@@ -108,6 +109,12 @@ export const SpellCard = ({ doc, isActive, isPlaying, onClick, onDelete, onEdit,
             <FontAwesomeIcon icon={faPen} />
             {t.common.edit}
           </button>
+          {onExport && (
+            <button data-testid={`spell-card-export-${doc.id}`} className={s.menuItem} onClick={(e) => { e.stopPropagation(); setMenuOpen(false); onExport(e); }}>
+              <FontAwesomeIcon icon={faFileExport} />
+              {t.spell.exportSpell}
+            </button>
+          )}
           <button className={`${s.menuItem} ${s.menuItemDanger}`} onClick={(e) => { e.stopPropagation(); setMenuOpen(false); onDelete(e); }}>
             <FontAwesomeIcon icon={faTrash} />
             {t.common.delete}
