@@ -375,6 +375,16 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
 
   useEffect(() => {
     setCredentialError(null);
+    if (selectedVoice.type !== 'ai' || !currentPageText || sentences.length === 0) return;
+    // Switching AI voice mid-read: stop the previous voice's audio and restart the
+    // current page from the top with the new one (fetchAndPlay already checks the
+    // per-voice cache before synthesizing, and preserves play/pause via `isPlaying`).
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+    fetchAndPlay(currentPageText);
+    //eslint-disable-next-line
   }, [selectedVoice.value]);
 
   useEffect(() => {
