@@ -168,11 +168,12 @@
 
 /* ── Expanded panel ──
    border-top-left-radius/border-bottom-left-radius matches .dashboard-container's own
-   10px radius (globals.css): backdrop-filter is composited in its own layer and, in
-   Chromium/WebKit, is not reliably clipped to an ANCESTOR's border-radius — it bleeds
-   past the curve as a rectangle, making dashboard-container's left corner look square
-   whenever this panel (the only sidebar state with backdrop-filter) is visible. Giving
-   the blurred element its own matching radius clips its own blur correctly instead. */
+   10px radius (globals.css). A solid background (not backdrop-filter blur, which used
+   to be the only thing making this panel readable over the collapsed rail behind it)
+   -- blur composites in its own layer and isn't reliably clipped to an ancestor's
+   border-radius in Chromium/WebKit, which produced a visible inward-shadow artifact at
+   the rounded corner (much more visible in light mode than dark). A flat background
+   avoids that entirely. */
 .panel {
   position: absolute;
   inset: 0;
@@ -185,7 +186,7 @@
   overflow-y: auto;
   border-top-left-radius: 10px;
   border-bottom-left-radius: 10px;
-  backdrop-filter: blur(14px);
+  background: var(--component-background);
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.15s ease;
