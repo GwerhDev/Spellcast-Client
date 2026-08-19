@@ -18,7 +18,7 @@
 }
 
 .btn:hover {
-  color: var(--color-primary);
+  color: var(--nhexa-desktop-accent);
 }
 
 .badge {
@@ -28,7 +28,7 @@
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: var(--color-primary);
+  background: var(--nhexa-desktop-accent);
   border: 1px solid var(--nhexa-desktop-surface);
 }
 
@@ -144,8 +144,8 @@
 }
 
 .rowIconDone {
-  background: color-mix(in srgb, var(--color-primary) 14%, transparent);
-  color: var(--color-primary);
+  background: color-mix(in srgb, var(--nhexa-desktop-accent) 14%, transparent);
+  color: var(--nhexa-desktop-accent);
 }
 
 .rowIconError {
@@ -176,7 +176,7 @@
 }
 
 .rowStatusDone {
-  color: var(--color-primary);
+  color: var(--nhexa-desktop-accent);
 }
 
 .rowStatusError {

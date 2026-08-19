@@ -221,9 +221,15 @@
   box-sizing: border-box;
 }
 
-.navItem:hover,
-.subItem:hover {
+.navItem:hover:not(.activeLink),
+.subItem:hover:not(.activeLink) {
   color: var(--text-1);
+}
+
+/* An active link keeps its accent on hover — don't fall back to the near-black
+   idle-hover color. */
+.activeLink:hover {
+  color: var(--color-primary);
 }
 
 .navItem {

@@ -10,7 +10,7 @@
   padding: 0;
   border-radius: 50%;
   overflow: hidden;
-  border: 1.5px solid var(--color-primary);
+  border: 1.5px solid var(--nhexa-desktop-accent);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -20,7 +20,7 @@
 }
 
 .trigger:hover {
-  border-color: var(--color-primary-accent, var(--color-primary));
+  border-color: var(--nhexa-desktop-accent-bright, var(--nhexa-desktop-accent));
   background-color: var(--nhexa-desktop-surface);
   color: inherit;
 }
@@ -34,7 +34,7 @@
 .initials {
   font-size: 9px;
   font-weight: 700;
-  color: var(--color-primary);
+  color: var(--nhexa-desktop-accent);
   font-family: var(--font-sans);
 }
 
@@ -67,7 +67,7 @@
   height: 48px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid var(--color-primary);
+  border: 2px solid var(--nhexa-desktop-accent);
 }
 
 .profileInitials {
@@ -75,13 +75,13 @@
   height: 48px;
   border-radius: 50%;
   background: var(--nhexa-desktop-surface);
-  border: 2px solid var(--color-primary);
+  border: 2px solid var(--nhexa-desktop-accent);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 18px;
   font-weight: 700;
-  color: var(--color-primary);
+  color: var(--nhexa-desktop-accent);
   font-family: var(--font-sans);
 }
 
@@ -116,8 +116,8 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--color-primary);
-  background: color-mix(in srgb, var(--color-primary) 14%, transparent);
+  color: var(--nhexa-desktop-accent);
+  background: color-mix(in srgb, var(--nhexa-desktop-accent) 14%, transparent);
   padding: 2px 7px;
   border-radius: 4px;
 }
@@ -138,7 +138,7 @@
 
 .xpBarFill {
   height: 100%;
-  background: linear-gradient(to right, var(--color-primary), var(--color-secondary));
+  background: linear-gradient(to right, var(--nhexa-desktop-accent), var(--nhexa-desktop-accent-bright));
   border-radius: 999px;
   transition: width 0.4s ease;
 }

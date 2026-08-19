@@ -94,6 +94,12 @@
   --nhexa-desktop-text-dim: #7b7b7b;
   --nhexa-desktop-skeleton-1: #3c3c3c;
   --nhexa-desktop-skeleton-2: #2f2f2f;
+  /* NHEXA brand accent (celeste) for shell elements -- the AppSwitcher/splash
+     wordmark, the splash progress bar, etc. Deliberately NOT --color-primary:
+     an in-app theme (e.g. Spellcast's bronze light theme) must never repaint the
+     shared shell. -accent is the brighter variant for bars/highlights. */
+  --nhexa-desktop-accent: #73a5cc;
+  --nhexa-desktop-accent-bright: #84b4d8;
 
   --paper-bg: #252830;
   --paper-shadow: 0 4px 28px rgba(0, 0, 0, 0.55);
@@ -140,8 +146,12 @@
 }
 
 html.light {
-  --color-primary: #73a5cc;
-  --color-secondary: #8469bb;
+  --color-primary: #9B7644;
+  --color-secondary: #b8823d;
+  /* Bronze theme: the primary accent (used for primary hover, etc.) must be a
+     LIGHTER bronze, not the celeste inherited from :root — otherwise hovering a
+     bronze primary button snaps back to blue. */
+  --color-primary-accent: #b98a4f;
   --color-button-primary: var(--color-primary);
   --color-button-primary-glass: color-mix(in srgb, var(--color-button-primary) 72%, transparent);
   --color-button-primary-hover: var(--color-secondary);

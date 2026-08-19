@@ -47,7 +47,8 @@
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.28em;
-  color: var(--color-primary);
+  /* Shell splash wordmark — brand celeste, never the in-app theme (see root.css). */
+  color: var(--nhexa-desktop-accent);
   text-transform: uppercase;
   margin-top: -1rem;
 }
@@ -65,7 +66,8 @@
 .bar {
   height: 100%;
   border-radius: 999px;
-  background: var(--color-primary);
+  /* Shell splash progress bar — brand celeste, never the in-app theme. */
+  background: var(--nhexa-desktop-accent);
   transition: width 0.4s ease;
 }
 

@@ -15,7 +15,9 @@
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  color: var(--color-primary);
+  /* NHEXA shell wordmark — keep the brand celeste regardless of the app's in-app
+     theme (bronze, etc.). Shell elements never follow the app theme token. */
+  color: var(--nhexa-desktop-accent);
   font-family: var(--font-sans);
   font-size: 9px;
   font-weight: 700;
