@@ -132,12 +132,15 @@
   100% { background-position: 600px 0; }
 }
 
+/* Fixed dark colors, not the --color-dark-* / --component-background tokens (those flip
+   with the light/dark theme) -- these list from the API while loading, same as the
+   theme-independent chrome outside app-container, so they must never re-theme. */
 .skeletonCard {
   width: 160px;
   flex-shrink: 0;
   border-radius: 8px;
-  border: 0.5px solid var(--color-dark-300);
-  background: var(--component-background);
+  border: 0.5px solid #3c3c3c;
+  background: #2b2a2e;
   overflow: hidden;
 }
 
@@ -157,9 +160,9 @@
   border-radius: 4px;
   background: linear-gradient(
     90deg,
-    var(--color-dark-300) 25%,
-    var(--color-dark-200) 50%,
-    var(--color-dark-300) 75%
+    #3c3c3c 25%,
+    #464646 50%,
+    #3c3c3c 75%
   );
   background-size: 600px 100%;
   animation: shimmer 1.4s infinite linear;

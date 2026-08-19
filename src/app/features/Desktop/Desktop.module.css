@@ -2,9 +2,9 @@
   position: fixed;
   inset: 0;
   z-index: 1;
-  background:
-    radial-gradient(120% 80% at 50% 0%, rgba(115, 165, 204, 0.12), transparent 55%),
-    #0c0e12;
+  /* Same fixed dark gradient as the splash/html/body/#root -- the whole app chrome
+     outside app-container stays this one consistent, theme-independent background. */
+  background: var(--background-gradient-color-fixed);
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.3s ease;
@@ -55,7 +55,7 @@
   justify-content: center;
   gap: 0.6rem;
   padding: 1.1rem 0.5rem;
-  background: var(--component-background);
+  background: #2b2a2e;
   border: 1.5px solid transparent;
   border-radius: 14px;
   cursor: pointer;
@@ -146,7 +146,7 @@
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.16em;
-  color: var(--text-color);
+  color: #cbcbcb;
   text-align: center;
   transition: color 0.18s ease;
 }
@@ -188,6 +188,8 @@
   margin: 0 1.5rem;
 }
 
+/* Fixed dark colors -- the desktop launcher is outside app-container and must always
+   look like dark mode regardless of the in-app theme toggle. */
 .skeletonItem {
   width: 116px;
   height: 130px;
@@ -198,7 +200,7 @@
   justify-content: center;
   gap: 0.6rem;
   padding: 1.1rem 0.5rem;
-  background: var(--component-background);
+  background: #2b2a2e;
   border: 1.5px solid rgba(255, 255, 255, 0.06);
 }
 
@@ -206,7 +208,7 @@
   width: 56px;
   height: 56px;
   border-radius: 12px;
-  background: linear-gradient(90deg, var(--color-dark-300), var(--color-dark-400), var(--color-dark-300));
+  background: linear-gradient(90deg, #3c3c3c, #2f2f2f, #3c3c3c);
   background-size: 200% 100%;
   animation: skeletonShine 1.8s infinite;
 }
@@ -215,7 +217,7 @@
   width: 70%;
   height: 8px;
   border-radius: 4px;
-  background: linear-gradient(90deg, var(--color-dark-300), var(--color-dark-400), var(--color-dark-300));
+  background: linear-gradient(90deg, #3c3c3c, #2f2f2f, #3c3c3c);
   background-size: 200% 100%;
   animation: skeletonShine 1.8s infinite 0.1s;
 }
@@ -224,7 +226,7 @@
   width: 50%;
   height: 6px;
   border-radius: 4px;
-  background: linear-gradient(90deg, var(--color-dark-300), var(--color-dark-400), var(--color-dark-300));
+  background: linear-gradient(90deg, #3c3c3c, #2f2f2f, #3c3c3c);
   background-size: 200% 100%;
   animation: skeletonShine 1.8s infinite 0.2s;
 }

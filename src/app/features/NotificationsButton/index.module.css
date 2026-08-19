@@ -9,7 +9,7 @@
   border: none;
   padding: 0;
   cursor: pointer;
-  color: var(--color-light-400);
+  color: #7b7b7b;
   font-size: 16px;
   display: flex;
   align-items: center;
@@ -29,7 +29,7 @@
   height: 5px;
   border-radius: 50%;
   background: var(--color-primary);
-  border: 1px solid var(--component-background);
+  border: 1px solid #2b2a2e;
 }
 
 /* ── Popover ── */
@@ -38,8 +38,8 @@
   top: calc(100% + 10px);
   right: 0;
   width: 240px;
-  background: var(--component-background);
-  border: 0.5px solid var(--color-dark-100);
+  background: #2b2a2e;
+  border: 0.5px solid #515151;
   border-radius: 10px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
   overflow: hidden;
@@ -51,13 +51,13 @@
   align-items: center;
   justify-content: space-between;
   padding: 0.5rem 0.6rem 0.5rem 0.75rem;
-  border-bottom: 0.5px solid var(--color-dark-100);
+  border-bottom: 0.5px solid #515151;
 }
 
 .popoverTitle {
   font-size: 0.72rem;
   font-weight: 600;
-  color: var(--text-color);
+  color: #cbcbcb;
   font-family: var(--font-sans);
 }
 
@@ -69,15 +69,15 @@
   border: none;
   cursor: pointer;
   font-size: 0.65rem;
-  color: var(--color-light-400);
+  color: #7b7b7b;
   padding: 0.15rem 0.3rem;
   border-radius: 4px;
   transition: color 0.15s, background 0.15s;
 }
 
 .clearBtn:hover {
-  color: var(--text-color);
-  background: var(--color-dark-300);
+  color: #cbcbcb;
+  background: #3c3c3c;
 }
 
 .empty {
@@ -87,7 +87,7 @@
   gap: 0.6rem;
   padding: 1.75rem 0.75rem;
   font-size: 0.72rem;
-  color: var(--color-light-400);
+  color: #7b7b7b;
   text-align: center;
   margin: 0;
   font-family: var(--font-sans);
@@ -116,7 +116,7 @@
   align-items: center;
   gap: 0.6rem;
   padding: 0.55rem 0.75rem;
-  border-bottom: 0.5px solid var(--color-dark-100);
+  border-bottom: 0.5px solid #515151;
   cursor: default;
 }
 
@@ -129,7 +129,7 @@
 }
 
 .rowClickable:hover {
-  background: var(--color-dark-300);
+  background: #3c3c3c;
 }
 
 .rowIcon {
@@ -164,7 +164,7 @@
 .rowTitle {
   font-size: 0.72rem;
   font-weight: 500;
-  color: var(--text-color);
+  color: #cbcbcb;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -185,7 +185,7 @@
 
 .rowTime {
   font-size: 0.6rem;
-  color: var(--color-light-400);
+  color: #7b7b7b;
   white-space: nowrap;
   flex-shrink: 0;
   font-family: var(--font-mono, monospace);

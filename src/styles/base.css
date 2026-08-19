@@ -16,7 +16,7 @@
 html,
 body {
   max-width: 100vw;
-  background: var(--background-gradient-color) no-repeat center / cover;
+  background: var(--background-gradient-color-fixed) no-repeat center / cover;
 }
 
 body {
@@ -182,6 +182,7 @@ main {
   max-width: var(--max-width);
   display: flex;
   flex-direction: column;
+  background: transparent;
 }
 
 ::-webkit-scrollbar {

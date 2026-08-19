@@ -74,14 +74,7 @@ export default function DefaultLayout() {
         onClose={() => setIsPlayerSettingsOpen(false)}
       />
       <Desktop />
-      <motion.div
-        className="app-window"
-        data-minimized={minimized}
-        onClick={minimized ? () => dispatch(setMinimized(false)) : undefined}
-        animate={minimized ? { scale: 0.52, y: '-8%', borderRadius: 16 } : { scale: 1, y: 0, borderRadius: 0 }}
-        transition={{ type: 'spring', stiffness: 260, damping: 30 }}
-        style={{ transformOrigin: 'center' }}
-      >
+      <div className="app-window">
         <div className="header-app">
           <span className="header-spacer"></span>
           <AppSwitcher />
@@ -90,7 +83,14 @@ export default function DefaultLayout() {
             <AccountMenu />
           </span>
         </div>
-        <div className="app-container">
+        <motion.div
+          className="app-container"
+          data-minimized={minimized}
+          onClick={minimized ? () => dispatch(setMinimized(false)) : undefined}
+          animate={minimized ? { scale: 0.52, y: '-8%', borderRadius: 16 } : { scale: 1, y: 0, borderRadius: 10 }}
+          transition={{ type: 'spring', stiffness: 260, damping: 30 }}
+          style={{ transformOrigin: 'center' }}
+        >
           <div className="dashboard-container">
             <nav className="nav-container" ref={navRef}>
               <aside className="aside-container">
@@ -116,8 +116,8 @@ export default function DefaultLayout() {
           )}
           <LogoutModal />
           <AttentionGuardModal show={showAttentionGuard} onContinue={handleAttentionGuardContinue} />
-        </div>
-      </motion.div>
+        </motion.div>
+      </div>
     </main>
   );
 }

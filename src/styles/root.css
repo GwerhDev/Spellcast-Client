@@ -67,6 +67,19 @@
     radial-gradient(ellipse 60% 40% at 20% 80%, color-mix(in oklch, var(--color-primary) 8%, transparent), transparent 70%),
     linear-gradient(to right top, var(--background-color-dark), var(--background-color-light));
 
+  /* Fixed, hardcoded (NOT a var() alias to --background-gradient-color -- custom
+     properties re-resolve live down the cascade, so an alias would still pick up
+     html.light's override at the point of use). The outer chrome behind app-container --
+     html, body, #root, and the desktop revealed behind a minimized window -- always
+     stays this exact dark gradient. Only --background-gradient-color (above) switches
+     with the theme, and it's applied to app-container alone, so light/dark only affects
+     what's inside it. Keep this literal recipe in sync with the dark-mode values above
+     by hand if those ever change. */
+  --background-gradient-color-fixed:
+    radial-gradient(ellipse 80% 60% at 70% 40%, color-mix(in oklch, #73a5cc 12%, transparent), transparent 70%),
+    radial-gradient(ellipse 60% 40% at 20% 80%, color-mix(in oklch, #73a5cc 8%, transparent), transparent 70%),
+    linear-gradient(to right top, #1a1a1c, #2f2f2f);
+
   --paper-bg: #252830;
   --paper-shadow: 0 4px 28px rgba(0, 0, 0, 0.55);
 
@@ -187,7 +200,7 @@ html.light {
 }
 
 #root {
-  background: var(--background-gradient-color);
+  background: var(--background-gradient-color-fixed);
   display: flex;
   background-position: center;
   background-repeat: no-repeat;

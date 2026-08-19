@@ -97,17 +97,6 @@
   flex-direction: column;
 }
 
-.app-window[data-minimized="true"] {
-  cursor: pointer;
-  overflow: hidden;
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55);
-}
-
-/* When minimized, clicks restore the window instead of hitting the inner UI. */
-.app-window[data-minimized="true"]>* {
-  pointer-events: none;
-}
-
 .app-container {
   gap: .5rem;
   width: 100%;
@@ -118,6 +107,21 @@
   position: relative;
   flex-direction: column;
   border-radius: 10px;
+  /* The one place the light/dark theme's background gradient applies -- everything
+     outside app-container (html/body/#root, the desktop behind a minimized window)
+     uses the fixed dark gradient instead, see root.css. */
+  background: var(--background-gradient-color) no-repeat center / cover;
+}
+
+.app-container[data-minimized="true"] {
+  cursor: pointer;
+  overflow: hidden;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55);
+}
+
+/* When minimized, clicks restore the window instead of hitting the inner UI. */
+.app-container[data-minimized="true"]>* {
+  pointer-events: none;
 }
 
 .app-viewer {
@@ -248,7 +252,8 @@
   align-items: center;
   flex-direction: column;
   justify-content: center;
-  background: var(--background-gradient-color);
+  /* Fixed, not the theme-reactive gradient -- the splash stays dark in light mode too. */
+  background: var(--background-gradient-color-fixed);
   z-index: 9999;
   transition: opacity 0.5s ease;
 }
