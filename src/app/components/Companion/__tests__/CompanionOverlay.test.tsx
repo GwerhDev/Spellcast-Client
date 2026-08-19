@@ -1,19 +1,25 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import { screen, fireEvent } from '@testing-library/react';
 import { renderWithProviders as render } from '../../../../test/renderWithProviders';
 import { CompanionOverlay } from '../CompanionOverlay';
 import type { Companion } from '../../../../config/assets';
 import type { CompanionPlacement } from '../../../../store/userLibrarySlice';
 
-// jsdom has no WebGL context — Canvas/r3f internals aren't under test here, only that
-// CompanionOverlay wires the resolved companion's models and placements into the render
-// tree correctly. Drag-to-move, Ctrl+drag-to-rotate and Ctrl+wheel-to-scale are driven by
-// onPointerDown/onWheel on the r3f <group> plus window pointermove/pointerup listeners —
-// not meaningfully testable without a real Canvas, so those gestures are exercised manually
-// in-browser instead; here we only verify the callback props are wired, not the gesture math
-// (already covered by userLibrarySlice's moveCompanionModel/rotateCompanionModel/scaleCompanionModel tests).
+// The DOM env has no WebGL context — r3f internals aren't under test here, only that
+// CompanionOverlay wires the resolved companion's models/placements into the render tree and
+// routes Ctrl-hover state to the right model. The overlay renders ONE shared <Canvas> (mocked
+// to render its children as DOM) plus a per-model HTML hit box on top; gestures are driven by
+// pointer/wheel listeners on those hit boxes and window pointermove/pointerup — the gesture
+// math itself is covered by userLibrarySlice's move/rotate/scale reducer tests, so here we
+// only assert prop wiring and the hover→highlight routing.
 vi.mock('@react-three/fiber', () => ({
   Canvas: ({ children }: { children: React.ReactNode }) => <div data-testid="mock-canvas">{children}</div>,
+  // The overlay drives its on-demand render loop via useThree(state => state.invalidate);
+  // the selector form must return a callable.
+  useThree: (selector?: (state: { invalidate: () => void }) => unknown) => {
+    const state = { invalidate: () => {} };
+    return selector ? selector(state) : state;
+  },
 }));
 
 vi.mock('../CatModel', () => ({
@@ -21,6 +27,23 @@ vi.mock('../CatModel', () => ({
     <div data-testid="mock-cat" data-color={color} data-highlighted={String(!!highlighted)} />
   ),
 }));
+
+// The overlay only mounts its <Canvas> once it has measured a non-zero size (so the
+// orthographic pixel camera has a real frustum). The test DOM reports clientWidth/Height as 0,
+// so stub them to a fixed size for the duration of these tests; without this the Canvas — and
+// the models inside it — would never render.
+const OVERLAY_W = 800;
+const OVERLAY_H = 600;
+let widthSpy: ReturnType<typeof vi.spyOn>;
+let heightSpy: ReturnType<typeof vi.spyOn>;
+beforeAll(() => {
+  widthSpy = vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(OVERLAY_W);
+  heightSpy = vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(OVERLAY_H);
+});
+afterAll(() => {
+  widthSpy.mockRestore();
+  heightSpy.mockRestore();
+});
 
 const companion: Companion = {
   id: 'cats',
@@ -49,6 +72,11 @@ describe('CompanionOverlay', () => {
     expect(screen.getByTestId('companion-overlay')).toBeInTheDocument();
   });
 
+  it('renders a single shared canvas, not one per model', () => {
+    render(<CompanionOverlay companion={companion} {...noopProps} />);
+    expect(screen.getAllByTestId('mock-canvas')).toHaveLength(1);
+  });
+
   it('renders one CatModel per model in the companion', () => {
     render(<CompanionOverlay companion={companion} {...noopProps} />);
     expect(screen.getAllByTestId('mock-cat')).toHaveLength(2);
@@ -74,36 +102,37 @@ describe('CompanionOverlay', () => {
     };
     render(<CompanionOverlay companion={companion} {...noopProps} placements={placements} />);
     const orange = screen.getByTestId('companion-hit-area-orange');
+    // Hit box is centered on the placement: 220px box → offset by half (110px).
     expect(orange.style.left).toBe(`${500 - 110}px`);
     expect(orange.style.top).toBe(`${300 - 110}px`);
   });
 
-  it('tells CatModel to highlight itself while the pointer moves over it with Ctrl held', () => {
+  it('highlights the model whose hit box the pointer moves over with Ctrl held', () => {
     render(<CompanionOverlay companion={companion} {...noopProps} />);
     const orangeHitArea = screen.getByTestId('companion-hit-area-orange');
-    const orangeCat = screen.getAllByTestId('mock-cat')[0];
-    expect(orangeCat).toHaveAttribute('data-highlighted', 'false');
+    // Orange is the first model, so its rendered CatModel is the first mock-cat.
+    expect(screen.getAllByTestId('mock-cat')[0]).toHaveAttribute('data-highlighted', 'false');
     fireEvent.mouseMove(orangeHitArea, { ctrlKey: true });
-    expect(orangeCat).toHaveAttribute('data-highlighted', 'true');
+    expect(screen.getAllByTestId('mock-cat')[0]).toHaveAttribute('data-highlighted', 'true');
+    // Only the hovered model highlights, not the other one.
+    expect(screen.getAllByTestId('mock-cat')[1]).toHaveAttribute('data-highlighted', 'false');
   });
 
   it('clears the highlight when the pointer moves without Ctrl', () => {
     render(<CompanionOverlay companion={companion} {...noopProps} />);
     const orangeHitArea = screen.getByTestId('companion-hit-area-orange');
-    const orangeCat = screen.getAllByTestId('mock-cat')[0];
     fireEvent.mouseMove(orangeHitArea, { ctrlKey: true });
-    expect(orangeCat).toHaveAttribute('data-highlighted', 'true');
+    expect(screen.getAllByTestId('mock-cat')[0]).toHaveAttribute('data-highlighted', 'true');
     fireEvent.mouseMove(orangeHitArea, { ctrlKey: false });
-    expect(orangeCat).toHaveAttribute('data-highlighted', 'false');
+    expect(screen.getAllByTestId('mock-cat')[0]).toHaveAttribute('data-highlighted', 'false');
   });
 
   it('clears the highlight on mouse leave', () => {
     render(<CompanionOverlay companion={companion} {...noopProps} />);
     const orangeHitArea = screen.getByTestId('companion-hit-area-orange');
-    const orangeCat = screen.getAllByTestId('mock-cat')[0];
     fireEvent.mouseMove(orangeHitArea, { ctrlKey: true });
-    expect(orangeCat).toHaveAttribute('data-highlighted', 'true');
+    expect(screen.getAllByTestId('mock-cat')[0]).toHaveAttribute('data-highlighted', 'true');
     fireEvent.mouseLeave(orangeHitArea);
-    expect(orangeCat).toHaveAttribute('data-highlighted', 'false');
+    expect(screen.getAllByTestId('mock-cat')[0]).toHaveAttribute('data-highlighted', 'false');
   });
 });

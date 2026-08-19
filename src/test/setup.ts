@@ -1,6 +1,8 @@
 import '@testing-library/jest-dom';
 
-// ResizeObserver is not implemented in jsdom
+// Deterministic ResizeObserver stub (never fires) so components that observe elements —
+// e.g. CompanionOverlay measuring its overlay — don't depend on the DOM env's own
+// implementation or timing.
 class ResizeObserverMock {
   observe() {}
   unobserve() {}
@@ -8,9 +10,9 @@ class ResizeObserverMock {
 }
 window.ResizeObserver = ResizeObserverMock as unknown as typeof ResizeObserver;
 
-// jsdom has no viewport model, so its real matchMedia always resolves width-based
-// queries to `matches: false`. Stub it so tests can opt into "matches: true" per query
-// (see src/test/mockMatchMedia.ts) to exercise mobile-breakpoint code paths.
+// The test DOM has no real viewport model, so width-based media queries always resolve to
+// `matches: false`. Stub it so tests can opt into "matches: true" per query (see
+// src/test/mockMatchMedia.ts) to exercise mobile-breakpoint code paths.
 window.matchMedia = window.matchMedia || ((query: string) => ({
   matches: false,
   media: query,
