@@ -80,6 +80,21 @@
     radial-gradient(ellipse 60% 40% at 20% 80%, color-mix(in oklch, #73a5cc 8%, transparent), transparent 70%),
     linear-gradient(to right top, #1a1a1c, #2f2f2f);
 
+  /* ── NHEXA desktop chrome ── shared token names+values across every NHEXA app
+     (Spellcast-Client, Spectra-Client, StreamBy-UI): the app launcher ("Desktop"),
+     the header's AppSwitcher/AccountMenu/NotificationsButton popovers, and the splash
+     all live in the shared "OS shell" outside any single app's own themed content, so
+     they use these instead of this app's own theme-aware tokens -- same look, same
+     names, in every app, and never affected by an in-app theme toggle. Keep these
+     names and values identical across the three repos when changing any of them. */
+  --nhexa-desktop-surface: #2b2a2e;
+  --nhexa-desktop-border: #515151;
+  --nhexa-desktop-border-soft: #3c3c3c;
+  --nhexa-desktop-text: #cbcbcb;
+  --nhexa-desktop-text-dim: #7b7b7b;
+  --nhexa-desktop-skeleton-1: #3c3c3c;
+  --nhexa-desktop-skeleton-2: #2f2f2f;
+
   --paper-bg: #252830;
   --paper-shadow: 0 4px 28px rgba(0, 0, 0, 0.55);
 

@@ -54,14 +54,14 @@
   width: 15px;
   height: 15px;
   flex-shrink: 0;
-  background-color: #cbcbcb;
+  background-color: var(--nhexa-desktop-text);
   -webkit-mask: url('../../../assets/nhexa-logo.svg') no-repeat center / contain;
   mask: url('../../../assets/nhexa-logo.svg') no-repeat center / contain;
 }
 
 .nhexaName {
   font-family: 'Game-Of-Squids', sans-serif;
-  color: #cbcbcb;
+  color: var(--nhexa-desktop-text);
 }
 
 .triggerIcon {

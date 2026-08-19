@@ -55,7 +55,7 @@
   justify-content: center;
   gap: 0.6rem;
   padding: 1.1rem 0.5rem;
-  background: #2b2a2e;
+  background: var(--nhexa-desktop-surface);
   border: 1.5px solid transparent;
   border-radius: 14px;
   cursor: pointer;
@@ -146,7 +146,7 @@
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.16em;
-  color: #cbcbcb;
+  color: var(--nhexa-desktop-text);
   text-align: center;
   transition: color 0.18s ease;
 }
@@ -200,7 +200,7 @@
   justify-content: center;
   gap: 0.6rem;
   padding: 1.1rem 0.5rem;
-  background: #2b2a2e;
+  background: var(--nhexa-desktop-surface);
   border: 1.5px solid rgba(255, 255, 255, 0.06);
 }
 
@@ -208,7 +208,7 @@
   width: 56px;
   height: 56px;
   border-radius: 12px;
-  background: linear-gradient(90deg, #3c3c3c, #2f2f2f, #3c3c3c);
+  background: linear-gradient(90deg, var(--nhexa-desktop-skeleton-1), var(--nhexa-desktop-skeleton-2), var(--nhexa-desktop-skeleton-1));
   background-size: 200% 100%;
   animation: skeletonShine 1.8s infinite;
 }
@@ -217,7 +217,7 @@
   width: 70%;
   height: 8px;
   border-radius: 4px;
-  background: linear-gradient(90deg, #3c3c3c, #2f2f2f, #3c3c3c);
+  background: linear-gradient(90deg, var(--nhexa-desktop-skeleton-1), var(--nhexa-desktop-skeleton-2), var(--nhexa-desktop-skeleton-1));
   background-size: 200% 100%;
   animation: skeletonShine 1.8s infinite 0.1s;
 }
@@ -226,7 +226,7 @@
   width: 50%;
   height: 6px;
   border-radius: 4px;
-  background: linear-gradient(90deg, #3c3c3c, #2f2f2f, #3c3c3c);
+  background: linear-gradient(90deg, var(--nhexa-desktop-skeleton-1), var(--nhexa-desktop-skeleton-2), var(--nhexa-desktop-skeleton-1));
   background-size: 200% 100%;
   animation: skeletonShine 1.8s infinite 0.2s;
 }

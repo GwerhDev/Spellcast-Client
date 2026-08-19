@@ -15,13 +15,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #2b2a2e;
+  background: var(--nhexa-desktop-surface);
   transition: border-color 0.2s ease;
 }
 
 .trigger:hover {
   border-color: var(--color-primary-accent, var(--color-primary));
-  background-color: #2b2a2e;
+  background-color: var(--nhexa-desktop-surface);
   color: inherit;
 }
 
@@ -43,8 +43,8 @@
   top: calc(100% + 8px);
   right: 0;
   width: 220px;
-  background: #2b2a2e;
-  border: 0.5px solid #515151;
+  background: var(--nhexa-desktop-surface);
+  border: 0.5px solid var(--nhexa-desktop-border);
   border-radius: 10px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
   padding: 0.6rem;
@@ -74,7 +74,7 @@
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: #2b2a2e;
+  background: var(--nhexa-desktop-surface);
   border: 2px solid var(--color-primary);
   display: flex;
   align-items: center;
@@ -88,7 +88,7 @@
 .username {
   font-size: 0.8rem;
   font-weight: 600;
-  color: #cbcbcb;
+  color: var(--nhexa-desktop-text);
   font-family: var(--font-sans);
 }
 
@@ -124,14 +124,14 @@
 
 .levelLabel {
   font-size: 0.65rem;
-  color: #7b7b7b;
+  color: var(--nhexa-desktop-text-dim);
   font-family: var(--font-mono, monospace);
 }
 
 .xpBarTrack {
   width: 100%;
   height: 3px;
-  background: #3c3c3c;
+  background: var(--nhexa-desktop-border-soft);
   border-radius: 999px;
   overflow: hidden;
 }
@@ -148,7 +148,7 @@
   align-items: center;
   gap: 0.3rem;
   font-size: 0.62rem;
-  color: #7b7b7b;
+  color: var(--nhexa-desktop-text-dim);
   font-family: var(--font-mono, monospace);
 }
 
@@ -169,7 +169,7 @@
   text-align: left;
   font-size: 0.75rem;
   font-weight: 500;
-  color: #cbcbcb;
+  color: var(--nhexa-desktop-text);
   font-family: var(--font-sans);
   border-radius: 6px;
   background: transparent;
@@ -183,7 +183,7 @@
 
 .menuItem:hover {
   background: rgba(115, 165, 204, 0.1);
-  color: #cbcbcb;
+  color: var(--nhexa-desktop-text);
 }
 
 .nhexaIcon {
