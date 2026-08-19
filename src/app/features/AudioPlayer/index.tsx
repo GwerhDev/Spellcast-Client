@@ -335,7 +335,10 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
       return;
     }
     if (sentences.length === 0) {
-      if (currentPage < totalPages) dispatch(goToNextPage());
+      if (currentPage < totalPages) {
+        dispatch(setAutoPlayOnLoad(true));
+        dispatch(goToNextPage());
+      }
       return;
     }
     if (selectedVoice.type === 'ai' && !pageAudioReadyRef.current) {
