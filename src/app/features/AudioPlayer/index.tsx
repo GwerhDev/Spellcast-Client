@@ -63,6 +63,7 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
     currentPage,
     spellTitle,
     currentPageText,
+    sentences,
   } = useSelector((state: RootState) => state.pdfReader);
   const { selectedVoice } = useSelector((state: RootState) => state.voice);
   const { userData } = useAppSelector((state) => state.session);
@@ -333,6 +334,10 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
       dispatch(pause());
       return;
     }
+    if (sentences.length === 0) {
+      if (currentPage < totalPages) dispatch(goToNextPage());
+      return;
+    }
     if (selectedVoice.type === 'ai' && !pageAudioReadyRef.current) {
       fetchAndPlay(currentPageText);
       return;
@@ -371,10 +376,19 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
 
   useEffect(() => {
     if (selectedVoice.type !== 'ai' || !currentPageText) return;
+    // Cover pages (see injectCoverIntoPages in pdfUtils) carry no readable text, so
+    // `sentences` comes back empty -- skip straight to the next page instead of
+    // synthesizing/playing empty audio.
+    if (sentences.length === 0) {
+      if (isPlaying || autoPlayOnLoad) {
+        if (currentPage < totalPages) dispatch(goToNextPage());
+      }
+      return;
+    }
     if (autoPlayOnLoad) dispatch(setAutoPlayOnLoad(false));
     fetchAndPlay(currentPageText);
     //eslint-disable-next-line
-  }, [currentPageText]);
+  }, [currentPageText, sentences]);
 
   useEffect(() => {
     if (!('mediaSession' in navigator)) return;
