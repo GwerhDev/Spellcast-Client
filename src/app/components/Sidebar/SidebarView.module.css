@@ -139,13 +139,19 @@
   transition: color 0.15s ease, background-color 0.15s ease;
 }
 
-.railIcon:hover {
+.railIcon:hover:not(.railIconActive) {
   color: var(--text-1);
 }
 
 .railIconActive {
   color: var(--color-primary);
   filter: drop-shadow(0 0 1px var(--color-secondary));
+}
+
+/* Collapsed rail: an active icon keeps its accent on hover instead of falling back to the
+   near-white idle-hover color. */
+.railIconActive:hover {
+  color: var(--color-primary);
 }
 
 .railIconActive::before,
