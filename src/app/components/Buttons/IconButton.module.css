@@ -15,12 +15,12 @@
 
 .primary {
   padding-inline: 3rem;
-  color: var(--text-color-accent);
+  color: var(--app-white);
   background: var(--color-primary);
 }
 
 .primary:hover {
-  color: var(--text-color-accent);
+  color: var(--app-white);
   background: var(--color-primary-accent);
 }
 
