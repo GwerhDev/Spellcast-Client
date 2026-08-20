@@ -12,8 +12,8 @@
   flex-grow: 1;
   white-space: normal;
   color: var(--color-light-100);
-  background-color: var(--component-background);
-  border-radius: 10px;
+  background-color: var(--paper-bg);
+  border-top-right-radius: 4px;
   padding: 1rem;
   overflow-y: auto;
   border: 1px solid transparent;
@@ -266,8 +266,6 @@
   margin-left: calc(-1 * var(--margin-left, 64px));
 }
 
-
-
 @media (max-width: 768px) {
   .titleContainer {
     display: none;
@@ -276,6 +274,10 @@
   /* Stack the pages panel below the sheet as a horizontal strip */
   .bodyWrapper {
     flex-direction: column;
+  }
+
+  .textContainer {
+    border-radius: 0;
   }
 
   /* Override the framer-motion inline width animation on mobile so the panel
