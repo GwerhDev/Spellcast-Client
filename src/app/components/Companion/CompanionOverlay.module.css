@@ -13,11 +13,19 @@
 
 /* Single shared WebGL canvas covering the overlay. Non-interactive: the per-model HTML
    hit boxes above it capture all pointer/wheel input, so the canvas itself never blocks
-   page scrolling or clicks. */
+   page scrolling or clicks.
+   r3f's <Canvas> puts the className on the wrapper <div> it renders, not on the actual
+   <canvas> element inside -- the real <canvas> gets no class at all, so it was left at
+   the UA default `pointer-events: auto` and silently ate every click/scroll over the
+   reader whenever a companion was active. The child selector reaches the real element. */
 .canvas {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
+  pointer-events: none;
+}
+
+.canvas canvas {
   pointer-events: none;
 }
