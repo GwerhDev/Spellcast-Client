@@ -1,8 +1,13 @@
+/* No z-index here on purpose: this wrapper must NOT become its own stacking context, or
+   every child inside it (each cat's canvas, however its own z-index compares to the
+   page) would be pinned as one block above/below the whole page regardless of per-model
+   depth. Its children compete directly against the paper sheet's z-index (see
+   PAGE_Z_INDEX in CompanionOverlay.tsx and .paperSheet/.textContainer in
+   SpellReader's index.module.css) inside .contentArea's stacking context instead. */
 .overlay {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  z-index: 5;
 }
 
 .hitArea {
@@ -11,21 +16,19 @@
   cursor: grab;
 }
 
-/* Single shared WebGL canvas covering the overlay. Non-interactive: the per-model HTML
-   hit boxes above it capture all pointer/wheel input, so the canvas itself never blocks
-   page scrolling or clicks.
+/* One small WebGL canvas per model (see CompanionCanvas in CompanionOverlay.tsx for why),
+   sized/positioned per-model via inline style rather than covering the whole overlay.
+   Non-interactive: the matching HTML hit box captures all pointer/wheel input for its
+   model, so no canvas ever blocks page scrolling or clicks.
    r3f's <Canvas> puts the className on the wrapper <div> it renders, not on the actual
    <canvas> element inside -- the real <canvas> gets no class at all, so it was left at
    the UA default `pointer-events: auto` and silently ate every click/scroll over the
    reader whenever a companion was active. The child selector reaches the real element. */
-.canvas {
+.catCanvas {
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
   pointer-events: none;
 }
 
-.canvas canvas {
+.catCanvas canvas {
   pointer-events: none;
 }

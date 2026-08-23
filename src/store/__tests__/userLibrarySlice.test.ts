@@ -9,6 +9,7 @@ import reducer, {
   moveCompanionModel,
   rotateCompanionModel,
   scaleCompanionModel,
+  toggleCompanionDepth,
   type CompanionPlacement,
 } from '../userLibrarySlice';
 
@@ -19,7 +20,7 @@ beforeEach(() => {
   });
 });
 
-const basePlacement: CompanionPlacement = { x: 80, y: 80, rotationX: 0, rotationY: 0, scale: 1 };
+const basePlacement: CompanionPlacement = { x: 80, y: 80, rotationX: 0, rotationY: 0, scale: 1, inFront: true };
 
 const baseState = {
   unlockedIds: [] as string[],
@@ -29,7 +30,7 @@ const baseState = {
   soundBgVolume: 0.35,
   masterVolume: 1,
   companionPlacements: {} as Record<string, CompanionPlacement>,
-  version: 4,
+  version: 5,
 };
 
 describe('userLibrarySlice', () => {
@@ -102,5 +103,16 @@ describe('userLibrarySlice', () => {
 
     const shrunk = reducer(baseState, scaleCompanionModel({ key: 'cats:orange', dScale: -5, base: basePlacement }));
     expect(shrunk.companionPlacements['cats:orange'].scale).toBe(0.4);
+  });
+
+  it('toggleCompanionDepth flips inFront from the base placement on first toggle', () => {
+    const state = reducer(baseState, toggleCompanionDepth({ key: 'cats:orange', base: basePlacement }));
+    expect(state.companionPlacements['cats:orange']).toEqual({ ...basePlacement, inFront: false });
+  });
+
+  it('toggleCompanionDepth flips back on a second toggle', () => {
+    const withPlacement = { ...baseState, companionPlacements: { 'cats:orange': { ...basePlacement, inFront: false } } };
+    const state = reducer(withPlacement, toggleCompanionDepth({ key: 'cats:orange', base: basePlacement }));
+    expect(state.companionPlacements['cats:orange'].inFront).toBe(true);
   });
 });

@@ -17,6 +17,11 @@
   padding: 1rem;
   overflow-y: auto;
   border: 1px solid transparent;
+  /* Real stacking position, not just paint order -- see PAGE_Z_INDEX in
+     CompanionOverlay.tsx: each companion model's canvas is placed just above or below
+     this exact value so a cat can occlude the page (or be occluded by it) individually. */
+  position: relative;
+  z-index: 4;
 }
 
 /* Fit-to-width: center cover images */
@@ -243,6 +248,11 @@
   box-shadow: var(--paper-shadow);
   color: var(--page-text-color, var(--color-light-100));
   box-sizing: border-box;
+  /* Real stacking position, not just paint order -- see PAGE_Z_INDEX in
+     CompanionOverlay.tsx: each companion model's canvas is placed just above or below
+     this exact value so a cat can occlude the page (or be occluded by it) individually. */
+  position: relative;
+  z-index: 4;
 }
 
 .paperSheet>img:first-child:not([title="pdf-graphic"]) {

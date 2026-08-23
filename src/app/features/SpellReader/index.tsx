@@ -10,7 +10,7 @@ import { faArrowLeft, faEdit, faFilePdf, faGear, faExpand, faCompress, faInfoCir
 import { RootState } from '../../../store';
 import { goToPage, setCurrentSentenceIndex, setShowReaderSettings, recordReaderActivity } from '../../../store/pdfReaderSlice';
 import { setPendingSeek } from '../../../store/audioPlayerSlice';
-import { moveCompanionModel, rotateCompanionModel, scaleCompanionModel, type CompanionPlacement } from '../../../store/userLibrarySlice';
+import { moveCompanionModel, rotateCompanionModel, scaleCompanionModel, toggleCompanionDepth, type CompanionPlacement } from '../../../store/userLibrarySlice';
 import { pageBackgrounds, companions } from '../../../config/assets';
 import { Spinner } from '../../components/Spinner';
 import { IconButton } from '../../components/Buttons/IconButton';
@@ -59,12 +59,22 @@ export const SpellReader = () => {
     ? companions.find(c => c.id === activeCompanionId) ?? null
     : null;
 
+  // Must match CompanionOverlay's own defaultPlacementFor exactly -- this is the "base" a
+  // reducer starts from the first time a model is moved/rotated/scaled/depth-toggled
+  // without a persisted placement yet, so it has to agree with what the overlay actually
+  // rendered that model at, or the first gesture would jump the model to a different spot
+  // than where the user was looking at it. Both the 220px gap (BASE_HIT_AREA_SIZE) and the
+  // 110px origin (half that) matter: a tighter gap let one model's hit box permanently
+  // block the other's, and an origin smaller than half the box size got the first model
+  // nudged inward by the overlay's own edge-clamp on mount while later ones weren't,
+  // silently shrinking the real gap back down.
   const defaultCompanionPlacement = (index: number): CompanionPlacement => ({
-    x: 80 + index * 140,
-    y: 80,
+    x: 110 + index * 220,
+    y: 110,
     rotationX: 0,
     rotationY: 0,
     scale: 1,
+    inFront: true,
   });
   const companionPlacementKey = (modelId: string) => `${activeCompanion?.id}:${modelId}`;
   const handleCompanionMove = (modelId: string, dx: number, dy: number) => {
@@ -81,6 +91,11 @@ export const SpellReader = () => {
     if (!activeCompanion) return;
     const index = activeCompanion.models.findIndex(m => m.id === modelId);
     dispatch(scaleCompanionModel({ key: companionPlacementKey(modelId), dScale, base: defaultCompanionPlacement(index) }));
+  };
+  const handleCompanionToggleDepth = (modelId: string) => {
+    if (!activeCompanion) return;
+    const index = activeCompanion.models.findIndex(m => m.id === modelId);
+    dispatch(toggleCompanionDepth({ key: companionPlacementKey(modelId), base: defaultCompanionPlacement(index) }));
   };
   const activeCompanionPlacements: Record<string, CompanionPlacement> = activeCompanion
     ? Object.fromEntries(
@@ -295,6 +310,9 @@ export const SpellReader = () => {
         <div className={s.contentArea}>
           {renderBody()}
           {activeCompanion && (
+            // Each model renders in its own small <canvas>, positioned/z-indexed against
+            // the page's own PAGE_Z_INDEX (see CompanionOverlay.tsx) so a cat can occlude
+            // the page or be occluded by it individually, per model, via Ctrl+Shift+click.
             <React.Suspense fallback={null}>
               <CompanionOverlay
                 companion={activeCompanion}
@@ -302,6 +320,7 @@ export const SpellReader = () => {
                 onMove={handleCompanionMove}
                 onRotate={handleCompanionRotate}
                 onScale={handleCompanionScale}
+                onToggleDepth={handleCompanionToggleDepth}
               />
             </React.Suspense>
           )}
