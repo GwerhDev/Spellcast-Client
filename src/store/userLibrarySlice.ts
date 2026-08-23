@@ -11,8 +11,11 @@ import { companions } from '../config/assets/companions';
 // outright instead of trying to migrate coordinates that no longer mean the same thing.
 const STATE_VERSION = 5;
 
-const MIN_COMPANION_SCALE = 0.4;
-const MAX_COMPANION_SCALE = 2.5;
+// Exported so CompanionOverlay can predict a scale change's clamped result itself (to
+// re-clamp the model's on-screen position immediately, before this reducer's own update
+// round-trips back through Redux) instead of duplicating these numbers.
+export const MIN_COMPANION_SCALE = 0.4;
+export const MAX_COMPANION_SCALE = 2.5;
 
 const FREE_IDS = [
   ...soundBackgrounds.filter(a => a.unlockMethod === 'free').map(a => a.id),

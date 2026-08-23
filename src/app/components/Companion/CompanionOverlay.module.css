@@ -23,7 +23,13 @@
    r3f's <Canvas> puts the className on the wrapper <div> it renders, not on the actual
    <canvas> element inside -- the real <canvas> gets no class at all, so it was left at
    the UA default `pointer-events: auto` and silently ate every click/scroll over the
-   reader whenever a companion was active. The child selector reaches the real element. */
+   reader whenever a companion was active. The child selector reaches the real element.
+   position: absolute here is redundant with (and always overridden by) the inline
+   `style={{ position: 'absolute', ... }}` CompanionCanvas passes -- an inline style prop
+   always wins over a className rule for the same property. It's kept as a fallback in case
+   that inline value is ever dropped: without it, r3f's own default of position: relative
+   on the wrapper takes over, and left/top stop meaning "absolute against .overlay" --
+   which is exactly what silently desynced this canvas from its own hit box after a drag. */
 .catCanvas {
   position: absolute;
   pointer-events: none;

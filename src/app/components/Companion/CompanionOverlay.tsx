@@ -1,7 +1,7 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
 import type { Companion, CompanionModel } from '../../../config/assets';
-import type { CompanionPlacement } from '../../../store/userLibrarySlice';
+import { MIN_COMPANION_SCALE, MAX_COMPANION_SCALE, type CompanionPlacement } from '../../../store/userLibrarySlice';
 import { CatModel } from './CatModel';
 import s from './CompanionOverlay.module.css';
 
@@ -190,6 +190,16 @@ const CompanionCanvas: React.FC<{
       className={s.catCanvas}
       data-testid={`companion-canvas-${model.id}`}
       style={{
+        // r3f's <Canvas> applies its own default position: relative to the wrapper div it
+        // renders, which wins over the CSS module's position: absolute (this inline style
+        // object always takes precedence over a className rule). Under position: relative,
+        // left/top offset from the element's own normal-flow position instead of from
+        // .overlay -- and since each model's CompanionCanvas sits at a different point in
+        // that flow (stacked one after another in the .map() below), the same left/top
+        // values landed each canvas at a DIFFERENT absolute spot than its matching hit box,
+        // which IS position: absolute against the same .overlay. Explicit here so this
+        // object's own position always wins, matching the hit box's positioning model.
+        position: 'absolute',
         width: size,
         height: size,
         left: placement.x - size / 2,
@@ -383,6 +393,21 @@ export const CompanionOverlay: React.FC<Props> = ({ companion, placements, onMov
             }}
             onScale={dScale => {
               onScale(model.id, dScale);
+              // Growing a model's scale grows its hit box/canvas footprint around the SAME
+              // x/y center -- a cat already sitting close to an edge can have its box grow
+              // straight past the overlay boundary with nothing else to catch it, since
+              // only a move or a resize re-clamps position, not a scale change on its own.
+              const current = placements[model.id] ?? defaultPlacementFor(companion.models.findIndex(m => m.id === model.id));
+              if (current && overlaySize.width > 0 && overlaySize.height > 0) {
+                // scaleCompanionModel clamps scale to [MIN_COMPANION_SCALE,
+                // MAX_COMPANION_SCALE] itself; predict the post-scale value here since this
+                // fires before the store's own update is visible in `placements`.
+                const nextScale = Math.min(MAX_COMPANION_SCALE, Math.max(MIN_COMPANION_SCALE, current.scale + dScale));
+                const clamped = clampToOverlay(current.x, current.y, nextScale, overlaySize);
+                if (clamped.x !== current.x || clamped.y !== current.y) {
+                  onMove(model.id, clamped.x - current.x, clamped.y - current.y);
+                }
+              }
               invalidate();
             }}
             onCtrlHoverChange={hovered => {
