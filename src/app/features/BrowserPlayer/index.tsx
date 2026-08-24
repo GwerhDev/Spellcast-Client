@@ -242,10 +242,14 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
 
   // Workaround for the Chrome SpeechSynthesis bug where the engine silently
   // freezes after ~15s of continuous speech. Nudging pause/resume keeps it alive.
-  // nudgePausedRef tells the utterance's onpause/onresume handlers (below) that
-  // this particular pause/resume pair is internal and expected, so they don't
-  // mistake it for an externally-triggered pause (e.g. headset controls) and
-  // sync Redux to a transient state.
+  // nudgePausedRef tells the utterance's onpause/onresume handlers (above) and the
+  // polling fallback (below) that this particular pause/resume pair is internal
+  // and expected, so they don't mistake it for an externally-triggered pause (e.g.
+  // headset controls) and sync Redux to a transient state. Cleared synchronously
+  // right after resume() rather than relying on the utterance's onresume event,
+  // since that event isn't guaranteed to fire in every browser (same reliability
+  // gap as onpause, see the polling fallback below) and a stuck `true` here would
+  // permanently blind that fallback to real external pauses afterwards.
   useEffect(() => {
     if (!isPlaying) return;
     const id = setInterval(() => {
@@ -253,10 +257,36 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
         nudgePausedRef.current = true;
         window.speechSynthesis.pause();
         window.speechSynthesis.resume();
+        nudgePausedRef.current = false;
       }
     }, 14_000);
     return () => clearInterval(id);
   }, [isPlaying]);
+
+  // Fallback sync for external pauses the utterance's onpause event doesn't
+  // reliably fire for (TCORE-81): some browsers only emit onpause when
+  // speechSynthesis.pause() was called from our own JS, not when audio output
+  // stops at the hardware/OS level via headset controls -- silently leaving
+  // Redux's isPlaying stuck at `true` with nothing to correct it. This polls the
+  // engine's actual paused/speaking state while we think we're playing and
+  // corrects Redux if it disagrees, independent of whether onpause ever fired.
+  // Requires two consecutive "stopped" reads (2s) before acting, since `speaking`
+  // legitimately blips false for a moment during the normal engine gap between
+  // one utterance ending and the next one's speak() call landing -- a single read
+  // can't tell that apart from a real external pause, but a real pause stays
+  // stopped past that gap while a normal transition doesn't.
+  useEffect(() => {
+    if (!isPlaying) return;
+    let consecutiveStops = 0;
+    const id = setInterval(() => {
+      if (nudgePausedRef.current || isSpeechPausedRef.current) { consecutiveStops = 0; return; }
+      const engineStopped = window.speechSynthesis.paused || !window.speechSynthesis.speaking;
+      if (!engineStopped) { consecutiveStops = 0; return; }
+      consecutiveStops += 1;
+      if (consecutiveStops >= 2 && isPlayingRef.current) dispatch(pause());
+    }, 1_000);
+    return () => clearInterval(id);
+  }, [isPlaying, dispatch]);
 
   useEffect(() => {
     activeUtteranceRef.current = null;
