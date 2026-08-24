@@ -10,14 +10,14 @@
 
 /* Card components (SpellCard, EditorPickerCard) set a fixed 160px width for
    flex/standalone contexts (e.g. the Home carousel, which must NOT be touched by
-   this override). Inside this grid, force cards to stretch to fill their column
+   this override). Inside this grid, cards should stretch to fill their column
    instead of sitting fixed-width inside a wider cell — otherwise rows with
    fewer/wider columns show dead space around each card. `.grid > *` alone ties
-   with `.card`'s own width rule on specificity (both 0,1,0) and can lose the
-   cascade depending on CSS module import/bundling order, so this uses !important
-   to win deterministically regardless of import order. */
-.grid > * {
-  width: 100% !important;
+   with `.card`'s own width rule on specificity (both 0,1,0), which can lose the
+   cascade depending on CSS module bundling order — repeating the class (`.grid.grid`)
+   raises specificity to (0,2,0) so this wins on its own merits, no !important needed. */
+.grid.grid > * {
+  width: 100%;
 }
 
 .sentinel {
