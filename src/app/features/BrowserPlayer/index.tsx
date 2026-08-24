@@ -233,7 +233,6 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
   useEffect(() => {
     if (!silentAudioRef.current) return;
     if (isPlaying) {
-      silentAudioRef.current.volume = 0;
       silentAudioRef.current.play().catch(() => {});
     } else {
       silentAudioRef.current.pause();
@@ -363,7 +362,6 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
   // click's own call stack, is what makes the anchor reliably get play permission.
   const playSilentAnchor = () => {
     if (!silentAudioRef.current) return;
-    silentAudioRef.current.volume = 0;
     silentAudioRef.current.play().catch(() => {});
   };
 
