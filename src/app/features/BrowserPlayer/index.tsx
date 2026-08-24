@@ -36,6 +36,18 @@ interface PlayerProps {
   showPlayerConfigModal: React.Dispatch<SetStateAction<boolean>>;
 }
 
+// speechSynthesis has no HTMLMediaElement of its own. Without one actually playing,
+// Chrome/Edge (and others) don't reliably route hardware/OS media-key events (e.g.
+// headset play/pause) to this page's Media Session at all -- our action handlers can
+// be set but simply never get called, and the OS's own media control surface pauses/
+// resumes on its own timeline instead (TCORE-81: this is why the on-screen button
+// never flips and speech resumes on its own after a few seconds -- the browser voice
+// path has nothing anchoring the Media Session, unlike AudioPlayer's real <audio>).
+// A silent, looping 100ms WAV playing for as long as we're "playing" gives the
+// browser a real media element to anchor the session to, so hardware controls reach
+// our setActionHandler('play'/'pause', ...) handlers like they do for AudioPlayer.
+const SILENT_AUDIO_SRC = 'data:audio/wav;base64,UklGRkQDAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YSADAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA==';
+
 export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, showPlayerConfigModal }) => {
   const { t } = useLanguage();
   const dispatch = useDispatch();
@@ -64,6 +76,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
   const [showDocDetail, setShowDocDetail] = useState(false);
   const volumeSliderRef = useRef<HTMLDivElement>(null);
   const volumeButtonRef = useRef<HTMLButtonElement>(null);
+  const silentAudioRef = useRef<HTMLAudioElement>(null);
   const activeUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const isSpeechPausedRef = useRef(false);
   const volumeDragPausedRef = useRef(false);
@@ -193,6 +206,20 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
 
   useEffect(() => {
     if (!isPlaying) window.speechSynthesis.pause();
+  }, [isPlaying]);
+
+  // Keep the silent anchor element (see SILENT_AUDIO_SRC above) playing in lockstep
+  // with isPlaying, so the OS/hardware media session stays anchored to a real,
+  // currently-playing media element for as long as we are. Its content is already
+  // pure silence, but force volume 0 too as a defensive no-op belt-and-suspenders.
+  useEffect(() => {
+    if (!silentAudioRef.current) return;
+    silentAudioRef.current.volume = 0;
+    if (isPlaying) {
+      silentAudioRef.current.play().catch(() => {});
+    } else {
+      silentAudioRef.current.pause();
+    }
   }, [isPlaying]);
 
   // Dedicated resume path for attention guard: always cancel + relaunch from current index.
@@ -403,6 +430,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
         onClose={() => setShowDocDetail(false)}
       />
       <div data-testid="browser-player" className={s.container}>
+        <audio ref={silentAudioRef} src={SILENT_AUDIO_SRC} loop />
         <div className={s.audioPlayerContainer}>
           <section className={s.leftSection}>
             <div
