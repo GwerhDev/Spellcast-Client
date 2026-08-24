@@ -210,12 +210,15 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
 
   // Keep the silent anchor element (see SILENT_AUDIO_SRC above) playing in lockstep
   // with isPlaying, so the OS/hardware media session stays anchored to a real,
-  // currently-playing media element for as long as we are. Its content is already
-  // pure silence, but force volume 0 too as a defensive no-op belt-and-suspenders.
+  // currently-playing media element for as long as we are. This reactive path
+  // covers programmatic play (autoPlayOnLoad, attention guard resume, etc.) where
+  // there's no click to call playSilentAnchor() from synchronously; handlePlay
+  // below also calls it directly for the direct-click case, since a play() call
+  // arriving only via this effect can get silently autoplay-blocked (TCORE-81).
   useEffect(() => {
     if (!silentAudioRef.current) return;
-    silentAudioRef.current.volume = 0;
     if (isPlaying) {
+      silentAudioRef.current.volume = 0;
       silentAudioRef.current.play().catch(() => {});
     } else {
       silentAudioRef.current.pause();
@@ -294,8 +297,23 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
     window.speechSynthesis.cancel();
   };
 
+  // Browsers only allow <audio>.play() to bypass autoplay blocking when it runs
+  // synchronously inside a real user gesture (click/keypress) call stack. The
+  // isPlaying-reactive effect below covers programmatic resumes (autoPlayOnLoad,
+  // attention guard, etc.), but a click handler that only dispatches Redux and lets
+  // that effect call .play() asynchronously can get silently blocked -- promise
+  // rejection swallowed, mediaSession left unanchored, hardware controls stop
+  // working, with no visible error (TCORE-81). Calling it here too, inside the
+  // click's own call stack, is what makes the anchor reliably get play permission.
+  const playSilentAnchor = () => {
+    if (!silentAudioRef.current) return;
+    silentAudioRef.current.volume = 0;
+    silentAudioRef.current.play().catch(() => {});
+  };
+
   const handlePlay = () => {
     if (isPlaying) return;
+    playSilentAnchor();
     if (sentences.length === 0) {
       dispatch(play());
       if (currentPage < totalPages) handleNext();
