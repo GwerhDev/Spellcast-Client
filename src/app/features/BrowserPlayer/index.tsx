@@ -79,6 +79,12 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
     if (!toggleSeq) return;
     togglePlayPauseRef.current();
   }, [toggleSeq]);
+  // Media Session's play/pause handlers need idempotent refs (always-play,
+  // always-pause), same as AudioPlayer (TCORE-81) -- routing them through the
+  // isPlaying-dependent toggle lets a double-fired Bluetooth/OS event apply the
+  // same branch twice and land on the opposite of what the user pressed.
+  const playRef = useRef<() => void>(() => { });
+  const pauseRef = useRef<() => void>(() => { });
   const volumePercentage = volume * 100;
 
   const handleTitle = () => {
@@ -174,7 +180,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
     speakSentence(
       sentences[currentSentenceIndex],
       () => dispatch(setCurrentSentenceIndex(currentSentenceIndex + 1)),
-      () => handlePlay(),
+      () => dispatch(play()),
     );
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resumeSeq]);
@@ -218,19 +224,21 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
       speakSentence(
         sentences[currentSentenceIndex],
         () => dispatch(setCurrentSentenceIndex(currentSentenceIndex + 1)),
-        () => handlePlay(),
+        () => dispatch(play()),
       );
     }
     //eslint-disable-next-line
   }, [currentSentenceIndex, sentences, isLoaded, currentPage, autoPlayOnLoad]);
 
-  const handleTogglePlayPause = () => {
-    if (isPlaying) {
-      isSpeechPausedRef.current = true;
-      window.speechSynthesis.pause();
-      dispatch(pause());
-      return;
-    }
+  const handleStop = () => {
+    activeUtteranceRef.current = null;
+    dispatch(stop());
+    dispatch(setCurrentSentenceIndex(0));
+    window.speechSynthesis.cancel();
+  };
+
+  const handlePlay = () => {
+    if (isPlaying) return;
     if (sentences.length === 0) {
       dispatch(play());
       if (currentPage < totalPages) handleNext();
@@ -248,22 +256,25 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
     speakSentence(
       sentences[currentSentenceIndex],
       () => dispatch(setCurrentSentenceIndex(currentSentenceIndex + 1)),
-      () => handlePlay(),
+      () => dispatch(play()),
     );
     dispatch(play());
   };
+
+  const handlePause = () => {
+    if (!isPlaying) return;
+    isSpeechPausedRef.current = true;
+    window.speechSynthesis.pause();
+    dispatch(pause());
+  };
+
+  const handleTogglePlayPause = () => {
+    if (isPlaying) handlePause();
+    else handlePlay();
+  };
   togglePlayPauseRef.current = handleTogglePlayPause;
-
-  const handleStop = () => {
-    activeUtteranceRef.current = null;
-    dispatch(stop());
-    dispatch(setCurrentSentenceIndex(0));
-    window.speechSynthesis.cancel();
-  };
-
-  const handlePlay = () => {
-    dispatch(play());
-  };
+  playRef.current = handlePlay;
+  pauseRef.current = handlePause;
 
   const handleVolumePointerDown = () => {
     if (activeUtteranceRef.current && !isSpeechPausedRef.current && window.speechSynthesis.speaking) {
@@ -280,7 +291,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
     speakSentence(
       sentences[currentSentenceIndex],
       () => dispatch(setCurrentSentenceIndex(currentSentenceIndex + 1)),
-      () => handlePlay(),
+      () => dispatch(play()),
     );
   };
 
@@ -298,6 +309,39 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
 
   const isPrevDisabled = isLoaded ? currentPage === 1 : true;
   const isNextDisabled = isLoaded ? currentPage === totalPages : true;
+
+  useEffect(() => {
+    if (!('mediaSession' in navigator)) return;
+
+    navigator.mediaSession.setActionHandler('play',           () => playRef.current());
+    navigator.mediaSession.setActionHandler('pause',          () => pauseRef.current());
+    navigator.mediaSession.setActionHandler('nexttrack',      handleNext);
+    navigator.mediaSession.setActionHandler('previoustrack',  handlePrevious);
+
+    return () => {
+      navigator.mediaSession.setActionHandler('play',          null);
+      navigator.mediaSession.setActionHandler('pause',         null);
+      navigator.mediaSession.setActionHandler('nexttrack',     null);
+      navigator.mediaSession.setActionHandler('previoustrack', null);
+    };
+    //eslint-disable-next-line
+  }, []);
+
+  useEffect(() => {
+    if (!('mediaSession' in navigator)) return;
+
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title:  spellTitle ?? '',
+      artist: isLoaded ? `${t.spell.page} ${currentPage} ${t.spell.of} ${totalPages}` : '',
+      album:  'Spellcast',
+      artwork: coverUrl ? [{ src: coverUrl, type: 'image/jpeg' }] : [],
+    });
+  }, [spellTitle, currentPage, totalPages, coverUrl, isLoaded, t]);
+
+  useEffect(() => {
+    if (!('mediaSession' in navigator)) return;
+    navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
+  }, [isPlaying]);
 
   useEffect(() => {
     const handleVoicesChanged = () => {
