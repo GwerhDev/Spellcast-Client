@@ -333,57 +333,45 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
     return () => clearInterval(id);
   }, [isPlaying]);
 
-  // Fallback sync for external pauses the utterance's onpause event doesn't
-  // reliably fire for (TCORE-81): some browsers only emit onpause when
-  // speechSynthesis.pause() was called from our own JS, not when audio output
-  // stops at the hardware/OS level via headset controls -- silently leaving
-  // Redux's isPlaying stuck at `true` with nothing to correct it. This polls the
-  // engine's actual paused/speaking state while we think we're playing and
-  // corrects Redux if it disagrees, independent of whether onpause ever fired.
-  // Requires two consecutive "stopped" reads (2s) before acting, since `speaking`
-  // legitimately blips false for a moment during the normal engine gap between
-  // one utterance ending and the next one's speak() call landing -- a single read
-  // can't tell that apart from a real external pause, but a real pause stays
-  // stopped past that gap while a normal transition doesn't.
+  // isPlaying always follows the engine's real state -- not a fallback that only
+  // watches while we expect one particular direction, but the one thing that
+  // continuously keeps Redux (and therefore the on-screen button/background)
+  // truthful about what speechSynthesis is actually doing (TCORE-81: the voice
+  // itself always correctly pauses/resumes for the headset -- it's Redux/the
+  // button/the background that don't always find out). speechSynthesis's own
+  // utterance onpause/onresume events aren't reliably fired by every browser
+  // for pauses/resumes that didn't originate from our own JS call (headset/OS
+  // media keys included), so this poll is the actual source of truth, running
+  // at all times regardless of which direction we currently think we're in.
+  // Two consecutive matching reads (1s) before acting either way, since
+  // `speaking` legitimately blips false for a moment in the normal engine gap
+  // between one utterance's onend and the next one's speak() call landing -- a
+  // single read can't tell that apart from a real external pause/resume, but a
+  // real change holds past that gap while the normal transition doesn't.
   useEffect(() => {
-    if (!isPlaying) return;
-    let consecutiveStops = 0;
+    let lastObserved: boolean | null = null;
+    let confirmCount = 0;
     const id = setInterval(() => {
-      if (nudgePausedRef.current || isSpeechPausedRef.current) { consecutiveStops = 0; return; }
-      const engineStopped = window.speechSynthesis.paused || !window.speechSynthesis.speaking;
-      if (!engineStopped) { consecutiveStops = 0; return; }
-      consecutiveStops += 1;
-      if (consecutiveStops >= 2 && isPlayingRef.current) dispatch(pause());
-    }, 1_000);
-    return () => clearInterval(id);
-  }, [isPlaying, dispatch]);
-
-  // Symmetric fallback for the paused side: makes isPlaying follow the engine's
-  // real state instead of only ever pushing our state onto it. Needed because
-  // the headset can call speechSynthesis.resume() directly on the engine
-  // (or the browser can resume it on its own once the Media Session eventually
-  // arms) without ever reaching our mediaSession 'play' action handler -- Redux
-  // would stay stuck at isPlaying: false forever with the voice audibly
-  // speaking and the on-screen button/background never reflecting it
-  // (TCORE-81). Same two-consecutive-reads debounce as the pause-side poll,
-  // for the same reason: a single read can't tell a real resume from the
-  // normal gap between an utterance's onend and the next speak() call.
-  useEffect(() => {
-    if (isPlaying) return;
-    let consecutiveSpeaking = 0;
-    const id = setInterval(() => {
-      if (nudgePausedRef.current) { consecutiveSpeaking = 0; return; }
+      if (nudgePausedRef.current || isSpeechPausedRef.current) { lastObserved = null; confirmCount = 0; return; }
       const engineSpeaking = window.speechSynthesis.speaking && !window.speechSynthesis.paused;
-      if (!engineSpeaking) { consecutiveSpeaking = 0; return; }
-      consecutiveSpeaking += 1;
-      if (consecutiveSpeaking >= 2 && !isPlayingRef.current) {
-        isSpeechPausedRef.current = false;
-        pausedAtRef.current = null;
-        dispatch(play());
+      if (engineSpeaking === lastObserved) {
+        confirmCount += 1;
+      } else {
+        lastObserved = engineSpeaking;
+        confirmCount = 1;
+      }
+      if (confirmCount === 2 && engineSpeaking !== isPlayingRef.current) {
+        if (engineSpeaking) {
+          isSpeechPausedRef.current = false;
+          pausedAtRef.current = null;
+          dispatch(play());
+        } else {
+          dispatch(pause());
+        }
       }
     }, 1_000);
     return () => clearInterval(id);
-  }, [isPlaying, dispatch]);
+  }, [dispatch]);
 
   useEffect(() => {
     activeUtteranceRef.current = null;
