@@ -328,12 +328,8 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
     }
   };
 
-  const handleTogglePlayPause = () => {
-    if (isFetching) return;
-    if (isPlaying) {
-      dispatch(pause());
-      return;
-    }
+  const handlePlay = () => {
+    if (isFetching || isPlaying) return;
     if (sentences.length === 0) {
       if (currentPage < totalPages) {
         dispatch(setAutoPlayOnLoad(true));
@@ -348,12 +344,33 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
     dispatch(play());
   };
 
+  const handlePause = () => {
+    if (isFetching) return;
+    dispatch(pause());
+  };
+
+  const handleTogglePlayPause = () => {
+    if (isPlaying) handlePause();
+    else handlePlay();
+  };
+
+  // Media Session's play/pause handlers must stay idempotent (always-play,
+  // always-pause) rather than routed through the isPlaying-dependent toggle above.
+  // Bluetooth/OS media controls can fire play and pause in quick succession for a
+  // single physical button press (TCORE-81) -- two toggle calls reading the same
+  // stale `isPlaying` closure apply the same branch twice and land on the opposite
+  // of what the user pressed, which is what "reverts itself" looked like.
+  const handlePlayRef = useRef(handlePlay);
+  const handlePauseRef = useRef(handlePause);
   const handleTogglePlayPauseRef = useRef(handleTogglePlayPause);
-  useEffect(() => { handleTogglePlayPauseRef.current = handleTogglePlayPause; });
+  useEffect(() => {
+    handlePlayRef.current = handlePlay;
+    handlePauseRef.current = handlePause;
+    handleTogglePlayPauseRef.current = handleTogglePlayPause;
+  });
   useEffect(() => {
     if (!toggleSeq) return;
     handleTogglePlayPauseRef.current();
-    //eslint-disable-next-line
   }, [toggleSeq]);
 
   const formatTime = (time: number) => {
@@ -406,10 +423,10 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
   useEffect(() => {
     if (!('mediaSession' in navigator)) return;
 
-    navigator.mediaSession.setActionHandler('play',          () => handleTogglePlayPauseRef.current());
-    navigator.mediaSession.setActionHandler('pause',         () => handleTogglePlayPauseRef.current());
-    navigator.mediaSession.setActionHandler('nexttrack',     handleNext);
-    navigator.mediaSession.setActionHandler('previoustrack', handlePrevious);
+    navigator.mediaSession.setActionHandler('play',           () => handlePlayRef.current());
+    navigator.mediaSession.setActionHandler('pause',          () => handlePauseRef.current());
+    navigator.mediaSession.setActionHandler('nexttrack',      handleNext);
+    navigator.mediaSession.setActionHandler('previoustrack',  handlePrevious);
 
     return () => {
       navigator.mediaSession.setActionHandler('play',          null);
