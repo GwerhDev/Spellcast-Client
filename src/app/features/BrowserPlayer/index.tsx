@@ -80,6 +80,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
   const silentAudioRef = useRef<HTMLAudioElement>(null);
   const activeUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const isSpeechPausedRef = useRef(false);
+  const pausedAtRef = useRef<number | null>(null);
   const volumeDragPausedRef = useRef(false);
   const nudgePausedRef = useRef(false);
   // Mirror of `isPlaying` for the utterance onpause/onresume handlers below, which
@@ -152,6 +153,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
     if (!isRetry) {
       activeUtteranceRef.current = utterance;
       isSpeechPausedRef.current = false;
+      pausedAtRef.current = null;
     }
     if (voice) utterance.voice = voice;
     utterance.volume = volume * masterVolume;
@@ -313,6 +315,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
   useEffect(() => {
     activeUtteranceRef.current = null;
     isSpeechPausedRef.current = false;
+    pausedAtRef.current = null;
     window.speechSynthesis.cancel();
 
     if (isLoaded && currentSentenceIndex > -1) {
@@ -344,6 +347,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
 
   const handleStop = () => {
     activeUtteranceRef.current = null;
+    pausedAtRef.current = null;
     dispatch(stop());
     dispatch(setCurrentSentenceIndex(0));
     window.speechSynthesis.cancel();
@@ -374,12 +378,22 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
     }
     // Resume if the Web Speech API is already paused (including when paused externally
     // by the attention guard via dispatch(pause()) without going through this handler).
-    if (isSpeechPausedRef.current || window.speechSynthesis.paused) {
+    // Chrome doesn't guarantee holding onto a paused utterance indefinitely -- after
+    // sitting paused for a while it can silently drop it while still reporting
+    // `paused === true`, so resume() on it does nothing and playback never comes
+    // back (TCORE-81: "dejo pasar un rato en pausa y no retoma"). Past a minute
+    // paused, don't trust resume() -- speak the current sentence fresh instead.
+    const pausedTooLong = pausedAtRef.current !== null && Date.now() - pausedAtRef.current > 60_000;
+    if (!pausedTooLong && (isSpeechPausedRef.current || window.speechSynthesis.paused)) {
       isSpeechPausedRef.current = false;
+      pausedAtRef.current = null;
       window.speechSynthesis.resume();
       dispatch(play());
       return;
     }
+    isSpeechPausedRef.current = false;
+    pausedAtRef.current = null;
+    window.speechSynthesis.cancel();
     speakSentence(
       sentences[currentSentenceIndex],
       () => dispatch(setCurrentSentenceIndex(currentSentenceIndex + 1)),
@@ -391,6 +405,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
   const handlePause = () => {
     if (!isPlaying) return;
     isSpeechPausedRef.current = true;
+    pausedAtRef.current = Date.now();
     window.speechSynthesis.pause();
     dispatch(pause());
   };
