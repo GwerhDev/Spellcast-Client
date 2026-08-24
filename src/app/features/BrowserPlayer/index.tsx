@@ -30,6 +30,7 @@ import { faFilePdf } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Waveform } from '../../components/Waveform/Waveform';
 import { SpellDetailModal } from '../../components/Modals/SpellDetailModal';
+import { addSignalNotice } from '../../../store/signalSlice';
 
 interface PlayerProps {
   showVoiceSelectorModal: React.Dispatch<SetStateAction<boolean>>;
@@ -418,8 +419,8 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
   useEffect(() => {
     if (!('mediaSession' in navigator)) return;
 
-    navigator.mediaSession.setActionHandler('play',           () => playRef.current());
-    navigator.mediaSession.setActionHandler('pause',          () => pauseRef.current());
+    navigator.mediaSession.setActionHandler('play',           () => { dispatch(addSignalNotice({ message: t.player.playedFromHeadset })); playRef.current(); });
+    navigator.mediaSession.setActionHandler('pause',          () => { dispatch(addSignalNotice({ message: t.player.pausedFromHeadset })); pauseRef.current(); });
     navigator.mediaSession.setActionHandler('nexttrack',      handleNext);
     navigator.mediaSession.setActionHandler('previoustrack',  handlePrevious);
 

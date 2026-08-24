@@ -135,6 +135,8 @@ export const en = {
   player: {
     play: 'Play',
     pause: 'Pause',
+    playedFromHeadset: 'Playback resumed from your headset',
+    pausedFromHeadset: 'Playback paused from your headset',
     stop: 'Stop',
     next: 'Next page',
     previous: 'Previous page',

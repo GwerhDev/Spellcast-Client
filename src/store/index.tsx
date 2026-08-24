@@ -1,6 +1,7 @@
 import { configureStore } from '@reduxjs/toolkit';
 import sessionReducer from './sessionSlice';
 import apiResponsesReducer from './apiResponsesSlice';
+import signalReducer from './signalSlice';
 import audioPlayerReducer from './audioPlayerSlice';
 import browserPlayerReducer from './browserPlayerSlice';
 import pdfReaderReducer from './pdfReaderSlice';
@@ -27,6 +28,7 @@ export const store = configureStore({
     audioPlayer: audioPlayerReducer,
     browserPlayer: browserPlayerReducer,
     apiResponses: apiResponsesReducer,
+    signal: signalReducer,
     userLibrary: userLibraryReducer,
     pdfUpload: pdfUploadReducer,
     layout: layoutReducer,

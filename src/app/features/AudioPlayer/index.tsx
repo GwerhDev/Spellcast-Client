@@ -24,6 +24,7 @@ import { PlayerConfigButton } from '../../components/Players/shared/PlayerConfig
 import { textToSpeechService, wrapPlainText, TtsError, type TimelineEntry } from '../../../services/tts';
 import type { JSONContent } from '@tiptap/core';
 import { addApiResponse } from '../../../store/apiResponsesSlice';
+import { addSignalNotice } from '../../../store/signalSlice';
 import type { CredentialError } from '../../components/Players/shared/VoiceSelectorButton/VoiceSelectorButton';
 import { getCachedAudio, setCachedAudio, AUDIO_CACHE_VERSION } from '../../../db/audioCache';
 import { getSpellById } from '../../../db';
@@ -423,8 +424,8 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
   useEffect(() => {
     if (!('mediaSession' in navigator)) return;
 
-    navigator.mediaSession.setActionHandler('play',           () => handlePlayRef.current());
-    navigator.mediaSession.setActionHandler('pause',          () => handlePauseRef.current());
+    navigator.mediaSession.setActionHandler('play',           () => { dispatch(addSignalNotice({ message: t.player.playedFromHeadset })); handlePlayRef.current(); });
+    navigator.mediaSession.setActionHandler('pause',          () => { dispatch(addSignalNotice({ message: t.player.pausedFromHeadset })); handlePauseRef.current(); });
     navigator.mediaSession.setActionHandler('nexttrack',      handleNext);
     navigator.mediaSession.setActionHandler('previoustrack',  handlePrevious);
 

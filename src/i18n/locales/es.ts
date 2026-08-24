@@ -137,6 +137,8 @@ export const es: Translations = {
   player: {
     play: 'Reproducir',
     pause: 'Pausar',
+    playedFromHeadset: 'Reproducción reanudada desde tus audífonos',
+    pausedFromHeadset: 'Reproducción pausada desde tus audífonos',
     stop: 'Detener',
     next: 'Página siguiente',
     previous: 'Página anterior',
