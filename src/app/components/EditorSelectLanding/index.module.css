@@ -73,17 +73,6 @@
   overflow-y: auto;
 }
 
-.docGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 1rem;
-}
-
-.sentinel {
-  grid-column: 1 / -1;
-  height: 1px;
-}
-
 .empty {
   color: var(--color-light-400);
   font-size: 0.9rem;

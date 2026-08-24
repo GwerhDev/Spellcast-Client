@@ -1,4 +1,5 @@
 import s from './index.module.css';
+import grid from '../../components/SpellGrid/index.module.css';
 import React, { useEffect, useState } from 'react';
 import { getSpellsFromDB, deleteSpellFromDB } from '../../../db';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -124,14 +125,14 @@ export const SpellList: React.FC<SpellListProps> = ({ query = '', filter = 'loca
 
   if (isLoading) return (
     <div className={s.container}>
-      <div className={s.slider}>
+      <div className={grid.grid}>
         {Array.from({ length: 10 }).map((_, i) => (
-          <div key={i} className={s.skeletonCard} data-testid="skeleton-card">
-            <div className={`${s.skeletonCover} ${s.skeletonLine}`} />
-            <div className={s.skeletonFooter}>
-              <div className={`${s.skeletonLine} ${s.skeletonTitle}`} />
-              <div className={`${s.skeletonLine} ${s.skeletonTitleShort}`} />
-              <div className={`${s.skeletonLine} ${s.skeletonDate}`} />
+          <div key={i} className={grid.skeletonCard} data-testid="skeleton-card">
+            <div className={`${grid.skeletonCover} ${grid.skeletonLine}`} />
+            <div className={grid.skeletonFooter}>
+              <div className={`${grid.skeletonLine} ${grid.skeletonTitle}`} />
+              <div className={`${grid.skeletonLine} ${grid.skeletonTitleShort}`} />
+              <div className={`${grid.skeletonLine} ${grid.skeletonDate}`} />
             </div>
           </div>
         ))}
@@ -154,7 +155,7 @@ export const SpellList: React.FC<SpellListProps> = ({ query = '', filter = 'loca
   return (
     <>
       <div className={s.container}>
-        <div className={s.slider}>
+        <div className={grid.grid}>
           {visible.map((doc) => {
             const uploadJob = uploadQueue.find(j => j.targetDocId === doc.id && (j.status === 'queued' || j.status === 'processing')) ?? null;
             return (
@@ -176,7 +177,7 @@ export const SpellList: React.FC<SpellListProps> = ({ query = '', filter = 'loca
             );
           })}
         </div>
-        {hasMore && <div ref={sentinelRef} data-testid="spell-list-sentinel" className={s.sentinel} />}
+        {hasMore && <div ref={sentinelRef} data-testid="spell-list-sentinel" className={grid.sentinel} />}
       </div>
       {selectedDoc && (
         <DeleteConfirmModal

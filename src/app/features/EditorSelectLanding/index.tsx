@@ -1,4 +1,5 @@
 import s from '../../components/EditorSelectLanding/index.module.css';
+import grid from '../../components/SpellGrid/index.module.css';
 import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { faArrowLeft, faCloud, faFeatherPointed, faHardDrive, faLayerGroup, faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
@@ -7,7 +8,6 @@ import { getSpellsFromDB } from '../../../db';
 import { useAppSelector } from '../../../store/hooks';
 import { Spell } from '../../../interfaces';
 import { EditorPickerCard } from '../../components/Cards/EditorPickerCard';
-import { Spinner } from '../../components/Spinner';
 import { SegmentedTabs } from '../../components/Tabs/SegmentedTabs';
 import { SectionHeader } from '../../components/SectionHeader';
 import { IconButton } from '../../components/Buttons/IconButton';
@@ -58,11 +58,24 @@ export const EditorSelectLanding = () => {
         <p>{t.storage.cloudSyncDesc}</p>
       </div>
     );
-    if (isLoading) return <Spinner isLoading />;
+    if (isLoading) return (
+      <div className={grid.grid}>
+        {Array.from({ length: 10 }).map((_, i) => (
+          <div key={i} className={grid.skeletonCard} data-testid="editor-select-skeleton-card">
+            <div className={`${grid.skeletonCover} ${grid.skeletonLine}`} />
+            <div className={grid.skeletonFooter}>
+              <div className={`${grid.skeletonLine} ${grid.skeletonTitle}`} />
+              <div className={`${grid.skeletonLine} ${grid.skeletonTitleShort}`} />
+              <div className={`${grid.skeletonLine} ${grid.skeletonDate}`} />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
     if (documents.length === 0) return <p data-testid="editor-select-empty" className={s.empty}>{t.spell.noLocalSpells}</p>;
     if (filtered.length === 0) return <p data-testid="editor-select-no-results" className={s.empty}>{t.spell.noSpells}</p>;
     return (
-      <div className={s.docGrid}>
+      <div className={grid.grid}>
         {visible.map((doc) => (
           <EditorPickerCard
             key={doc.id}
@@ -70,7 +83,7 @@ export const EditorSelectLanding = () => {
             onClick={() => navigate(`/editor/${doc.id}`, { state: { from: location.pathname } })}
           />
         ))}
-        {hasMore && <div ref={sentinelRef} data-testid="editor-select-sentinel" className={s.sentinel} />}
+        {hasMore && <div ref={sentinelRef} data-testid="editor-select-sentinel" className={grid.sentinel} />}
       </div>
     );
   };
