@@ -483,6 +483,24 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
     navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
   }, [isPlaying]);
 
+  // AudioPlayer calls setPositionState on its real <audio>; BrowserPlayer never
+  // did, since spoken sentences have no fixed duration/position of their own.
+  // Using the silent anchor's own duration/currentTime here: a fully "armed"
+  // Media Session that hardware keys are reliably routed to may need this call
+  // in addition to playbackState, not just a playing media element (TCORE-81:
+  // matches the reported "needs two full click cycles before the headset
+  // starts working" -- position state was never being reported at all before).
+  useEffect(() => {
+    if (!('mediaSession' in navigator) || !navigator.mediaSession.setPositionState) return;
+    const anchor = silentAudioRef.current;
+    if (!anchor || !anchor.duration || Number.isNaN(anchor.duration)) return;
+    navigator.mediaSession.setPositionState({
+      duration: anchor.duration,
+      playbackRate: anchor.playbackRate,
+      position: Math.min(anchor.currentTime, anchor.duration),
+    });
+  }, [isPlaying]);
+
   useEffect(() => {
     const handleVoicesChanged = () => {
       const voices = window.speechSynthesis.getVoices();
