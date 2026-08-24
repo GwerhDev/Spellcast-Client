@@ -15,6 +15,7 @@ import { setAutoPlayOnLoad, resetBrowserPlayer, requestTogglePlay } from '../../
 import { setAutoPlayOnLoad as setAudioAutoPlayOnLoad, resetAudioPlayer, requestTogglePlay as requestAudioTogglePlay } from '../../../store/audioPlayerSlice';
 import { setPdfFile, setPdfSpellInfo, resetPdfReader } from '../../../store/pdfReaderSlice';
 import { useLanguage } from '../../../i18n';
+import { useInfiniteList } from '../../../hooks/useInfiniteList';
 
 export type LibraryFilter = 'all' | 'local' | 'cloud';
 export type LibrarySpellFilter = 'all' | 'reading' | 'pdf' | 'unprocessed';
@@ -113,12 +114,13 @@ export const SpellList: React.FC<SpellListProps> = ({ query = '', filter = 'loca
 
   const q = query.trim().toLowerCase();
   const byQuery = q ? documents.filter(d => d.title.toLowerCase().includes(q)) : documents;
-  const visible = byQuery.filter(d => {
+  const filtered = byQuery.filter(d => {
     if (docFilter === 'reading') return (d.progress?.currentPage ?? 0) > 0;
     if (docFilter === 'pdf') return !!d.pdf;
     if (docFilter === 'unprocessed') return !d.pagesContent;
     return true;
   });
+  const { visible, hasMore, sentinelRef } = useInfiniteList(filtered);
 
   if (isLoading) return (
     <div className={s.container}>
@@ -142,7 +144,7 @@ export const SpellList: React.FC<SpellListProps> = ({ query = '', filter = 'loca
       <p>{t.spell.noLocalSpells}</p>
     </div>
   );
-  if (visible.length === 0) return (
+  if (filtered.length === 0) return (
     <div data-testid="spell-list-no-results" className={s.empty}>
       <FontAwesomeIcon icon={faMagnifyingGlass} className={s.emptyIcon} />
       <p>{t.spell.noSpells}</p>
@@ -174,6 +176,7 @@ export const SpellList: React.FC<SpellListProps> = ({ query = '', filter = 'loca
             );
           })}
         </div>
+        {hasMore && <div ref={sentinelRef} data-testid="spell-list-sentinel" className={s.sentinel} />}
       </div>
       {selectedDoc && (
         <DeleteConfirmModal

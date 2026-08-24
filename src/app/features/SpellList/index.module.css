@@ -21,6 +21,11 @@
   width: 100%;
 }
 
+.sentinel {
+  grid-column: 1 / -1;
+  height: 1px;
+}
+
 .empty {
   display: flex;
   flex-direction: column;

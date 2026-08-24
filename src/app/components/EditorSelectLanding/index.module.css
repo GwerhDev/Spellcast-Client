@@ -79,6 +79,11 @@
   gap: 1rem;
 }
 
+.sentinel {
+  grid-column: 1 / -1;
+  height: 1px;
+}
+
 .empty {
   color: var(--color-light-400);
   font-size: 0.9rem;

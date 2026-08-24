@@ -12,6 +12,7 @@ import { SegmentedTabs } from '../../components/Tabs/SegmentedTabs';
 import { SectionHeader } from '../../components/SectionHeader';
 import { IconButton } from '../../components/Buttons/IconButton';
 import { useLanguage } from '../../../i18n';
+import { useInfiniteList } from '../../../hooks/useInfiniteList';
 
 type EditorFilter = 'all' | 'local' | 'cloud';
 
@@ -47,7 +48,8 @@ export const EditorSelectLanding = () => {
   };
 
   const q = query.trim().toLowerCase();
-  const visible = q ? documents.filter(d => d.title.toLowerCase().includes(q)) : documents;
+  const filtered = q ? documents.filter(d => d.title.toLowerCase().includes(q)) : documents;
+  const { visible, hasMore, sentinelRef } = useInfiniteList(filtered);
 
   const renderBody = () => {
     if (filter === 'cloud') return (
@@ -58,7 +60,7 @@ export const EditorSelectLanding = () => {
     );
     if (isLoading) return <Spinner isLoading />;
     if (documents.length === 0) return <p data-testid="editor-select-empty" className={s.empty}>{t.spell.noLocalSpells}</p>;
-    if (visible.length === 0) return <p data-testid="editor-select-no-results" className={s.empty}>{t.spell.noSpells}</p>;
+    if (filtered.length === 0) return <p data-testid="editor-select-no-results" className={s.empty}>{t.spell.noSpells}</p>;
     return (
       <div className={s.docGrid}>
         {visible.map((doc) => (
@@ -68,6 +70,7 @@ export const EditorSelectLanding = () => {
             onClick={() => navigate(`/editor/${doc.id}`, { state: { from: location.pathname } })}
           />
         ))}
+        {hasMore && <div ref={sentinelRef} data-testid="editor-select-sentinel" className={s.sentinel} />}
       </div>
     );
   };
