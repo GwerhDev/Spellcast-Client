@@ -205,8 +205,20 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
     window.speechSynthesis.speak(utterance);
   };
 
+  // isPlaying is the master switch the engine must follow in both directions:
+  // pause it when we stop, and resume it when we start again. Before this, only
+  // the pause() half was reactive -- resuming only ever happened inside
+  // handlePlay's own click-time check of window.speechSynthesis.paused, so any
+  // path that flipped isPlaying back to true without going through that exact
+  // check (a headset press landing while the engine hadn't finished settling
+  // into "paused" yet, the Chrome freeze bug, etc.) left the voice stuck silent
+  // with nothing to notice and correct it (TCORE-81).
   useEffect(() => {
-    if (!isPlaying) window.speechSynthesis.pause();
+    if (isPlaying) {
+      if (window.speechSynthesis.paused) window.speechSynthesis.resume();
+    } else {
+      window.speechSynthesis.pause();
+    }
   }, [isPlaying]);
 
   // Keep the silent anchor element (see SILENT_AUDIO_SRC above) playing in lockstep
@@ -251,9 +263,18 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
   // since that event isn't guaranteed to fire in every browser (same reliability
   // gap as onpause, see the polling fallback below) and a stuck `true` here would
   // permanently blind that fallback to real external pauses afterwards.
+  // Also acts as the safety net for isPlaying/engine desyncs: if we think we're
+  // playing but the engine is sitting paused with nothing queued (the reactive
+  // resume() in the isPlaying effect above fired too early, got dropped, or the
+  // engine froze on it), this tick catches it and forces a resume rather than
+  // leaving the voice silently stuck until the next unrelated state change.
   useEffect(() => {
     if (!isPlaying) return;
     const id = setInterval(() => {
+      if (window.speechSynthesis.paused && !window.speechSynthesis.speaking) {
+        window.speechSynthesis.resume();
+        return;
+      }
       if (window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
         nudgePausedRef.current = true;
         window.speechSynthesis.pause();
