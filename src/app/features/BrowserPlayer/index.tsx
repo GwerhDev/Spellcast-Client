@@ -239,6 +239,53 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
     }
   }, [isPlaying]);
 
+  // Warm up the Media Session on the very first real user gesture anywhere on
+  // the page, not just the first click on this player's own play button.
+  // Reported symptom (TCORE-81): the headset only starts receiving signals
+  // after two full click-driven play/pause cycles on the on-screen button --
+  // Chrome appears to need a settled play->pause->play cycle with playbackState
+  // + setPositionState reported before it commits to routing hardware signals
+  // to this tab. Running that cycle on the anchor as soon as the user first
+  // interacts with the page at all (before they've necessarily touched the
+  // player) means it's already warmed up by the time they do reach for play.
+  // Browsers require a real gesture for the anchor's own play() to succeed, so
+  // this can't run any earlier than the user's first click/keydown/touch.
+  useEffect(() => {
+    if (!('mediaSession' in navigator)) return;
+    let warmed = false;
+    const warmUp = () => {
+      if (warmed || isPlaying) return;
+      warmed = true;
+      document.removeEventListener('pointerdown', warmUp);
+      document.removeEventListener('keydown', warmUp);
+      const anchor = silentAudioRef.current;
+      if (!anchor) return;
+      anchor.play().then(() => {
+        navigator.mediaSession.playbackState = 'playing';
+        if (navigator.mediaSession.setPositionState && anchor.duration && !Number.isNaN(anchor.duration)) {
+          navigator.mediaSession.setPositionState({
+            duration: anchor.duration,
+            playbackRate: anchor.playbackRate,
+            position: Math.min(anchor.currentTime, anchor.duration),
+          });
+        }
+        setTimeout(() => {
+          if (!isPlayingRef.current) {
+            anchor.pause();
+            navigator.mediaSession.playbackState = 'paused';
+          }
+        }, 300);
+      }).catch(() => {});
+    };
+    document.addEventListener('pointerdown', warmUp);
+    document.addEventListener('keydown', warmUp);
+    return () => {
+      document.removeEventListener('pointerdown', warmUp);
+      document.removeEventListener('keydown', warmUp);
+    };
+    //eslint-disable-next-line
+  }, []);
+
   // Dedicated resume path for attention guard: always cancel + relaunch from current index.
   // speechSynthesis.resume() is unreliable if the utterance was canceled mid-pause.
   useEffect(() => {
