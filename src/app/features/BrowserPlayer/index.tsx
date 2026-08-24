@@ -358,6 +358,33 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
     return () => clearInterval(id);
   }, [isPlaying, dispatch]);
 
+  // Symmetric fallback for the paused side: makes isPlaying follow the engine's
+  // real state instead of only ever pushing our state onto it. Needed because
+  // the headset can call speechSynthesis.resume() directly on the engine
+  // (or the browser can resume it on its own once the Media Session eventually
+  // arms) without ever reaching our mediaSession 'play' action handler -- Redux
+  // would stay stuck at isPlaying: false forever with the voice audibly
+  // speaking and the on-screen button/background never reflecting it
+  // (TCORE-81). Same two-consecutive-reads debounce as the pause-side poll,
+  // for the same reason: a single read can't tell a real resume from the
+  // normal gap between an utterance's onend and the next speak() call.
+  useEffect(() => {
+    if (isPlaying) return;
+    let consecutiveSpeaking = 0;
+    const id = setInterval(() => {
+      if (nudgePausedRef.current) { consecutiveSpeaking = 0; return; }
+      const engineSpeaking = window.speechSynthesis.speaking && !window.speechSynthesis.paused;
+      if (!engineSpeaking) { consecutiveSpeaking = 0; return; }
+      consecutiveSpeaking += 1;
+      if (consecutiveSpeaking >= 2 && !isPlayingRef.current) {
+        isSpeechPausedRef.current = false;
+        pausedAtRef.current = null;
+        dispatch(play());
+      }
+    }, 1_000);
+    return () => clearInterval(id);
+  }, [isPlaying, dispatch]);
+
   useEffect(() => {
     activeUtteranceRef.current = null;
     isSpeechPausedRef.current = false;
