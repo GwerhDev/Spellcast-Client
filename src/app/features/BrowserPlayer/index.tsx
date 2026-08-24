@@ -67,6 +67,11 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
   const activeUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const isSpeechPausedRef = useRef(false);
   const volumeDragPausedRef = useRef(false);
+  const nudgePausedRef = useRef(false);
+  // Mirror of `isPlaying` for the utterance onpause/onresume handlers below, which
+  // are set once per utterance and would otherwise close over a stale value.
+  const isPlayingRef = useRef(isPlaying);
+  useEffect(() => { isPlayingRef.current = isPlaying; }, [isPlaying]);
   const { userData } = useAppSelector((state) => state.session);
   const { activeSoundBgId, soundBgVolume, masterVolume } = useAppSelector((state) => state.userLibrary);
 
@@ -139,6 +144,26 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
 
     if (!isRetry && onStart) utterance.onstart = onStart;
 
+    // Keep Redux in sync with the engine's real pause/resume state (TCORE-81).
+    // These fire for ANY pause/resume of the engine, regardless of who triggered
+    // it -- including headset/OS media keys that pause speechSynthesis directly
+    // without going through our mediaSession action handlers. Without this,
+    // isPlaying can stay stuck at `true` after an external pause: the on-screen
+    // button never flips, and once anything re-triggers the sentence effect
+    // (TCORE-81) it sees isPlaying still true and resumes speaking on its own.
+    // nudgePausedRef skips the internal anti-freeze pause+resume nudge below, and
+    // isSpeechPausedRef skips our own handlePause (which already dispatches).
+    utterance.onpause = () => {
+      if (!isRetry && activeUtteranceRef.current !== utterance) return;
+      if (nudgePausedRef.current || isSpeechPausedRef.current) return;
+      if (isPlayingRef.current) dispatch(pause());
+    };
+    utterance.onresume = () => {
+      if (!isRetry && activeUtteranceRef.current !== utterance) return;
+      if (nudgePausedRef.current) { nudgePausedRef.current = false; return; }
+      if (!isPlayingRef.current) dispatch(play());
+    };
+
     utterance.onend = () => {
       if (!isRetry && activeUtteranceRef.current !== utterance) return;
       onEnd();
@@ -187,10 +212,15 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
 
   // Workaround for the Chrome SpeechSynthesis bug where the engine silently
   // freezes after ~15s of continuous speech. Nudging pause/resume keeps it alive.
+  // nudgePausedRef tells the utterance's onpause/onresume handlers (below) that
+  // this particular pause/resume pair is internal and expected, so they don't
+  // mistake it for an externally-triggered pause (e.g. headset controls) and
+  // sync Redux to a transient state.
   useEffect(() => {
     if (!isPlaying) return;
     const id = setInterval(() => {
       if (window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
+        nudgePausedRef.current = true;
         window.speechSynthesis.pause();
         window.speechSynthesis.resume();
       }
