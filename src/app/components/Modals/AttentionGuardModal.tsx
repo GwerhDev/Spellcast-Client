@@ -22,15 +22,15 @@ export const AttentionGuardModal: React.FC<AttentionGuardModalProps> = ({ show, 
   const attentionGuardEnabled = useSelector((state: RootState) => state.spellReader.attentionGuardEnabled);
   const attentionGuardInterval = useSelector((state: RootState) => state.spellReader.attentionGuardInterval);
 
+  // localStorage persistence for these fields is centralized in a single
+  // store.subscribe() (src/store/index.tsx) -- dispatching is enough here.
   const handleInterval = (value: number) => {
     const clamped = Math.min(30, Math.max(1, value));
     dispatch(setAttentionGuardInterval(clamped));
-    localStorage.setItem('reader:attentionGuardInterval', String(clamped));
   };
 
   const handleToggle = (value: boolean) => {
     dispatch(setAttentionGuardEnabled(value));
-    localStorage.setItem('reader:attentionGuard', String(value));
   };
 
   useEffect(() => {

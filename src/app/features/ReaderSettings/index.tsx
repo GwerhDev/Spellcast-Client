@@ -20,14 +20,14 @@ const DisplayTab: React.FC = () => {
   const [showPageNumbers, setShowPageNumbers] = useState(true);
   const { t } = useLanguage();
 
+  // localStorage persistence for these fields is centralized in a single
+  // store.subscribe() (src/store/index.tsx) -- dispatching is enough here.
   const handleFitToWidth = (value: boolean) => {
     dispatch(setFitToWidth(value));
-    localStorage.setItem('reader:fitToWidth', String(value));
   };
 
   const handleLightningMode = (value: boolean) => {
     dispatch(setLightningMode(value));
-    localStorage.setItem('reader:lightningMode', String(value));
   };
 
   return (
@@ -141,15 +141,15 @@ const FocusTab: React.FC = () => {
   const { attentionGuardEnabled, attentionGuardInterval } = useSelector((state: RootState) => state.spellReader);
   const { t } = useLanguage();
 
+  // localStorage persistence for these fields is centralized in a single
+  // store.subscribe() (src/store/index.tsx) -- dispatching is enough here.
   const handleToggle = (value: boolean) => {
     dispatch(setAttentionGuardEnabled(value));
-    localStorage.setItem('reader:attentionGuard', String(value));
   };
 
   const handleInterval = (value: number) => {
     const clamped = Math.min(30, Math.max(1, value));
     dispatch(setAttentionGuardInterval(clamped));
-    localStorage.setItem('reader:attentionGuardInterval', String(clamped));
   };
 
   return (

@@ -57,5 +57,23 @@ store.subscribe(() => {
   } catch {}
 });
 
+// Single writer for the reader preference keys: ReaderSettings and
+// AttentionGuardModal both dispatch to spellReader for these four fields
+// (the modal offers the same toggle/interval controls mid-read, without
+// opening the full settings panel), but previously ALSO both called
+// localStorage.setItem for the same keys themselves -- two independent
+// writers of the same state that happened to agree only because both
+// copied the same logic by hand. Centralizing the write here means
+// dispatch() alone is enough from either component.
+store.subscribe(() => {
+  try {
+    const { fitToWidth, lightningMode, attentionGuardEnabled, attentionGuardInterval } = store.getState().spellReader;
+    localStorage.setItem('reader:fitToWidth', String(fitToWidth));
+    localStorage.setItem('reader:lightningMode', String(lightningMode));
+    localStorage.setItem('reader:attentionGuard', String(attentionGuardEnabled));
+    localStorage.setItem('reader:attentionGuardInterval', String(attentionGuardInterval));
+  } catch {}
+});
+
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;

@@ -16,7 +16,7 @@ vi.mock('../../services/credentials', () => ({
   setCurrentCredential: vi.fn(),
 }));
 
-const initial = { credentials: [], currentCredentialId: null, loading: false, error: null };
+const initial = { credentials: [], currentCredentialId: null, loading: false };
 
 const mockCred: TTS_Credential = { id: 'c1', azure_key: 'key', region: 'us', voices: [] };
 
@@ -28,7 +28,6 @@ describe('credentialsSlice', () => {
   it('getCredentials.pending sets loading', () => {
     const state = reducer(initial, { type: getCredentials.pending.type });
     expect(state.loading).toBe(true);
-    expect(state.error).toBeNull();
   });
 
   it('getCredentials.fulfilled stores credentials', () => {
@@ -38,11 +37,10 @@ describe('credentialsSlice', () => {
     expect(state.credentials).toEqual([mockCred]);
   });
 
-  it('getCredentials.rejected stores error', () => {
+  it('getCredentials.rejected clears loading', () => {
     const action = getCredentials.rejected(new Error('Unauthorized'), '', undefined);
     const state = reducer({ ...initial, loading: true }, action);
     expect(state.loading).toBe(false);
-    expect(state.error).toBe('Unauthorized');
   });
 
   it('updateCredential.fulfilled replaces credentials list', () => {

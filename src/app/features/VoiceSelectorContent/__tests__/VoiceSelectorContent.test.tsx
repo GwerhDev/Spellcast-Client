@@ -38,7 +38,6 @@ describe('VoiceSelectorContent', () => {
           credentials: [credential('cred-1', 'Adri'), credential('cred-2', 'Willem')],
           currentCredentialId: 'cred-2',
           loading: false,
-          error: null,
         },
       },
     });
@@ -54,7 +53,6 @@ describe('VoiceSelectorContent', () => {
           credentials: [credential('cred-1', 'Adri'), credential('cred-2', 'Willem')],
           currentCredentialId: null,
           loading: false,
-          error: null,
         },
       },
     });

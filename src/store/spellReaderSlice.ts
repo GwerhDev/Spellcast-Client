@@ -8,7 +8,6 @@ interface SpellReaderState {
   currentPage: number;
   isLoaded: boolean;
   hasInitialPageSet: boolean;
-  isContinuousPlayActive: boolean;
   showSearcher: boolean;
   currentPageText: string;
   progress?: SpellProgress; // Add progress to state
@@ -35,7 +34,6 @@ const initialState: SpellReaderState = {
   currentSentenceIndex: -1, // Use -1 to indicate nothing is highlighted initially
   currentPageText: "",
   hasInitialPageSet: false, // Initialize new flag
-  isContinuousPlayActive: false,
   showSearcher: false,
   showReaderSettings: false,
   fitToWidth: localStorage.getItem('reader:fitToWidth') !== 'false',
@@ -116,9 +114,6 @@ const spellReaderSlice = createSlice({
     setHasInitialPageSet(state, action: PayloadAction<boolean>) { // New action
       state.hasInitialPageSet = action.payload;
     },
-    setContinuousPlay(state, action: PayloadAction<boolean>) {
-      state.isContinuousPlayActive = action.payload;
-    },
     setShowReaderSettings(state, action: PayloadAction<boolean>) {
       state.showReaderSettings = action.payload;
     },
@@ -146,9 +141,6 @@ const spellReaderSlice = createSlice({
     invalidateSpellList(state) {
       state.listVersion += 1;
     },
-    setReaderTitle(state, action: PayloadAction<string>) {
-      state.spellTitle = action.payload;
-    },
   },
 });
 
@@ -162,7 +154,6 @@ export const {
   setPageText,
   setSpellLoaded,
   setHasInitialPageSet,
-  setContinuousPlay,
   setShowSearcher,
   setSentences,
   setCurrentSentenceIndex,
@@ -175,7 +166,6 @@ export const {
   recordReaderActivity,
   invalidateContent,
   invalidateSpellList,
-  setReaderTitle,
 } = spellReaderSlice.actions;
 
 export default spellReaderSlice.reducer;

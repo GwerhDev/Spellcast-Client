@@ -106,7 +106,6 @@ const baseState = {
     currentPage: 1,
     isLoaded: true,
     hasInitialPageSet: true,
-    isContinuousPlayActive: false,
     showSearcher: false,
     currentPageText: 'Sentence one. Sentence two.',
     currentSentenceIndex: 0,

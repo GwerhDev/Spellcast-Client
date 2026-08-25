@@ -7,14 +7,12 @@ interface CredentialsState {
   credentials: TTS_Credential[];
   currentCredentialId: string | null;
   loading: boolean;
-  error: string | null;
 }
 
 const initialState: CredentialsState = {
   credentials: [],
   currentCredentialId: null,
   loading: false,
-  error: null,
 };
 
 export const getCredentials = createAsyncThunk(
@@ -60,33 +58,26 @@ const credentialsSlice = createSlice({
     builder
       .addCase(getCredentials.pending, (state) => {
         state.loading = true;
-        state.error = null;
       })
       .addCase(getCredentials.fulfilled, (state, action) => {
         state.loading = false;
         state.credentials = action.payload;
       })
-      .addCase(getCredentials.rejected, (state, action) => {
+      .addCase(getCredentials.rejected, (state) => {
         state.loading = false;
-        state.error = action.error.message || "Failed to fetch credentials";
       })
       .addCase(updateCredential.pending, (state) => {
         state.loading = true;
-        state.error = null;
       })
       .addCase(updateCredential.fulfilled, (state, action) => {
         state.loading = false;
         state.credentials = action.payload.credentials;
       })
-      .addCase(updateCredential.rejected, (state, action) => {
+      .addCase(updateCredential.rejected, (state) => {
         state.loading = false;
-        state.error = action.error.message || "Failed to update credential";
       })
       .addCase(updateCurrentCredential.fulfilled, (state, action) => {
         state.currentCredentialId = action.payload;
-      })
-      .addCase(updateCurrentCredential.rejected, (state, action) => {
-        state.error = action.error.message || "Failed to set current credential";
       });
   },
 });

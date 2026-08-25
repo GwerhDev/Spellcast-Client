@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import reducer, {
-  setPlaylist,
   play,
   pause,
   stop,
@@ -24,7 +23,6 @@ const initial = {
   volume: 1,
   currentTime: 0,
   duration: 0,
-  sourceType: 'playlist' as const,
   autoPlayOnLoad: false,
   timeline: [] as never[],
   pendingSeekMs: null as number | null,
@@ -53,25 +51,6 @@ describe('audioPlayerSlice', () => {
   it('togglePlayPause flips isPlaying', () => {
     expect(reducer(initial, togglePlayPause()).isPlaying).toBe(true);
     expect(reducer({ ...initial, isPlaying: true }, togglePlayPause()).isPlaying).toBe(false);
-  });
-
-  it('setPlaylist loads tracks and resets playback state', () => {
-    const urls = ['a.mp3', 'b.mp3'];
-    const state = reducer(initial, setPlaylist({ playlist: urls }));
-    expect(state.playlist).toEqual(urls);
-    expect(state.currentTrackIndex).toBe(0);
-    expect(state.isPlaying).toBe(false);
-    expect(state.currentTime).toBe(0);
-  });
-
-  it('setPlaylist with startIndex picks the right track', () => {
-    const state = reducer(initial, setPlaylist({ playlist: ['a.mp3', 'b.mp3', 'c.mp3'], startIndex: 2 }));
-    expect(state.currentTrackIndex).toBe(2);
-  });
-
-  it('setPlaylist with empty list sets currentTrackIndex to null', () => {
-    const state = reducer(initial, setPlaylist({ playlist: [] }));
-    expect(state.currentTrackIndex).toBeNull();
   });
 
   it('playNext advances to next track', () => {
