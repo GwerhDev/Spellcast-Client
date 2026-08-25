@@ -204,11 +204,22 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
   // own JS call (headset/OS media keys included), so this poll is the actual
   // source of truth for "did something external change what the engine is
   // doing" -- running at all times, in both directions, rather than only while
-  // expecting one particular transition. Two consecutive matching reads (1s)
-  // before acting, since `speaking` legitimately blips false for a moment in
-  // the normal gap between one utterance's onend and the next one's speak()
-  // call -- a single read can't tell that apart from a real external change,
-  // but a real change holds past that gap while the normal transition doesn't.
+  // expecting one particular transition.
+  //
+  // Confirmation windows differ by direction on purpose. Going from "stopped"
+  // to "speaking" (an external resume) only ever needs to survive the normal
+  // sub-second engine startup latency, so 2 consecutive reads (~1-2s) is
+  // plenty. Going from "speaking" to "stopped" is different: the gap between
+  // one utterance's onend firing and the NEXT speakSentence() call actually
+  // landing isn't just an engine timing quirk -- it's a full React cycle
+  // (dispatch(setCurrentSentenceIndex) -> re-render -> the sentence effect
+  // running -> speakSentence()), which under real browser load can take longer
+  // than a couple of seconds. A confirmation window too tight for that made
+  // this poll mistake the normal inter-sentence gap for a real external pause
+  // and dispatch(pause()) on its own, mid-reading, regardless of which UI
+  // triggered the original play() -- the exact "state desyncs no matter the
+  // source" symptom reported (TCORE-81). 5 consecutive reads (~5s) gives that
+  // cycle real room without meaningfully delaying a genuine external pause.
   useEffect(() => {
     let lastObserved: boolean | null = null;
     let confirmCount = 0;
@@ -220,7 +231,8 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
         lastObserved = engineSpeaking;
         confirmCount = 1;
       }
-      if (confirmCount === 2 && engineSpeaking !== isPlayingRef.current) {
+      const requiredConfirmations = engineSpeaking ? 2 : 5;
+      if (confirmCount === requiredConfirmations && engineSpeaking !== isPlayingRef.current) {
         dispatch(engineSpeaking ? play() : pause());
       }
     }, 1_000);
