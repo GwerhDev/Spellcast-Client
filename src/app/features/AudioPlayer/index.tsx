@@ -75,8 +75,30 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
   const [credentialError, setCredentialError] = useState<CredentialError | null>(null);
   const [showDocDetail, setShowDocDetail] = useState(false);
+  // The page whose audio is actually loaded and audible right now -- distinct
+  // from spellReader's `currentPage`, which updates the instant the user
+  // navigates, before that page's audio has finished being fetched/
+  // synthesized. Only this drives the OS Media Session metadata below, so
+  // the lock-screen/notification "Page N" never gets ahead of what's
+  // actually playing (TCORE-81). The in-app page label intentionally still
+  // uses the live `currentPage` -- that one is a navigation indicator, not
+  // a now-playing indicator, and updating it instantly on click is correct.
+  const [audioReadyPage, setAudioReadyPage] = useState<number | null>(null);
 
   const pageAudioReadyRef = useRef(false);
+  // Tracks the user's actual play/pause intent, independently of Redux's
+  // isPlaying -- which fetchAndPlay forces to false while synthesizing/
+  // loading new audio, so the UI doesn't show "playing" over silence.
+  // Every play/pause entry point (click, headset, toggle) reads and writes
+  // THIS ref; fetchAndPlay reads it fresh at the moment its async work
+  // resolves, instead of a stale local snapshot taken before the fetch
+  // started. Without this, a pause requested while a fetch was in flight
+  // got silently reverted once the fetch completed (TCORE-81): isPlaying
+  // was already forced to false by the fetch itself, so a pause request
+  // arriving mid-fetch had nothing left to "undo" in Redux and was dropped
+  // on the floor, then fetchAndPlay's own stale intent snapshot resumed
+  // playback regardless of what the user had actually asked for meanwhile.
+  const wantsToPlayRef = useRef(isPlaying);
   const abortControllerRef = useRef<AbortController | null>(null);
   const prefetchAbortRef = useRef<AbortController | null>(null);
   const currentBlobUrlRef = useRef<string | null>(null);
@@ -251,9 +273,14 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
     }
   };
 
+  // Callers set wantsToPlayRef BEFORE calling this (their own snapshot of
+  // "should this resume once ready", e.g. isPlaying || autoPlayOnLoad at
+  // the moment they decided to fetch) -- fetchAndPlay itself never
+  // computes or overwrites that intent, only reads it, so a pause/play
+  // requested while this is still in flight (via handlePause/handlePlay,
+  // which write the same ref) is never lost to a stale value captured
+  // before the async work started.
   const fetchAndPlay = async (text: string) => {
-    const shouldPlay = isPlaying || autoPlayOnLoad;
-
     abortControllerRef.current?.abort();
     prefetchAbortRef.current?.abort();
 
@@ -262,7 +289,7 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
 
     pageAudioReadyRef.current = false;
     setIsFetching(true);
-    if (shouldPlay) dispatch(pause());
+    if (wantsToPlayRef.current) dispatch(pause());
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
@@ -304,7 +331,8 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
       }
       if (!controller.signal.aborted) {
         loadAudio(blob!);
-        if (shouldPlay) {
+        setAudioReadyPage(currentPage);
+        if (wantsToPlayRef.current) {
           dispatch(play());
           audioRef.current!.play().catch(e => console.error('Error playing audio:', e));
         }
@@ -330,7 +358,13 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
   };
 
   const handlePlay = () => {
-    if (isFetching || isPlaying) return;
+    // Always record the intent, even while a fetch for this same page is
+    // already in flight -- that fetch's own resolution reads this ref
+    // fresh (see fetchAndPlay above), so a play requested after an
+    // accidental/earlier pause mid-fetch still resumes once ready, without
+    // starting a second, overlapping fetch.
+    wantsToPlayRef.current = true;
+    if (isPlaying) return;
     if (sentences.length === 0) {
       if (currentPage < totalPages) {
         dispatch(setAutoPlayOnLoad(true));
@@ -339,19 +373,30 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
       return;
     }
     if (selectedVoice.type === 'ai' && !pageAudioReadyRef.current) {
-      fetchAndPlay(currentPageText);
+      if (!isFetching) fetchAndPlay(currentPageText);
       return;
     }
     dispatch(play());
   };
 
   const handlePause = () => {
-    if (isFetching) return;
+    // Always record the intent -- including mid-fetch, when isPlaying is
+    // already forced to false by fetchAndPlay itself and there is nothing
+    // left in Redux to "undo": without this, a pause requested while
+    // audio was still being fetched had no effect at all and playback
+    // resumed regardless once the fetch completed (TCORE-81).
+    wantsToPlayRef.current = false;
+    if (!isPlaying) return;
     dispatch(pause());
   };
 
   const handleTogglePlayPause = () => {
-    if (isPlaying) handlePause();
+    // Reads intent, not Redux's isPlaying -- during a fetch, isPlaying is
+    // already false (silenced by fetchAndPlay), which would otherwise make
+    // a pause click during that window get misread as "not playing, so
+    // play" and swallowed by handlePlay's own isFetching guard instead of
+    // ever registering as a pause.
+    if (wantsToPlayRef.current) handlePause();
     else handlePlay();
   };
 
@@ -401,6 +446,7 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
     }
+    wantsToPlayRef.current = isPlaying || autoPlayOnLoad;
     fetchAndPlay(currentPageText);
     //eslint-disable-next-line
   }, [selectedVoice.value]);
@@ -416,6 +462,7 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
       }
       return;
     }
+    wantsToPlayRef.current = isPlaying || autoPlayOnLoad;
     if (autoPlayOnLoad) dispatch(setAutoPlayOnLoad(false));
     fetchAndPlay(currentPageText);
     //eslint-disable-next-line
@@ -440,13 +487,18 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
   useEffect(() => {
     if (!('mediaSession' in navigator)) return;
 
+    // artist uses audioReadyPage, NOT the live currentPage -- currentPage
+    // flips the instant the user navigates, before that page's audio has
+    // actually finished loading, so the OS lock-screen/notification could
+    // show "Page 5" while page 4's audio was still the only thing audible
+    // (TCORE-81).
     navigator.mediaSession.metadata = new MediaMetadata({
       title:  spellTitle ?? '',
-      artist: isLoaded ? `${t.spell.page} ${currentPage} ${t.spell.of} ${totalPages}` : '',
+      artist: isLoaded && audioReadyPage !== null ? `${t.spell.page} ${audioReadyPage} ${t.spell.of} ${totalPages}` : '',
       album:  'Spellcast',
       artwork: coverUrl ? [{ src: coverUrl, type: 'image/jpeg' }] : [],
     });
-  }, [spellTitle, currentPage, totalPages, coverUrl]);
+  }, [spellTitle, audioReadyPage, totalPages, coverUrl]);
 
   useEffect(() => {
     if (!('mediaSession' in navigator)) return;
