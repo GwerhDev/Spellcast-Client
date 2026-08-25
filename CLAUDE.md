@@ -101,6 +101,10 @@ Redux Toolkit with typed hooks (`useAppSelector`, `useAppDispatch` from `src/sto
 
 **Rule:** Feature components dispatch actions. Presentational components receive state as props and call prop callbacks — never touch the store.
 
+**Rule: no timers/polls to arbitrate races between async state writers.** Never resolve a race between two things that can both write the same state (e.g. an engine's real status vs. a Redux flag) with a `setInterval` poll, a fixed confirmation-tick count, or a `setTimeout` delay that guesses how long the other side needs. That's a bet on timing, not a fix — a slow tick or an unlucky delay still loses the bet. Instead:
+- Await the real event/callback the API already provides (e.g. `utterance.onpause`/`onresume`/`onend`, wrapped in a `Promise`) so the next step waits for actual confirmation, not a guessed duration.
+- Or collapse the competing writers into one: a single state machine/reducer that is the only thing allowed to decide the state, with everything else (click, headset, hardware nudge, drag) sending it an event to consume in order — never a second path that writes the same state independently and gets reconciled later by a timer.
+
 ---
 
 ## Database (IndexedDB)
