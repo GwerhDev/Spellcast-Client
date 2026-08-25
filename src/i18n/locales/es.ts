@@ -360,7 +360,7 @@ export const es: Translations = {
     rank: 'Novato',
   },
   start: {
-    castSpell: 'Lanza un hechizo',
+    castSpell: 'Lanza un Spell',
     importSubtitle: 'Empieza importando un nuevo Spell',
     textSubtitle: 'Escribe unas palabras mágicas',
     textTab: 'Texto',

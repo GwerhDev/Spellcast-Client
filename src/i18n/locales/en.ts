@@ -358,7 +358,7 @@ export const en = {
     rank: 'Novice',
   },
   start: {
-    castSpell: 'Cast a spell',
+    castSpell: 'Cast a Spell',
     importSubtitle: 'Get started by importing a new Spell',
     textSubtitle: 'Write some magic words',
     textTab: 'Text',

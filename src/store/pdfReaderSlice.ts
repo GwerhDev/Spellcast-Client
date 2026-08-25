@@ -64,6 +64,15 @@ const pdfReaderSlice = createSlice({
       if (action.payload.progress) {
         state.currentPage = action.payload.progress.currentPage || 1;
         state.currentSentenceIndex = action.payload.progress.lastReadSentenceIndex || 0;
+      } else {
+        // Without progress (a freshly-imported spell with no reading history yet),
+        // currentSentenceIndex would otherwise stay at initialState's -1 (this
+        // reducer only wrote it inside the `if` above). BrowserPlayer's sentence
+        // effect requires currentSentenceIndex > -1 before it will ever call
+        // speakSentence(), so a spell with no progress silently never spoke a word
+        // when played from a list card (TCORE-81).
+        state.currentPage = 1;
+        state.currentSentenceIndex = 0;
       }
     },
     setSentences: (state, action: PayloadAction<{ sentences: string[], startIndex?: number }>) => {
