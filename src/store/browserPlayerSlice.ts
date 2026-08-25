@@ -7,6 +7,7 @@ interface BrowserPlayerState {
   autoPlayOnLoad: boolean;
   toggleSeq: number;
   resumeSeq: number;
+  externalPauseSeq: number;
 }
 
 const initialState: BrowserPlayerState = {
@@ -16,6 +17,7 @@ const initialState: BrowserPlayerState = {
   autoPlayOnLoad: false,
   toggleSeq: 0,
   resumeSeq: 0,
+  externalPauseSeq: 0,
 };
 
 const browserPlayerSlice = createSlice({
@@ -51,6 +53,16 @@ const browserPlayerSlice = createSlice({
       state.resumeSeq += 1;
       state.isPlaying = true;
     },
+    // For callers outside BrowserPlayer (e.g. the attention guard's
+    // inactivity timeout) that need to pause playback without touching
+    // speechSynthesis themselves. BrowserPlayer's single event queue is the
+    // only thing allowed to call speechSynthesis.pause() -- this seq counter
+    // is what tells it a pause was requested externally, exactly like
+    // toggleSeq/resumeSeq already do for the other external callers.
+    requestExternalPause: (state) => {
+      state.externalPauseSeq += 1;
+      state.isPlaying = false;
+    },
   },
 });
 
@@ -62,6 +74,7 @@ export const {
   setVolume,
   resetBrowserPlayer,
   setAutoPlayOnLoad,
+  requestExternalPause,
   requestTogglePlay,
   requestResume,
 } = browserPlayerSlice.actions;

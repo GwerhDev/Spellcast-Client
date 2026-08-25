@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useAppDispatch, useAppSelector } from 'store/hooks';
 import { pause as pauseAudio, requestTogglePlay as toggleAudio } from 'store/audioPlayerSlice';
-import { pause as pauseBrowser, requestResume as resumeBrowser } from 'store/browserPlayerSlice';
+import { requestExternalPause as pauseBrowser, requestResume as resumeBrowser } from 'store/browserPlayerSlice';
 import { setShowAttentionGuard } from 'store/pdfReaderSlice';
 
 export function useAttentionGuard() {
@@ -40,8 +40,12 @@ export function useAttentionGuard() {
     const ms = stateRef.current.attentionGuardInterval * 60_000;
     timerRef.current = setTimeout(() => {
       dispatch(pauseAudio());
+      // BrowserPlayer owns the only path allowed to touch speechSynthesis --
+      // requestExternalPause bumps externalPauseSeq, which BrowserPlayer
+      // enqueues as a real ATTENTION_PAUSE event on its single event queue,
+      // same as a click or a headset pause. Calling speechSynthesis.pause()
+      // here directly would be a second, unserialized writer of engine state.
       dispatch(pauseBrowser());
-      window.speechSynthesis.pause();
       dispatch(setShowAttentionGuard(true));
     }, ms);
   };

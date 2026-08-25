@@ -37,17 +37,41 @@ interface PlayerProps {
   showPlayerConfigModal: React.Dispatch<SetStateAction<boolean>>;
 }
 
-// speechSynthesis has no HTMLMediaElement of its own. Without one actually playing,
-// Chrome/Edge (and others) don't reliably route hardware/OS media-key events (e.g.
-// headset play/pause) to this page's Media Session at all -- our action handlers can
-// be set but simply never get called, and the OS's own media control surface pauses/
-// resumes on its own timeline instead (TCORE-81: this is why the on-screen button
-// never flips and speech resumes on its own after a few seconds -- the browser voice
-// path has nothing anchoring the Media Session, unlike AudioPlayer's real <audio>).
-// A silent, looping 100ms WAV playing for as long as we're "playing" gives the
-// browser a real media element to anchor the session to, so hardware controls reach
-// our setActionHandler('play'/'pause', ...) handlers like they do for AudioPlayer.
+// ── ARCHITECTURE (TCORE-81) ────────────────────────────────────────────────
+//
+// Every path that can change whether the engine is speaking -- the on-screen
+// button, the headset/OS media keys, the attention guard's inactivity
+// timeout, the "resume from here" request, the anti-freeze nudge, the volume
+// slider drag -- pushes ONE event onto a single FIFO queue instead of
+// touching speechSynthesis or Redux's isPlaying directly. One async runner
+// drains that queue strictly one event at a time: it never starts processing
+// event N+1 until event N's handler has fully finished, including any await
+// on the engine's own callback (onpause/onresume/onend). That await is what
+// replaces every timer/poll/confirmation-window this file used to have --
+// it's not a guess at how long the browser needs, it's the browser itself
+// telling us it's done, whenever that actually happens.
+//
+// This is what makes "wait exactly as long as the engine needs, never less,
+// never a guessed budget" possible: two events can never race each other
+// over the engine or over isPlaying, because there is structurally only ever
+// one event being handled at a time. Redux's isPlaying is written from
+// exactly one place -- the end of whichever handler just ran -- never from a
+// reactive effect watching isPlaying itself, never from a poll.
 const SILENT_AUDIO_SRC = 'data:audio/wav;base64,UklGRkQDAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YSADAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA==';
+
+type EngineEvent =
+  | { type: 'CLICK_PLAY' }
+  | { type: 'CLICK_PAUSE' }
+  | { type: 'HEADSET_PLAY' }
+  | { type: 'HEADSET_PAUSE' }
+  | { type: 'ATTENTION_PAUSE' }
+  | { type: 'RESUME_REQUESTED' }
+  | { type: 'TOGGLE_REQUESTED' }
+  | { type: 'VOLUME_DRAG_START' }
+  | { type: 'VOLUME_DRAG_END' }
+  | { type: 'CONTENT_CHANGED' } // sentence/page/spell changed under us
+  | { type: 'SENTENCE_ENDED'; utterance: SpeechSynthesisUtterance } // the engine's own onend fired
+  | { type: 'FREEZE_NUDGE' };
 
 export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, showPlayerConfigModal }) => {
   const { t } = useLanguage();
@@ -60,6 +84,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
     autoPlayOnLoad,
     toggleSeq,
     resumeSeq,
+    externalPauseSeq,
   } = useSelector((state: RootState) => state.browserPlayer);
   const {
     isLoaded,
@@ -71,65 +96,37 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
     currentSentenceIndex,
   } = useSelector((state: RootState) => state.pdfReader);
   const { selectedVoice } = useSelector((state: RootState) => state.voice);
+  const { userData } = useAppSelector((state) => state.session);
+  const { activeSoundBgId, soundBgVolume, masterVolume } = useAppSelector((state) => state.userLibrary);
 
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
   const [showDocDetail, setShowDocDetail] = useState(false);
+
   const volumeSliderRef = useRef<HTMLDivElement>(null);
   const volumeButtonRef = useRef<HTMLButtonElement>(null);
   const silentAudioRef = useRef<HTMLAudioElement>(null);
   const activeUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
-  const isSpeechPausedRef = useRef(false);
-  const pausedAtRef = useRef<number | null>(null);
-  const volumeDragPausedRef = useRef(false);
-  const nudgePausedRef = useRef(false);
-  // Mirror of `isPlaying` for the utterance onpause/onresume handlers below, which
-  // are set once per utterance and would otherwise close over a stale value.
-  const isPlayingRef = useRef(isPlaying);
-  useEffect(() => { isPlayingRef.current = isPlaying; }, [isPlaying]);
-  const { userData } = useAppSelector((state) => state.session);
-  const { activeSoundBgId, soundBgVolume, masterVolume } = useAppSelector((state) => state.userLibrary);
+  const volumeWasPlayingRef = useRef(false);
 
-  const waitingForSentencesRef = useRef(false);
-  useEffect(() => { waitingForSentencesRef.current = true; }, [currentPage]);
-  useEffect(() => { waitingForSentencesRef.current = false; }, [sentences]);
+  const handleTitle = () => navigate(`/spell/${spellId}/reader`);
+  const handleSearcher = () => dispatch(setShowSearcher(true));
+  const handlePrevious = () => { if (isLoaded) dispatch(goToPreviousPage()); };
+  const handleNext = () => { if (isLoaded) dispatch(goToNextPage()); };
+  const isPrevDisabled = isLoaded ? currentPage === 1 : true;
+  const isNextDisabled = isLoaded ? currentPage === totalPages : true;
 
-  const togglePlayPauseRef = useRef<() => void>(() => { });
-  useEffect(() => {
-    if (!toggleSeq) return;
-    togglePlayPauseRef.current();
-  }, [toggleSeq]);
-  // Media Session's play/pause handlers need idempotent refs (always-play,
-  // always-pause), same as AudioPlayer (TCORE-81) -- routing them through the
-  // isPlaying-dependent toggle lets a double-fired Bluetooth/OS event apply the
-  // same branch twice and land on the opposite of what the user pressed.
-  const playRef = useRef<() => void>(() => { });
-  const pauseRef = useRef<() => void>(() => { });
-  const volumePercentage = volume * 100;
-
-  const handleTitle = () => {
-    navigate(`/spell/${spellId}/reader`);
+  // Mirrors of Redux/props state for the queue runner below, which is a
+  // stable-identity async function (created once) and must always read the
+  // LATEST render's values, never the ones captured when it was created.
+  const latestRef = useRef({
+    isPlaying, voice, volume, masterVolume, sentences, currentSentenceIndex,
+    currentPage, totalPages, isLoaded, autoPlayOnLoad,
+  });
+  latestRef.current = {
+    isPlaying, voice, volume, masterVolume, sentences, currentSentenceIndex,
+    currentPage, totalPages, isLoaded, autoPlayOnLoad,
   };
-
-  const handleSearcher = () => {
-    dispatch(setShowSearcher(true));
-  };
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        showVolumeSlider &&
-        volumeSliderRef.current &&
-        !volumeSliderRef.current.contains(event.target as Node) &&
-        volumeButtonRef.current &&
-        !volumeButtonRef.current.contains(event.target as Node)
-      ) {
-        setShowVolumeSlider(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [showVolumeSlider]);
 
   useEffect(() => {
     let url: string | null = null;
@@ -148,425 +145,417 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
     return () => { if (url) URL.revokeObjectURL(url); };
   }, [spellId, userData?.id]);
 
-  const speakSentence = (text: string, onEnd: () => void, onStart?: () => void, isRetry = false) => {
-    const utterance = new SpeechSynthesisUtterance(text);
-    if (!isRetry) {
-      activeUtteranceRef.current = utterance;
-      isSpeechPausedRef.current = false;
-      pausedAtRef.current = null;
-    }
-    if (voice) utterance.voice = voice;
-    utterance.volume = volume * masterVolume;
+  const applyMediaSessionMetadata = () => {
+    if (!('mediaSession' in navigator)) return;
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: spellTitle ?? '',
+      artist: isLoaded ? `${t.spell.page} ${currentPage} ${t.spell.of} ${totalPages}` : '',
+      album: 'Spellcast',
+      artwork: coverUrl ? [{ src: coverUrl, type: 'image/jpeg' }] : [],
+    });
+  };
 
-    if (!isRetry && onStart) utterance.onstart = onStart;
+  useEffect(() => {
+    applyMediaSessionMetadata();
+    //eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [spellTitle, currentPage, totalPages, coverUrl, isLoaded, t]);
 
-    // Keep Redux in sync with the engine's real pause/resume state (TCORE-81).
-    // These fire for ANY pause/resume of the engine, regardless of who triggered
-    // it -- including headset/OS media keys that pause speechSynthesis directly
-    // without going through our mediaSession action handlers. Without this,
-    // isPlaying can stay stuck at `true` after an external pause: the on-screen
-    // button never flips, and once anything re-triggers the sentence effect
-    // (TCORE-81) it sees isPlaying still true and resumes speaking on its own.
-    // nudgePausedRef skips the internal anti-freeze pause+resume nudge below, and
-    // isSpeechPausedRef skips our own handlePause (which already dispatches).
-    utterance.onpause = () => {
-      if (!isRetry && activeUtteranceRef.current !== utterance) return;
-      if (nudgePausedRef.current || isSpeechPausedRef.current) return;
-      if (isPlayingRef.current) dispatch(pause());
-    };
-    utterance.onresume = () => {
-      if (!isRetry && activeUtteranceRef.current !== utterance) return;
-      if (nudgePausedRef.current) { nudgePausedRef.current = false; return; }
-      if (!isPlayingRef.current) dispatch(play());
-    };
+  // ── Single event queue: the only writer of isPlaying / the only caller of
+  // speechSynthesis.speak()/pause()/resume()/cancel() and the silent anchor.
+  // Strictly serial: drainQueue never starts handling the next event until
+  // the current one's handler (including every await inside it) is done.
+  // Crucially, a handler's await is only ever for a SHORT engine
+  // confirmation (paused/resumed/started) -- never for "the whole sentence
+  // finished speaking", which can take many seconds. If it awaited that, a
+  // CLICK_PAUSE arriving mid-sentence would sit stuck in the queue behind it
+  // instead of pausing immediately. Instead, starting a sentence fires
+  // speak() and returns right away; the engine's own onend (whenever it
+  // actually fires, seconds later) enqueues a SENTENCE_ENDED event like
+  // anything else, so a pause queued in the meantime runs the instant the
+  // queue gets to it, not after the sentence happens to finish.
+  const queueRef = useRef<EngineEvent[]>([]);
+  const processingRef = useRef(false);
 
-    utterance.onend = () => {
-      if (!isRetry && activeUtteranceRef.current !== utterance) return;
-      onEnd();
-    };
-
-    utterance.onerror = (e) => {
-      if (!isRetry && activeUtteranceRef.current !== utterance) return;
-      if (e.error === 'interrupted' || e.error === 'canceled') return;
-      if (e.error === 'not-allowed') {
-        handleStop();
-        return;
+  const drainQueue = async () => {
+    if (processingRef.current) return;
+    processingRef.current = true;
+    while (queueRef.current.length > 0) {
+      const event = queueRef.current.shift()!;
+      try {
+        await handleEventRef.current(event);
+      } catch (err) {
+        console.error('[BrowserPlayer] engine event handler threw:', event.type, err);
       }
+    }
+    processingRef.current = false;
+  };
+
+  const enqueue = (event: EngineEvent) => {
+    queueRef.current.push(event);
+    void drainQueue();
+  };
+
+  // handleEvent (defined below, after the engine primitives it uses) closes
+  // over per-render values via latestRef, but drainQueue above is defined
+  // before it in source order and must always call the CURRENT render's
+  // handleEvent -- not the one captured when drainQueue happened to be
+  // created -- hence this ref indirection instead of a forward reference.
+  const handleEventRef = useRef<(event: EngineEvent) => Promise<void>>(async () => {});
+
+  // ── Real, awaited engine primitives ─────────────────────────────────────
+  // Each of these waits for the browser's OWN callback confirming the change
+  // actually landed, instead of guessing a duration. No timer, no poll: the
+  // await settles exactly when the engine says so, however long that takes
+  // -- but only ever for a short pause/resume/start confirmation, never for
+  // how long a sentence takes to finish being spoken (see above).
+  const engineSpeakSentence = (text: string): void => {
+    applyMediaSessionMetadata();
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    activeUtteranceRef.current = utterance;
+    const { voice: v, volume: vol, masterVolume: mv } = latestRef.current;
+    if (v) utterance.voice = v;
+    utterance.volume = vol * mv;
+
+    utterance.onend = () => enqueue({ type: 'SENTENCE_ENDED', utterance });
+    utterance.onerror = (e) => {
+      if (e.error === 'interrupted' || e.error === 'canceled') return; // superseded by a newer speak()/cancel() -- that event owns what happens next
       if (e.error === 'text-too-long') {
         const mid = Math.floor(text.length / 2);
         const split = text.lastIndexOf(' ', mid);
         const pivot = split > 0 ? split : mid;
-        speakSentence(text.slice(0, pivot).trimEnd(), () => {
-          speakSentence(text.slice(pivot).trimStart(), onEnd, undefined, true);
-        }, undefined, true);
+        pendingSplitRef.current = { remainder: text.slice(pivot).trimStart() };
+        engineSpeakSentence(text.slice(0, pivot).trimEnd());
         return;
       }
-      onEnd();
+      enqueue({ type: 'SENTENCE_ENDED', utterance }); // treat unknown engine errors as "done with this sentence"
     };
 
     window.speechSynthesis.speak(utterance);
   };
 
-  // isPlaying is the master switch the engine must follow in both directions:
-  // pause it when we stop, and resume it when we start again. Before this, only
-  // the pause() half was reactive -- resuming only ever happened inside
-  // handlePlay's own click-time check of window.speechSynthesis.paused, so any
-  // path that flipped isPlaying back to true without going through that exact
-  // check (a headset press landing while the engine hadn't finished settling
-  // into "paused" yet, the Chrome freeze bug, etc.) left the voice stuck silent
-  // with nothing to notice and correct it (TCORE-81).
-  useEffect(() => {
-    if (isPlaying) {
-      if (window.speechSynthesis.paused) window.speechSynthesis.resume();
-    } else {
+  // Set only by the text-too-long split above: the SENTENCE_ENDED handler
+  // checks this to know the utterance that just ended was only the first
+  // half of a sentence, and the real second half still needs to be spoken
+  // before actually advancing to the next sentence index.
+  const pendingSplitRef = useRef<{ remainder: string } | null>(null);
+
+  // Awaits the engine's own onpause/onresume event -- not a guessed delay for
+  // HOW LONG the engine needs, so the queue runner genuinely knows the
+  // engine reached the state we asked for before it lets the next queued
+  // event run.
+  //
+  // ENGINE_EVENT_SAFETY_TIMEOUT_MS below is NOT a confirmation window or a
+  // guess at engine timing -- utterance.onpause/onresume are documented as
+  // unreliable across real browsers (some never fire them at all for a
+  // given pause()/resume() call, independently of how long the engine
+  // takes). Without a bound, a browser that never fires the event leaves
+  // this promise -- and the entire queue behind it, including every future
+  // play/pause click -- permanently stuck. This bound exists ONLY to survive
+  // an event that may structurally never come, not to arbitrate a race
+  // between two writers (there is only ever one: this awaited call itself).
+  const ENGINE_EVENT_SAFETY_TIMEOUT_MS = 500;
+
+  const engineAwaitPause = (): Promise<void> => {
+    const utterance = activeUtteranceRef.current;
+    if (!utterance || !window.speechSynthesis.speaking) {
       window.speechSynthesis.pause();
+      return Promise.resolve();
     }
-  }, [isPlaying]);
+    return new Promise((resolve) => {
+      let settled = false;
+      const settle = () => {
+        if (settled) return;
+        settled = true;
+        utterance.onpause = prevOnPause;
+        resolve();
+      };
+      const prevOnPause = utterance.onpause;
+      utterance.onpause = (ev) => {
+        prevOnPause?.call(utterance, ev);
+        settle();
+      };
+      window.speechSynthesis.pause();
+      setTimeout(settle, ENGINE_EVENT_SAFETY_TIMEOUT_MS);
+    });
+  };
 
-  // Keep the silent anchor element (see SILENT_AUDIO_SRC above) playing in lockstep
-  // with isPlaying, so the OS/hardware media session stays anchored to a real,
-  // currently-playing media element for as long as we are. This reactive path
-  // covers programmatic play (autoPlayOnLoad, attention guard resume, etc.) where
-  // there's no click to call playSilentAnchor() from synchronously; handlePlay
-  // below also calls it directly for the direct-click case, since a play() call
-  // arriving only via this effect can get silently autoplay-blocked (TCORE-81).
-  useEffect(() => {
-    if (!silentAudioRef.current) return;
-    if (isPlaying) {
-      silentAudioRef.current.play().catch(() => {});
-    } else {
-      silentAudioRef.current.pause();
+  const engineAwaitResume = (): Promise<void> => {
+    const utterance = activeUtteranceRef.current;
+    if (!utterance || !window.speechSynthesis.paused) {
+      window.speechSynthesis.resume();
+      return Promise.resolve();
     }
-  }, [isPlaying]);
+    return new Promise((resolve) => {
+      let settled = false;
+      const settle = () => {
+        if (settled) return;
+        settled = true;
+        utterance.onresume = prevOnResume;
+        resolve();
+      };
+      const prevOnResume = utterance.onresume;
+      utterance.onresume = (ev) => {
+        prevOnResume?.call(utterance, ev);
+        settle();
+      };
+      window.speechSynthesis.resume();
+      setTimeout(settle, ENGINE_EVENT_SAFETY_TIMEOUT_MS);
+    });
+  };
 
-  // Warm up the Media Session on the very first real user gesture anywhere on
-  // the page, not just the first click on this player's own play button.
-  // Reported symptom (TCORE-81): the headset only starts receiving signals
-  // after two full click-driven play/pause cycles on the on-screen button --
-  // Chrome appears to need a settled play->pause->play cycle with playbackState
-  // + setPositionState reported before it commits to routing hardware signals
-  // to this tab. Running that cycle on the anchor as soon as the user first
-  // interacts with the page at all (before they've necessarily touched the
-  // player) means it's already warmed up by the time they do reach for play.
-  // Browsers require a real gesture for the anchor's own play() to succeed, so
-  // this can't run any earlier than the user's first click/keydown/touch.
-  useEffect(() => {
-    if (!('mediaSession' in navigator)) return;
-    let warmed = false;
-    const warmUp = () => {
-      if (warmed || isPlaying) return;
-      warmed = true;
-      document.removeEventListener('pointerdown', warmUp);
-      document.removeEventListener('keydown', warmUp);
-      const anchor = silentAudioRef.current;
-      if (!anchor) return;
-      anchor.play().then(() => {
-        navigator.mediaSession.playbackState = 'playing';
-        if (navigator.mediaSession.setPositionState && anchor.duration && !Number.isNaN(anchor.duration)) {
-          navigator.mediaSession.setPositionState({
-            duration: anchor.duration,
-            playbackRate: anchor.playbackRate,
-            position: Math.min(anchor.currentTime, anchor.duration),
-          });
-        }
-        setTimeout(() => {
-          if (!isPlayingRef.current) {
-            anchor.pause();
-            navigator.mediaSession.playbackState = 'paused';
-          }
-        }, 300);
-      }).catch(() => {});
-    };
-    document.addEventListener('pointerdown', warmUp);
-    document.addEventListener('keydown', warmUp);
-    return () => {
-      document.removeEventListener('pointerdown', warmUp);
-      document.removeEventListener('keydown', warmUp);
-    };
-    //eslint-disable-next-line
-  }, []);
+  // Starts speaking the current sentence (if any) without awaiting how long
+  // that takes -- see engineSpeakSentence above. Returns immediately once
+  // the engine has been told what to say, freeing the queue to process
+  // whatever comes next (a pause, a headset event, anything) while the
+  // sentence is still being spoken.
+  const startSpeakingCurrentSentence = (): void => {
+    const { sentences: sents, currentSentenceIndex: idx, currentPage: page, totalPages: total } = latestRef.current;
+    if (sents.length === 0 || idx < 0 || idx >= sents.length) {
+      if (page < total) { dispatch(goToNextPage()); return; }
+      dispatch(stop());
+      dispatch(setCurrentSentenceIndex(0));
+      return;
+    }
+    engineSpeakSentence(sents[idx]);
+  };
 
-  // Dedicated resume path for attention guard: always cancel + relaunch from current index.
-  // speechSynthesis.resume() is unreliable if the utterance was canceled mid-pause.
-  useEffect(() => {
-    if (!resumeSeq) return;
-    window.speechSynthesis.cancel();
-    isSpeechPausedRef.current = false;
-    if (sentences.length === 0 || currentSentenceIndex >= sentences.length) return;
-    speakSentence(
-      sentences[currentSentenceIndex],
-      () => dispatch(setCurrentSentenceIndex(currentSentenceIndex + 1)),
-      () => dispatch(play()),
-    );
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [resumeSeq]);
+  const startPlayingFromCurrentSentence = (): void => {
+    if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
+    silentAudioRef.current?.play().catch(() => {});
+    dispatch(play());
+    startSpeakingCurrentSentence();
+  };
 
-  // Workaround for the Chrome SpeechSynthesis bug where the engine silently
-  // freezes after ~15s of continuous speech. Nudging pause/resume keeps it alive.
-  // nudgePausedRef tells the utterance's onpause/onresume handlers (above) and the
-  // polling fallback (below) that this particular pause/resume pair is internal
-  // and expected, so they don't mistake it for an externally-triggered pause (e.g.
-  // headset controls) and sync Redux to a transient state. Cleared synchronously
-  // right after resume() rather than relying on the utterance's onresume event,
-  // since that event isn't guaranteed to fire in every browser (same reliability
-  // gap as onpause, see the polling fallback below) and a stuck `true` here would
-  // permanently blind that fallback to real external pauses afterwards.
-  // Also acts as the safety net for isPlaying/engine desyncs: if we think we're
-  // playing but the engine is sitting paused with nothing queued (the reactive
-  // resume() in the isPlaying effect above fired too early, got dropped, or the
-  // engine froze on it), this tick catches it and forces a resume rather than
-  // leaving the voice silently stuck until the next unrelated state change.
-  useEffect(() => {
-    if (!isPlaying) return;
-    const id = setInterval(() => {
-      if (window.speechSynthesis.paused && !window.speechSynthesis.speaking) {
-        window.speechSynthesis.resume();
-        return;
-      }
-      if (window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
-        nudgePausedRef.current = true;
-        window.speechSynthesis.pause();
-        window.speechSynthesis.resume();
-        nudgePausedRef.current = false;
-      }
-    }, 14_000);
-    return () => clearInterval(id);
-  }, [isPlaying]);
+  const stopEngineAndConfirmPaused = async (): Promise<void> => {
+    silentAudioRef.current?.pause();
+    if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
+    await engineAwaitPause();
+  };
 
-  // isPlaying always follows the engine's real state -- not a fallback that only
-  // watches while we expect one particular direction, but the one thing that
-  // continuously keeps Redux (and therefore the on-screen button/background)
-  // truthful about what speechSynthesis is actually doing (TCORE-81: the voice
-  // itself always correctly pauses/resumes for the headset -- it's Redux/the
-  // button/the background that don't always find out). speechSynthesis's own
-  // utterance onpause/onresume events aren't reliably fired by every browser
-  // for pauses/resumes that didn't originate from our own JS call (headset/OS
-  // media keys included), so this poll is the actual source of truth, running
-  // at all times regardless of which direction we currently think we're in.
-  // Two consecutive matching reads (1s) before acting either way, since
-  // `speaking` legitimately blips false for a moment in the normal engine gap
-  // between one utterance's onend and the next one's speak() call landing -- a
-  // single read can't tell that apart from a real external pause/resume, but a
-  // real change holds past that gap while the normal transition doesn't.
-  useEffect(() => {
-    let lastObserved: boolean | null = null;
-    let confirmCount = 0;
-    const id = setInterval(() => {
-      if (nudgePausedRef.current || isSpeechPausedRef.current) { lastObserved = null; confirmCount = 0; return; }
-      const engineSpeaking = window.speechSynthesis.speaking && !window.speechSynthesis.paused;
-      if (engineSpeaking === lastObserved) {
-        confirmCount += 1;
-      } else {
-        lastObserved = engineSpeaking;
-        confirmCount = 1;
-      }
-      if (confirmCount === 2 && engineSpeaking !== isPlayingRef.current) {
-        if (engineSpeaking) {
-          isSpeechPausedRef.current = false;
-          pausedAtRef.current = null;
+  const handleEvent = async (event: EngineEvent): Promise<void> => {
+    const { isPlaying: playing, sentences: sents, currentSentenceIndex: idx } = latestRef.current;
+
+    switch (event.type) {
+      case 'CLICK_PLAY':
+      case 'HEADSET_PLAY':
+      case 'RESUME_REQUESTED': {
+        if (playing) return;
+        if (event.type === 'HEADSET_PLAY') dispatch(addSignalNotice({ message: t.player.playedFromHeadset }));
+        if (sents.length === 0 || idx < 0 || idx >= sents.length) { dispatch(play()); return; }
+        // A pause (CLICK_PAUSE/HEADSET_PAUSE/ATTENTION_PAUSE) never clears
+        // activeUtteranceRef -- the utterance is still loaded in the engine,
+        // just paused. If a plain CLICK_PLAY/HEADSET_PLAY called speak() on
+        // a brand-new utterance here instead of resume()-ing this one, the
+        // real engine (still sitting in its own paused state from the
+        // earlier pause) would silently never start speaking the new one --
+        // most browsers require an explicit resume() to leave paused, speak()
+        // alone doesn't. Applies to all three event types alike: whichever
+        // one asked, if something is still loaded, resume it instead of
+        // starting fresh.
+        if (activeUtteranceRef.current) {
           dispatch(play());
-        } else {
-          dispatch(pause());
-        }
-      }
-    }, 1_000);
-    return () => clearInterval(id);
-  }, [dispatch]);
-
-  useEffect(() => {
-    activeUtteranceRef.current = null;
-    isSpeechPausedRef.current = false;
-    pausedAtRef.current = null;
-    window.speechSynthesis.cancel();
-
-    if (isLoaded && currentSentenceIndex > -1) {
-      if (sentences.length === 0 || currentSentenceIndex >= sentences.length) {
-        if (isPlaying && !waitingForSentencesRef.current) {
-          if (currentPage < totalPages) return handleNext();
-          return handleStop();
-        }
-        return;
-      }
-
-      if (!isPlaying) {
-        if (autoPlayOnLoad) {
-          dispatch(setAutoPlayOnLoad(false));
-          dispatch(play());
-        } else {
+          if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
+          silentAudioRef.current?.play().catch(() => {});
+          await engineAwaitResume();
           return;
         }
+        startPlayingFromCurrentSentence();
+        return;
       }
 
-      speakSentence(
-        sentences[currentSentenceIndex],
-        () => dispatch(setCurrentSentenceIndex(currentSentenceIndex + 1)),
-        () => dispatch(play()),
-      );
+      case 'CLICK_PAUSE':
+      case 'HEADSET_PAUSE': {
+        if (!playing) return;
+        if (event.type === 'HEADSET_PAUSE') dispatch(addSignalNotice({ message: t.player.pausedFromHeadset }));
+        dispatch(pause());
+        await stopEngineAndConfirmPaused();
+        return;
+      }
+
+      case 'ATTENTION_PAUSE': {
+        // requestExternalPause already set isPlaying: false in the SAME
+        // dispatch that queued this event (unlike a click, which dispatches
+        // pause() only once its handler runs) -- so `playing` above is
+        // already false by the time this is processed. Whether there's
+        // actually anything to pause on the engine is asked directly instead.
+        if (!window.speechSynthesis.speaking && !activeUtteranceRef.current) return;
+        await stopEngineAndConfirmPaused();
+        return;
+      }
+
+      case 'TOGGLE_REQUESTED': {
+        await handleEvent(playing ? { type: 'CLICK_PAUSE' } : { type: 'CLICK_PLAY' });
+        return;
+      }
+
+      case 'VOLUME_DRAG_START': {
+        volumeWasPlayingRef.current = playing && !!activeUtteranceRef.current && window.speechSynthesis.speaking;
+        if (volumeWasPlayingRef.current) await engineAwaitPause();
+        return;
+      }
+
+      case 'VOLUME_DRAG_END': {
+        if (!volumeWasPlayingRef.current) return;
+        volumeWasPlayingRef.current = false;
+        await engineAwaitResume();
+        return;
+      }
+
+      case 'CONTENT_CHANGED': {
+        // Page/sentence/spell changed for a reason OTHER than a sentence
+        // finishing on its own (manual page nav, a fresh spell mounting,
+        // etc.) -- SENTENCE_ENDED below is what handles the "just finished
+        // speaking, advance to the next one" case. If we're mid-utterance,
+        // drop it and speak whatever is now current instead.
+        if (!playing) return;
+        activeUtteranceRef.current = null;
+        window.speechSynthesis.cancel();
+        startSpeakingCurrentSentence();
+        return;
+      }
+
+      case 'SENTENCE_ENDED': {
+        // Ignore an onend that fired for an utterance that isn't the one we
+        // still think is active -- it was already superseded by a newer
+        // speak()/cancel() (a pause, a content change, a fresh play), and
+        // that event already decided what happens next.
+        if (activeUtteranceRef.current !== event.utterance) return;
+        activeUtteranceRef.current = null;
+
+        if (pendingSplitRef.current) {
+          const { remainder } = pendingSplitRef.current;
+          pendingSplitRef.current = null;
+          engineSpeakSentence(remainder);
+          return;
+        }
+
+        if (!playing) return; // paused while this sentence was speaking
+        dispatch(setCurrentSentenceIndex(idx + 1));
+        // The content-tracking effect below reacts to that dispatch by
+        // enqueueing CONTENT_CHANGED, which is what actually starts
+        // speaking the next sentence -- kept as one single path for
+        // "content changed, speak what's current" instead of duplicating
+        // that logic here.
+        return;
+      }
+
+      case 'FREEZE_NUDGE': {
+        // Chrome's SpeechSynthesis engine can silently freeze after ~15s of
+        // continuous speech. Nudging pause immediately followed by resume
+        // keeps it alive. Routed through the same queue as everything else,
+        // so it can never race a real pause/resume: if a CLICK_PAUSE is
+        // sitting right after this in the queue, this nudge finishes first
+        // (awaiting the real onpause/onresume) and the pause runs on a
+        // genuinely settled, non-paused engine -- never the other way round.
+        if (!playing || !window.speechSynthesis.speaking || window.speechSynthesis.paused) return;
+        await engineAwaitPause();
+        // A real pause/resume may have been queued and already run while
+        // this nudge's pause was landing -- don't resume if so.
+        if (!latestRef.current.isPlaying) return;
+        await engineAwaitResume();
+        return;
+      }
     }
-    //eslint-disable-next-line
-  }, [currentSentenceIndex, sentences, isLoaded, currentPage, autoPlayOnLoad]);
-
-  const handleStop = () => {
-    activeUtteranceRef.current = null;
-    pausedAtRef.current = null;
-    dispatch(stop());
-    dispatch(setCurrentSentenceIndex(0));
-    window.speechSynthesis.cancel();
   };
+  handleEventRef.current = handleEvent;
 
-  // Browsers only allow <audio>.play() to bypass autoplay blocking when it runs
-  // synchronously inside a real user gesture (click/keypress) call stack. The
-  // isPlaying-reactive effect below covers programmatic resumes (autoPlayOnLoad,
-  // attention guard, etc.), but a click handler that only dispatches Redux and lets
-  // that effect call .play() asynchronously can get silently blocked -- promise
-  // rejection swallowed, mediaSession left unanchored, hardware controls stop
-  // working, with no visible error (TCORE-81). Calling it here too, inside the
-  // click's own call stack, is what makes the anchor reliably get play permission.
-  const playSilentAnchor = () => {
-    if (!silentAudioRef.current) return;
-    silentAudioRef.current.play().catch(() => {});
-  };
-
-  const handlePlay = () => {
-    if (isPlaying) return;
-    playSilentAnchor();
-    if (sentences.length === 0) {
-      dispatch(play());
-      if (currentPage < totalPages) handleNext();
-      else handleStop();
+  // ── Content tracking: page/sentence/spell changes enqueue CONTENT_CHANGED
+  // instead of ever touching the engine directly. Whether that event does
+  // anything depends entirely on isPlaying at the moment the queue actually
+  // gets to it (read fresh from latestRef, not captured here), so a
+  // page/sentence change that lands while paused is a no-op. Runs on mount
+  // too (React always runs a useEffect at least once) -- which is exactly
+  // what's needed for a spell mounted with autoPlayOnLoad already true (the
+  // "play from a list card" path): there is no earlier render to compare
+  // against, mounting IS the change.
+  useEffect(() => {
+    if (autoPlayOnLoad) {
+      dispatch(setAutoPlayOnLoad(false));
+      enqueue({ type: 'CLICK_PLAY' });
       return;
     }
-    // Resume if the Web Speech API is already paused (including when paused externally
-    // by the attention guard via dispatch(pause()) without going through this handler).
-    // Chrome doesn't guarantee holding onto a paused utterance indefinitely -- after
-    // sitting paused for a while it can silently drop it while still reporting
-    // `paused === true`, so resume() on it does nothing and playback never comes
-    // back (TCORE-81: "dejo pasar un rato en pausa y no retoma"). Past a minute
-    // paused, don't trust resume() -- speak the current sentence fresh instead.
-    const pausedTooLong = pausedAtRef.current !== null && Date.now() - pausedAtRef.current > 60_000;
-    if (!pausedTooLong && (isSpeechPausedRef.current || window.speechSynthesis.paused)) {
-      isSpeechPausedRef.current = false;
-      pausedAtRef.current = null;
-      window.speechSynthesis.resume();
-      dispatch(play());
-      return;
+    enqueue({ type: 'CONTENT_CHANGED' });
+    //eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentSentenceIndex, sentences, isLoaded, currentPage, spellId, autoPlayOnLoad]);
+
+  const handleTogglePlayPause = () => enqueue({ type: 'TOGGLE_REQUESTED' });
+
+  // External callers (attention guard) that need to toggle/resume playback
+  // from outside this component route through these two seq counters --
+  // never speechSynthesis directly -- so they can't become a second writer
+  // of engine state. Each seq bump enqueues exactly one event.
+  const toggleSeqRef = useRef(toggleSeq);
+  useEffect(() => {
+    if (toggleSeq !== toggleSeqRef.current) {
+      toggleSeqRef.current = toggleSeq;
+      enqueue({ type: 'TOGGLE_REQUESTED' });
     }
-    isSpeechPausedRef.current = false;
-    pausedAtRef.current = null;
-    window.speechSynthesis.cancel();
-    speakSentence(
-      sentences[currentSentenceIndex],
-      () => dispatch(setCurrentSentenceIndex(currentSentenceIndex + 1)),
-      () => dispatch(play()),
-    );
-    dispatch(play());
-  };
+    //eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [toggleSeq]);
 
-  const handlePause = () => {
-    if (!isPlaying) return;
-    isSpeechPausedRef.current = true;
-    pausedAtRef.current = Date.now();
-    window.speechSynthesis.pause();
-    dispatch(pause());
-  };
-
-  const handleTogglePlayPause = () => {
-    if (isPlaying) handlePause();
-    else handlePlay();
-  };
-  togglePlayPauseRef.current = handleTogglePlayPause;
-  playRef.current = handlePlay;
-  pauseRef.current = handlePause;
-
-  const handleVolumePointerDown = () => {
-    if (activeUtteranceRef.current && !isSpeechPausedRef.current && window.speechSynthesis.speaking) {
-      window.speechSynthesis.pause();
-      volumeDragPausedRef.current = true;
+  const resumeSeqRef = useRef(resumeSeq);
+  useEffect(() => {
+    if (resumeSeq !== resumeSeqRef.current) {
+      resumeSeqRef.current = resumeSeq;
+      enqueue({ type: 'RESUME_REQUESTED' });
     }
-  };
+    //eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resumeSeq]);
 
-  const handleVolumePointerUp = () => {
-    if (!volumeDragPausedRef.current) return;
-    volumeDragPausedRef.current = false;
-    if (!activeUtteranceRef.current) return;
-    window.speechSynthesis.cancel();
-    speakSentence(
-      sentences[currentSentenceIndex],
-      () => dispatch(setCurrentSentenceIndex(currentSentenceIndex + 1)),
-      () => dispatch(play()),
-    );
-  };
-
-  const handlePrevious = () => {
-    if (isLoaded) {
-      dispatch(goToPreviousPage());
+  // requestExternalPause (attention guard's inactivity timeout) already sets
+  // isPlaying: false itself; this seq bump is just what tells the queue to
+  // actually run the pause on the engine, the same as a click would.
+  const externalPauseSeqRef = useRef(externalPauseSeq);
+  useEffect(() => {
+    if (externalPauseSeq !== externalPauseSeqRef.current) {
+      externalPauseSeqRef.current = externalPauseSeq;
+      enqueue({ type: 'ATTENTION_PAUSE' });
     }
-  };
+    //eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [externalPauseSeq]);
 
-  const handleNext = () => {
-    if (isLoaded) {
-      dispatch(goToNextPage());
-    }
-  };
-
-  const isPrevDisabled = isLoaded ? currentPage === 1 : true;
-  const isNextDisabled = isLoaded ? currentPage === totalPages : true;
-
+  // Media Session's play/pause handlers must stay idempotent (always-play,
+  // always-pause), mirroring AudioPlayer: Bluetooth/OS media controls can
+  // fire play and pause in quick succession for a single physical button
+  // press. Both just enqueue -- the queue's own handler checks `playing`
+  // freshly when it actually runs, so a stray double-fire is a no-op, not a
+  // wrong toggle.
   useEffect(() => {
     if (!('mediaSession' in navigator)) return;
-
-    navigator.mediaSession.setActionHandler('play',           () => { dispatch(addSignalNotice({ message: t.player.playedFromHeadset })); playRef.current(); });
-    navigator.mediaSession.setActionHandler('pause',          () => { dispatch(addSignalNotice({ message: t.player.pausedFromHeadset })); pauseRef.current(); });
-    navigator.mediaSession.setActionHandler('nexttrack',      handleNext);
-    navigator.mediaSession.setActionHandler('previoustrack',  handlePrevious);
-
+    navigator.mediaSession.setActionHandler('play', () => enqueue({ type: 'HEADSET_PLAY' }));
+    navigator.mediaSession.setActionHandler('pause', () => enqueue({ type: 'HEADSET_PAUSE' }));
+    navigator.mediaSession.setActionHandler('nexttrack', handleNext);
+    navigator.mediaSession.setActionHandler('previoustrack', handlePrevious);
     return () => {
-      navigator.mediaSession.setActionHandler('play',          null);
-      navigator.mediaSession.setActionHandler('pause',         null);
-      navigator.mediaSession.setActionHandler('nexttrack',     null);
+      navigator.mediaSession.setActionHandler('play', null);
+      navigator.mediaSession.setActionHandler('pause', null);
+      navigator.mediaSession.setActionHandler('nexttrack', null);
       navigator.mediaSession.setActionHandler('previoustrack', null);
     };
-    //eslint-disable-next-line
+    //eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  useEffect(() => {
-    if (!('mediaSession' in navigator)) return;
-
-    navigator.mediaSession.metadata = new MediaMetadata({
-      title:  spellTitle ?? '',
-      artist: isLoaded ? `${t.spell.page} ${currentPage} ${t.spell.of} ${totalPages}` : '',
-      album:  'Spellcast',
-      artwork: coverUrl ? [{ src: coverUrl, type: 'image/jpeg' }] : [],
-    });
-  }, [spellTitle, currentPage, totalPages, coverUrl, isLoaded, t]);
 
   useEffect(() => {
     if (!('mediaSession' in navigator)) return;
     navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
   }, [isPlaying]);
 
-  // AudioPlayer calls setPositionState on its real <audio>; BrowserPlayer never
-  // did, since spoken sentences have no fixed duration/position of their own.
-  // Using the silent anchor's own duration/currentTime here: a fully "armed"
-  // Media Session that hardware keys are reliably routed to may need this call
-  // in addition to playbackState, not just a playing media element (TCORE-81:
-  // matches the reported "needs two full click cycles before the headset
-  // starts working" -- position state was never being reported at all before).
+  // Chrome's ~15s continuous-speech freeze workaround -- see FREEZE_NUDGE in
+  // handleEvent. Only ever enqueues; never touches the engine itself here.
   useEffect(() => {
-    if (!('mediaSession' in navigator) || !navigator.mediaSession.setPositionState) return;
-    const anchor = silentAudioRef.current;
-    if (!anchor || !anchor.duration || Number.isNaN(anchor.duration)) return;
-    navigator.mediaSession.setPositionState({
-      duration: anchor.duration,
-      playbackRate: anchor.playbackRate,
-      position: Math.min(anchor.currentTime, anchor.duration),
-    });
+    if (!isPlaying) return;
+    const id = setInterval(() => enqueue({ type: 'FREEZE_NUDGE' }), 14_000);
+    return () => clearInterval(id);
+    //eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isPlaying]);
+
+  const handleVolumePointerDown = () => enqueue({ type: 'VOLUME_DRAG_START' });
+  const handleVolumePointerUp = () => enqueue({ type: 'VOLUME_DRAG_END' });
 
   useEffect(() => {
     const handleVoicesChanged = () => {
       const voices = window.speechSynthesis.getVoices();
-
       if (selectedVoice.type === 'browser') {
         const storedBrowserVoice = voices.find(v => v.name === selectedVoice.value);
         if (storedBrowserVoice) {
@@ -580,10 +569,10 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
     };
     window.speechSynthesis.addEventListener('voiceschanged', handleVoicesChanged);
     handleVoicesChanged();
-    return () => {
-      window.speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
-    };
+    return () => window.speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
   }, [dispatch, voice, selectedVoice]);
+
+  const volumePercentage = volume * 100;
 
   return (
     <>

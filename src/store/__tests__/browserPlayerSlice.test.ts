@@ -8,9 +8,10 @@ import reducer, {
   resetBrowserPlayer,
   setAutoPlayOnLoad,
   requestTogglePlay,
+  requestExternalPause,
 } from '../browserPlayerSlice';
 
-const initial = { isPlaying: false, voice: null, volume: 1, autoPlayOnLoad: false, toggleSeq: 0, resumeSeq: 0 };
+const initial = { isPlaying: false, voice: null, volume: 1, autoPlayOnLoad: false, toggleSeq: 0, resumeSeq: 0, externalPauseSeq: 0 };
 
 describe('browserPlayerSlice', () => {
   it('returns initial state', () => {
@@ -56,8 +57,16 @@ describe('browserPlayerSlice', () => {
     expect(s2.toggleSeq).toBe(2);
   });
 
+  it('requestExternalPause sets isPlaying false and increments externalPauseSeq', () => {
+    const s1 = reducer({ ...initial, isPlaying: true }, requestExternalPause());
+    expect(s1.isPlaying).toBe(false);
+    expect(s1.externalPauseSeq).toBe(1);
+    const s2 = reducer(s1, requestExternalPause());
+    expect(s2.externalPauseSeq).toBe(2);
+  });
+
   it('resetBrowserPlayer resets state but preserves autoPlayOnLoad', () => {
-    const playing = { isPlaying: true, voice: { name: 'X' } as SpeechSynthesisVoice, volume: 0.3, autoPlayOnLoad: true, toggleSeq: 5, resumeSeq: 0 };
+    const playing = { isPlaying: true, voice: { name: 'X' } as SpeechSynthesisVoice, volume: 0.3, autoPlayOnLoad: true, toggleSeq: 5, resumeSeq: 0, externalPauseSeq: 0 };
     const reset = reducer(playing, resetBrowserPlayer());
     expect(reset.isPlaying).toBe(false);
     expect(reset.voice).toBeNull();
