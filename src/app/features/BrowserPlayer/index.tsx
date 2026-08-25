@@ -144,12 +144,36 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
     return () => { if (url) URL.revokeObjectURL(url); };
   }, [spellId, userData?.id]);
 
+  // Applies Media Session metadata synchronously. Called both reactively (the
+  // effect below, for changes that happen while nothing is about to speak --
+  // e.g. the cover/portrait updating after a slow IndexedDB read) AND
+  // synchronously at the top of speakSentence, so that metadata is GUARANTEED
+  // applied before any speak() call reaches the engine -- not just "usually
+  // first because of effect declaration order", which is an implicit ordering
+  // that a future refactor could silently break again (TCORE-81: this exact
+  // bug -- the OS media widget showing no title, portrait-only -- has already
+  // recurred once after being fixed only by effect ordering). Calling this
+  // function is now the actual guarantee; effect order is just a backup.
+  const applyMediaSessionMetadata = () => {
+    if (!('mediaSession' in navigator)) return;
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: spellTitle ?? '',
+      artist: isLoaded ? `${t.spell.page} ${currentPage} ${t.spell.of} ${totalPages}` : '',
+      album: 'Spellcast',
+      artwork: coverUrl ? [{ src: coverUrl, type: 'image/jpeg' }] : [],
+    });
+  };
+
   // Speaks one sentence. Purely "tell the engine what to say next" -- it never
   // touches Redux except via the two callbacks the caller supplies (onEnd,
   // called when this sentence finishes; the caller decides what that means).
   // The engine driver effect below is the only place that decides play vs.
-  // pause; this function never checks or sets isPlaying.
+  // pause; this function never checks or sets isPlaying. Applies Media Session
+  // metadata first, synchronously, before ever calling speechSynthesis.speak()
+  // -- see applyMediaSessionMetadata's comment for why this call is required
+  // here and not just left to the reactive effect below.
   const speakSentence = (text: string, onEnd: () => void, isRetry = false): void => {
+    applyMediaSessionMetadata();
     const utterance = new SpeechSynthesisUtterance(text);
     if (!isRetry) activeUtteranceRef.current = utterance;
     if (voice) utterance.voice = voice;
@@ -256,27 +280,16 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
     return () => clearInterval(id);
   }, [isPlaying]);
 
-  // Declared BEFORE the sentence effect below on purpose: React runs a
-  // component's effects in declaration order after each render, and the
-  // sentence effect below is what calls window.speechSynthesis.speak() for the
-  // very first utterance. When BrowserPlayer mounts already isPlaying/
-  // autoPlayOnLoad: true (e.g. play started from a list card, where the spell
-  // only finishes loading -- and this component only mounts -- after the
-  // click), both effects fire in the same first-render pass. If metadata were
-  // declared after the sentence effect, speak() would run BEFORE
-  // navigator.mediaSession.metadata was ever set, letting the OS grab/settle
-  // the session with blank metadata -- the title never showing in the OS media
-  // widget, portrait-only, even though speech and hardware controls work fine
-  // (TCORE-81, confirmed via the OS media widget in earlier testing; lost once
-  // in the from-scratch rewrite and restored here).
+  // Reactive backup for changes that happen while nothing is about to speak
+  // (e.g. the cover art resolving a moment after mount, or the page indicator
+  // updating on navigation). speakSentence() above is what actually
+  // GUARANTEES metadata precedes every speak() call, synchronously, in the
+  // same call stack -- not this effect's declaration position (TCORE-81: an
+  // ordering-only guarantee already regressed once across a refactor; this
+  // explicit call is what makes it structurally impossible to regress again).
   useEffect(() => {
-    if (!('mediaSession' in navigator)) return;
-    navigator.mediaSession.metadata = new MediaMetadata({
-      title: spellTitle ?? '',
-      artist: isLoaded ? `${t.spell.page} ${currentPage} ${t.spell.of} ${totalPages}` : '',
-      album: 'Spellcast',
-      artwork: coverUrl ? [{ src: coverUrl, type: 'image/jpeg' }] : [],
-    });
+    applyMediaSessionMetadata();
+    //eslint-disable-next-line react-hooks/exhaustive-deps
   }, [spellTitle, currentPage, totalPages, coverUrl, isLoaded, t]);
 
   // Reacts to a new sentence becoming current (page change, spell load, or the
