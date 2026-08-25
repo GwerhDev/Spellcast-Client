@@ -17,6 +17,7 @@ import groupsReducer from '../store/groupsSlice';
 import spellReducer from '../store/spellSlice';
 import apiResponsesReducer from '../store/apiResponsesSlice';
 import layoutReducer from '../store/layoutSlice';
+import signalReducer from '../store/signalSlice';
 
 const rootReducer = combineReducers({
   pdfReader: pdfReaderReducer,
@@ -32,6 +33,7 @@ const rootReducer = combineReducers({
   spell: spellReducer,
   apiResponses: apiResponsesReducer,
   layout: layoutReducer,
+  signal: signalReducer,
 });
 
 type PreloadedState = Partial<ReturnType<typeof rootReducer>>;
