@@ -244,6 +244,29 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
     return () => clearInterval(id);
   }, [isPlaying]);
 
+  // Declared BEFORE the sentence effect below on purpose: React runs a
+  // component's effects in declaration order after each render, and the
+  // sentence effect below is what calls window.speechSynthesis.speak() for the
+  // very first utterance. When BrowserPlayer mounts already isPlaying/
+  // autoPlayOnLoad: true (e.g. play started from a list card, where the spell
+  // only finishes loading -- and this component only mounts -- after the
+  // click), both effects fire in the same first-render pass. If metadata were
+  // declared after the sentence effect, speak() would run BEFORE
+  // navigator.mediaSession.metadata was ever set, letting the OS grab/settle
+  // the session with blank metadata -- the title never showing in the OS media
+  // widget, portrait-only, even though speech and hardware controls work fine
+  // (TCORE-81, confirmed via the OS media widget in earlier testing; lost once
+  // in the from-scratch rewrite and restored here).
+  useEffect(() => {
+    if (!('mediaSession' in navigator)) return;
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: spellTitle ?? '',
+      artist: isLoaded ? `${t.spell.page} ${currentPage} ${t.spell.of} ${totalPages}` : '',
+      album: 'Spellcast',
+      artwork: coverUrl ? [{ src: coverUrl, type: 'image/jpeg' }] : [],
+    });
+  }, [spellTitle, currentPage, totalPages, coverUrl, isLoaded, t]);
+
   // Reacts to a new sentence becoming current (page change, spell load, or the
   // previous sentence ending). Only ever tells the engine what to speak, or
   // asks Redux to advance page/stop/start -- never touches speechSynthesis
@@ -407,16 +430,6 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
     };
     //eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  useEffect(() => {
-    if (!('mediaSession' in navigator)) return;
-    navigator.mediaSession.metadata = new MediaMetadata({
-      title: spellTitle ?? '',
-      artist: isLoaded ? `${t.spell.page} ${currentPage} ${t.spell.of} ${totalPages}` : '',
-      album: 'Spellcast',
-      artwork: coverUrl ? [{ src: coverUrl, type: 'image/jpeg' }] : [],
-    });
-  }, [spellTitle, currentPage, totalPages, coverUrl, isLoaded, t]);
 
   useEffect(() => {
     const handleVoicesChanged = () => {
