@@ -11,7 +11,7 @@ import { CustomModal } from '../../components/Modals/CustomModal';
 import { DeleteConfirmModal } from '../../components/Modals/DeleteConfirmModal';
 import { deleteSpellFromDB } from '../../../db';
 import { useAppSelector, useAppDispatch } from '../../../store/hooks';
-import { invalidateSpellList } from '../../../store/pdfReaderSlice';
+import { invalidateSpellList } from '../../../store/spellReaderSlice';
 import { useSpellImport } from '../../../hooks/useSpellImport';
 
 export const LibraryLanding = () => {

@@ -11,7 +11,7 @@ import { SpellCard } from '../../components/Cards/SpellCard';
 import { useDispatch } from 'react-redux';
 import { setAutoPlayOnLoad, resetBrowserPlayer, requestTogglePlay } from '../../../store/browserPlayerSlice';
 import { setAutoPlayOnLoad as setAudioAutoPlayOnLoad, resetAudioPlayer, requestTogglePlay as requestAudioTogglePlay } from '../../../store/audioPlayerSlice';
-import { setPdfFile, setPdfSpellInfo, resetPdfReader } from '../../../store/pdfReaderSlice';
+import { setSpellFile, setSpellInfo, resetSpellReader } from '../../../store/spellReaderSlice';
 import { useLanguage } from '../../../i18n';
 import { faArrowRight, faBuildingColumns, faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -19,8 +19,8 @@ import { IconButton } from '../../components/Buttons/IconButton';
 
 export const LastSpells: React.FC = () => {
   const { userData } = useAppSelector((state) => state.session);
-  const { spellId: activeDocId, currentPage: activeCurrentPage, isLoaded: readerLoaded, listVersion } = useAppSelector((state) => state.pdfReader);
-  const uploadQueue = useAppSelector((state) => state.pdfUpload.queue);
+  const { spellId: activeDocId, currentPage: activeCurrentPage, isLoaded: readerLoaded, listVersion } = useAppSelector((state) => state.spellReader);
+  const uploadQueue = useAppSelector((state) => state.spellUpload.queue);
   const audioPlaying = useAppSelector((state) => state.audioPlayer.isPlaying);
   const browserPlaying = useAppSelector((state) => state.browserPlayer.isPlaying);
   const selectedVoiceType = useAppSelector((state) => state.voice.selectedVoice.type);
@@ -63,13 +63,13 @@ export const LastSpells: React.FC = () => {
       return;
     }
     const totalPages = doc.pagesContent ? (() => { try { return JSON.parse(doc.pagesContent!).length; } catch { return 1; } })() : 1;
-    dispatch(resetPdfReader());
+    dispatch(resetSpellReader());
     dispatch(resetBrowserPlayer());
     dispatch(resetAudioPlayer());
     dispatch(setAutoPlayOnLoad(true));
     dispatch(setAudioAutoPlayOnLoad(true));
-    dispatch(setPdfFile({ id: doc.id, title: doc.title, progress: doc.progress }));
-    dispatch(setPdfSpellInfo({ totalPages }));
+    dispatch(setSpellFile({ id: doc.id, title: doc.title, progress: doc.progress }));
+    dispatch(setSpellInfo({ totalPages }));
   };
 
   const fetchDocuments = async () => {

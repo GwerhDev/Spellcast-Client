@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { faDesktop, faPalette, faShieldHalved, faCat } from '@fortawesome/free-solid-svg-icons';
 import { RootState } from '../../../store';
-import { setShowReaderSettings, setFitToWidth, setLightningMode, setAttentionGuardEnabled, setAttentionGuardInterval } from '../../../store/pdfReaderSlice';
+import { setShowReaderSettings, setFitToWidth, setLightningMode, setAttentionGuardEnabled, setAttentionGuardInterval } from '../../../store/spellReaderSlice';
 import { setActivePageBg, setActiveCompanion, unlockAsset } from '../../../store/userLibrarySlice';
 import { pageBackgrounds, companions } from '../../../config/assets';
 import { TabModal } from '../../components/Modals/TabModal';
@@ -14,7 +14,7 @@ import { useLanguage } from '../../../i18n';
 
 const DisplayTab: React.FC = () => {
   const dispatch = useDispatch();
-  const { fitToWidth, lightningMode } = useSelector((state: RootState) => state.pdfReader);
+  const { fitToWidth, lightningMode } = useSelector((state: RootState) => state.spellReader);
   const [smoothScroll, setSmoothScroll] = useState(true);
   const [doublePageView, setDoublePageView] = useState(false);
   const [showPageNumbers, setShowPageNumbers] = useState(true);
@@ -138,7 +138,7 @@ const CompanionsTab: React.FC = () => {
 
 const FocusTab: React.FC = () => {
   const dispatch = useDispatch();
-  const { attentionGuardEnabled, attentionGuardInterval } = useSelector((state: RootState) => state.pdfReader);
+  const { attentionGuardEnabled, attentionGuardInterval } = useSelector((state: RootState) => state.spellReader);
   const { t } = useLanguage();
 
   const handleToggle = (value: boolean) => {
@@ -187,7 +187,7 @@ const FocusTab: React.FC = () => {
 
 export const ReaderSettings: React.FC = () => {
   const dispatch = useDispatch();
-  const { showReaderSettings } = useSelector((state: RootState) => state.pdfReader);
+  const { showReaderSettings } = useSelector((state: RootState) => state.spellReader);
   const { t } = useLanguage();
 
   return (

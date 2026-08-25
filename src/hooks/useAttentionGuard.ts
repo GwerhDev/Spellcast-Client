@@ -2,14 +2,14 @@ import { useEffect, useRef } from 'react';
 import { useAppDispatch, useAppSelector } from 'store/hooks';
 import { pause as pauseAudio, requestTogglePlay as toggleAudio } from 'store/audioPlayerSlice';
 import { requestExternalPause as pauseBrowser, requestResume as resumeBrowser } from 'store/browserPlayerSlice';
-import { setShowAttentionGuard } from 'store/pdfReaderSlice';
+import { setShowAttentionGuard } from 'store/spellReaderSlice';
 
 export function useAttentionGuard() {
   const dispatch = useAppDispatch();
 
-  const attentionGuardEnabled = useAppSelector(s => s.pdfReader.attentionGuardEnabled);
-  const attentionGuardInterval = useAppSelector(s => s.pdfReader.attentionGuardInterval);
-  const showAttentionGuard = useAppSelector(s => s.pdfReader.showAttentionGuard);
+  const attentionGuardEnabled = useAppSelector(s => s.spellReader.attentionGuardEnabled);
+  const attentionGuardInterval = useAppSelector(s => s.spellReader.attentionGuardInterval);
+  const showAttentionGuard = useAppSelector(s => s.spellReader.showAttentionGuard);
 
   const aiIsPlaying = useAppSelector(s => s.audioPlayer.isPlaying);
   const browserIsPlaying = useAppSelector(s => s.browserPlayer.isPlaying);
@@ -17,8 +17,8 @@ export function useAttentionGuard() {
 
   const aiToggleSeq = useAppSelector(s => s.audioPlayer.toggleSeq);
   const browserToggleSeq = useAppSelector(s => s.browserPlayer.toggleSeq);
-  const activitySeq = useAppSelector(s => s.pdfReader.activitySeq);
-  const currentPage = useAppSelector(s => s.pdfReader.currentPage);
+  const activitySeq = useAppSelector(s => s.spellReader.activitySeq);
+  const currentPage = useAppSelector(s => s.spellReader.currentPage);
 
   const selectedVoiceType = useAppSelector(s => s.voice.selectedVoice?.type);
 

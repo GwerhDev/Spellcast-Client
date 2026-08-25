@@ -8,7 +8,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowLeft, faEdit, faFilePdf, faGear, faExpand, faCompress, faInfoCircle } from '@fortawesome/free-solid-svg-icons';
 import { RootState } from '../../../store';
-import { goToPage, setCurrentSentenceIndex, setShowReaderSettings, recordReaderActivity } from '../../../store/pdfReaderSlice';
+import { goToPage, setCurrentSentenceIndex, setShowReaderSettings, recordReaderActivity } from '../../../store/spellReaderSlice';
 import { setPendingSeek } from '../../../store/audioPlayerSlice';
 import { moveCompanionModel, rotateCompanionModel, scaleCompanionModel, toggleCompanionDepth, type CompanionPlacement } from '../../../store/userLibrarySlice';
 import { pageBackgrounds, companions } from '../../../config/assets';
@@ -48,7 +48,7 @@ export const SpellReader = () => {
   const {
     currentPage, totalPages, currentPageText, spellTitle, spellId,
     isLoaded, currentSentenceIndex, fitToWidth,
-  } = useSelector((state: RootState) => state.pdfReader);
+  } = useSelector((state: RootState) => state.spellReader);
   const { selectedVoice } = useSelector((state: RootState) => state.voice);
   const { timeline: aiTimeline, currentTime: aiCurrentTime, isPlaying: aiIsPlaying } = useSelector((state: RootState) => state.audioPlayer);
   const { isPlaying } = useSelector((state: RootState) => state.browserPlayer);

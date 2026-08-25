@@ -6,7 +6,7 @@ import { useAppSelector } from '../../../store/hooks';
 import { getSpellById, deleteSpellFromDB } from '../../../db';
 import { setAutoPlayOnLoad, resetBrowserPlayer } from '../../../store/browserPlayerSlice';
 import { setAutoPlayOnLoad as setAudioAutoPlayOnLoad } from '../../../store/audioPlayerSlice';
-import { invalidateSpellList, resetPdfReader } from '../../../store/pdfReaderSlice';
+import { invalidateSpellList, resetSpellReader } from '../../../store/spellReaderSlice';
 import { Spinner } from '../../components/Spinner';
 import { PrimaryButton } from '../../components/Buttons/PrimaryButton';
 import { SecondaryButton } from '../../components/Buttons/SecondaryButton';
@@ -26,7 +26,7 @@ export const SpellDetail: React.FC = () => {
   const dispatch = useDispatch();
   const { userData, logged } = useAppSelector((state) => state.session);
   const { t } = useLanguage();
-  const { spellId: currentPlayingId, currentPage: readerCurrentPage } = useAppSelector((state) => state.pdfReader);
+  const { spellId: currentPlayingId, currentPage: readerCurrentPage } = useAppSelector((state) => state.spellReader);
   const [doc, setDoc] = useState<Awaited<ReturnType<typeof getSpellById>> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -75,7 +75,7 @@ export const SpellDetail: React.FC = () => {
       await deleteSpellFromDB(id, userData.id);
       if (currentPlayingId === id) {
         dispatch(resetBrowserPlayer());
-        dispatch(resetPdfReader());
+        dispatch(resetSpellReader());
       }
       dispatch(invalidateSpellList());
       navigate('/');

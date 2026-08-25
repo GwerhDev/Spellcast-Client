@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { screen, fireEvent } from '@testing-library/react';
 import { renderWithProviders, makeStore } from '../../../../test/renderWithProviders';
 import { NotificationsButton } from '../index';
-import { enqueueUpload, setUploadDone, setQueueUiState } from '../../../../store/pdfUploadSlice';
+import { enqueueUpload, setUploadDone, setQueueUiState } from '../../../../store/spellUploadSlice';
 
 describe('NotificationsButton', () => {
   it('renders the button', () => {

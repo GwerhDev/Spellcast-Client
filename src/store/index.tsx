@@ -4,14 +4,14 @@ import apiResponsesReducer from './apiResponsesSlice';
 import signalReducer from './signalSlice';
 import audioPlayerReducer from './audioPlayerSlice';
 import browserPlayerReducer from './browserPlayerSlice';
-import pdfReaderReducer from './pdfReaderSlice';
+import spellReaderReducer from './spellReaderSlice';
 import spellReducer from './spellSlice';
 import voiceReducer from './voiceSlice';
 import credentialsReducer from './credentialsSlice';
 import groupsReducer from './groupsSlice';
 import editorReducer from './editorSlice';
 import userLibraryReducer from './userLibrarySlice';
-import pdfUploadReducer from './pdfUploadSlice';
+import spellUploadReducer from './spellUploadSlice';
 import desktopReducer from './desktopSlice';
 import layoutReducer from './layoutSlice';
 
@@ -23,21 +23,24 @@ export const store = configureStore({
     editor: editorReducer,
     session: sessionReducer,
     spell: spellReducer,
-    pdfReader: pdfReaderReducer,
+    spellReader: spellReaderReducer,
     credentials: credentialsReducer,
     audioPlayer: audioPlayerReducer,
     browserPlayer: browserPlayerReducer,
     apiResponses: apiResponsesReducer,
     signal: signalReducer,
     userLibrary: userLibraryReducer,
-    pdfUpload: pdfUploadReducer,
+    spellUpload: spellUploadReducer,
     layout: layoutReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
-        ignoredActions: ['pdfReader/loadPdf/fulfilled', 'browserPlayer/setVoice'],
-        ignoredPaths: ['pdfReader.pdfDoc', 'browserPlayer.voice', 'pdfUpload.queue'],
+        // 'pdfReader/loadPdf/fulfilled' and 'pdfReader.pdfDoc' were dropped
+        // here: no such action or field exists anywhere in the codebase --
+        // orphaned config from an earlier version of this slice.
+        ignoredActions: ['browserPlayer/setVoice'],
+        ignoredPaths: ['browserPlayer.voice', 'spellUpload.queue'],
       },
     }),
 });

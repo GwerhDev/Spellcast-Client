@@ -16,7 +16,7 @@ import {
   clearPendingSeek,
 } from '../../../store/audioPlayerSlice';
 import { setSoundBgVolume, setMasterVolume } from '../../../store/userLibrarySlice';
-import { goToNextPage, goToPreviousPage, setShowSearcher } from '../../../store/pdfReaderSlice';
+import { goToNextPage, goToPreviousPage, setShowSearcher } from '../../../store/spellReaderSlice';
 import { PlaybackControls } from '../../components/Players/AudioPlayer/PlaybackControls/PlaybackControls';
 import { VolumeControls } from '../../components/Players/AudioPlayer/VolumeControls/VolumeControls';
 import { VoiceSelectorButton } from '../../components/Players/shared/VoiceSelectorButton/VoiceSelectorButton';
@@ -65,7 +65,7 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
     spellTitle,
     currentPageText,
     sentences,
-  } = useSelector((state: RootState) => state.pdfReader);
+  } = useSelector((state: RootState) => state.spellReader);
   const { selectedVoice } = useSelector((state: RootState) => state.voice);
   const { userData } = useAppSelector((state) => state.session);
   const { activeSoundBgId, soundBgVolume, masterVolume } = useAppSelector((state) => state.userLibrary);

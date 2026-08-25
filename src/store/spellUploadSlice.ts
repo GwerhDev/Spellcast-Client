@@ -3,7 +3,7 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 export type UploadStatus = 'queued' | 'processing' | 'done' | 'error';
 export type QueueUiState = 'open' | 'minimized' | 'closed';
 
-export interface PdfUploadJob {
+export interface SpellUploadJob {
   id: string;
   title: string;
   fileContent: string;
@@ -26,25 +26,25 @@ export interface UploadHistoryEntry {
   completedAt: number;
 }
 
-interface PdfUploadState {
-  queue: PdfUploadJob[];
+interface SpellUploadState {
+  queue: SpellUploadJob[];
   uiState: QueueUiState;
   history: UploadHistoryEntry[];
   unreadHistory: number;
 }
 
-const initialState: PdfUploadState = {
+const initialState: SpellUploadState = {
   queue: [],
   uiState: 'open',
   history: [],
   unreadHistory: 0,
 };
 
-const pdfUploadSlice = createSlice({
-  name: 'pdfUpload',
+const spellUploadSlice = createSlice({
+  name: 'spellUpload',
   initialState,
   reducers: {
-    enqueueUpload(state, action: PayloadAction<Omit<PdfUploadJob, 'status' | 'progress'>>) {
+    enqueueUpload(state, action: PayloadAction<Omit<SpellUploadJob, 'status' | 'progress'>>) {
       state.queue.push({ ...action.payload, status: 'queued', progress: null });
       state.uiState = 'open';
     },
@@ -118,6 +118,6 @@ export const {
   dismissUpload,
   markHistoryRead,
   clearHistory,
-} = pdfUploadSlice.actions;
+} = spellUploadSlice.actions;
 
-export default pdfUploadSlice.reducer;
+export default spellUploadSlice.reducer;

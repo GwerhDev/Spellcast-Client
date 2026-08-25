@@ -3,13 +3,13 @@ import s from '../../components/PdfUploadQueue/index.module.css';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { RootState } from '../../../store';
-import { dismissUpload, setQueueUiState, PdfUploadJob } from '../../../store/pdfUploadSlice';
+import { dismissUpload, setQueueUiState, SpellUploadJob } from '../../../store/spellUploadSlice';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFile, faXmark, faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons';
 import { IconButton } from '../../components/Buttons/IconButton';
 import { useLanguage } from '../../../i18n';
 
-const JobRow: React.FC<{ job: PdfUploadJob }> = ({ job }) => {
+const JobRow: React.FC<{ job: SpellUploadJob }> = ({ job }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { t } = useLanguage();
@@ -74,8 +74,8 @@ const JobRow: React.FC<{ job: PdfUploadJob }> = ({ job }) => {
 export const PdfUploadQueue: React.FC = () => {
   const { t } = useLanguage();
   const dispatch = useDispatch();
-  const queue = useSelector((state: RootState) => state.pdfUpload.queue);
-  const uiState = useSelector((state: RootState) => state.pdfUpload.uiState);
+  const queue = useSelector((state: RootState) => state.spellUpload.queue);
+  const uiState = useSelector((state: RootState) => state.spellUpload.uiState);
 
   if (queue.length === 0 || uiState === 'closed') return null;
 

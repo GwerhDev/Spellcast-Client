@@ -3,11 +3,11 @@ import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../../store';
 import { TertiaryButton } from '../../components/Buttons/TertiaryButton';
-import { setShowSearcher } from '../../../store/pdfReaderSlice';
+import { setShowSearcher } from '../../../store/spellReaderSlice';
 import { useLanguage } from '../../../i18n';
 
 export const SearcherButton: React.FC = () => {
-  const { currentPage, totalPages } = useSelector((state: RootState) => state.pdfReader);
+  const { currentPage, totalPages } = useSelector((state: RootState) => state.spellReader);
   const dispatch = useDispatch();
   const { t } = useLanguage();
 

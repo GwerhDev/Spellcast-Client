@@ -2,7 +2,7 @@ import type { JSONContent } from '@tiptap/core'
 import type { TTSAttrs, TTSSegment, TextRun, DocumentBlock } from '../types'
 
 /**
- * Sentence splitter — kept identical to PdfProcessor.extractSentencesFromJSON (browser-voice
+ * Sentence splitter — kept identical to SpellProcessor.extractSentencesFromJSON (browser-voice
  * `sentences`) and, as of TCORE-77, to the backend's own app.utils.parser.split_sentences
  * (Spellcast-API). Both this file's buildCharInfo() (below) and the backend's
  * _build_char_info() apply this same regex to a whole paragraph's *merged* inline text (not

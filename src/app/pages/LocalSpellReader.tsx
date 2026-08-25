@@ -5,7 +5,7 @@ import { getSpellById } from '../../db';
 import { useAppSelector } from '../../store/hooks';
 import { resetAudioPlayer, setAutoPlayOnLoad as setAudioAutoPlayOnLoad } from '../../store/audioPlayerSlice';
 import { resetBrowserPlayer, stop, setAutoPlayOnLoad } from '../../store/browserPlayerSlice';
-import { setPdfFile, setPdfSpellInfo, resetPdfReader, setPdfLoaded, setHasInitialPageSet } from '../../store/pdfReaderSlice';
+import { setSpellFile, setSpellInfo, resetSpellReader, setSpellLoaded, setHasInitialPageSet } from '../../store/spellReaderSlice';
 import { Spinner } from '../components/Spinner';
 import { SpellReader } from '../components/SpellReader';
 import { useLanguage } from '../../i18n';
@@ -19,7 +19,7 @@ export const LocalSpellReader: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const { userData, logged } = useAppSelector((state) => state.session);
-  const { spellId } = useAppSelector((state) => state.pdfReader);
+  const { spellId } = useAppSelector((state) => state.spellReader);
 
   useEffect(() => {
     const loadDocument = async () => {
@@ -40,14 +40,14 @@ export const LocalSpellReader: React.FC = () => {
 
       try {
         dispatch(stop());
-        dispatch(resetPdfReader());
+        dispatch(resetSpellReader());
         dispatch(resetAudioPlayer());
         dispatch(resetBrowserPlayer());
         if (location.state?.autoPlay) {
           dispatch(setAutoPlayOnLoad(true));
           dispatch(setAudioAutoPlayOnLoad(true));
         }
-        dispatch(setPdfLoaded(false));
+        dispatch(setSpellLoaded(false));
 
         const doc = await getSpellById(id, userData.id);
         if (!doc) { setError('Document not found.'); setIsLoading(false); return; }
@@ -56,8 +56,8 @@ export const LocalSpellReader: React.FC = () => {
           ? (JSON.parse(doc.pagesContent) as unknown[]).length
           : 1;
 
-        dispatch(setPdfFile({ id, title: doc.title, progress: doc.progress }));
-        dispatch(setPdfSpellInfo({ totalPages }));
+        dispatch(setSpellFile({ id, title: doc.title, progress: doc.progress }));
+        dispatch(setSpellInfo({ totalPages }));
         dispatch(setHasInitialPageSet(true));
         setIsLoading(false);
       } catch (err) {

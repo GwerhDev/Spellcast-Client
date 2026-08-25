@@ -4,7 +4,7 @@ import { Outlet } from 'react-router-dom';
 import { Sidebar } from '../features/Sidebar/Sidebar';
 import { LogoutModal } from '../components/Modals/LogoutModal';
 import { AudioPlayer } from '../features/AudioPlayer';
-import { PdfProcessor } from '../components/PdfProcessor/PdfProcessor';
+import { SpellProcessor } from '../features/SpellProcessor';
 import { BrowserPlayer } from '../features/BrowserPlayer';
 import { RootState } from 'store/index';
 import { useSelector } from 'react-redux';
@@ -16,21 +16,21 @@ import { AccountMenu } from '../components/AccountMenu/AccountMenu';
 import { AppSwitcher } from '../components/AppSwitcher/AppSwitcher';
 import { VoiceSelectorModal } from '../components/Modals/VoiceSelectorModal';
 import { SoundBackground } from '../components/SoundBackground/SoundBackground';
-import { PdfUploadWorker } from '../components/PdfUploadWorker';
+import { SpellUploadWorker } from '../features/SpellUploadWorker';
 import { PdfUploadQueue } from '../components/PdfUploadQueue';
 import { NotificationsButton } from '../features/NotificationsButton';
 import { Desktop } from '../features/Desktop';
 import { useAppDispatch } from 'store/hooks';
 import { setMinimized } from 'store/desktopSlice';
 import { setSidebarCollapsed } from 'store/layoutSlice';
-import { invalidateSpellList } from 'store/pdfReaderSlice';
+import { invalidateSpellList } from 'store/spellReaderSlice';
 import { useAttentionGuard } from '../../hooks/useAttentionGuard';
 import { AttentionGuardModal } from '../components/Modals/AttentionGuardModal';
 import { onSpellsMigrated } from '../../db';
 
 export default function DefaultLayout() {
   const { selectedVoice } = useSelector((state: RootState) => state.voice);
-  const { isLoaded: documentLoaded } = useSelector((state: RootState) => state.pdfReader);
+  const { isLoaded: documentLoaded } = useSelector((state: RootState) => state.spellReader);
   const minimized = useSelector((state: RootState) => state.desktop.minimized);
   const dispatch = useAppDispatch();
   const { showModal: showAttentionGuard, handleContinue: handleAttentionGuardContinue } = useAttentionGuard();
@@ -62,8 +62,8 @@ export default function DefaultLayout() {
   return (
     <main>
       <SoundBackground />
-      <PdfProcessor />
-      <PdfUploadWorker />
+      <SpellProcessor />
+      <SpellUploadWorker />
       <SearcherModal />
       <VoiceSelectorModal
         show={isVoiceSelectorOpen}

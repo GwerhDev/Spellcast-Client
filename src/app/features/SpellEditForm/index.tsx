@@ -7,8 +7,8 @@ import { useAppSelector } from '../../../store/hooks';
 import { selectCurrentCredential } from '../../../store/credentialsSlice';
 import { getSpellById, updateSpellContent } from '../../../db';
 import { setShowEditorSettings } from '../../../store/editorSlice';
-import { invalidateContent } from '../../../store/pdfReaderSlice';
-import { enqueueUpload } from '../../../store/pdfUploadSlice';
+import { invalidateContent } from '../../../store/spellReaderSlice';
+import { enqueueUpload } from '../../../store/spellUploadSlice';
 import { textToSpeechService } from '../../../services/tts';
 import { Spinner } from '../../components/Spinner';
 import { PageList } from '../../components/SpellCreateForm/PageList';
@@ -75,10 +75,10 @@ export const SpellEditForm: React.FC = () => {
   const pdfInputRef = useRef<HTMLInputElement>(null);
 
   const activeJob = useAppSelector(state =>
-    state.pdfUpload.queue.find(j => j.targetDocId === id && (j.status === 'queued' || j.status === 'processing'))
+    state.spellUpload.queue.find(j => j.targetDocId === id && (j.status === 'queued' || j.status === 'processing'))
   );
   const isProcessingPdf = !!activeJob;
-  const { contentVersion } = useAppSelector(state => state.pdfReader);
+  const { contentVersion } = useAppSelector(state => state.spellReader);
   const contentVersionRef = useRef(contentVersion);
 
   useEffect(() => {

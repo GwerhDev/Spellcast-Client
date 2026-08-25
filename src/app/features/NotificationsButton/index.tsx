@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBell, faBellSlash, faFile, faXmark } from '@fortawesome/free-solid-svg-icons';
 import { RootState } from '../../../store';
-import { clearHistory, markHistoryRead, UploadHistoryEntry } from '../../../store/pdfUploadSlice';
+import { clearHistory, markHistoryRead, UploadHistoryEntry } from '../../../store/spellUploadSlice';
 import { useLanguage } from '../../../i18n';
 import s from './index.module.css';
 
@@ -51,8 +51,8 @@ export const NotificationsButton: React.FC = () => {
   const { t } = useLanguage();
   const ref = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
-  const history = useSelector((state: RootState) => state.pdfUpload.history);
-  const unread = useSelector((state: RootState) => state.pdfUpload.unreadHistory);
+  const history = useSelector((state: RootState) => state.spellUpload.history);
+  const unread = useSelector((state: RootState) => state.spellUpload.unreadHistory);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {

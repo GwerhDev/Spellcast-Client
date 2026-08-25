@@ -8,7 +8,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { RootState } from '../../../../store';
 import { resetSpellState, setSpellDetails } from '../../../../store/spellSlice';
-import { enqueueUpload } from '../../../../store/pdfUploadSlice';
+import { enqueueUpload } from '../../../../store/spellUploadSlice';
 import { useAppSelector } from '../../../../store/hooks';
 import { SpellCreateInput } from '../../../components/Inputs/SpellCreateInput';
 import { useLanguage } from '../../../../i18n';

@@ -18,7 +18,7 @@ import { faArrowLeft, faCloudUpload, faPaperclip, faSave } from '@fortawesome/fr
 import { PdfProcessingStatus } from '../../components/PdfProcessingStatus';
 import { IconButton } from '../../components/Buttons/IconButton';
 import { resetSpellState, setSpellDetails, setSpellTitle as setSpellTitleAction } from '../../../store/spellSlice';
-import { resetPdfReader } from '../../../store/pdfReaderSlice';
+import { resetSpellReader } from '../../../store/spellReaderSlice';
 import { textToSpeechService } from '../../../services/tts';
 import { renderPageToCover, extractPdfPages, injectCoverIntoPages, emptyPageContent, blobToDataUrl } from '../../../utils/pdfUtils';
 import { useLanguage } from '../../../i18n';
@@ -265,7 +265,7 @@ export const SpellCreateForm: React.FC = () => {
         originalPagesContent: originalPagesRef.current ? JSON.stringify(originalPagesRef.current) : undefined,
       });
 
-      dispatch(resetPdfReader());
+      dispatch(resetSpellReader());
       dispatch(resetSpellState());
       navigate(`/spell/${newId}`);
 

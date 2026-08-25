@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { addApiResponse } from '../store/apiResponsesSlice';
-import { invalidateSpellList } from '../store/pdfReaderSlice';
+import { invalidateSpellList } from '../store/spellReaderSlice';
 import { useLanguage } from '../i18n';
 import { importSpellFromFile } from '../utils/spellFormat';
 

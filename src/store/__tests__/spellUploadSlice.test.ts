@@ -7,7 +7,7 @@ import reducer, {
   setUploadError,
   setUploadCover,
   dismissUpload,
-} from '../pdfUploadSlice';
+} from '../spellUploadSlice';
 
 const initial = reducer(undefined, { type: '@@INIT' });
 
@@ -19,7 +19,7 @@ const baseJob = {
   userId: 'user-1',
 };
 
-describe('pdfUploadSlice', () => {
+describe('spellUploadSlice', () => {
   describe('enqueueUpload', () => {
     it('adds job with queued status', () => {
       const state = reducer(initial, enqueueUpload(baseJob));

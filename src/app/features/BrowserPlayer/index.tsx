@@ -17,7 +17,7 @@ import {
   goToPreviousPage,
   setShowSearcher,
   setCurrentSentenceIndex,
-} from '../../../store/pdfReaderSlice';
+} from '../../../store/spellReaderSlice';
 import { PlaybackControls } from './PlaybackControls';
 import { VolumeControls } from '../../components/Players/BrowserPlayer/VolumeControls/VolumeControls';
 import { VoiceSelectorButton } from '../../components/Players/shared/VoiceSelectorButton/VoiceSelectorButton';
@@ -94,7 +94,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
     spellTitle,
     sentences,
     currentSentenceIndex,
-  } = useSelector((state: RootState) => state.pdfReader);
+  } = useSelector((state: RootState) => state.spellReader);
   const { selectedVoice } = useSelector((state: RootState) => state.voice);
   const { userData } = useAppSelector((state) => state.session);
   const { activeSoundBgId, soundBgVolume, masterVolume } = useAppSelector((state) => state.userLibrary);

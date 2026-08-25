@@ -65,11 +65,11 @@ describe('SpellDetail', () => {
     const store = loggedStore();
     renderDetail(store);
     await screen.findByTestId('spell-detail-title');
-    expect(store.getState().pdfReader.listVersion).toBe(0);
+    expect(store.getState().spellReader.listVersion).toBe(0);
 
     fireEvent.click(screen.getByTestId('spell-detail-delete-btn'));
     fireEvent.click(await screen.findByTestId('delete-confirm-confirm-btn'));
 
-    await waitFor(() => expect(store.getState().pdfReader.listVersion).toBe(1));
+    await waitFor(() => expect(store.getState().spellReader.listVersion).toBe(1));
   });
 });

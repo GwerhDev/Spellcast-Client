@@ -6,7 +6,7 @@ import { useAppSelector } from '../../../store/hooks';
 import { getSpellById, deleteSpellFromDB } from '../../../db';
 import { setAutoPlayOnLoad, resetBrowserPlayer } from '../../../store/browserPlayerSlice';
 import { setAutoPlayOnLoad as setAudioAutoPlayOnLoad } from '../../../store/audioPlayerSlice';
-import { invalidateSpellList, resetPdfReader } from '../../../store/pdfReaderSlice';
+import { invalidateSpellList, resetSpellReader } from '../../../store/spellReaderSlice';
 import { CustomModal } from './CustomModal';
 import { PrimaryButton } from '../Buttons/PrimaryButton';
 import { SecondaryButton } from '../Buttons/SecondaryButton';
@@ -28,7 +28,7 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
   const dispatch = useDispatch();
   const { t } = useLanguage();
   const { userData } = useAppSelector(state => state.session);
-  const { spellId: currentPlayingId, currentPage: readerCurrentPage } = useAppSelector(state => state.pdfReader);
+  const { spellId: currentPlayingId, currentPage: readerCurrentPage } = useAppSelector(state => state.spellReader);
 
   const [doc, setDoc] = useState<Awaited<ReturnType<typeof getSpellById>> | null>(null);
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
@@ -73,7 +73,7 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
     await deleteSpellFromDB(spellId, userData.id);
     if (currentPlayingId === spellId) {
       dispatch(resetBrowserPlayer());
-      dispatch(resetPdfReader());
+      dispatch(resetSpellReader());
     }
     dispatch(invalidateSpellList());
     setShowDeleteModal(false);

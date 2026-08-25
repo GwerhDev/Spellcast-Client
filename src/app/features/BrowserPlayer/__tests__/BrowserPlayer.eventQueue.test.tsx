@@ -99,7 +99,7 @@ const baseState = {
     resumeSeq: 0,
     externalPauseSeq: 0,
   },
-  pdfReader: {
+  spellReader: {
     spellId: 'spell-1',
     spellTitle: 'Test Spell',
     totalPages: 1,

@@ -6,7 +6,7 @@ import { useDispatch } from 'react-redux';
 import { setSpellTitle } from '../../../store/spellSlice';
 import { SpellState } from '../../../interfaces';
 import { useAppSelector } from '../../../store/hooks';
-import { enqueueUpload } from '../../../store/pdfUploadSlice';
+import { enqueueUpload } from '../../../store/spellUploadSlice';
 import { useLanguage } from '../../../i18n';
 
 interface SpellCreateInputProps {
@@ -24,7 +24,7 @@ export const SpellCreateInput = (props: SpellCreateInputProps) => {
   const { t } = useLanguage();
   const dispatch = useDispatch();
   const { userData } = useAppSelector(state => state.session);
-  const job = useAppSelector(state => jobId ? state.pdfUpload.queue.find(j => j.id === jobId) : null);
+  const job = useAppSelector(state => jobId ? state.spellUpload.queue.find(j => j.id === jobId) : null);
   const onDoneRef = useRef(onDone);
   onDoneRef.current = onDone;
 

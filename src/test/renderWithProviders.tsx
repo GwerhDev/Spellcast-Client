@@ -4,8 +4,8 @@ import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
 import { configureStore, combineReducers, EnhancedStore } from '@reduxjs/toolkit';
 import { LanguageProvider } from '../i18n';
-import pdfReaderReducer from '../store/pdfReaderSlice';
-import pdfUploadReducer from '../store/pdfUploadSlice';
+import spellReaderReducer from '../store/spellReaderSlice';
+import spellUploadReducer from '../store/spellUploadSlice';
 import browserPlayerReducer from '../store/browserPlayerSlice';
 import audioPlayerReducer from '../store/audioPlayerSlice';
 import sessionReducer from '../store/sessionSlice';
@@ -20,8 +20,8 @@ import layoutReducer from '../store/layoutSlice';
 import signalReducer from '../store/signalSlice';
 
 const rootReducer = combineReducers({
-  pdfReader: pdfReaderReducer,
-  pdfUpload: pdfUploadReducer,
+  spellReader: spellReaderReducer,
+  spellUpload: spellUploadReducer,
   browserPlayer: browserPlayerReducer,
   audioPlayer: audioPlayerReducer,
   session: sessionReducer,

@@ -9,16 +9,16 @@ import {
   setUploadCover,
   setUploadDone,
   setUploadError,
-} from '../../../store/pdfUploadSlice';
+} from '../../../store/spellUploadSlice';
 import { saveSpellToDB, updateSpellFull } from '../../../db';
 import { renderPageToCover, extractPdfPages, injectCoverIntoPages, blobToDataUrl } from '../../../utils/pdfUtils';
-import { invalidateContent, invalidateSpellList } from '../../../store/pdfReaderSlice';
+import { invalidateContent, invalidateSpellList } from '../../../store/spellReaderSlice';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
-export const PdfUploadWorker: React.FC = () => {
+export const SpellUploadWorker: React.FC = () => {
   const dispatch = useDispatch();
-  const queue = useSelector((state: RootState) => state.pdfUpload.queue);
+  const queue = useSelector((state: RootState) => state.spellUpload.queue);
   const isProcessing = useRef(false);
 
   useEffect(() => {
@@ -79,7 +79,7 @@ export const PdfUploadWorker: React.FC = () => {
           dispatch(invalidateSpellList());
         }
       } catch (err) {
-        console.error('PdfUploadWorker error:', err);
+        console.error('SpellUploadWorker error:', err);
         dispatch(setUploadError({ id: next.id, message: String(err) }));
       } finally {
         isProcessing.current = false;

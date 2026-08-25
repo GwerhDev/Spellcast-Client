@@ -6,7 +6,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import type { JSONContent } from '../../../magictext';
 import { RootState } from '../../../store';
-import { goToPage, setShowSearcher } from '../../../store/pdfReaderSlice';
+import { goToPage, setShowSearcher } from '../../../store/spellReaderSlice';
 import { getSpellById } from '../../../db';
 import { useAppSelector } from '../../../store/hooks';
 import { CustomModal } from '../../components/Modals/CustomModal';
@@ -44,7 +44,7 @@ export const SearcherModal: React.FC = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { currentPage, totalPages, showSearcher, spellId } = useSelector(
-    (state: RootState) => state.pdfReader
+    (state: RootState) => state.spellReader
   );
   const { userData } = useAppSelector((state) => state.session);
   const [query, setQuery] = useState('');

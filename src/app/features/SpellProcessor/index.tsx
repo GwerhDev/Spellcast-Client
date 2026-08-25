@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import type { JSONContent } from '../../../magictext';
 import { RootState } from '../../../store';
-import { setPageText, setPdfLoaded, setSentences } from '../../../store/pdfReaderSlice';
+import { setPageText, setSpellLoaded, setSentences } from '../../../store/spellReaderSlice';
 import { getSpellById, updateSpellProgress } from '../../../db';
 import { useAppSelector } from '../../../store/hooks';
 import { SpellProgress } from '../../../interfaces/index';
@@ -36,10 +36,10 @@ const extractSentencesFromJSON = (text: string): string[] => {
   }
 };
 
-export const PdfProcessor = () => {
+export const SpellProcessor = () => {
   const dispatch = useDispatch();
   const { userData } = useAppSelector((state) => state.session);
-  const { currentPage, spellId, isLoaded, currentSentenceIndex, contentVersion } = useSelector((state: RootState) => state.pdfReader);
+  const { currentPage, spellId, isLoaded, currentSentenceIndex, contentVersion } = useSelector((state: RootState) => state.spellReader);
 
   const [pages, setPages] = useState<string[]>([]);
   const [docLoaded, setDocLoaded] = useState(false);
@@ -65,7 +65,7 @@ export const PdfProcessor = () => {
     const text = pages[currentPage - 1] ?? '';
     dispatch(setPageText({ text }));
     dispatch(setSentences({ sentences: extractSentencesFromJSON(text) }));
-    dispatch(setPdfLoaded(true));
+    dispatch(setSpellLoaded(true));
   }, [currentPage, docLoaded, pages, dispatch]);
 
   useEffect(() => {

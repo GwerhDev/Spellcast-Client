@@ -1,32 +1,32 @@
 import { describe, it, expect } from 'vitest';
 import reducer, {
-  setPdfFile,
-  setPdfSpellInfo,
-  setPdfLoaded,
+  setSpellFile,
+  setSpellInfo,
+  setSpellLoaded,
   goToNextPage,
   goToPreviousPage,
   goToPage,
-  resetPdfReader,
+  resetSpellReader,
   setCurrentSentenceIndex,
   setSentences,
   invalidateSpellList,
   invalidateContent,
   setFitToWidth,
   setLightningMode,
-} from '../pdfReaderSlice';
+} from '../spellReaderSlice';
 
 const initial = reducer(undefined, { type: '@@INIT' });
 
-describe('pdfReaderSlice', () => {
-  describe('setPdfFile', () => {
+describe('spellReaderSlice', () => {
+  describe('setSpellFile', () => {
     it('sets spellId and title', () => {
-      const state = reducer(initial, setPdfFile({ id: 'doc-1', title: 'My Doc' }));
+      const state = reducer(initial, setSpellFile({ id: 'doc-1', title: 'My Doc' }));
       expect(state.spellId).toBe('doc-1');
       expect(state.spellTitle).toBe('My Doc');
     });
 
     it('restores currentPage and sentenceIndex from progress', () => {
-      const state = reducer(initial, setPdfFile({
+      const state = reducer(initial, setSpellFile({
         id: 'doc-1',
         title: 'My Doc',
         progress: { currentPage: 5, lastReadSentenceIndex: 3, pagesProgress: [] },
@@ -38,7 +38,7 @@ describe('pdfReaderSlice', () => {
 
   describe('pagination', () => {
     const withPages = reducer(
-      reducer(initial, setPdfSpellInfo({ totalPages: 5 })),
+      reducer(initial, setSpellInfo({ totalPages: 5 })),
       goToPage(3)
     );
 
@@ -109,13 +109,13 @@ describe('pdfReaderSlice', () => {
     });
   });
 
-  describe('resetPdfReader', () => {
+  describe('resetSpellReader', () => {
     it('returns to initial state', () => {
       const loaded = reducer(
-        reducer(initial, setPdfFile({ id: 'x', title: 'X' })),
-        setPdfLoaded(true)
+        reducer(initial, setSpellFile({ id: 'x', title: 'X' })),
+        setSpellLoaded(true)
       );
-      const reset = reducer(loaded, resetPdfReader());
+      const reset = reducer(loaded, resetSpellReader());
       expect(reset.spellId).toBeNull();
       expect(reset.isLoaded).toBe(false);
     });

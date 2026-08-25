@@ -17,7 +17,7 @@ describe('SpellReader', () => {
 
   it('shows loading state when document is not loaded', () => {
     renderWithProviders(<SpellReader />);
-    // Default pdfReader state has isLoaded = false
+    // Default spellReader state has isLoaded = false
     expect(screen.getByTestId('spell-reader-loading')).toBeInTheDocument();
   });
 });

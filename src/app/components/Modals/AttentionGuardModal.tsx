@@ -8,7 +8,7 @@ import { NumberStepper } from '../Inputs/NumberStepper';
 import { ToggleRow } from '../Inputs/ToggleRow';
 import { useLanguage } from '../../../i18n';
 import { RootState } from '../../../store';
-import { setAttentionGuardInterval, setAttentionGuardEnabled } from '../../../store/pdfReaderSlice';
+import { setAttentionGuardInterval, setAttentionGuardEnabled } from '../../../store/spellReaderSlice';
 import s from './AttentionGuardModal.module.css';
 
 interface AttentionGuardModalProps {
@@ -19,8 +19,8 @@ interface AttentionGuardModalProps {
 export const AttentionGuardModal: React.FC<AttentionGuardModalProps> = ({ show, onContinue }) => {
   const { t } = useLanguage();
   const dispatch = useDispatch();
-  const attentionGuardEnabled = useSelector((state: RootState) => state.pdfReader.attentionGuardEnabled);
-  const attentionGuardInterval = useSelector((state: RootState) => state.pdfReader.attentionGuardInterval);
+  const attentionGuardEnabled = useSelector((state: RootState) => state.spellReader.attentionGuardEnabled);
+  const attentionGuardInterval = useSelector((state: RootState) => state.spellReader.attentionGuardInterval);
 
   const handleInterval = (value: number) => {
     const clamped = Math.min(30, Math.max(1, value));

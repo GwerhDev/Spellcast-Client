@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { screen, fireEvent } from '@testing-library/react';
 import { renderWithProviders, makeStore } from '../../../../test/renderWithProviders';
 import { PdfUploadQueue } from '../index';
-import { enqueueUpload } from '../../../../store/pdfUploadSlice';
+import { enqueueUpload } from '../../../../store/spellUploadSlice';
 
 const makeQueuedJob = (id: string, title = 'Test.pdf') => enqueueUpload({ id, title } as never);
 
