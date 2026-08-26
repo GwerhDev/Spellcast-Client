@@ -4,6 +4,20 @@ import {
   faList, faPlus,
 } from "@fortawesome/free-solid-svg-icons";
 
+// Silent, single-cycle WAV looped by both BrowserPlayer and AudioPlayer as a
+// real, always-audible HTMLMediaElement anchor: Chromium doesn't reliably
+// adopt a page's own navigator.mediaSession (metadata + action handlers) as
+// the OS-facing widget until SOME real <audio>/<video> element on the page is
+// genuinely playing. speechSynthesis alone isn't an HTMLMediaElement, and AI
+// audio synthesis has a real network/synthesis round-trip before its own
+// <audio> element starts playing -- during that window nothing was actually
+// "playing" from the browser's point of view, so the OS widget wouldn't sync
+// with metadata we'd already set correctly (observed: title/artist staying
+// blank in the widget until the next interaction). This anchor removes that
+// window entirely by giving the browser something real to play the instant
+// playback is intended, independent of whether the real content is ready yet.
+export const SILENT_AUDIO_SRC = 'data:audio/wav;base64,UklGRkQDAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YSADAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA==';
+
 export const dashboardDirectoryList = [
   { name: "Groups", icon: faUsers, path: "dashboard/groups" },
   { name: "Shared", icon: faShare, path: "dashboard/shared" },

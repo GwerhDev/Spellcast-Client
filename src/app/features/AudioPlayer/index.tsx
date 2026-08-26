@@ -34,6 +34,7 @@ import { faFilePdf } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Waveform } from '../../components/Waveform/Waveform';
 import { SpellDetailModal } from '../../components/Modals/SpellDetailModal';
+import { SILENT_AUDIO_SRC } from '../../../config/consts';
 
 interface PlayerProps {
   showVoiceSelectorModal: React.Dispatch<SetStateAction<boolean>>;
@@ -105,6 +106,18 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
   const aiTimelineRef = useRef<TimelineEntry[]>([]);
   const volumeSliderRef = useRef<HTMLDivElement>(null);
   const volumeButtonRef = useRef<HTMLButtonElement>(null);
+  // Real, always-audible anchor kept in sync with intent (wantsToPlayRef),
+  // NOT with Redux's isPlaying -- isPlaying is silenced during the AI
+  // synthesis fetch, which is exactly the window this anchor needs to cover.
+  // See SILENT_AUDIO_SRC for why this exists at all (Chromium media-session
+  // OS-widget adoption needs a real playing element, not just correct
+  // metadata).
+  const silentAudioRef = useRef<HTMLAudioElement>(null);
+  const setWantsToPlay = (value: boolean) => {
+    wantsToPlayRef.current = value;
+    if (value) silentAudioRef.current?.play().catch(() => {});
+    else silentAudioRef.current?.pause();
+  };
 
   const currentTrackUrl = currentTrackIndex !== null ? playlist[currentTrackIndex] : null;
   const progressPercentage = duration > 0 ? (currentTime / duration) * 100 : 0;
@@ -139,17 +152,20 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
 
   useEffect(() => {
     let url: string | null = null;
+    // Clear the PREVIOUS spell's cover immediately, before this spell's own
+    // fetch even starts -- otherwise, for the entire window until it
+    // resolves, spellTitle/audioReadyPage (already updated) pair with a
+    // stale coverUrl still holding the last spell's image in the Media
+    // Session metadata effect below, so the OS widget can show the new
+    // spell's title next to the old spell's artwork.
+    setCoverUrl(null);
     if (spellId && userData?.id) {
       getSpellById(spellId, userData.id).then(doc => {
         if (doc?.cover) {
           url = URL.createObjectURL(doc.cover);
           setCoverUrl(url);
-        } else {
-          setCoverUrl(null);
         }
       });
-    } else {
-      setCoverUrl(null);
     }
     return () => { if (url) URL.revokeObjectURL(url); };
   }, [spellId, userData?.id]);
@@ -363,7 +379,7 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
     // fresh (see fetchAndPlay above), so a play requested after an
     // accidental/earlier pause mid-fetch still resumes once ready, without
     // starting a second, overlapping fetch.
-    wantsToPlayRef.current = true;
+    setWantsToPlay(true);
     if (isPlaying) return;
     if (sentences.length === 0) {
       if (currentPage < totalPages) {
@@ -385,7 +401,7 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
     // left in Redux to "undo": without this, a pause requested while
     // audio was still being fetched had no effect at all and playback
     // resumed regardless once the fetch completed (TCORE-81).
-    wantsToPlayRef.current = false;
+    setWantsToPlay(false);
     if (!isPlaying) return;
     dispatch(pause());
   };
@@ -446,7 +462,7 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
     }
-    wantsToPlayRef.current = isPlaying || autoPlayOnLoad;
+    setWantsToPlay(isPlaying || autoPlayOnLoad);
     fetchAndPlay(currentPageText);
     //eslint-disable-next-line
   }, [selectedVoice.value]);
@@ -462,7 +478,7 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
       }
       return;
     }
-    wantsToPlayRef.current = isPlaying || autoPlayOnLoad;
+    setWantsToPlay(isPlaying || autoPlayOnLoad);
     if (autoPlayOnLoad) dispatch(setAutoPlayOnLoad(false));
     fetchAndPlay(currentPageText);
     //eslint-disable-next-line
@@ -526,11 +542,13 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
       <div data-testid="audio-player" className={s.container}>
         <div className={s.audioPlayerContainer}>
           <audio
+            data-testid="audio-player-media"
             ref={audioRef}
             onTimeUpdate={handleTimeUpdate}
             onLoadedMetadata={handleLoadedMetadata}
             onEnded={handleEnded}
           />
+          <audio data-testid="audio-player-silent-anchor" ref={silentAudioRef} src={SILENT_AUDIO_SRC} loop />
           <section className={s.leftSection}>
             <div
               className={s.coverWrap}
@@ -538,8 +556,8 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
               style={spellId ? { cursor: 'pointer' } : undefined}
             >
               {coverUrl
-                ? <img src={coverUrl} alt="" className={s.cover} />
-                : <div className={s.coverIcon}><FontAwesomeIcon icon={faFilePdf} /></div>
+                ? <img data-testid="audio-player-cover" src={coverUrl} alt="" className={s.cover} />
+                : <div data-testid="audio-player-cover-placeholder" className={s.coverIcon}><FontAwesomeIcon icon={faFilePdf} /></div>
               }
               {isPlaying && (
                 <div className={s.coverWaveOverlay}>
@@ -549,7 +567,7 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
             </div>
             {isLoaded && (
               <div className={s.spellDetails}>
-                <p title={spellTitle || ''} onClick={spellId ? handleTitle : undefined} style={spellId ? undefined : { cursor: 'default' }}>{spellTitle}</p>
+                <p data-testid="audio-player-title" title={spellTitle || ''} onClick={spellId ? handleTitle : undefined} style={spellId ? undefined : { cursor: 'default' }}>{spellTitle}</p>
                 {spellId && <small onClick={handleSearcher}>{t.spell.page} {currentPage} {t.spell.of} {totalPages}</small>}
               </div>
             )}

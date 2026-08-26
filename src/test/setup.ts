@@ -105,3 +105,47 @@ window.matchMedia = window.matchMedia || ((query: string) => ({
   removeEventListener: () => {},
   dispatchEvent: () => false,
 }) as unknown as MediaQueryList);
+
+// happy-dom has no Media Session API at all -- navigator.mediaSession is undefined
+// and MediaMetadata doesn't exist as a global, so every `if ('mediaSession' in
+// navigator)` guard in BrowserPlayer/AudioPlayer silently no-ops under every
+// existing test, and their OS-lock-screen-metadata/action-handler wiring is never
+// actually exercised. A minimal but real (stateful, not just present-and-empty)
+// implementation lets tests assert on what metadata/handlers a component actually
+// registers, not just that it doesn't crash.
+if (typeof globalThis.MediaMetadata === 'undefined') {
+  class MediaMetadataStub {
+    title: string;
+    artist: string;
+    album: string;
+    artwork: MediaImage[];
+    constructor(init: MediaMetadataInit = {}) {
+      this.title = init.title ?? '';
+      this.artist = init.artist ?? '';
+      this.album = init.album ?? '';
+      this.artwork = init.artwork ? [...init.artwork] : [];
+    }
+  }
+  globalThis.MediaMetadata = MediaMetadataStub as unknown as typeof MediaMetadata;
+}
+if (!('mediaSession' in navigator)) {
+  class MediaSessionStub {
+    metadata: MediaMetadata | null = null;
+    playbackState: MediaSessionPlaybackState = 'none';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    private handlers = new Map<string, ((details: any) => void) | null>();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    setActionHandler(action: string, handler: ((details: any) => void) | null) {
+      this.handlers.set(action, handler);
+    }
+    getActionHandler(action: string) {
+      return this.handlers.get(action) ?? null;
+    }
+    setPositionState() {}
+  }
+  Object.defineProperty(navigator, 'mediaSession', {
+    value: new MediaSessionStub(),
+    writable: true,
+    configurable: true,
+  });
+}

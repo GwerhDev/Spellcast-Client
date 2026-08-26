@@ -31,6 +31,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Waveform } from '../../components/Waveform/Waveform';
 import { SpellDetailModal } from '../../components/Modals/SpellDetailModal';
 import { addSignalNotice } from '../../../store/signalSlice';
+import { SILENT_AUDIO_SRC } from '../../../config/consts';
 
 interface PlayerProps {
   showVoiceSelectorModal: React.Dispatch<SetStateAction<boolean>>;
@@ -57,7 +58,6 @@ interface PlayerProps {
 // one event being handled at a time. Redux's isPlaying is written from
 // exactly one place -- the end of whichever handler just ran -- never from a
 // reactive effect watching isPlaying itself, never from a poll.
-const SILENT_AUDIO_SRC = 'data:audio/wav;base64,UklGRkQDAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YSADAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA==';
 
 type EngineEvent =
   | { type: 'CLICK_PLAY' }
@@ -130,17 +130,22 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
 
   useEffect(() => {
     let url: string | null = null;
+    // Clear the PREVIOUS spell's cover immediately, before this spell's own
+    // fetch even starts -- otherwise, for the entire window until it
+    // resolves, spellTitle/currentPage (synchronous Redux state, already
+    // updated) pair with a stale coverUrl still holding the last spell's
+    // image. The Media Session metadata effect below rebuilds its
+    // MediaMetadata from both together, so that window is exactly when the
+    // OS widget can show the new spell's title next to the old spell's
+    // artwork.
+    setCoverUrl(null);
     if (spellId && userData?.id) {
       getSpellById(spellId, userData.id).then(doc => {
         if (doc?.cover) {
           url = URL.createObjectURL(doc.cover);
           setCoverUrl(url);
-        } else {
-          setCoverUrl(null);
         }
       });
-    } else {
-      setCoverUrl(null);
     }
     return () => { if (url) URL.revokeObjectURL(url); };
   }, [spellId, userData?.id]);
@@ -195,6 +200,49 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
     void drainQueue();
   };
 
+  // Media Session's play/pause handlers must stay idempotent (always-play,
+  // always-pause), mirroring AudioPlayer: Bluetooth/OS media controls can
+  // fire play and pause in quick succession for a single physical button
+  // press. Both just enqueue -- the queue's own handler checks `playing`
+  // freshly when it actually runs, so a stray double-fire is a no-op, not a
+  // wrong toggle.
+  const registerMediaSessionHandlers = () => {
+    if (!('mediaSession' in navigator)) return;
+    navigator.mediaSession.setActionHandler('play', () => enqueue({ type: 'HEADSET_PLAY' }));
+    navigator.mediaSession.setActionHandler('pause', () => enqueue({ type: 'HEADSET_PAUSE' }));
+    navigator.mediaSession.setActionHandler('nexttrack', handleNext);
+    navigator.mediaSession.setActionHandler('previoustrack', handlePrevious);
+  };
+
+  // Reasserts the handlers above, but ONLY when the (spell, page) pair
+  // actually changed since the last time -- NOT on every single sentence.
+  // A speechSynthesis cancel()+speak() cycle (engineSpeakSentence, below)
+  // happens on every page turn while playing via CONTENT_CHANGED, and a
+  // real cancel()+speak() cycle can leave the OS's own media widget
+  // controlling window.speechSynthesis directly instead of routing through
+  // these handlers, as if the browser silently forgot the page registered
+  // them -- a headset pause hitting the raw engine instead of HEADSET_PAUSE
+  // never reaches dispatch(pause()), so isPlaying never flips and anything
+  // else keyed off it (SoundBackground's ambient audio) keeps playing. But
+  // engineSpeakSentence also runs on every ORDINARY same-page
+  // sentence-to-sentence advance (CONTENT_CHANGED fires on every
+  // currentSentenceIndex change too, not just page changes) -- reasserting
+  // there unconditionally called setActionHandler with a brand-new closure
+  // every few seconds during normal reading, which real Chrome's OS/MPRIS
+  // bridge does not tolerate well: it stopped recognizing the page's own
+  // session at all and fell back to its generic built-in Web Speech widget
+  // (observed: the OS widget showing the raw voice name, e.g. "Google
+  // Deutsch", instead of the spell's title). Gating on an actual (spell,
+  // page) change keeps the reassertion tied to a real, infrequent state
+  // transition -- not a guessed delay, and not every sentence either.
+  const lastAnchoredKeyRef = useRef<string | null>(null);
+  const reassertMediaSessionHandlersOnPageChange = () => {
+    const key = `${spellId}:${latestRef.current.currentPage}`;
+    if (lastAnchoredKeyRef.current === key) return;
+    lastAnchoredKeyRef.current = key;
+    registerMediaSessionHandlers();
+  };
+
   // handleEvent (defined below, after the engine primitives it uses) closes
   // over per-render values via latestRef, but drainQueue above is defined
   // before it in source order and must always call the CURRENT render's
@@ -210,6 +258,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
   // how long a sentence takes to finish being spoken (see above).
   const engineSpeakSentence = (text: string): void => {
     applyMediaSessionMetadata();
+    reassertMediaSessionHandlersOnPageChange();
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
     activeUtteranceRef.current = utterance;
@@ -515,18 +564,12 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
     //eslint-disable-next-line react-hooks/exhaustive-deps
   }, [externalPauseSeq]);
 
-  // Media Session's play/pause handlers must stay idempotent (always-play,
-  // always-pause), mirroring AudioPlayer: Bluetooth/OS media controls can
-  // fire play and pause in quick succession for a single physical button
-  // press. Both just enqueue -- the queue's own handler checks `playing`
-  // freshly when it actually runs, so a stray double-fire is a no-op, not a
-  // wrong toggle.
+  // Baseline registration for when nothing has spoken yet (e.g. a spell
+  // mounted paused) -- see registerMediaSessionHandlers above for why this
+  // alone isn't enough and engineSpeakSentence reasserts it too.
   useEffect(() => {
+    registerMediaSessionHandlers();
     if (!('mediaSession' in navigator)) return;
-    navigator.mediaSession.setActionHandler('play', () => enqueue({ type: 'HEADSET_PLAY' }));
-    navigator.mediaSession.setActionHandler('pause', () => enqueue({ type: 'HEADSET_PAUSE' }));
-    navigator.mediaSession.setActionHandler('nexttrack', handleNext);
-    navigator.mediaSession.setActionHandler('previoustrack', handlePrevious);
     return () => {
       navigator.mediaSession.setActionHandler('play', null);
       navigator.mediaSession.setActionHandler('pause', null);
@@ -591,8 +634,8 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
               style={spellId ? { cursor: 'pointer' } : undefined}
             >
               {coverUrl
-                ? <img src={coverUrl} alt="" className={s.cover} />
-                : <div className={s.coverIcon}><FontAwesomeIcon icon={faFilePdf} /></div>
+                ? <img data-testid="browser-player-cover" src={coverUrl} alt="" className={s.cover} />
+                : <div data-testid="browser-player-cover-placeholder" className={s.coverIcon}><FontAwesomeIcon icon={faFilePdf} /></div>
               }
               {isPlaying && (
                 <div className={s.coverWaveOverlay}>
@@ -602,7 +645,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
             </div>
             {isLoaded && (
               <div className={s.spellDetails}>
-                <p title={spellTitle || ''} onClick={spellId ? handleTitle : undefined} style={spellId ? undefined : { cursor: 'default' }}>{spellTitle}</p>
+                <p data-testid="browser-player-title" title={spellTitle || ''} onClick={spellId ? handleTitle : undefined} style={spellId ? undefined : { cursor: 'default' }}>{spellTitle}</p>
                 {spellId && <small onClick={handleSearcher}>{t.spell.page} {currentPage} {t.spell.of} {totalPages}</small>}
               </div>
             )}

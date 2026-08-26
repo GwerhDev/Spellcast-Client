@@ -138,8 +138,13 @@ describe('AudioPlayer pause-during-fetch race (TCORE-81)', () => {
 
     // The bug: fetchAndPlay used to resume playback here regardless, because
     // it decided based on a stale snapshot taken before the pause occurred.
+    // The silent anchor element (kept in sync with intent, not isPlaying) is
+    // NOT what's being asserted on here -- only the real audio element must
+    // never have been told to play.
     expect(store.getState().audioPlayer.isPlaying).toBe(false);
-    expect(window.HTMLMediaElement.prototype.play).not.toHaveBeenCalled();
+    const realAudio = screen.getByTestId('audio-player-media');
+    const playSpy = window.HTMLMediaElement.prototype.play as unknown as { mock: { instances: unknown[] } };
+    expect(playSpy.mock.instances).not.toContain(realAudio);
   });
 });
 
