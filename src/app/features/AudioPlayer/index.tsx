@@ -527,6 +527,14 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
 
   useEffect(() => {
     if (!('mediaSession' in navigator)) return;
+    // Never write metadata before the cover fetch has settled -- this
+    // effect fires unconditionally on mount (coverUrl still null at that
+    // point, regardless of the coverSettled gate on the play-trigger
+    // effects above), so without this guard it still sent the OS an
+    // incomplete first snapshot (no artwork) right as real playback
+    // started -- exactly the moment Chrome decides whether to adopt this
+    // page's own media session at all.
+    if (!coverSettled) return;
 
     // artist uses audioReadyPage, NOT the live currentPage -- currentPage
     // flips the instant the user navigates, before that page's audio has
@@ -539,7 +547,7 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
       album:  'Spellcast',
       artwork: coverUrl ? [{ src: coverUrl, type: 'image/jpeg' }] : [],
     });
-  }, [spellTitle, audioReadyPage, totalPages, coverUrl]);
+  }, [spellTitle, audioReadyPage, totalPages, coverUrl, coverSettled]);
 
   useEffect(() => {
     if (!('mediaSession' in navigator)) return;

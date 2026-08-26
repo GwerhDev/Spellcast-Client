@@ -176,9 +176,18 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
   };
 
   useEffect(() => {
+    // Never write metadata before the cover fetch has settled -- this effect
+    // fires unconditionally on mount (coverUrl still null at that point,
+    // regardless of the coverSettled gate on the play-trigger effect below),
+    // so without this guard it still sent the OS an incomplete first
+    // snapshot (no artwork) right as real playback started -- exactly the
+    // moment Chrome decides whether to adopt this page's own media session
+    // at all, observed to sometimes leave it stuck on its generic default
+    // ("chrome-extension" control) for one or two page turns afterward.
+    if (!coverSettled) return;
     applyMediaSessionMetadata();
     //eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [spellTitle, currentPage, totalPages, coverUrl, isLoaded, t]);
+  }, [spellTitle, currentPage, totalPages, coverUrl, isLoaded, t, coverSettled]);
 
   // ── Single event queue: the only writer of isPlaying / the only caller of
   // speechSynthesis.speak()/pause()/resume()/cancel() and the silent anchor.
