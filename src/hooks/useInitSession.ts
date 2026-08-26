@@ -33,6 +33,15 @@ export function useInitSession(
       } else {
         dispatch(addApiResponse({ message: 'Authentication successful.', type: 'success' }));
         dispatch(getCredentials());
+        // Without this, the browser treats IndexedDB (spells, preferences, audio
+        // cache) as "best-effort" storage, which it can silently evict under disk
+        // pressure with no warning -- confirmed in production via DevTools showing
+        // "Es persistente: No" on a database that had lost all its records. This
+        // requests the "persistent" storage bucket, which browsers exempt from
+        // that eviction. Never throws/rejects on unsupported browsers; the
+        // request can also simply be denied (heuristic, no user prompt) -- either
+        // way this is a best-effort ask, not a guarantee, so failures are ignored.
+        navigator.storage?.persist?.().catch(() => {});
       }
       onProgress?.(100);
       onMessage?.('');

@@ -82,6 +82,34 @@ describe('useInitSession', () => {
     expect(store.getState().apiResponses.responses.some((r) => r.type === 'success')).toBe(true);
   });
 
+  it('requests persistent storage on successful auth, so the browser stops treating IndexedDB as evictable', async () => {
+    // Production data loss (spells vanishing) was traced to IndexedDB never
+    // being granted persistent storage -- the browser's default "best-effort"
+    // bucket can be silently evicted under disk pressure.
+    fetchAuthMock.mockResolvedValue({ logged: true, userData: { id: 'user-1' } });
+    const persistMock = vi.fn().mockResolvedValue(true);
+    vi.stubGlobal('navigator', { ...navigator, storage: { ...navigator.storage, persist: persistMock } });
+    const store = makeStore();
+
+    renderInitSession(store);
+    await act(async () => { await vi.advanceTimersByTimeAsync(500); });
+
+    expect(persistMock).toHaveBeenCalledTimes(1);
+    vi.unstubAllGlobals();
+  });
+
+  it('does not throw if navigator.storage is unsupported', async () => {
+    fetchAuthMock.mockResolvedValue({ logged: true, userData: { id: 'user-1' } });
+    vi.stubGlobal('navigator', { ...navigator, storage: undefined });
+    const store = makeStore();
+
+    renderInitSession(store);
+    await act(async () => { await vi.advanceTimersByTimeAsync(500); });
+
+    expect(store.getState().session.logged).toBe(true); // the rest of init still completed
+    vi.unstubAllGlobals();
+  });
+
   it('on failed auth: reports an error, redirects to login, and never touches session/credentials state', async () => {
     fetchAuthMock.mockResolvedValue({ logged: false });
     const store = makeStore();
