@@ -128,6 +128,7 @@ export const CredentialCard = (props: CredentialCardProps) => {
       <div className={s.actions}>
         {!credential.isNew && !editionActive && (
           <IconButton
+            data-testid="credential-card-toggle-active"
             variant="transparent"
             icon={isActive ? faStar : faStarOutline}
             className={isActive ? s.activeStar : ''}
@@ -135,19 +136,19 @@ export const CredentialCard = (props: CredentialCardProps) => {
             onClick={handleToggleActive}
           />
         )}
-        <IconButton variant="transparent" icon={faCommentDots} onClick={handleOpenVoiceSelector} />
+        <IconButton data-testid="credential-card-voices" variant="transparent" icon={faCommentDots} onClick={handleOpenVoiceSelector} />
 
         {
           editionActive ?
-            <IconButton variant="transparent" icon={faSave} onClick={() => handleSave()} />
+            <IconButton data-testid="credential-card-save" variant="transparent" icon={faSave} onClick={() => handleSave()} />
             :
-            <IconButton variant="transparent" icon={faEdit} onClick={() => handleEdit()} />
+            <IconButton data-testid="credential-card-edit" variant="transparent" icon={faEdit} onClick={() => handleEdit()} />
         }
         {
           credential.isNew || editionActive ? (
-            <IconButton variant="transparent" icon={faTimes} onClick={() => handleCancel()} />
+            <IconButton data-testid="credential-card-cancel" variant="transparent" icon={faTimes} onClick={() => handleCancel()} />
           ) : (
-            <IconButton variant="transparent" icon={faTrash} onClick={() => handleDelete(credential.id)} />
+            <IconButton data-testid="credential-card-delete" variant="transparent" icon={faTrash} onClick={() => handleDelete(credential.id)} />
           )
         }
       </div>

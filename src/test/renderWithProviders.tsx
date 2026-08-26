@@ -18,6 +18,7 @@ import spellReducer from '../store/spellSlice';
 import apiResponsesReducer from '../store/apiResponsesSlice';
 import layoutReducer from '../store/layoutSlice';
 import signalReducer from '../store/signalSlice';
+import desktopReducer from '../store/desktopSlice';
 
 const rootReducer = combineReducers({
   spellReader: spellReaderReducer,
@@ -34,6 +35,7 @@ const rootReducer = combineReducers({
   apiResponses: apiResponsesReducer,
   layout: layoutReducer,
   signal: signalReducer,
+  desktop: desktopReducer,
 });
 
 type PreloadedState = Partial<ReturnType<typeof rootReducer>>;
@@ -48,6 +50,9 @@ interface Options extends Omit<RenderOptions, 'wrapper'> {
 }
 
 export const renderWithProviders = (ui: React.ReactElement, options: Options = {}) => {
+  // preloadedState is destructured out here only to exclude it from renderOptions
+  // (RTL's render() doesn't accept it) -- makeStore already consumed it above.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { store = makeStore(options.preloadedState), initialPath = '/', preloadedState: _ps, ...renderOptions } = options;
 
   const Wrapper = ({ children }: { children: React.ReactNode }) => (
