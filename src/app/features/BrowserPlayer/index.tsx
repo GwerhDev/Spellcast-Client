@@ -264,14 +264,14 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
     // generic default, flickering the OS widget every time a sentence
     // changed. Metadata now has exactly one writer: the dedicated effect.
     //
-    // Handlers, unlike metadata, ARE reasserted on every utterance
-    // (unconditionally, not gated to page changes) -- with a network TTS
-    // voice, each speak() call was found to leave the OS 'play'/'pause'
-    // handlers actually unbound from our page until the next reassert,
-    // meaning the headset stopped controlling BrowserPlayer at all between
-    // reassertions. That functional loss matters more than the OS widget's
-    // cosmetic display, which per-page gating didn't fully fix anyway.
-    registerMediaSessionHandlers();
+    // Also deliberately NOT reasserting the action handlers here anymore
+    // (tried both gated-to-page-changes and unconditional-every-utterance):
+    // neither actually fixed the OS widget fighting a network TTS voice for
+    // control, and reasserting-every-utterance made things audibly WORSE --
+    // periodic cuts in the speech itself, not just a cosmetic widget issue.
+    // Handlers are registered once at mount only (see the effect below);
+    // widget/headset robustness across a long session is a real trade-off
+    // against not touching the live engine's surroundings every sentence.
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
     activeUtteranceRef.current = utterance;
@@ -516,15 +516,6 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
         // this nudge's pause was landing -- don't resume if so.
         if (!latestRef.current.isPlaying) return;
         await engineAwaitResume();
-        // This is a REAL pause()+resume() cycle on the live engine, same as
-        // a genuine user pause/resume -- observed to be enough on its own
-        // (independent of page turns) to make real Chrome stop treating this
-        // page's navigator.mediaSession as the active OS session and fall
-        // back to its generic Web Speech widget, invisibly, once every ~14s
-        // of continuous same-page reading. Reasserting here closes that gap
-        // the same way engineSpeakSentence already does for page turns.
-        applyMediaSessionMetadata();
-        registerMediaSessionHandlers();
         return;
       }
     }
