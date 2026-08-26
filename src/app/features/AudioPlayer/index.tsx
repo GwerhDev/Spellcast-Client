@@ -150,8 +150,18 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showVolumeSlider]);
 
+  // Whether the cover fetch below has SETTLED for the current spell -- either
+  // a real cover arrived, or it's confirmed there isn't one. Gates the very
+  // first autoplay-triggered fetchAndPlay (see the content-tracking effects
+  // further down) so the FIRST navigator.mediaSession.metadata this spell
+  // ever sends the OS already has everything, instead of an incomplete
+  // snapshot (no artwork) that a later, corrected write isn't reliably
+  // resyncing to the OS widget on its own.
+  const [coverSettled, setCoverSettled] = useState(false);
+
   useEffect(() => {
     let url: string | null = null;
+    let cancelled = false;
     // Clear the PREVIOUS spell's cover immediately, before this spell's own
     // fetch even starts -- otherwise, for the entire window until it
     // resolves, spellTitle/audioReadyPage (already updated) pair with a
@@ -159,15 +169,20 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
     // Session metadata effect below, so the OS widget can show the new
     // spell's title next to the old spell's artwork.
     setCoverUrl(null);
+    setCoverSettled(false);
     if (spellId && userData?.id) {
       getSpellById(spellId, userData.id).then(doc => {
+        if (cancelled) return;
         if (doc?.cover) {
           url = URL.createObjectURL(doc.cover);
           setCoverUrl(url);
         }
+        setCoverSettled(true);
       });
+    } else {
+      setCoverSettled(true); // nothing to wait for
     }
-    return () => { if (url) URL.revokeObjectURL(url); };
+    return () => { cancelled = true; if (url) URL.revokeObjectURL(url); };
   }, [spellId, userData?.id]);
 
   useEffect(() => {
@@ -455,6 +470,11 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
   useEffect(() => {
     setCredentialError(null);
     if (selectedVoice.type !== 'ai' || !currentPageText || sentences.length === 0) return;
+    // Also runs on mount (selectedVoice.value always "changes" from nothing
+    // on the first render) -- gated the same way as the content-tracking
+    // effect below, so a fresh autoplay-triggered mount doesn't fetch/play
+    // through THIS path before the cover has settled either.
+    if (autoPlayOnLoad && !coverSettled) return;
     // Switching AI voice mid-read: stop the previous voice's audio and restart the
     // current page from the top with the new one (fetchAndPlay already checks the
     // per-voice cache before synthesizing, and preserves play/pause via `isPlaying`).
@@ -465,7 +485,7 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
     setWantsToPlay(isPlaying || autoPlayOnLoad);
     fetchAndPlay(currentPageText);
     //eslint-disable-next-line
-  }, [selectedVoice.value]);
+  }, [selectedVoice.value, coverSettled]);
 
   useEffect(() => {
     if (selectedVoice.type !== 'ai' || !currentPageText) return;
@@ -478,11 +498,16 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
       }
       return;
     }
+    // Wait for the cover fetch to settle before the very FIRST
+    // autoplay-triggered fetch -- see coverSettled above. An ongoing page
+    // turn while already playing is unaffected: coverSettled is already
+    // true by then for this spell (it only resets on a spell/user change).
+    if (autoPlayOnLoad && !coverSettled) return;
     setWantsToPlay(isPlaying || autoPlayOnLoad);
     if (autoPlayOnLoad) dispatch(setAutoPlayOnLoad(false));
     fetchAndPlay(currentPageText);
     //eslint-disable-next-line
-  }, [currentPageText, sentences]);
+  }, [currentPageText, sentences, coverSettled]);
 
   useEffect(() => {
     if (!('mediaSession' in navigator)) return;

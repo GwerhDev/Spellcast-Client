@@ -128,8 +128,18 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
     currentPage, totalPages, isLoaded, autoPlayOnLoad,
   };
 
+  // Whether the cover fetch below has SETTLED for the current spell -- either
+  // a real cover arrived, or it's confirmed there isn't one. Gates the very
+  // first autoplay-triggered CLICK_PLAY (see the content-tracking effect
+  // further down) so the FIRST navigator.mediaSession.metadata this spell
+  // ever sends the OS already has everything, instead of an incomplete
+  // snapshot (no artwork) that a later, corrected write isn't reliably
+  // resyncing to the OS widget on its own.
+  const [coverSettled, setCoverSettled] = useState(false);
+
   useEffect(() => {
     let url: string | null = null;
+    let cancelled = false;
     // Clear the PREVIOUS spell's cover immediately, before this spell's own
     // fetch even starts -- otherwise, for the entire window until it
     // resolves, spellTitle/currentPage (synchronous Redux state, already
@@ -139,15 +149,20 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
     // OS widget can show the new spell's title next to the old spell's
     // artwork.
     setCoverUrl(null);
+    setCoverSettled(false);
     if (spellId && userData?.id) {
       getSpellById(spellId, userData.id).then(doc => {
+        if (cancelled) return;
         if (doc?.cover) {
           url = URL.createObjectURL(doc.cover);
           setCoverUrl(url);
         }
+        setCoverSettled(true);
       });
+    } else {
+      setCoverSettled(true); // nothing to wait for
     }
-    return () => { if (url) URL.revokeObjectURL(url); };
+    return () => { cancelled = true; if (url) URL.revokeObjectURL(url); };
   }, [spellId, userData?.id]);
 
   const applyMediaSessionMetadata = () => {
@@ -520,13 +535,19 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
   // against, mounting IS the change.
   useEffect(() => {
     if (autoPlayOnLoad) {
+      // Wait for the cover fetch to settle before ever starting to speak --
+      // see coverSettled above. This effect just re-runs (still a no-op)
+      // every time something in its deps changes until coverSettled flips
+      // true, then proceeds exactly once. Not a timer: it's driven by the
+      // real fetch's own completion, whenever that actually happens.
+      if (!coverSettled) return;
       dispatch(setAutoPlayOnLoad(false));
       enqueue({ type: 'CLICK_PLAY' });
       return;
     }
     enqueue({ type: 'CONTENT_CHANGED' });
     //eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentSentenceIndex, sentences, isLoaded, currentPage, spellId, autoPlayOnLoad]);
+  }, [currentSentenceIndex, sentences, isLoaded, currentPage, spellId, autoPlayOnLoad, coverSettled]);
 
   const handleTogglePlayPause = () => enqueue({ type: 'TOGGLE_REQUESTED' });
 
