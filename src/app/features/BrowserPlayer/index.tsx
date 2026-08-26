@@ -224,6 +224,29 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
     void drainQueue();
   };
 
+  // Chrome's ~15s continuous-speech freeze workaround (FREEZE_NUDGE in
+  // handleEvent) -- but timed from when the CURRENT utterance actually
+  // started, not a blanket "every 14s while playing" interval. BrowserPlayer
+  // speaks sentence by sentence, cancelling and starting a fresh utterance
+  // for each one -- most sentences are well under 15s, so a blanket timer
+  // fired a real pause()+resume() cycle on the live engine every ~14s
+  // REGARDLESS of how many short sentences had already restarted the clock,
+  // audibly cutting normal reading for no reason (the freeze this exists to
+  // prevent can only happen within a single continuous utterance). Rearmed
+  // on every new utterance and after every actual nudge, so a genuinely
+  // long single sentence still gets protected.
+  const freezeNudgeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const clearFreezeNudgeTimer = () => {
+    if (freezeNudgeTimerRef.current) {
+      clearTimeout(freezeNudgeTimerRef.current);
+      freezeNudgeTimerRef.current = null;
+    }
+  };
+  const armFreezeNudgeTimer = () => {
+    clearFreezeNudgeTimer();
+    freezeNudgeTimerRef.current = setTimeout(() => enqueue({ type: 'FREEZE_NUDGE' }), 14_000);
+  };
+
   // Media Session's play/pause handlers must stay idempotent (always-play,
   // always-pause), mirroring AudioPlayer: Bluetooth/OS media controls can
   // fire play and pause in quick succession for a single physical button
@@ -294,6 +317,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
     };
 
     window.speechSynthesis.speak(utterance);
+    armFreezeNudgeTimer(); // clock starts over for THIS utterance
   };
 
   // Set only by the text-too-long split above: the SENTENCE_ENDED handler
@@ -390,6 +414,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
   };
 
   const stopEngineAndConfirmPaused = async (): Promise<void> => {
+    clearFreezeNudgeTimer(); // genuinely paused -- nothing to nudge until resumed
     silentAudioRef.current?.pause();
     if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
     await engineAwaitPause();
@@ -420,6 +445,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
           if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
           silentAudioRef.current?.play().catch(() => {});
           await engineAwaitResume();
+          armFreezeNudgeTimer(); // clock starts over from the resume point
           return;
         }
         startPlayingFromCurrentSentence();
@@ -453,7 +479,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
 
       case 'VOLUME_DRAG_START': {
         volumeWasPlayingRef.current = playing && !!activeUtteranceRef.current && window.speechSynthesis.speaking;
-        if (volumeWasPlayingRef.current) await engineAwaitPause();
+        if (volumeWasPlayingRef.current) { clearFreezeNudgeTimer(); await engineAwaitPause(); }
         return;
       }
 
@@ -461,6 +487,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
         if (!volumeWasPlayingRef.current) return;
         volumeWasPlayingRef.current = false;
         await engineAwaitResume();
+        armFreezeNudgeTimer();
         return;
       }
 
@@ -516,6 +543,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
         // this nudge's pause was landing -- don't resume if so.
         if (!latestRef.current.isPlaying) return;
         await engineAwaitResume();
+        armFreezeNudgeTimer(); // still the same utterance -- protect again in case it runs even longer
         return;
       }
     }
@@ -603,14 +631,10 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
     navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
   }, [isPlaying]);
 
-  // Chrome's ~15s continuous-speech freeze workaround -- see FREEZE_NUDGE in
-  // handleEvent. Only ever enqueues; never touches the engine itself here.
-  useEffect(() => {
-    if (!isPlaying) return;
-    const id = setInterval(() => enqueue({ type: 'FREEZE_NUDGE' }), 14_000);
-    return () => clearInterval(id);
-    //eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isPlaying]);
+  // The freeze-nudge timer itself is armed/cleared/re-armed at each real
+  // utterance start/pause/resume (see armFreezeNudgeTimer above) -- this
+  // effect only guarantees cleanup on unmount, not a recurring poll.
+  useEffect(() => () => clearFreezeNudgeTimer(), []);
 
   const handleVolumePointerDown = () => enqueue({ type: 'VOLUME_DRAG_START' });
   const handleVolumePointerUp = () => enqueue({ type: 'VOLUME_DRAG_END' });
