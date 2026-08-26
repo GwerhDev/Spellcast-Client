@@ -161,17 +161,16 @@ describe('BrowserPlayer media session wiring', () => {
     expect(store.getState().browserPlayer.isPlaying).toBe(false);
   });
 
-  it('does NOT re-register the action handlers on an ordinary same-page sentence-to-sentence advance', async () => {
-    // Regression: an earlier version of this fix reasserted the handlers on
-    // every engineSpeakSentence call unconditionally -- which happens on
-    // EVERY sentence, not just page turns (CONTENT_CHANGED fires on every
-    // currentSentenceIndex change too). Calling setActionHandler with a
-    // brand-new closure every few seconds during ordinary reading made real
-    // Chrome stop recognizing the page's own media session altogether and
-    // fall back to its generic built-in Web Speech widget (observed: the OS
-    // showing the raw voice name, e.g. "Google Deutsch", instead of the
-    // spell's title) -- i.e. reintroduced the exact bug this fix exists to
-    // solve. Reassertion must be gated to real (spell, page) changes only.
+  it('DOES re-register the action handlers on an ordinary same-page sentence-to-sentence advance', async () => {
+    // A network TTS voice was found to leave the OS 'play'/'pause' handlers
+    // actually unbound from our page after each speak() call -- gating
+    // reassertion to page changes only (an earlier version of this fix)
+    // left the headset unable to control BrowserPlayer for most of a
+    // reading session. That functional loss matters more than the OS
+    // widget's cosmetic display (a separate, likely Chrome/network-voice-
+    // level limitation gating didn't fix anyway) -- so handlers are
+    // reasserted on every utterance, unconditionally, same as metadata used
+    // to be before it was given its own single-writer effect.
     const twoSentenceState = {
       ...baseState,
       spellReader: { ...baseState.spellReader, sentences: ['Sentence one.', 'Sentence two.'] },
@@ -190,12 +189,13 @@ describe('BrowserPlayer media session wiring', () => {
     setActionHandlerSpy.mockClear();
 
     // Sentence one ends -- the engine advances to sentence two, STILL on
-    // page 1. This must not touch the OS action handlers at all.
+    // page 1. The handlers must be reasserted anyway.
     await act(async () => {
       activeUtterance!.onend!();
       await Promise.resolve(); await Promise.resolve();
     });
     expect(mockSpeechSynthesis.speak.mock.calls.length).toBeGreaterThan(speakCallsBeforeAdvance); // sentence two started
-    expect(setActionHandlerSpy).not.toHaveBeenCalled();
+    expect(setActionHandlerSpy).toHaveBeenCalledWith('play', expect.any(Function));
+    expect(setActionHandlerSpy).toHaveBeenCalledWith('pause', expect.any(Function));
   });
 });

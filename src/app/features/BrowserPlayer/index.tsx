@@ -238,35 +238,6 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
     navigator.mediaSession.setActionHandler('previoustrack', handlePrevious);
   };
 
-  // Reasserts the handlers above, but ONLY when the (spell, page) pair
-  // actually changed since the last time -- NOT on every single sentence.
-  // A speechSynthesis cancel()+speak() cycle (engineSpeakSentence, below)
-  // happens on every page turn while playing via CONTENT_CHANGED, and a
-  // real cancel()+speak() cycle can leave the OS's own media widget
-  // controlling window.speechSynthesis directly instead of routing through
-  // these handlers, as if the browser silently forgot the page registered
-  // them -- a headset pause hitting the raw engine instead of HEADSET_PAUSE
-  // never reaches dispatch(pause()), so isPlaying never flips and anything
-  // else keyed off it (SoundBackground's ambient audio) keeps playing. But
-  // engineSpeakSentence also runs on every ORDINARY same-page
-  // sentence-to-sentence advance (CONTENT_CHANGED fires on every
-  // currentSentenceIndex change too, not just page changes) -- reasserting
-  // there unconditionally called setActionHandler with a brand-new closure
-  // every few seconds during normal reading, which real Chrome's OS/MPRIS
-  // bridge does not tolerate well: it stopped recognizing the page's own
-  // session at all and fell back to its generic built-in Web Speech widget
-  // (observed: the OS widget showing the raw voice name, e.g. "Google
-  // Deutsch", instead of the spell's title). Gating on an actual (spell,
-  // page) change keeps the reassertion tied to a real, infrequent state
-  // transition -- not a guessed delay, and not every sentence either.
-  const lastAnchoredKeyRef = useRef<string | null>(null);
-  const reassertMediaSessionHandlersOnPageChange = () => {
-    const key = `${spellId}:${latestRef.current.currentPage}`;
-    if (lastAnchoredKeyRef.current === key) return;
-    lastAnchoredKeyRef.current = key;
-    registerMediaSessionHandlers();
-  };
-
   // handleEvent (defined below, after the engine primitives it uses) closes
   // over per-render values via latestRef, but drainQueue above is defined
   // before it in source order and must always call the CURRENT render's
@@ -292,7 +263,15 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
     // repeatedly reconsider session ownership and often lose it to its own
     // generic default, flickering the OS widget every time a sentence
     // changed. Metadata now has exactly one writer: the dedicated effect.
-    reassertMediaSessionHandlersOnPageChange();
+    //
+    // Handlers, unlike metadata, ARE reasserted on every utterance
+    // (unconditionally, not gated to page changes) -- with a network TTS
+    // voice, each speak() call was found to leave the OS 'play'/'pause'
+    // handlers actually unbound from our page until the next reassert,
+    // meaning the headset stopped controlling BrowserPlayer at all between
+    // reassertions. That functional loss matters more than the OS widget's
+    // cosmetic display, which per-page gating didn't fully fix anyway.
+    registerMediaSessionHandlers();
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
     activeUtteranceRef.current = utterance;
