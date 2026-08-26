@@ -281,7 +281,17 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
   // -- but only ever for a short pause/resume/start confirmation, never for
   // how long a sentence takes to finish being spoken (see above).
   const engineSpeakSentence = (text: string): void => {
-    applyMediaSessionMetadata();
+    // Deliberately NOT calling applyMediaSessionMetadata() here: title/
+    // artist/cover never change between sentences on the same page, and the
+    // dedicated effect above already keeps metadata in sync on every REAL
+    // change (spellTitle/currentPage/totalPages/coverUrl), including
+    // running before this function is ever reached for a fresh page (same
+    // render, declared earlier). Reassigning a brand-new MediaMetadata on
+    // every single sentence -- which is what this function used to do,
+    // unconditionally -- was observed to make real Chrome's OS/MPRIS bridge
+    // repeatedly reconsider session ownership and often lose it to its own
+    // generic default, flickering the OS widget every time a sentence
+    // changed. Metadata now has exactly one writer: the dedicated effect.
     reassertMediaSessionHandlersOnPageChange();
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
