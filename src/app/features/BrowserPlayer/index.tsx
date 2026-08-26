@@ -518,6 +518,15 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
         // this nudge's pause was landing -- don't resume if so.
         if (!latestRef.current.isPlaying) return;
         await engineAwaitResume();
+        // This is a REAL pause()+resume() cycle on the live engine, same as
+        // a genuine user pause/resume -- observed to be enough on its own
+        // (independent of page turns) to make real Chrome stop treating this
+        // page's navigator.mediaSession as the active OS session and fall
+        // back to its generic Web Speech widget, invisibly, once every ~14s
+        // of continuous same-page reading. Reasserting here closes that gap
+        // the same way engineSpeakSentence already does for page turns.
+        applyMediaSessionMetadata();
+        registerMediaSessionHandlers();
         return;
       }
     }
