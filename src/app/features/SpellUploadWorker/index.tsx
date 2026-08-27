@@ -11,6 +11,7 @@ import {
   setUploadError,
 } from '../../../store/spellUploadSlice';
 import { saveSpellToDB, updateSpellFull } from '../../../db';
+import { setOriginalPdf } from '../../../db/originalPdfs';
 import { renderPageToCover, extractPdfPages, injectCoverIntoPages, blobToDataUrl } from '../../../utils/pdfUtils';
 import { invalidateContent, invalidateSpellList } from '../../../store/spellReaderSlice';
 
@@ -58,23 +59,26 @@ export const SpellUploadWorker: React.FC = () => {
           await updateSpellFull(next.targetDocId, next.userId, {
             title: next.title,
             pagesContent: JSON.stringify(pagesContent),
-            pdf: pdfBlob,
             cover: coverBlob ?? undefined,
-            originalPdf: pdfBlob,
             originalPagesContent: JSON.stringify(pagesContent),
           });
+          // Replacing a spell's content always keeps the PDF it was replaced with as the
+          // new "original" (matches the pre-TCORE-90 behavior for this path) -- stored in
+          // its own store now, never on the spell record itself.
+          await setOriginalPdf(next.targetDocId, pdfBlob);
           dispatch(invalidateContent());
           dispatch(setUploadDone({ id: next.id }));
         } else {
           const resultDocId = await saveSpellToDB({
             title: next.title,
-            pdf: pdfBlob,
-            originalPdf: next.saveOriginal ? pdfBlob : undefined,
             cover: coverBlob ?? undefined,
             userId: next.userId,
             pagesContent: JSON.stringify(pagesContent),
             originalPagesContent: next.saveOriginal ? JSON.stringify(pagesContent) : undefined,
           });
+          if (next.saveOriginal) {
+            await setOriginalPdf(resultDocId, pdfBlob);
+          }
           dispatch(setUploadDone({ id: next.id, resultDocId }));
           dispatch(invalidateSpellList());
         }

@@ -130,14 +130,14 @@ describe('db/index.ts CRUD', () => {
   it('updateSpellFull replaces content fields while preserving the rest of the record', async () => {
     const { saveSpellToDB, updateSpellFull, getSpellById } = await importDb();
     const id = await saveSpellToDB(seedSpell({ userId: 'user-1', title: 'Old' }));
-    const pdfBlob = new Blob(['%PDF-1.4'], { type: 'application/pdf' });
+    const coverBlob = new Blob(['cover-bytes'], { type: 'image/png' });
 
-    await updateSpellFull(id, 'user-1', { title: 'New', pagesContent: '[2]', pdf: pdfBlob as unknown as globalThis.Blob });
+    await updateSpellFull(id, 'user-1', { title: 'New', pagesContent: '[2]', cover: coverBlob as unknown as globalThis.Blob });
 
     const spell = await getSpellById(id, 'user-1');
     expect(spell?.title).toBe('New');
     expect(spell?.pagesContent).toBe('[2]');
-    expect(spell?.pdf).toBeInstanceOf(Blob);
+    expect(spell?.cover).toBeInstanceOf(Blob);
     // Fields not part of the update (e.g. progress from saveSpellToDB) survive the spread.
     expect(spell?.progress).toEqual({ currentPage: 0, pagesProgress: [], lastReadSentenceIndex: 0 });
   });
@@ -145,9 +145,7 @@ describe('db/index.ts CRUD', () => {
   it('getSpellOriginalPages returns the field only for the matching user', async () => {
     const { saveSpellToDB, updateSpellFull, getSpellOriginalPages } = await importDb();
     const id = await saveSpellToDB(seedSpell({ userId: 'user-1' }));
-    await updateSpellFull(id, 'user-1', {
-      title: 'T', pagesContent: '[]', pdf: new Blob(['x']) as unknown as globalThis.Blob, originalPagesContent: 'ORIGINAL',
-    });
+    await updateSpellFull(id, 'user-1', { title: 'T', pagesContent: '[]', originalPagesContent: 'ORIGINAL' });
 
     expect(await getSpellOriginalPages(id, 'user-1')).toBe('ORIGINAL');
     expect(await getSpellOriginalPages(id, 'user-2')).toBeUndefined();
@@ -179,6 +177,17 @@ describe('db/index.ts CRUD', () => {
     await clearAllData();
 
     expect(await getSpellsFromDB('user-1')).toEqual([]);
+  });
+
+  it('deleteSpellFromDB also deletes the spell\'s original PDF from the separate store (TCORE-90)', async () => {
+    const { saveSpellToDB, deleteSpellFromDB } = await importDb();
+    const { setOriginalPdf, getOriginalPdf } = await import('../originalPdfs');
+    const id = await saveSpellToDB(seedSpell({ userId: 'user-1' }));
+    await setOriginalPdf(id, new Blob(['%PDF-1.4']) as unknown as globalThis.Blob);
+
+    await deleteSpellFromDB(id, 'user-1');
+
+    expect(await getOriginalPdf(id)).toBeNull();
   });
 });
 
@@ -251,6 +260,116 @@ describe('db/index.ts schema setup and legacy migration', () => {
     const { saveSpellToDB, getSpellsFromDB } = await importDb();
     const id = await saveSpellToDB(seedSpell({ userId: 'user-1' }));
     expect((await getSpellsFromDB('user-1')).map((s) => s.id)).toContain(id);
+  });
+
+  it('migrates a legacy spell\'s embedded pdf/originalPdf blob into the separate original-pdf store, then strips those fields (TCORE-90)', async () => {
+    // Seed a `spells` record the way it looked BEFORE this migration -- with the PDF
+    // blobs embedded directly on the record, as any real pre-existing browser has today.
+    // Written directly against the raw store (bypassing saveSpellToDB, which no longer
+    // accepts pdf/originalPdf) to faithfully model what's already on disk for real users.
+    await new Promise<void>((resolve, reject) => {
+      const req = indexedDB.open(DB_NAME, DB_VERSION);
+      req.onupgradeneeded = (e) => {
+        const db = (e.target as IDBOpenDBRequest).result;
+        const store = db.createObjectStore(SPELLS_STORE_NAME, { keyPath: 'id' });
+        store.createIndex('userId', 'userId', { unique: false });
+      };
+      req.onsuccess = (e) => {
+        const db = (e.target as IDBOpenDBRequest).result;
+        const tx = db.transaction(SPELLS_STORE_NAME, 'readwrite');
+        tx.objectStore(SPELLS_STORE_NAME).add({
+          id: 'legacy-pdf-1',
+          title: 'Legacy Spell',
+          userId: 'user-1',
+          createdAt: new Date(),
+          pdf: new Blob(['%PDF-1.4 working']),
+          originalPdf: new Blob(['%PDF-1.4 original']),
+        });
+        tx.oncomplete = () => { db.close(); resolve(); };
+        tx.onerror = () => reject(tx.error);
+      };
+      req.onerror = () => reject(req.error);
+    });
+
+    const { getSpellById, onOriginalPdfsMigrated } = await importDb();
+    const { getOriginalPdf } = await import('../originalPdfs');
+    const migratedPromise = new Promise<boolean>((resolve) => {
+      onOriginalPdfsMigrated(() => resolve(true));
+      setTimeout(() => resolve(false), 2000);
+    });
+
+    // Triggers openDB(), which fires the migration in the background.
+    await getSpellById('legacy-pdf-1', 'user-1');
+    const migrated = await migratedPromise;
+    expect(migrated).toBe(true);
+
+    // The blob now lives in the dedicated store -- never lost.
+    const movedBlob = await getOriginalPdf('legacy-pdf-1');
+    expect(movedBlob).not.toBeNull();
+    await expect(movedBlob!.text()).resolves.toBe('%PDF-1.4 original');
+
+    // ...and the legacy fields are gone from the spell record itself, everything else intact.
+    const spell = await getSpellById('legacy-pdf-1', 'user-1');
+    expect(spell).not.toHaveProperty('pdf');
+    expect(spell).not.toHaveProperty('originalPdf');
+    expect(spell?.title).toBe('Legacy Spell');
+  });
+
+  it('does not lose a concurrent write that lands while the migration is still running (no lost-update, TCORE-90 review)', async () => {
+    // Same legacy seed as above.
+    await new Promise<void>((resolve, reject) => {
+      const req = indexedDB.open(DB_NAME, DB_VERSION);
+      req.onupgradeneeded = (e) => {
+        const db = (e.target as IDBOpenDBRequest).result;
+        const store = db.createObjectStore(SPELLS_STORE_NAME, { keyPath: 'id' });
+        store.createIndex('userId', 'userId', { unique: false });
+      };
+      req.onsuccess = (e) => {
+        const db = (e.target as IDBOpenDBRequest).result;
+        const tx = db.transaction(SPELLS_STORE_NAME, 'readwrite');
+        tx.objectStore(SPELLS_STORE_NAME).add({
+          id: 'legacy-pdf-2',
+          title: 'Legacy Spell 2',
+          userId: 'user-1',
+          createdAt: new Date(),
+          pdf: new Blob(['%PDF-1.4 working']),
+          originalPdf: new Blob(['%PDF-1.4 original']),
+        });
+        tx.oncomplete = () => { db.close(); resolve(); };
+        tx.onerror = () => reject(tx.error);
+      };
+      req.onerror = () => reject(req.error);
+    });
+
+    const { getSpellById, updateSpellProgress, onOriginalPdfsMigrated } = await importDb();
+    const originalPdfsModule = await import('../originalPdfs');
+
+    // The migration awaits setOriginalPdf() (copying the blob out) BEFORE it strips the
+    // fields from the spell record -- that gap is exactly when a real user action (reading
+    // a page while the background migration is still running) can write to the SAME
+    // record. Hooking the real setOriginalPdf to also perform that write reproduces the
+    // race deterministically instead of depending on incidental timing.
+    const realSetOriginalPdf = originalPdfsModule.setOriginalPdf;
+    vi.spyOn(originalPdfsModule, 'setOriginalPdf').mockImplementation(async (spellId, blob) => {
+      await realSetOriginalPdf(spellId, blob);
+      if (spellId === 'legacy-pdf-2') {
+        await updateSpellProgress('legacy-pdf-2', 'user-1', { currentPage: 9, pagesProgress: [1, 2, 3], lastReadSentenceIndex: 42 });
+      }
+    });
+
+    const migratedPromise = new Promise<boolean>((resolve) => {
+      onOriginalPdfsMigrated(() => resolve(true));
+      setTimeout(() => resolve(false), 2000);
+    });
+    await getSpellById('legacy-pdf-2', 'user-1');
+    expect(await migratedPromise).toBe(true);
+
+    const spell = await getSpellById('legacy-pdf-2', 'user-1');
+    // The migration's own write must never clobber the concurrent progress update with a
+    // stale pre-migration snapshot.
+    expect(spell?.progress).toEqual({ currentPage: 9, pagesProgress: [1, 2, 3], lastReadSentenceIndex: 42 });
+    expect(spell).not.toHaveProperty('pdf');
+    expect(spell).not.toHaveProperty('originalPdf');
   });
 });
 

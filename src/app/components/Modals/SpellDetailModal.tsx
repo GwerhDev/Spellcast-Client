@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { useAppSelector } from '../../../store/hooks';
 import { getSpellById, deleteSpellFromDB } from '../../../db';
+import { hasOriginalPdf } from '../../../db/originalPdfs';
 import { setAutoPlayOnLoad, resetBrowserPlayer } from '../../../store/browserPlayerSlice';
 import { setAutoPlayOnLoad as setAudioAutoPlayOnLoad } from '../../../store/audioPlayerSlice';
 import { invalidateSpellList, resetSpellReader } from '../../../store/spellReaderSlice';
@@ -33,6 +34,9 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
   const [doc, setDoc] = useState<Awaited<ReturnType<typeof getSpellById>> | null>(null);
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  // TCORE-90: the original PDF no longer lives on the Spell record -- its existence is
+  // looked up in the dedicated store instead of reading a `pdf` field.
+  const [hasPdf, setHasPdf] = useState(false);
 
   useEffect(() => {
     if (!spellId || !userData?.id || !show) return;
@@ -45,6 +49,11 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
     setCoverUrl(url);
     return () => URL.revokeObjectURL(url);
   }, [doc?.cover]);
+
+  useEffect(() => {
+    if (!doc?.id) { setHasPdf(false); return; }
+    hasOriginalPdf(doc.id).then(setHasPdf);
+  }, [doc?.id]);
 
   if (!show || !spellId) return null;
 
@@ -97,7 +106,7 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
               <div className={s.info}>
                 <h2 className={s.title}>{doc.title}</h2>
                 <div className={s.tags}>
-                  {doc.pdf && <Tag tone="default" size="sm">PDF</Tag>}
+                  {hasPdf && <span data-testid="spell-detail-modal-pdf-tag"><Tag tone="default" size="sm">PDF</Tag></span>}
                   {currentPage > 0 && progressPct !== null && (
                     <Tag tone={progressPct === 100 ? 'ok' : 'primary'} size="sm">
                       {progressPct}%

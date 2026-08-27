@@ -18,6 +18,13 @@ vi.mock('../../db', () => ({
   saveSpellToDB: (...args: unknown[]) => saveSpellToDBMock(...args),
 }));
 
+const getOriginalPdfMock = vi.fn();
+const setOriginalPdfMock = vi.fn();
+vi.mock('../../db/originalPdfs', () => ({
+  getOriginalPdf: (...args: unknown[]) => getOriginalPdfMock(...args),
+  setOriginalPdf: (...args: unknown[]) => setOriginalPdfMock(...args),
+}));
+
 const getCachedAudioEntriesForSpellMock = vi.fn();
 const setCachedAudioMock = vi.fn();
 vi.mock('../../db/audioCache', () => ({
@@ -44,9 +51,11 @@ const readZipJson = async (blob: Blob, path: string) => {
 beforeEach(() => {
   vi.clearAllMocks();
   getSpellByIdMock.mockResolvedValue(baseSpell);
+  getOriginalPdfMock.mockResolvedValue(null);
   getCachedAudioEntriesForSpellMock.mockResolvedValue([]);
   saveSpellToDBMock.mockResolvedValue('new-spell-id');
   setCachedAudioMock.mockResolvedValue(undefined);
+  setOriginalPdfMock.mockResolvedValue(undefined);
 });
 
 describe('exportSpellToBlob', () => {
@@ -67,7 +76,7 @@ describe('exportSpellToBlob', () => {
       formatVersion: SPELL_FORMAT_VERSION,
       title: 'My Spell',
       exportedAt: manifest.exportedAt,
-      hasSource: false,
+      hasOriginalPdf: false,
       voices: [],
     });
   });
@@ -79,39 +88,53 @@ describe('exportSpellToBlob', () => {
     expect(Object.keys(spellJson)).toEqual(['title', 'pagesContent']);
   });
 
-  it('bundles source/ when includeSource is true and the record has an original PDF', async () => {
+  it('bundles original/original.pdf (read from the dedicated PDF store, not the record) when includeSource is true and one exists', async () => {
     const pdfBytes = new TextEncoder().encode('%PDF-1.4 fake');
+    getOriginalPdfMock.mockResolvedValue(new Blob([pdfBytes], { type: 'application/pdf' }));
     getSpellByIdMock.mockResolvedValue({
       ...baseSpell,
-      originalPdf: new Blob([pdfBytes], { type: 'application/pdf' }),
       originalPagesContent: JSON.stringify([{ type: 'doc', original: true }]),
     });
 
     const { blob } = await exportSpellToBlob('spell-1', 'user-1', { includeSource: true });
     const zip = await JSZip.loadAsync(await blob.arrayBuffer());
 
-    expect(zip.file('source/original.pdf')).not.toBeNull();
-    expect(zip.file('source/originalPagesContent.json')).not.toBeNull();
+    expect(getOriginalPdfMock).toHaveBeenCalledWith('spell-1');
+    expect(zip.file('original/original.pdf')).not.toBeNull();
+    expect(zip.file('original/originalPagesContent.json')).not.toBeNull();
     const manifest = await readZipJson(blob, 'manifest.json') as SpellManifest;
-    expect(manifest.hasSource).toBe(true);
+    expect(manifest.hasOriginalPdf).toBe(true);
   });
 
-  it('does not bundle source/ when includeSource is true but the record has no original PDF/pages', async () => {
+  it('does not bundle original/original.pdf when includeSource is true but nothing is stored for this spell', async () => {
+    getOriginalPdfMock.mockResolvedValue(null);
     const { blob } = await exportSpellToBlob('spell-1', 'user-1', { includeSource: true });
     const zip = await JSZip.loadAsync(await blob.arrayBuffer());
-    expect(zip.file('source/original.pdf')).toBeNull();
+    expect(zip.file('original/original.pdf')).toBeNull();
     const manifest = await readZipJson(blob, 'manifest.json') as SpellManifest;
-    expect(manifest.hasSource).toBe(false);
+    expect(manifest.hasOriginalPdf).toBe(false);
   });
 
-  it('does not bundle source/ when includeSource is false, even if the record has an original PDF', async () => {
-    getSpellByIdMock.mockResolvedValue({
-      ...baseSpell,
-      originalPdf: new Blob(['fake'], { type: 'application/pdf' }),
-    });
+  it('does not bundle original/original.pdf when includeSource is false, even if one is stored', async () => {
+    getOriginalPdfMock.mockResolvedValue(new Blob(['fake'], { type: 'application/pdf' }));
     const { blob } = await exportSpellToBlob('spell-1', 'user-1', { includeSource: false });
     const zip = await JSZip.loadAsync(await blob.arrayBuffer());
-    expect(zip.file('source/original.pdf')).toBeNull();
+    expect(zip.file('original/original.pdf')).toBeNull();
+    // includeSource only gates the (heavier) binary -- it must never even look it up.
+    expect(getOriginalPdfMock).not.toHaveBeenCalled();
+  });
+
+  it('bundles original/originalPagesContent.json whenever the record has it, regardless of includeSource', async () => {
+    getSpellByIdMock.mockResolvedValue({
+      ...baseSpell,
+      originalPagesContent: JSON.stringify([{ type: 'doc', original: true }]),
+    });
+
+    const { blob } = await exportSpellToBlob('spell-1', 'user-1', { includeSource: false });
+    const zip = await JSZip.loadAsync(await blob.arrayBuffer());
+
+    expect(zip.file('original/originalPagesContent.json')).not.toBeNull();
+    expect(zip.file('original/original.pdf')).toBeNull();
   });
 
   it('bundles renders/<voice>/ for every cached audio+timeline pair when includeAudio is true', async () => {
@@ -189,7 +212,7 @@ describe('importSpellFromFile', () => {
 
   it('throws SpellImportError when the format version is unsupported', async () => {
     const zip = new JSZip();
-    zip.file('manifest.json', JSON.stringify({ formatVersion: 999, title: 't', exportedAt: '', hasSource: false, voices: [] }));
+    zip.file('manifest.json', JSON.stringify({ formatVersion: 999, title: 't', exportedAt: '', hasOriginalPdf: false, voices: [] }));
     zip.file('spell.json', JSON.stringify({ title: 't', pagesContent: '[]' }));
     const blob = await zip.generateAsync({ type: 'blob' });
 
@@ -198,13 +221,13 @@ describe('importSpellFromFile', () => {
 
   it('throws SpellImportError when spell.json is missing', async () => {
     const zip = new JSZip();
-    zip.file('manifest.json', JSON.stringify({ formatVersion: SPELL_FORMAT_VERSION, title: 't', exportedAt: '', hasSource: false, voices: [] }));
+    zip.file('manifest.json', JSON.stringify({ formatVersion: SPELL_FORMAT_VERSION, title: 't', exportedAt: '', hasOriginalPdf: false, voices: [] }));
     const blob = await zip.generateAsync({ type: 'blob' });
 
     await expect(importSpellFromFile(asFile(blob), 'user-1')).rejects.toThrow(/missing spell\.json/);
   });
 
-  it('round-trips a plain spell (no source, no audio) through export then import', async () => {
+  it('round-trips a plain spell (no source, no audio) through export then import, never sending a pdf/originalPdf field', async () => {
     const { blob } = await exportSpellToBlob('spell-1', 'user-1');
     const newId = await importSpellFromFile(asFile(blob), 'user-2');
 
@@ -213,32 +236,36 @@ describe('importSpellFromFile', () => {
       title: 'My Spell',
       userId: 'user-2',
       pagesContent: baseSpell.pagesContent,
-      pdf: undefined,
-      originalPdf: undefined,
       originalPagesContent: undefined,
     });
+    expect(setOriginalPdfMock).not.toHaveBeenCalled();
     expect(setCachedAudioMock).not.toHaveBeenCalled();
   });
 
-  it('round-trips a spell with bundled source into a new record using a fresh id', async () => {
+  it('round-trips a spell with a bundled original PDF into a new record using a fresh id, storing the PDF in the dedicated store (not the record)', async () => {
     const pdfBlob = new Blob([new TextEncoder().encode('%PDF-1.4 fake')], { type: 'application/pdf' });
+    getOriginalPdfMock.mockResolvedValue(pdfBlob);
     getSpellByIdMock.mockResolvedValue({
       ...baseSpell,
-      originalPdf: pdfBlob,
       originalPagesContent: JSON.stringify([{ type: 'doc', original: true }]),
     });
+    saveSpellToDBMock.mockResolvedValue('brand-new-id');
 
     const { blob } = await exportSpellToBlob('spell-1', 'user-1', { includeSource: true });
-    await importSpellFromFile(asFile(blob), 'user-2');
+    const newId = await importSpellFromFile(asFile(blob), 'user-2');
 
+    expect(newId).toBe('brand-new-id');
     expect(saveSpellToDBMock).toHaveBeenCalledTimes(1);
     const call = saveSpellToDBMock.mock.calls[0][0];
     expect(call.title).toBe('My Spell');
     expect(call.originalPagesContent).toBe(JSON.stringify([{ type: 'doc', original: true }]));
-    // The bundled PDF doubles as both `pdf` and `originalPdf`, mirroring a fresh upload.
-    expect(call.pdf).toBeInstanceOf(Blob);
-    expect(call.originalPdf).toBeInstanceOf(Blob);
-    expect(await call.pdf.arrayBuffer()).toEqual(await call.originalPdf.arrayBuffer());
+    expect(call).not.toHaveProperty('pdf');
+    expect(call).not.toHaveProperty('originalPdf');
+
+    expect(setOriginalPdfMock).toHaveBeenCalledTimes(1);
+    const [storedId, storedBlob] = setOriginalPdfMock.mock.calls[0];
+    expect(storedId).toBe('brand-new-id');
+    expect(await (storedBlob as Blob).arrayBuffer()).toEqual(await pdfBlob.arrayBuffer());
   });
 
   it('round-trips bundled audio renders into setCachedAudio calls keyed on the NEW spell id', async () => {
@@ -258,5 +285,40 @@ describe('importSpellFromFile', () => {
     expect(firstCallArgs[2]).toBe('alice');
     expect(firstCallArgs[4]).toEqual(entries[0].timeline);
     expect(await (firstCallArgs[3] as Blob).arrayBuffer()).toEqual(await entries[0].blob.arrayBuffer());
+  });
+
+  describe('format v1 backward compatibility', () => {
+    const buildV1Zip = async (opts: { withPdf?: boolean; withOriginalPages?: boolean } = {}) => {
+      const zip = new JSZip();
+      zip.file('spell.json', JSON.stringify({ title: 'Old Spell', pagesContent: '[]' }));
+      const hasSource = !!(opts.withPdf || opts.withOriginalPages);
+      if (opts.withPdf) zip.file('source/original.pdf', new TextEncoder().encode('%PDF-1.4 v1'));
+      if (opts.withOriginalPages) zip.file('source/originalPagesContent.json', JSON.stringify([{ type: 'doc', v1: true }]));
+      zip.file('manifest.json', JSON.stringify({ formatVersion: 1, title: 'Old Spell', exportedAt: '', hasSource, voices: [] }));
+      return zip.generateAsync({ type: 'blob' });
+    };
+
+    it('imports a v1 .spell with a bundled PDF without breaking, ignoring the PDF entirely', async () => {
+      const blob = await buildV1Zip({ withPdf: true });
+      saveSpellToDBMock.mockResolvedValue('v1-new-id');
+
+      const newId = await importSpellFromFile(asFile(blob), 'user-2');
+
+      expect(newId).toBe('v1-new-id');
+      expect(saveSpellToDBMock).toHaveBeenCalledWith(expect.objectContaining({ title: 'Old Spell' }));
+      const call = saveSpellToDBMock.mock.calls[0][0];
+      expect(call).not.toHaveProperty('pdf');
+      expect(call).not.toHaveProperty('originalPdf');
+      // The old PDF is not migrated into the new store either -- explicitly dropped.
+      expect(setOriginalPdfMock).not.toHaveBeenCalled();
+    });
+
+    it('still hydrates originalPagesContent from a v1 source/ folder (for revert to keep working)', async () => {
+      const blob = await buildV1Zip({ withOriginalPages: true });
+      const newId = await importSpellFromFile(asFile(blob), 'user-2');
+      expect(newId).toBeDefined();
+      const call = saveSpellToDBMock.mock.calls[0][0];
+      expect(call.originalPagesContent).toBe(JSON.stringify([{ type: 'doc', v1: true }]));
+    });
   });
 });

@@ -4,6 +4,7 @@ import { Routes, Route } from 'react-router-dom';
 import { renderWithProviders, makeStore } from '../../../../test/renderWithProviders';
 import { SpellDetail } from '../index';
 import * as db from '../../../../db';
+import * as originalPdfsDb from '../../../../db/originalPdfs';
 
 const mockDoc = {
   id: 'doc-1',
@@ -30,7 +31,29 @@ const renderDetail = (store = loggedStore()) =>
   );
 
 describe('SpellDetail', () => {
-  beforeEach(() => { vi.restoreAllMocks(); });
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    vi.spyOn(originalPdfsDb, 'hasOriginalPdf').mockResolvedValue(false);
+  });
+
+  describe('PDF tag (TCORE-90 -- derived from the dedicated store, not doc.pdf)', () => {
+    it('shows the PDF tag once hasOriginalPdf resolves true', async () => {
+      vi.spyOn(db, 'getSpellById').mockResolvedValue(mockDoc as never);
+      vi.spyOn(originalPdfsDb, 'hasOriginalPdf').mockResolvedValue(true);
+      renderDetail();
+      await screen.findByTestId('spell-detail-title');
+      expect(await screen.findByTestId('spell-detail-pdf-tag')).toBeInTheDocument();
+      expect(originalPdfsDb.hasOriginalPdf).toHaveBeenCalledWith('doc-1');
+    });
+
+    it('does not show the PDF tag when no original PDF is stored', async () => {
+      vi.spyOn(db, 'getSpellById').mockResolvedValue(mockDoc as never);
+      vi.spyOn(originalPdfsDb, 'hasOriginalPdf').mockResolvedValue(false);
+      renderDetail();
+      await screen.findByTestId('spell-detail-title');
+      expect(screen.queryByTestId('spell-detail-pdf-tag')).not.toBeInTheDocument();
+    });
+  });
 
   it('shows loading state while fetching', () => {
     vi.spyOn(db, 'getSpellById').mockReturnValue(new Promise(() => {}));

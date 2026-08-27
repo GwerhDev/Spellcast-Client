@@ -1,5 +1,6 @@
 import { DB_NAME, DB_VERSION, SPELLS_STORE_NAME } from "../config/api";
 import { Spell, SpellProgress } from "../interfaces";
+import { setOriginalPdf, deleteOriginalPdf } from "./originalPdfs";
 
 // The pre-rename (TCORE-78) store name, frozen on purpose: it names whatever a
 // browser already has on disk from before this migration shipped, so it must never
@@ -56,6 +57,82 @@ type MigrationListener = () => void;
 const migrationListeners: MigrationListener[] = [];
 export const onSpellsMigrated = (listener: MigrationListener): void => {
   migrationListeners.push(listener);
+};
+
+// TCORE-90: pre-existing spell records still carry their `pdf`/`originalPdf` Blob embedded
+// (that's how every record was written before this migration shipped). Same fire-and-forget,
+// never-blocking shape as migrateLegacyDocumentsStore below, but crossing INTO a different
+// physical database (src/db/originalPdfs.ts) rather than a different store of this same one --
+// so it can't run inside `spells`'s onupgradeneeded versionchange transaction (transactions
+// don't span databases). Only ever ADDS to the new store and STRIPS the two fields from the
+// old record after that add is confirmed -- it never deletes a spell record, and a record
+// whose copy fails is simply left untouched to retry on the next openDB() call.
+const originalPdfMigrationListeners: MigrationListener[] = [];
+export const onOriginalPdfsMigrated = (listener: MigrationListener): void => {
+  originalPdfMigrationListeners.push(listener);
+};
+
+let pdfMigrationAttempted = false;
+
+const migrateEmbeddedPdfsToOwnStore = async (db: IDBDatabase): Promise<void> => {
+  if (pdfMigrationAttempted) return;
+  pdfMigrationAttempted = true;
+
+  try {
+    const allSpells = await new Promise<(Spell & { pdf?: Blob; originalPdf?: Blob })[]>((resolve, reject) => {
+      const req = db.transaction(SPELLS_STORE_NAME, 'readonly').objectStore(SPELLS_STORE_NAME).getAll();
+      req.onsuccess = () => resolve(req.result ?? []);
+      req.onerror = () => reject(req.error);
+    });
+
+    const legacyRecords = allSpells.filter((s) => s.pdf || s.originalPdf);
+    if (legacyRecords.length === 0) return;
+
+    let migratedCount = 0;
+    for (const record of legacyRecords) {
+      try {
+        // The PDF actually worth keeping is `originalPdf` -- the file the user chose to
+        // retain. `pdf` was always either the same bytes or fully derivable from it and
+        // never had its own reader, so it's simply dropped rather than copied too.
+        if (record.originalPdf) {
+          await setOriginalPdf(record.id, record.originalPdf);
+        }
+        // Re-read the CURRENT record inside this readwrite transaction rather than
+        // writing back the `getAll()` snapshot from above -- that snapshot can be stale
+        // by the time we get here (this loop iteration already awaited a separate
+        // transaction to copy the blob out), and a real user action (e.g. reading a page)
+        // can have written newer progress/content to this exact record in that window.
+        // get+put inside the SAME transaction only ever removes the two legacy fields
+        // from whatever is actually there right now, never reverting anything else.
+        await new Promise<void>((resolve, reject) => {
+          const tx = db.transaction(SPELLS_STORE_NAME, 'readwrite');
+          const store = tx.objectStore(SPELLS_STORE_NAME);
+          const getReq = store.get(record.id);
+          getReq.onsuccess = () => {
+            const current = getReq.result as (Spell & { pdf?: Blob; originalPdf?: Blob }) | undefined;
+            if (!current) { resolve(); return; } // deleted in the meantime -- nothing to do
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { pdf: _pdf, originalPdf: _originalPdf, ...rest } = current;
+            const putReq = store.put(rest);
+            putReq.onsuccess = () => resolve();
+            putReq.onerror = () => reject(putReq.error);
+          };
+          getReq.onerror = () => reject(getReq.error);
+        });
+        migratedCount++;
+      } catch (err) {
+        // Leave this one record untouched (still carrying the embedded blob) -- next
+        // openDB() call will find it again via the same `pdf || originalPdf` filter above.
+        console.error(`[IndexedDB] Failed to migrate embedded PDF for spell "${record.id}", will retry on next open:`, err);
+      }
+    }
+
+    if (migratedCount > 0) {
+      originalPdfMigrationListeners.forEach((listener) => listener());
+    }
+  } catch (err) {
+    console.error('[IndexedDB] Embedded-PDF migration scan failed, will retry on next open:', err);
+  }
 };
 
 const migrateLegacyDocumentsStore = async (db: IDBDatabase): Promise<void> => {
@@ -193,6 +270,7 @@ const openDB = (): Promise<IDBDatabase> => {
           const bumpedDb = (bumpEvent.target as IDBOpenDBRequest).result;
           resolve(bumpedDb);
           void migrateLegacyDocumentsStore(bumpedDb);
+          void migrateEmbeddedPdfsToOwnStore(bumpedDb);
         };
         bumpRequest.onerror = (bumpEvent) => {
           reject((bumpEvent.target as IDBOpenDBRequest).error ?? new Error('Failed to add the spells store to an existing database.'));
@@ -200,6 +278,7 @@ const openDB = (): Promise<IDBDatabase> => {
       } else {
         resolve(db);
         void migrateLegacyDocumentsStore(db);
+        void migrateEmbeddedPdfsToOwnStore(db);
       }
     };
 
@@ -319,7 +398,7 @@ export const deleteSpellFromDB = async (id: string, userId: string | undefined):
   const transaction = db.transaction(SPELLS_STORE_NAME, 'readwrite');
   const spellStore = transaction.objectStore(SPELLS_STORE_NAME);
 
-  return new Promise((resolve, reject) => {
+  await new Promise<void>((resolve, reject) => {
     transaction.oncomplete = () => resolve();
     transaction.onerror = () => reject(transaction.error);
 
@@ -333,6 +412,13 @@ export const deleteSpellFromDB = async (id: string, userId: string | undefined):
         reject('Spell not found or you do not have permission to delete it.');
       }
     };
+  });
+
+  // Best-effort (TCORE-90): the spell itself is already gone, so a failure here would
+  // leave an orphaned PDF in the other store, not lose anything -- never let it fail the
+  // delete the user actually asked for.
+  await deleteOriginalPdf(id).catch((err) => {
+    console.error(`[IndexedDB] Failed to delete original PDF for removed spell "${id}":`, err);
   });
 };
 
@@ -360,7 +446,7 @@ export const updateSpellContent = async (id: string, userId: string, updates: { 
 export const updateSpellFull = async (
   id: string,
   userId: string,
-  updates: { title: string; pagesContent: string; pdf: Blob; cover?: Blob; originalPdf?: Blob; originalPagesContent?: string }
+  updates: { title: string; pagesContent: string; cover?: Blob; originalPagesContent?: string }
 ): Promise<void> => {
   const db = await openDB();
   const transaction = db.transaction(SPELLS_STORE_NAME, 'readwrite');

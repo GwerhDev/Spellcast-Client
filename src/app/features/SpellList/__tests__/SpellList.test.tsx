@@ -3,6 +3,7 @@ import { screen } from '@testing-library/react';
 import { renderWithProviders, makeStore } from '../../../../test/renderWithProviders';
 import { SpellList } from '../index';
 import * as db from '../../../../db';
+import * as originalPdfsDb from '../../../../db/originalPdfs';
 
 const mockDoc = {
   id: 'doc-1',
@@ -21,7 +22,10 @@ const loggedStore = () => {
 };
 
 describe('SpellList', () => {
-  beforeEach(() => { vi.restoreAllMocks(); });
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    vi.spyOn(originalPdfsDb, 'getAllOriginalPdfIds').mockResolvedValue(new Set());
+  });
 
   it('shows skeleton cards while fetching', () => {
     // Never resolves — keeps isLoading=true
@@ -41,5 +45,20 @@ describe('SpellList', () => {
     vi.spyOn(db, 'getSpellsFromDB').mockResolvedValue([mockDoc] as never);
     renderWithProviders(<SpellList query="zzznomatch" />, { store: loggedStore() });
     expect(await screen.findByTestId('spell-list-no-results')).toBeInTheDocument();
+  });
+
+  describe('docFilter="pdf" (TCORE-90 -- derived from the dedicated store, not doc.pdf)', () => {
+    it('keeps only spells present in getAllOriginalPdfIds, in a single batch read', async () => {
+      const withPdf = { ...mockDoc, id: 'doc-1', title: 'Has PDF' };
+      const withoutPdf = { ...mockDoc, id: 'doc-2', title: 'No PDF' };
+      vi.spyOn(db, 'getSpellsFromDB').mockResolvedValue([withPdf, withoutPdf] as never);
+      vi.spyOn(originalPdfsDb, 'getAllOriginalPdfIds').mockResolvedValue(new Set(['doc-1']));
+
+      renderWithProviders(<SpellList docFilter="pdf" />, { store: loggedStore() });
+
+      expect(await screen.findByTestId('spell-card-doc-1')).toBeInTheDocument();
+      expect(screen.queryByTestId('spell-card-doc-2')).not.toBeInTheDocument();
+      expect(originalPdfsDb.getAllOriginalPdfIds).toHaveBeenCalledTimes(1);
+    });
   });
 });

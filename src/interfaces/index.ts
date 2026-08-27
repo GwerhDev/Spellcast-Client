@@ -82,13 +82,15 @@ export interface SpellProgress {
 export interface Spell {
   id: string;
   title: string;
-  pdf?: Blob;
   cover?: Blob;
   createdAt: Date;
   userId: string | undefined;
   progress?: SpellProgress;
   pagesContent?: string;
-  originalPdf?: Blob;
+  // The original PDF (if the user chose to keep one) no longer lives here -- it's an
+  // ingestion input, not part of the spell's content, and bloated every list/export. See
+  // src/db/originalPdfs.ts (TCORE-90). Whether one exists for this spell is looked up there,
+  // keyed by `id`, not stored on this record.
   originalPagesContent?: string;
 }
 

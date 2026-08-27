@@ -3,6 +3,7 @@ import { screen, fireEvent, waitFor } from '@testing-library/react';
 import { renderWithProviders, makeStore } from '../../../../test/renderWithProviders';
 import { SpellDetailModal } from '../SpellDetailModal';
 import * as db from '../../../../db';
+import * as originalPdfsDb from '../../../../db/originalPdfs';
 
 const mockDoc = {
   id: 'doc-1',
@@ -21,7 +22,27 @@ const loggedStore = () => {
 };
 
 describe('SpellDetailModal', () => {
-  beforeEach(() => { vi.restoreAllMocks(); });
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    vi.spyOn(originalPdfsDb, 'hasOriginalPdf').mockResolvedValue(false);
+  });
+
+  describe('PDF tag (TCORE-90 -- derived from the dedicated store, not doc.pdf)', () => {
+    it('shows the PDF tag once hasOriginalPdf resolves true', async () => {
+      vi.spyOn(db, 'getSpellById').mockResolvedValue(mockDoc as never);
+      vi.spyOn(originalPdfsDb, 'hasOriginalPdf').mockResolvedValue(true);
+      renderWithProviders(<SpellDetailModal spellId="doc-1" show onClose={vi.fn()} />, { store: loggedStore() });
+      expect(await screen.findByTestId('spell-detail-modal-pdf-tag')).toBeInTheDocument();
+    });
+
+    it('does not show the PDF tag when no original PDF is stored', async () => {
+      vi.spyOn(db, 'getSpellById').mockResolvedValue(mockDoc as never);
+      vi.spyOn(originalPdfsDb, 'hasOriginalPdf').mockResolvedValue(false);
+      renderWithProviders(<SpellDetailModal spellId="doc-1" show onClose={vi.fn()} />, { store: loggedStore() });
+      await screen.findByTestId('spell-detail-modal-continue-btn');
+      expect(screen.queryByTestId('spell-detail-modal-pdf-tag')).not.toBeInTheDocument();
+    });
+  });
 
   it('renders nothing when show is false', () => {
     renderWithProviders(<SpellDetailModal spellId="doc-1" show={false} onClose={vi.fn()} />, { store: loggedStore() });

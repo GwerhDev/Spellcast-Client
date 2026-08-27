@@ -2,6 +2,7 @@ import s from './index.module.css';
 import grid from '../../components/SpellGrid/index.module.css';
 import React, { useEffect, useState } from 'react';
 import { getSpellsFromDB, deleteSpellFromDB } from '../../../db';
+import { getAllOriginalPdfIds } from '../../../db/originalPdfs';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { DeleteConfirmModal } from '../../components/Modals/DeleteConfirmModal';
 // import { SpellExportModal } from '../../components/Modals/SpellExportModal'; // .spell export: future
@@ -42,6 +43,9 @@ export const SpellList: React.FC<SpellListProps> = ({ query = '', filter = 'loca
   const browserPlaying = useAppSelector(state => state.browserPlayer.isPlaying);
   const selectedVoiceType = useAppSelector(state => state.voice.selectedVoice.type);
   const [documents, setDocuments] = useState<Spell[]>([]);
+  // TCORE-90: which spells have an original PDF stored, fetched once per list load (a
+  // single batch read) instead of reading a `pdf` field off each Spell record.
+  const [pdfIds, setPdfIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState<{ id: string, title: string } | null>(null);
@@ -73,8 +77,9 @@ export const SpellList: React.FC<SpellListProps> = ({ query = '', filter = 'loca
     if (!logged) { setIsLoading(false); return; }
     try {
       setIsLoading(true);
-      const docs = await getSpellsFromDB(userData.id);
+      const [docs, ids] = await Promise.all([getSpellsFromDB(userData.id), getAllOriginalPdfIds()]);
       setDocuments(docs.sort((a: Spell, b: Spell) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+      setPdfIds(ids);
     } catch (error) {
       console.error('Failed to fetch local documents:', error);
     } finally {
@@ -117,7 +122,7 @@ export const SpellList: React.FC<SpellListProps> = ({ query = '', filter = 'loca
   const byQuery = q ? documents.filter(d => d.title.toLowerCase().includes(q)) : documents;
   const filtered = byQuery.filter(d => {
     if (docFilter === 'reading') return (d.progress?.currentPage ?? 0) > 0;
-    if (docFilter === 'pdf') return !!d.pdf;
+    if (docFilter === 'pdf') return pdfIds.has(d.id);
     if (docFilter === 'unprocessed') return !d.pagesContent;
     return true;
   });

@@ -1,25 +1,36 @@
 import JSZip from 'jszip';
 import type { TimelineEntry } from '../services/tts';
 import { getSpellById, saveSpellToDB } from '../db';
+import { getOriginalPdf, setOriginalPdf } from '../db/originalPdfs';
 import { getCachedAudioEntriesForSpell, setCachedAudio, type CachedAudioEntry } from '../db/audioCache';
 
 // .spell is a ZIP container (TCORE-78): manifest.json + spell.json (required) +
-// source/ (optional, original PDF) + renders/<voice>/ (optional, audio+timeline pairs,
-// always co-located — never packaged separately). Bumping this invalidates nothing on
-// its own; importSpellFromFile() rejects a manifest with a formatVersion it doesn't
-// recognize, so this only needs to change on an actual container-shape change.
-export const SPELL_FORMAT_VERSION = 1;
+// original/ (optional: originalPagesContent.json always when present, original.pdf only
+// when explicitly requested) + renders/<voice>/ (optional, audio+timeline pairs, always
+// co-located — never packaged separately). Bumping this invalidates nothing on its own;
+// importSpellFromFile() rejects a manifest with a formatVersion it doesn't recognize, so
+// this only needs to change on an actual container-shape change.
+//
+// Bumped 1 -> 2 (TCORE-90): the original PDF moved out of the Spell record into its own
+// store (src/db/originalPdfs.ts), and the folder was renamed source/ -> original/ to match.
+// v1 files are still importable (see importSpellFromFile) — their bundled PDF, if any, is
+// simply ignored (never migrated into the new store) per the ticket's own call.
+export const SPELL_FORMAT_VERSION = 2;
 
 export interface SpellManifest {
   formatVersion: number;
   title: string;
   exportedAt: string;
-  hasSource: boolean;
+  hasOriginalPdf: boolean;
   voices: string[];
 }
 
 export interface ExportSpellOptions {
-  /** Bundle source/ (the original PDF + its extracted pages), when present on the record. */
+  /**
+   * Bundle original/original.pdf, when one is stored for this spell. Gates ONLY the PDF
+   * binary (the heavy part) — original/originalPagesContent.json (needed for revert) is
+   * bundled whenever the record has it, independent of this flag.
+   */
   includeSource?: boolean;
   /** Bundle renders/<voice>/ (cached audio + timelines), when any are cached for this spell. */
   includeAudio?: boolean;
@@ -69,11 +80,18 @@ export async function exportSpellToBlob(
     pagesContent: spell.pagesContent ?? '[]',
   }));
 
-  const hasSource = includeSource && !!(spell.originalPdf || spell.originalPagesContent);
-  if (hasSource) {
-    if (spell.originalPdf) zip.file('source/original.pdf', await spell.originalPdf.arrayBuffer());
-    if (spell.originalPagesContent) zip.file('source/originalPagesContent.json', spell.originalPagesContent);
+  // originalPagesContent is small JSON, needed for revert-to-original on the receiving
+  // end — it travels whenever present, regardless of includeSource (that toggle is only
+  // about the much heavier PDF binary below).
+  if (spell.originalPagesContent) {
+    zip.file('original/originalPagesContent.json', spell.originalPagesContent);
   }
+
+  // Only look up the PDF store at all when actually requested — it's the one genuinely
+  // heavy, opt-in part of a .spell export.
+  const originalPdf = includeSource ? await getOriginalPdf(spellId) : null;
+  const hasOriginalPdf = !!originalPdf;
+  if (originalPdf) zip.file('original/original.pdf', await originalPdf.arrayBuffer());
 
   let voices: string[] = [];
   if (includeAudio) {
@@ -94,13 +112,13 @@ export async function exportSpellToBlob(
     }
   }
 
-  // manifest.json goes in last so its `voices`/`hasSource` flags reflect what was
+  // manifest.json goes in last so its `voices`/`hasOriginalPdf` flags reflect what was
   // actually written above, not what was requested.
   const manifest: SpellManifest = {
     formatVersion: SPELL_FORMAT_VERSION,
     title: spell.title,
     exportedAt: new Date().toISOString(),
-    hasSource,
+    hasOriginalPdf,
     voices,
   };
   zip.file('manifest.json', JSON.stringify(manifest));
@@ -151,28 +169,33 @@ export async function importSpellFromFile(file: File, userId: string): Promise<s
 
   const manifestJson = await readZipFile(zip, 'manifest.json');
   if (!manifestJson) throw new SpellImportError('Not a valid .spell file: missing manifest.json.');
-  const manifest = JSON.parse(manifestJson) as SpellManifest;
-  if (manifest.formatVersion !== SPELL_FORMAT_VERSION) {
+  const manifest = JSON.parse(manifestJson) as SpellManifest & { hasSource?: boolean };
+  // v1 (TCORE-78) is still importable: its bundled PDF (if any) is intentionally dropped
+  // rather than migrated into the new store (see SPELL_FORMAT_VERSION's comment) — only
+  // its originalPagesContent JSON, if present, is worth carrying over for revert.
+  if (manifest.formatVersion !== 1 && manifest.formatVersion !== SPELL_FORMAT_VERSION) {
     throw new SpellImportError(`Unsupported .spell format version: ${manifest.formatVersion}.`);
   }
+  const sourceFolder = manifest.formatVersion === 1 ? 'source' : 'original';
 
   const spellJson = await readZipFile(zip, 'spell.json');
   if (!spellJson) throw new SpellImportError('Not a valid .spell file: missing spell.json.');
   const { title, pagesContent } = JSON.parse(spellJson) as { title: string; pagesContent: string };
 
-  const originalPdf = manifest.hasSource ? await readZipBlob(zip, 'source/original.pdf', 'application/pdf') : null;
-  const originalPagesContent = manifest.hasSource ? await readZipFile(zip, 'source/originalPagesContent.json') : null;
+  const originalPagesContent = await readZipFile(zip, `${sourceFolder}/originalPagesContent.json`);
+  // v2 only: v1's bundled PDF, if any, is never read back at all.
+  const originalPdf = manifest.formatVersion === SPELL_FORMAT_VERSION
+    ? await readZipBlob(zip, 'original/original.pdf', 'application/pdf')
+    : null;
 
   const newSpellId = await saveSpellToDB({
     title,
     userId,
     pagesContent,
-    // The original PDF (when bundled) doubles as both `pdf` and `originalPdf` — this
-    // mirrors how a fresh PDF upload seeds both fields identically at creation time.
-    pdf: originalPdf ?? undefined,
-    originalPdf: originalPdf ?? undefined,
     originalPagesContent: originalPagesContent ?? undefined,
   });
+
+  if (originalPdf) await setOriginalPdf(newSpellId, originalPdf);
 
   for (const voice of manifest.voices) {
     const voiceFolder = zip.folder(`renders/${voice}`);

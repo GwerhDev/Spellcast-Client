@@ -8,8 +8,8 @@ import * as pdfjsLib from 'pdfjs-dist';
 import { PageList } from '../../components/SpellCreateForm/PageList';
 import { SpellEditor } from '../../components/Editors/SpellEditor';
 import type { PageMargins } from '../../components/Editors/SpellEditor';
-import jsPDF from 'jspdf';
 import { saveSpellToDB } from '../../../db';
+import { setOriginalPdf } from '../../../db/originalPdfs';
 import { useNavigate } from 'react-router-dom';
 import type { JSONContent } from '../../../magictext';
 import type { TTSPlayPayload } from '../../../magictext';
@@ -221,49 +221,21 @@ export const SpellCreateForm: React.FC = () => {
 
     setIsSaving(true);
     try {
-      const pdf = new jsPDF();
-      const margin = 1;
-      const startY = 1;
-      const lineHeight = 1;
-
-      pagesContent.forEach((pageContent, index) => {
-        if (index > 0) {
-          pdf.addPage();
-        }
-
-        const plainText = pageContent.content?.map(node => {
-          if (node.type === 'paragraph' && node.content) {
-            return node.content.map(item => 'text' in item ? item.text : '').join('');
-          }
-          return '';
-        }).join('\n') || '';
-
-        const lines = pdf.splitTextToSize(plainText, pdf.internal.pageSize.width - margin * 2);
-
-        let y = startY;
-        const pageHeight = pdf.internal.pageSize.height;
-
-        for (const line of lines) {
-          if (y + lineHeight > pageHeight - margin) {
-            pdf.addPage();
-            y = startY;
-          }
-          pdf.text(line, margin, y);
-          y += lineHeight;
-        }
-      });
-
-      const pdfBlob = pdf.output('blob');
-
       const newId = await saveSpellToDB({
         title: spellTitle,
-        pdf: pdfBlob,
         cover: cover ?? undefined,
         userId: userData.id,
         pagesContent: JSON.stringify(pagesContent),
-        originalPdf: originalPdfRef.current ?? undefined,
         originalPagesContent: originalPagesRef.current ? JSON.stringify(originalPagesRef.current) : undefined,
       });
+
+      // Only the real, user-imported PDF (if any) is worth keeping -- it's an ingestion
+      // input, not part of the spell's content (TCORE-90), so it lives in its own store,
+      // never on the spell record. There is no reason to synthesize and store a PDF
+      // rendering of the typed/edited content itself: nothing reads it back.
+      if (originalPdfRef.current) {
+        await setOriginalPdf(newId, originalPdfRef.current);
+      }
 
       dispatch(resetSpellReader());
       dispatch(resetSpellState());
@@ -306,7 +278,7 @@ export const SpellCreateForm: React.FC = () => {
         <IconButton icon={faPaperclip} variant='transparent' title={t.spell.importPdf} onClick={() => pdfInputRef.current?.click()} />
         <input ref={pdfInputRef} type="file" accept=".pdf" style={{ display: 'none' }}
           onChange={(e) => { if (e.target.files?.[0]) handlePdfImport(e.target.files[0]); }} />
-        <IconButton icon={faSave} variant='transparent' title={t.common.save} disabled={isSaving || !spellTitle} onClick={handleSaveLocal} />
+        <IconButton data-testid="spell-create-save-btn" icon={faSave} variant='transparent' title={t.common.save} disabled={isSaving || !spellTitle} onClick={handleSaveLocal} />
         <IconButton icon={faCloudUpload} disabled variant='transparent' title={t.nav.cloud} onClick={() => {}} />
       </div>
 
