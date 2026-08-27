@@ -3,6 +3,7 @@ import { waitFor } from '@testing-library/react';
 import { renderWithProviders, makeStore } from '../../../../test/renderWithProviders';
 import { SpellUploadWorker } from '../index';
 import { enqueueUpload } from '../../../../store/spellUploadSlice';
+import type { PdfMetadata } from '../../../../utils/pdfUtils';
 
 // pdfjs-dist requires DOMMatrix (not in jsdom)
 vi.mock('pdfjs-dist', () => ({
@@ -17,11 +18,13 @@ vi.mock('pdfjs-dist/build/pdf.worker?url', () => ({ default: '' }));
 
 // Page rendering/cover extraction are pdf.js-canvas-heavy and irrelevant to this worker's
 // own responsibility (routing what gets saved where) -- stubbed to plain pass-through data.
+const extractPdfMetadataMock = vi.fn<() => Promise<PdfMetadata>>(() => Promise.resolve({}));
 vi.mock('../../../../utils/pdfUtils', () => ({
   renderPageToCover: vi.fn(() => Promise.resolve(null)),
   extractPdfPages: vi.fn(() => Promise.resolve([{ type: 'doc', content: [] }])),
   injectCoverIntoPages: vi.fn((pages) => Promise.resolve(pages)),
   blobToDataUrl: vi.fn(() => Promise.resolve('data:image/png;base64,')),
+  extractPdfMetadata: (...args: unknown[]) => extractPdfMetadataMock(...(args as [])),
 }));
 
 const saveSpellToDBMock = vi.fn<(payload: Record<string, unknown>) => Promise<string>>(() => Promise.resolve('new-spell-id'));
@@ -52,6 +55,7 @@ beforeEach(() => {
   saveSpellToDBMock.mockResolvedValue('new-spell-id');
   updateSpellFullMock.mockResolvedValue(undefined);
   setOriginalPdfMock.mockResolvedValue(undefined);
+  extractPdfMetadataMock.mockResolvedValue({});
 });
 
 describe('SpellUploadWorker', () => {
@@ -98,5 +102,60 @@ describe('SpellUploadWorker', () => {
     expect(payload).not.toHaveProperty('pdf');
     expect(payload).not.toHaveProperty('originalPdf');
     expect(setOriginalPdfMock).toHaveBeenCalledWith('existing-spell', expect.anything());
+  });
+
+  describe('PDF metadata prefill (TCORE-97 follow-up)', () => {
+    it('creation path: passes description/author/tags/language extracted from the PDF to saveSpellToDB', async () => {
+      extractPdfMetadataMock.mockResolvedValue({
+        title: 'PDF Title',
+        description: 'A tale of dragons',
+        author: 'Jane Doe',
+        tags: ['fantasy', 'adventure'],
+        language: 'en',
+      });
+      const store = makeStore();
+      store.dispatch(enqueue({ saveOriginal: false } as never));
+      renderWithProviders(<SpellUploadWorker />, { store });
+
+      await waitFor(() => expect(saveSpellToDBMock).toHaveBeenCalled());
+      const payload = saveSpellToDBMock.mock.calls[0][0] as Record<string, unknown>;
+      expect(payload.description).toBe('A tale of dragons');
+      expect(payload.author).toBe('Jane Doe');
+      expect(payload.tags).toEqual(['fantasy', 'adventure']);
+      expect(payload.language).toBe('en');
+    });
+
+    it('creation path: metadata fields are undefined when the PDF has none', async () => {
+      extractPdfMetadataMock.mockResolvedValue({});
+      const store = makeStore();
+      store.dispatch(enqueue({ saveOriginal: false } as never));
+      renderWithProviders(<SpellUploadWorker />, { store });
+
+      await waitFor(() => expect(saveSpellToDBMock).toHaveBeenCalled());
+      const payload = saveSpellToDBMock.mock.calls[0][0] as Record<string, unknown>;
+      expect(payload.description).toBeUndefined();
+      expect(payload.author).toBeUndefined();
+      expect(payload.tags).toBeUndefined();
+      expect(payload.language).toBeUndefined();
+    });
+
+    it('replace-content path (targetDocId): does NOT pass metadata to updateSpellFull, even when the PDF has some', async () => {
+      extractPdfMetadataMock.mockResolvedValue({
+        description: 'A tale of dragons',
+        author: 'Jane Doe',
+        tags: ['fantasy'],
+        language: 'en',
+      });
+      const store = makeStore();
+      store.dispatch(enqueue({ saveOriginal: false, targetDocId: 'existing-spell' } as never));
+      renderWithProviders(<SpellUploadWorker />, { store });
+
+      await waitFor(() => expect(updateSpellFullMock).toHaveBeenCalled());
+      const payload = updateSpellFullMock.mock.calls[0][2] as Record<string, unknown>;
+      expect(payload).not.toHaveProperty('description');
+      expect(payload).not.toHaveProperty('author');
+      expect(payload).not.toHaveProperty('tags');
+      expect(payload).not.toHaveProperty('language');
+    });
   });
 });

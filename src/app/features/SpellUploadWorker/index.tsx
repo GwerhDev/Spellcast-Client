@@ -12,7 +12,7 @@ import {
 } from '../../../store/spellUploadSlice';
 import { saveSpellToDB, updateSpellFull } from '../../../db';
 import { setOriginalPdf } from '../../../db/originalPdfs';
-import { renderPageToCover, extractPdfPages, injectCoverIntoPages, blobToDataUrl } from '../../../utils/pdfUtils';
+import { renderPageToCover, extractPdfPages, injectCoverIntoPages, blobToDataUrl, extractPdfMetadata } from '../../../utils/pdfUtils';
 import { invalidateContent, invalidateSpellList } from '../../../store/spellReaderSlice';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
@@ -33,6 +33,7 @@ export const SpellUploadWorker: React.FC = () => {
       try {
         const pdfData = atob(next.fileContent.substring(next.fileContent.indexOf(',') + 1));
         const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
+        const meta = await extractPdfMetadata(pdf);
 
         const page1TextContent = await (await pdf.getPage(1)).getTextContent();
         const page1HasText = page1TextContent.items.some(
@@ -75,6 +76,14 @@ export const SpellUploadWorker: React.FC = () => {
             userId: next.userId,
             pagesContent: JSON.stringify(pagesContent),
             originalPagesContent: next.saveOriginal ? JSON.stringify(pagesContent) : undefined,
+            // TCORE-97 follow-up: same PDF-metadata prefill SpellCreateForm already does,
+            // so spells created via this background path get it too. Never overrides
+            // anything a user could edit here (there's no review step on this path), so
+            // there's no clobber risk to guard against, unlike the form's title field.
+            description: meta.description,
+            author: meta.author,
+            tags: meta.tags,
+            language: meta.language,
           });
           if (next.saveOriginal) {
             await setOriginalPdf(resultDocId, pdfBlob);
