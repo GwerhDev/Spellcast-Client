@@ -162,9 +162,9 @@ export const LastSpells: React.FC = () => {
       <div className={s.container}>
         <div className={s.header}>
           <h2 className={s.title}>{t.nav.lastSpells}</h2>
-          <span className={s.libraryLink} onClick={() => navigate('/library')}>
+          <span className={s.grimoireLink} onClick={() => navigate('/grimoire')}>
             <FontAwesomeIcon icon={faBuildingColumns} />
-            {t.nav.library}
+            {t.nav.grimoire}
             <FontAwesomeIcon icon={faArrowRight} />
           </span>
         </div>
@@ -191,9 +191,9 @@ export const LastSpells: React.FC = () => {
               );
             })}
             {hasMore && (
-              <div className={s.seeAllCard} onClick={() => navigate('/library')}>
+              <div className={s.seeAllCard} onClick={() => navigate('/grimoire')}>
                 <FontAwesomeIcon icon={faArrowRight} />
-                <span>{t.nav.library}</span>
+                <span>{t.nav.grimoire}</span>
               </div>
             )}
           </div>

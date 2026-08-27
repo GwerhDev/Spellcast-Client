@@ -39,7 +39,7 @@ export const es: Translations = {
     overview: 'Resumen',
     groups: 'Grupos',
     shared: 'Compartido',
-    library: 'Biblioteca',
+    grimoire: 'Grimorio',
     audios: 'Audios',
     credentials: 'Credenciales',
     permissions: 'Permisos',
@@ -100,7 +100,7 @@ export const es: Translations = {
     importError: 'No se pudo importar este archivo .spell.',
     importSuccess: '"{title}" importado.',
   },
-  library: {
+  grimoire: {
     subtitle: 'Tus Spells, siempre a mano',
     addSpells: 'Añadir Spells',
     selectMode: 'Seleccionar',
@@ -347,7 +347,7 @@ export const es: Translations = {
     cloudSyncDesc: 'La sincronización en la nube no está configurada. Tus datos se almacenan únicamente de forma local.',
     subtitle: 'Vista general del uso de almacenamiento local y en la nube.',
     localSubtitle: 'Spells, caché de audio y ajustes guardados en tu navegador.',
-    cloudSubtitle: 'Sincroniza tu biblioteca y preferencias en todos tus dispositivos.',
+    cloudSubtitle: 'Sincroniza tu grimorio y preferencias en todos tus dispositivos.',
   },
   permissions: {
     subtitle: 'Controla los niveles de acceso y lo que otros pueden hacer con tu contenido.',

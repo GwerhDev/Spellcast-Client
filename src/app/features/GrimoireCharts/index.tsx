@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import s from '../../components/LibraryCharts/LibraryCharts.module.css';
+import s from '../../components/GrimoireCharts/GrimoireCharts.module.css';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -84,7 +84,7 @@ const countIDB = async (dbName: string, store: string): Promise<number> => {
   });
 };
 
-export const LibraryCharts: React.FC = () => {
+export const GrimoireCharts: React.FC = () => {
   const { t } = useLanguage();
   const { userData, logged } = useAppSelector(s => s.session);
   const [docs, setDocs] = useState<Spell[]>([]);
@@ -166,7 +166,7 @@ export const LibraryCharts: React.FC = () => {
   ];
 
   return (
-    <div data-testid="library-charts" className={s.chartsContainer}>
+    <div data-testid="grimoire-charts" className={s.chartsContainer}>
       <div className={s.chartCard}>
         <div className={s.cardHeader}>
           <span className={s.cardTitle}>{t.overview.activity}</span>

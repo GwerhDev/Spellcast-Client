@@ -3,8 +3,8 @@ import { screen } from '@testing-library/react';
 import { renderWithProviders } from '../../../../test/renderWithProviders';
 import { UserPresentation } from '../index';
 
-vi.mock('../../../components/LibraryCharts/LibraryCharts', () => ({
-  LibraryCharts: () => null,
+vi.mock('../../../components/GrimoireCharts/GrimoireCharts', () => ({
+  GrimoireCharts: () => null,
 }));
 
 vi.mock('../../../components/UserStats/UserStats', () => ({

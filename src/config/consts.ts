@@ -42,7 +42,7 @@ export const editorDirectoryList = [
 // Sections with no sub-items — rendered as single-click rows/icons in both sidebar states.
 export const sidebarDirectLinks = [
   { key: "home", icon: faHome, path: "/" },
-  { key: "library", icon: faBuildingColumns, path: "/library" },
+  { key: "grimoire", icon: faBuildingColumns, path: "/grimoire" },
   { key: "havenstore", icon: faStore, path: "/havenstore" },
 ];
 

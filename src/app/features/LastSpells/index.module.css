@@ -20,7 +20,7 @@
   color: var(--text-color);
 }
 
-.libraryLink {
+.grimoireLink {
   display: flex;
   align-items: center;
   gap: 0.35rem;
@@ -31,7 +31,7 @@
   transition: color 0.2s ease;
 }
 
-.libraryLink:hover {
+.grimoireLink:hover {
   color: var(--color-primary);
 }
 

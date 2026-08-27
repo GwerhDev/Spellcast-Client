@@ -14,7 +14,7 @@ import { Home } from './app/pages/Home';
 import { StorageLocal } from './app/pages/StorageLocal';
 import { StorageCloud } from './app/pages/StorageCloud';
 import { Editor } from './app/pages/Editor';
-import { Library } from './app/pages/Library';
+import { Grimoire } from './app/pages/Grimoire';
 import { Storage } from './app/pages/Storage';
 import { Overview } from './app/pages/Overview';
 import { NotFound } from './app/pages/NotFound';
@@ -69,7 +69,7 @@ function App() {
           <Route path="/user" element={<RootBackground />} />
           <Route path="/user/dashboard/groups" element={<UserGroups />} />
 
-          <Route path="/library" element={<Library />} />
+          <Route path="/grimoire" element={<Grimoire />} />
           <Route path="/havenstore" element={<HavenStore />} />
 
           <Route path="/user/storage" element={<Storage />} />

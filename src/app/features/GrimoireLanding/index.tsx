@@ -2,7 +2,7 @@ import { useState } from 'react';
 import s from './index.module.css';
 import { useLanguage } from '../../../i18n';
 import { SegmentedTabs } from '../../components/Tabs/SegmentedTabs';
-import { SpellList, LibraryFilter } from '../SpellList';
+import { SpellList, GrimoireFilter } from '../SpellList';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCloud, faHardDrive, faLayerGroup, faMagnifyingGlass, faPlus, faCheckSquare, faTrash, faXmark, faBuildingColumns, faFileImport } from '@fortawesome/free-solid-svg-icons';
 import { SectionHeader } from '../../components/SectionHeader';
@@ -14,11 +14,11 @@ import { useAppSelector, useAppDispatch } from '../../../store/hooks';
 import { invalidateSpellList } from '../../../store/spellReaderSlice';
 import { useSpellImport } from '../../../hooks/useSpellImport';
 
-export const LibraryLanding = () => {
+export const GrimoireLanding = () => {
   const { t } = useLanguage();
   const dispatch = useAppDispatch();
   const { userData } = useAppSelector(state => state.session);
-  const [filter, setFilter] = useState<LibraryFilter>('all');
+  const [filter, setFilter] = useState<GrimoireFilter>('all');
   const [query, setQuery] = useState('');
   const [showImport, setShowImport] = useState(false);
   const [selectionMode, setSelectionMode] = useState(false);
@@ -33,7 +33,7 @@ export const LibraryLanding = () => {
   ];
 
   const handleFilterChange = (id: string) => {
-    setFilter(id as LibraryFilter);
+    setFilter(id as GrimoireFilter);
     setQuery('');
   };
 
@@ -63,19 +63,19 @@ export const LibraryLanding = () => {
   };
 
   return (
-    <div className={s.container} data-testid="library-landing">
-      <SectionHeader icon={faBuildingColumns} title={t.nav.library} subtitle={t.library.subtitle} align="center" />
+    <div className={s.container} data-testid="grimoire-landing">
+      <SectionHeader icon={faBuildingColumns} title={t.nav.grimoire} subtitle={t.grimoire.subtitle} align="center" />
 
       <SegmentedTabs tabs={tabs} active={filter} onChange={handleFilterChange} />
 
-      <CustomModal show={showImport} onClose={() => setShowImport(false)} title={t.library.addSpells} compact>
+      <CustomModal show={showImport} onClose={() => setShowImport(false)} title={t.grimoire.addSpells} compact>
         <ImportOption />
       </CustomModal>
 
       <div className={s.searchWrapper}>
         <FontAwesomeIcon icon={faMagnifyingGlass} className={s.searchIcon} />
         <input
-          data-testid="library-search"
+          data-testid="grimoire-search"
           className={s.searchInput}
           type="text"
           value={query}
@@ -89,19 +89,19 @@ export const LibraryLanding = () => {
           data-testid="add-spells-btn"
           className={`${s.toolbarBtn} ${showImport ? s.toolbarBtnActive : ''}`}
           onClick={() => { setShowImport(v => !v); if (selectionMode) toggleSelectionMode(); }}
-          title={t.library.addSpells}
+          title={t.grimoire.addSpells}
         >
           <FontAwesomeIcon icon={faPlus} />
-          {t.library.addSpells}
+          {t.grimoire.addSpells}
         </button>
         <button
           data-testid="select-mode-btn"
           className={`${s.toolbarBtn} ${selectionMode ? s.toolbarBtnActive : ''}`}
           onClick={toggleSelectionMode}
-          title={selectionMode ? t.library.cancelSelection : t.library.selectMode}
+          title={selectionMode ? t.grimoire.cancelSelection : t.grimoire.selectMode}
         >
           <FontAwesomeIcon icon={selectionMode ? faXmark : faCheckSquare} />
-          {selectionMode ? t.library.cancelSelection : t.library.selectMode}
+          {selectionMode ? t.grimoire.cancelSelection : t.grimoire.selectMode}
         </button>
         <button
           data-testid="import-spell-btn"
@@ -141,11 +141,11 @@ export const LibraryLanding = () => {
       {selectionMode && selectedIds.length > 0 && (
         <div className={s.bulkBar} data-testid="bulk-bar">
           <span className={s.bulkCount}>
-            {t.library.nSelected.replace('{n}', String(selectedIds.length))}
+            {t.grimoire.nSelected.replace('{n}', String(selectedIds.length))}
           </span>
           <button data-testid="bulk-delete-btn" className={s.bulkDeleteBtn} onClick={() => setShowBulkDeleteModal(true)}>
             <FontAwesomeIcon icon={faTrash} />
-            {t.library.deleteSelected}
+            {t.grimoire.deleteSelected}
           </button>
         </div>
       )}
@@ -156,7 +156,7 @@ export const LibraryLanding = () => {
           onClose={() => setShowBulkDeleteModal(false)}
           onConfirm={handleBulkDeleteConfirm}
           title={t.spell.deleteTitle}
-          message={t.library.deleteSelectedConfirm.replace('{n}', String(selectedIds.length))}
+          message={t.grimoire.deleteSelectedConfirm.replace('{n}', String(selectedIds.length))}
         />
       )}
     </div>

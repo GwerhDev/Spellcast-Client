@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Spellcast is a PDF document reader and editor with Text-to-Speech capabilities. Users import PDFs, read them with browser or AI voices, edit pages, and manage their library — all stored locally via IndexedDB with optional cloud sync planned.
+Spellcast is a PDF document reader and editor with Text-to-Speech capabilities. Users import PDFs, read them with browser or AI voices, edit pages, and manage their grimoire — all stored locally via IndexedDB with optional cloud sync planned.
 
 **Stack:** React 18 · TypeScript · Vite · Redux Toolkit · React Router v6 · pdfjs-dist · Tiptap · IndexedDB · CSS Modules · i18n (custom) · FontAwesome
 
@@ -28,7 +28,7 @@ One file per route. Wires URL params to feature components. Does NOT contain UI 
 /editor/:id          → DocumentEdit.tsx
 /document/:id        → DocumentDetail.tsx
 /document/:id/reader → LocalDocumentReader.tsx
-/library             → Library.tsx
+/grimoire            → Grimoire.tsx
 /user/dashboard      → Overview.tsx
 ...
 ```
@@ -40,7 +40,7 @@ Feature components manage domain data and Redux state. They are allowed to:
 - Orchestrate presentational children via props
 
 Examples of existing components that belong here once extracted:
-`DocumentList`, `LibraryLanding`, `LastDocuments`, `DocumentCreateForm`, `DocumentEditForm`, `DocumentReader`, `AudioPlayer`, `BrowserPlayer`, `PdfUploadWorker`, `PdfProcessor`
+`DocumentList`, `GrimoireLanding`, `LastDocuments`, `DocumentCreateForm`, `DocumentEditForm`, `DocumentReader`, `AudioPlayer`, `BrowserPlayer`, `PdfUploadWorker`, `PdfProcessor`
 
 ### Layer 4 — `src/app/components/`
 **Presentational / dumb components.** They must:

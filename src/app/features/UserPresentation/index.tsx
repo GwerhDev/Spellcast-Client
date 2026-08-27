@@ -2,7 +2,7 @@ import s from '../../components/UserPresentation/UserPresentation.module.css';
 import sk from '../../components/Loader/Skeleton.module.css';
 import { useSelector } from 'react-redux';
 import { UserStats } from '../../components/UserStats/UserStats';
-import { LibraryCharts } from '../../components/LibraryCharts/LibraryCharts';
+import { GrimoireCharts } from '../../components/GrimoireCharts/GrimoireCharts';
 import { StorageOverview } from '../../components/StorageOverview/StorageOverview';
 import { userData } from '../../../interfaces';
 import { RootState } from '../../../store';
@@ -72,7 +72,7 @@ export const UserPresentation = () => {
       </div>
 
       <div className={s.stats}>
-        <LibraryCharts />
+        <GrimoireCharts />
         <UserStats />
         <StorageOverview />
       </div>

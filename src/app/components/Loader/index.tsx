@@ -6,7 +6,7 @@ const MESSAGES = [
   "Preparing your grimoire…",
   "Summoning voices…",
   "Awakening the reader…",
-  "Loading your library…",
+  "Fetching your grimoire…",
   "Casting spells…",
   "Binding the pages…",
 ];

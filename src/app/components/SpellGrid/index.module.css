@@ -1,4 +1,4 @@
-/* Shared grid + skeleton styles for every view that lists spells (Library, Editor
+/* Shared grid + skeleton styles for every view that lists spells (Grimoire, Editor
    "Select"). Keeping this in one place means gap/card-width/skeleton styling can't
    drift between routes — import it alongside any route-specific CSS module. */
 

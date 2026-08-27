@@ -1,8 +1,8 @@
 import { PageTransition } from '../components/PageTransition';
-import { LibraryLanding } from '../components/LibraryLanding';
+import { GrimoireLanding } from '../components/GrimoireLanding';
 
-export const Library = () => (
+export const Grimoire = () => (
   <PageTransition className="dashboard-sections">
-    <LibraryLanding />
+    <GrimoireLanding />
   </PageTransition>
 );

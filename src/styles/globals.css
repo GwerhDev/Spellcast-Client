@@ -35,7 +35,7 @@
 
 /* Magic title — primary-colored text with a light "spell sheen" that periodically
    sweeps across the letters (inspired by the player's churning fire) plus a soft
-   constant primary halo. One shared, identical effect for Home, Library and Editor. */
+   constant primary halo. One shared, identical effect for Home, Grimoire and Editor. */
 .featured-glow {
   /* Layer 1 (moving): the bright sheen band, transparent elsewhere.
      Layer 2 (fixed): a solid primary fill that ALWAYS covers the text, so it

@@ -37,7 +37,7 @@ export const en = {
     overview: 'Overview',
     groups: 'Groups',
     shared: 'Shared',
-    library: 'Library',
+    grimoire: 'Grimoire',
     audios: 'Audios',
     credentials: 'Credentials',
     permissions: 'Permissions',
@@ -98,7 +98,7 @@ export const en = {
     importError: 'Failed to import this .spell file.',
     importSuccess: '"{title}" imported.',
   },
-  library: {
+  grimoire: {
     subtitle: 'Your spells, always at hand',
     addSpells: 'Add spells',
     selectMode: 'Select',
@@ -345,7 +345,7 @@ export const en = {
     cloudSyncDesc: 'Cloud sync is not configured. Your data is stored locally only.',
     subtitle: 'Overview of your local and cloud storage usage.',
     localSubtitle: 'Spells, audio cache, and settings stored in your browser.',
-    cloudSubtitle: 'Sync your library and preferences across all your devices.',
+    cloudSubtitle: 'Sync your grimoire and preferences across all your devices.',
   },
   permissions: {
     subtitle: 'Control access levels and what others can do with your content.',

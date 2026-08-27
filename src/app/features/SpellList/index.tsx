@@ -19,13 +19,13 @@ import { setSpellFile, setSpellInfo, resetSpellReader } from '../../../store/spe
 import { useLanguage } from '../../../i18n';
 import { useInfiniteList } from '../../../hooks/useInfiniteList';
 
-export type LibraryFilter = 'all' | 'local' | 'cloud';
-export type LibrarySpellFilter = 'all' | 'reading' | 'pdf' | 'unprocessed';
+export type GrimoireFilter = 'all' | 'local' | 'cloud';
+export type GrimoireSpellFilter = 'all' | 'reading' | 'pdf' | 'unprocessed';
 
 interface SpellListProps {
   query?: string;
-  filter?: LibraryFilter;
-  docFilter?: LibrarySpellFilter;
+  filter?: GrimoireFilter;
+  docFilter?: GrimoireSpellFilter;
   selectionMode?: boolean;
   selectedIds?: string[];
   onToggleSelect?: (id: string) => void;
