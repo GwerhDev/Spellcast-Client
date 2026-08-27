@@ -58,6 +58,12 @@ beforeEach(() => {
   setOriginalPdfMock.mockResolvedValue(undefined);
 });
 
+describe('SPELL_FORMAT_VERSION', () => {
+  it('is 3 (bumped for TCORE-97 metadata support)', () => {
+    expect(SPELL_FORMAT_VERSION).toBe(3);
+  });
+});
+
 describe('exportSpellToBlob', () => {
   it('throws when the spell is not found', async () => {
     getSpellByIdMock.mockResolvedValue(undefined);
@@ -177,6 +183,34 @@ describe('exportSpellToBlob', () => {
     const { filename } = await exportSpellToBlob('spell-1', 'user-1');
     expect(filename).toBe('spell.spell');
   });
+
+  it('includes description/author/tags/language in manifest.json when the record has them (TCORE-97)', async () => {
+    getSpellByIdMock.mockResolvedValue({
+      ...baseSpell,
+      description: 'A tale of dragons',
+      author: 'Jane Doe',
+      tags: ['fantasy', 'adventure'],
+      language: 'en',
+    });
+
+    const { blob } = await exportSpellToBlob('spell-1', 'user-1');
+    const manifest = await readZipJson(blob, 'manifest.json') as SpellManifest;
+
+    expect(manifest.description).toBe('A tale of dragons');
+    expect(manifest.author).toBe('Jane Doe');
+    expect(manifest.tags).toEqual(['fantasy', 'adventure']);
+    expect(manifest.language).toBe('en');
+  });
+
+  it('omits description/author/tags/language from manifest.json when the record has none of them', async () => {
+    const { blob } = await exportSpellToBlob('spell-1', 'user-1');
+    const manifest = await readZipJson(blob, 'manifest.json') as Record<string, unknown>;
+
+    expect(manifest).not.toHaveProperty('description');
+    expect(manifest).not.toHaveProperty('author');
+    expect(manifest).not.toHaveProperty('tags');
+    expect(manifest).not.toHaveProperty('language');
+  });
 });
 
 describe('downloadBlob', () => {
@@ -285,6 +319,58 @@ describe('importSpellFromFile', () => {
     expect(firstCallArgs[2]).toBe('alice');
     expect(firstCallArgs[4]).toEqual(entries[0].timeline);
     expect(await (firstCallArgs[3] as Blob).arrayBuffer()).toEqual(await entries[0].blob.arrayBuffer());
+  });
+
+  it('round-trips description/author/tags/language through export then import (TCORE-97)', async () => {
+    getSpellByIdMock.mockResolvedValue({
+      ...baseSpell,
+      description: 'A tale of dragons',
+      author: 'Jane Doe',
+      tags: ['fantasy', 'adventure'],
+      language: 'en',
+    });
+    saveSpellToDBMock.mockResolvedValue('brand-new-id');
+
+    const { blob } = await exportSpellToBlob('spell-1', 'user-1');
+    await importSpellFromFile(asFile(blob), 'user-2');
+
+    const call = saveSpellToDBMock.mock.calls[0][0];
+    expect(call.description).toBe('A tale of dragons');
+    expect(call.author).toBe('Jane Doe');
+    expect(call.tags).toEqual(['fantasy', 'adventure']);
+    expect(call.language).toBe('en');
+  });
+
+  describe('format v2 backward compatibility (TCORE-97 bumped the version to 3; v2 files predate metadata)', () => {
+    const buildV2Zip = async () => {
+      const zip = new JSZip();
+      zip.file('spell.json', JSON.stringify({ title: 'V2 Spell', pagesContent: '[]' }));
+      zip.file('original/original.pdf', new TextEncoder().encode('%PDF-1.4 v2'));
+      zip.file('original/originalPagesContent.json', JSON.stringify([{ type: 'doc', v2: true }]));
+      // No description/author/tags/language keys at all -- that's the point.
+      zip.file('manifest.json', JSON.stringify({ formatVersion: 2, title: 'V2 Spell', exportedAt: '', hasOriginalPdf: true, voices: [] }));
+      return zip.generateAsync({ type: 'blob' });
+    };
+
+    it('still imports, still hydrates originalPagesContent and the bundled original.pdf, with metadata fields left undefined', async () => {
+      const blob = await buildV2Zip();
+      saveSpellToDBMock.mockResolvedValue('v2-new-id');
+
+      const newId = await importSpellFromFile(asFile(blob), 'user-2');
+
+      expect(newId).toBe('v2-new-id');
+      const call = saveSpellToDBMock.mock.calls[0][0];
+      expect(call.title).toBe('V2 Spell');
+      expect(call.originalPagesContent).toBe(JSON.stringify([{ type: 'doc', v2: true }]));
+      expect(call.description).toBeUndefined();
+      expect(call.author).toBeUndefined();
+      expect(call.tags).toBeUndefined();
+      expect(call.language).toBeUndefined();
+      // The regression this guards against: gating the original.pdf read on
+      // `formatVersion === SPELL_FORMAT_VERSION` (now 3) would silently stop reading it
+      // for pre-existing v2 files the moment the constant bumped.
+      expect(setOriginalPdfMock).toHaveBeenCalledWith('v2-new-id', expect.anything());
+    });
   });
 
   describe('format v1 backward compatibility', () => {

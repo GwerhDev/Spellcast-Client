@@ -47,6 +47,65 @@
   border-bottom-color: var(--color-primary);
 }
 
+.metadataToggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.5rem 1rem;
+  background: transparent;
+  border: none;
+  border-top: 1px solid var(--color-dark-300);
+  color: var(--color-light-400);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.metadataToggle:hover {
+  color: var(--color-light-100);
+}
+
+.metadataSection {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0 1rem 1rem;
+}
+
+.metadataField {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.metadataField label {
+  font-size: 0.75rem;
+  color: var(--color-light-400);
+}
+
+.metadataField input,
+.metadataField textarea {
+  width: 100%;
+  background: var(--color-dark-300);
+  border: 1px solid var(--color-dark-300);
+  border-radius: 6px;
+  color: var(--color-light-100);
+  padding: 0.5rem;
+  font: inherit;
+  resize: vertical;
+}
+
+.metadataField input:focus,
+.metadataField textarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.metadataFieldWide {
+  grid-column: 1 / -1;
+}
+
 .editorContainer {
   width: 100%;
   flex-grow: 1;

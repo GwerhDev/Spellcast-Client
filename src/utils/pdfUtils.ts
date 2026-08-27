@@ -7,6 +7,35 @@ export const emptyPageContent: JSONContent = {
   content: [{ type: 'paragraph' }],
 };
 
+// TCORE-97: prefill for the spell metadata form (description/author/tags/language) --
+// read once at import time, never authoritative (the user can always edit or clear it).
+export interface PdfMetadata {
+  title?: string;
+  description?: string;
+  author?: string;
+  tags?: string[];
+  language?: string;
+}
+
+export const extractPdfMetadata = async (pdf: pdfjsLib.PDFDocumentProxy): Promise<PdfMetadata> => {
+  try {
+    const { info, metadata } = await pdf.getMetadata();
+    const i = info as Record<string, unknown>;
+    const str = (v: unknown): string | undefined => (typeof v === 'string' && v.trim() ? v.trim() : undefined);
+    const title = str(i.Title);
+    const description = str(i.Subject);
+    const author = str(i.Author);
+    const keywords = str(i.Keywords);
+    const tags = keywords ? keywords.split(/[,;]/).map((k) => k.trim()).filter(Boolean) : undefined;
+    const language = str(i.Language) ?? str(metadata?.get('dc:language'));
+    return { title, description, author, tags, language };
+  } catch {
+    // A corrupt or unreadable Info/XMP dictionary must never block the import itself --
+    // prefill is a convenience, not a requirement.
+    return {};
+  }
+};
+
 export const blobToDataUrl = (blob: Blob): Promise<string> =>
   new Promise((resolve, reject) => {
     const reader = new FileReader();

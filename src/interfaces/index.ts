@@ -92,6 +92,12 @@ export interface Spell {
   // src/db/originalPdfs.ts (TCORE-90). Whether one exists for this spell is looked up there,
   // keyed by `id`, not stored on this record.
   originalPagesContent?: string;
+  // TCORE-97: social/feed metadata, all optional -- prefilled from the PDF's own Info/XMP
+  // dictionary at import time (see extractPdfMetadata in pdfUtils.ts), always editable.
+  description?: string;
+  author?: string;
+  tags?: string[];
+  language?: string;
 }
 
 export interface SpellState {

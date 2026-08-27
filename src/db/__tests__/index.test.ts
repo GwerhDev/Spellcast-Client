@@ -44,6 +44,34 @@ describe('db/index.ts CRUD', () => {
     expect(spell?.progress).toEqual({ currentPage: 0, pagesProgress: [], lastReadSentenceIndex: 0 });
   });
 
+  it('saveSpellToDB persists social/feed metadata (description/author/tags/language) when provided, all optional (TCORE-97)', async () => {
+    const { saveSpellToDB, getSpellById } = await importDb();
+    const id = await saveSpellToDB({
+      ...seedSpell(),
+      description: 'A tale of dragons',
+      author: 'Jane Doe',
+      tags: ['fantasy', 'adventure'],
+      language: 'en',
+    });
+
+    const spell = await getSpellById(id, 'user-1');
+    expect(spell?.description).toBe('A tale of dragons');
+    expect(spell?.author).toBe('Jane Doe');
+    expect(spell?.tags).toEqual(['fantasy', 'adventure']);
+    expect(spell?.language).toBe('en');
+  });
+
+  it('saveSpellToDB works with none of the new metadata fields set (all optional)', async () => {
+    const { saveSpellToDB, getSpellById } = await importDb();
+    const id = await saveSpellToDB(seedSpell());
+
+    const spell = await getSpellById(id, 'user-1');
+    expect(spell?.description).toBeUndefined();
+    expect(spell?.author).toBeUndefined();
+    expect(spell?.tags).toBeUndefined();
+    expect(spell?.language).toBeUndefined();
+  });
+
   it('getSpellsFromDB returns only the requesting user\'s spells via the userId index', async () => {
     const { saveSpellToDB, getSpellsFromDB } = await importDb();
     await saveSpellToDB(seedSpell({ title: 'Mine', userId: 'user-1' }));

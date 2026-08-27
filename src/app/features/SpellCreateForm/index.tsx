@@ -14,13 +14,14 @@ import { useNavigate } from 'react-router-dom';
 import type { JSONContent } from '../../../magictext';
 import type { TTSPlayPayload } from '../../../magictext';
 import workerSrc from 'pdfjs-dist/build/pdf.worker?url';
-import { faArrowLeft, faCloudUpload, faPaperclip, faSave } from '@fortawesome/free-solid-svg-icons';
+import { faArrowLeft, faCloudUpload, faPaperclip, faSave, faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { PdfProcessingStatus } from '../../components/PdfProcessingStatus';
 import { IconButton } from '../../components/Buttons/IconButton';
 import { resetSpellState, setSpellDetails, setSpellTitle as setSpellTitleAction } from '../../../store/spellSlice';
 import { resetSpellReader } from '../../../store/spellReaderSlice';
 import { textToSpeechService } from '../../../services/tts';
-import { renderPageToCover, extractPdfPages, injectCoverIntoPages, emptyPageContent, blobToDataUrl } from '../../../utils/pdfUtils';
+import { renderPageToCover, extractPdfPages, injectCoverIntoPages, emptyPageContent, blobToDataUrl, extractPdfMetadata } from '../../../utils/pdfUtils';
 import { useLanguage } from '../../../i18n';
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
@@ -44,6 +45,16 @@ export const SpellCreateForm: React.FC = () => {
   const pdfInputRef = useRef<HTMLInputElement>(null);
   const originalPdfRef = useRef<File | null>(null);
   const originalPagesRef = useRef<JSONContent[] | null>(null);
+  // TCORE-97: optional social/feed metadata, prefilled from the PDF's own Info/XMP
+  // dictionary (see extractPdfMetadata) but always user-editable.
+  const [description, setDescription] = useState('');
+  const [author, setAuthor] = useState('');
+  const [tagsInput, setTagsInput] = useState('');
+  const [language, setLanguage] = useState('');
+  const [metadataExpanded, setMetadataExpanded] = useState(false);
+  // Guards the PDF-preferred title against clobbering a title the user already typed by
+  // hand in the (tiny, but real) window before extractPdfMetadata resolves.
+  const titleEditedByUserRef = useRef(false);
 
   const isCoverPage = (p: JSONContent): boolean => {
     const first = p?.content?.[0];
@@ -143,8 +154,28 @@ export const SpellCreateForm: React.FC = () => {
         setPdfProgress(null);
         setCoverUrl(null);
         setProcessingCollapsed(false);
+        titleEditedByUserRef.current = false;
+        setDescription(''); setAuthor(''); setTagsInput(''); setLanguage(''); setMetadataExpanded(false);
         const pdfData = atob(spell.fileContent.substring(spell.fileContent.indexOf(',') + 1));
         const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
+
+        // Prefill (TCORE-97), right after obtaining `pdf` and before the heavier page
+        // extraction below -- minimizes the window in which a user could type a custom
+        // title before this resolves. Never authoritative: every field stays editable,
+        // and the filename-derived title is only replaced if the user hasn't already
+        // changed it by hand.
+        const meta = await extractPdfMetadata(pdf);
+        if (meta.title && !titleEditedByUserRef.current) {
+          setSpellTitle(meta.title);
+          dispatch(setSpellTitleAction(meta.title));
+        }
+        if (meta.description) setDescription(meta.description);
+        if (meta.author) setAuthor(meta.author);
+        if (meta.tags?.length) setTagsInput(meta.tags.join(', '));
+        if (meta.language) setLanguage(meta.language);
+        if (meta.description || meta.author || meta.tags?.length || meta.language) {
+          setMetadataExpanded(true);
+        }
 
         const page1TextContent = await (await pdf.getPage(1)).getTextContent();
         const page1HasText = page1TextContent.items.some((item) => (item as { str: string }).str.trim().length > 0);
@@ -187,7 +218,7 @@ export const SpellCreateForm: React.FC = () => {
     };
 
     extractTextFromPdf();
-  }, [spell.fileContent]);
+  }, [spell.fileContent, dispatch]);
 
   const handlePageClick = (pageIndex: number) => {
     setEditingPageIndex(pageIndex);
@@ -221,12 +252,17 @@ export const SpellCreateForm: React.FC = () => {
 
     setIsSaving(true);
     try {
+      const trimmedTags = tagsInput.split(/[,;]/).map((t) => t.trim()).filter(Boolean);
       const newId = await saveSpellToDB({
         title: spellTitle,
         cover: cover ?? undefined,
         userId: userData.id,
         pagesContent: JSON.stringify(pagesContent),
         originalPagesContent: originalPagesRef.current ? JSON.stringify(originalPagesRef.current) : undefined,
+        description: description || undefined,
+        author: author || undefined,
+        tags: trimmedTags.length ? trimmedTags : undefined,
+        language: language || undefined,
       });
 
       // Only the real, user-imported PDF (if any) is worth keeping -- it's an ingestion
@@ -260,6 +296,7 @@ export const SpellCreateForm: React.FC = () => {
             placeholder={t.spell.titlePlaceholder}
             value={spellTitle}
             onChange={(e) => {
+              titleEditedByUserRef.current = true;
               setSpellTitle(e.target.value);
               dispatch(setSpellTitleAction(e.target.value));
             }}
@@ -281,6 +318,64 @@ export const SpellCreateForm: React.FC = () => {
         <IconButton data-testid="spell-create-save-btn" icon={faSave} variant='transparent' title={t.common.save} disabled={isSaving || !spellTitle} onClick={handleSaveLocal} />
         <IconButton icon={faCloudUpload} disabled variant='transparent' title={t.nav.cloud} onClick={() => {}} />
       </div>
+
+      <button
+        type="button"
+        data-testid="spell-metadata-toggle"
+        className={s.metadataToggle}
+        onClick={() => setMetadataExpanded((v) => !v)}
+      >
+        <FontAwesomeIcon icon={metadataExpanded ? faChevronUp : faChevronDown} />
+        {t.spell.metadataSectionTitle}
+      </button>
+      {metadataExpanded && (
+        <div data-testid="spell-metadata-section" className={s.metadataSection}>
+          <div className={`${s.metadataField} ${s.metadataFieldWide}`}>
+            <label htmlFor="spell-metadata-description">{t.spell.descriptionLabel}</label>
+            <textarea
+              id="spell-metadata-description"
+              data-testid="spell-metadata-description"
+              rows={2}
+              placeholder={t.spell.descriptionPlaceholder}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+          </div>
+          <div className={s.metadataField}>
+            <label htmlFor="spell-metadata-author">{t.spell.authorLabel}</label>
+            <input
+              id="spell-metadata-author"
+              data-testid="spell-metadata-author"
+              type="text"
+              placeholder={t.spell.authorPlaceholder}
+              value={author}
+              onChange={(e) => setAuthor(e.target.value)}
+            />
+          </div>
+          <div className={s.metadataField}>
+            <label htmlFor="spell-metadata-language">{t.spell.languageLabel}</label>
+            <input
+              id="spell-metadata-language"
+              data-testid="spell-metadata-language"
+              type="text"
+              placeholder={t.spell.languagePlaceholder}
+              value={language}
+              onChange={(e) => setLanguage(e.target.value)}
+            />
+          </div>
+          <div className={`${s.metadataField} ${s.metadataFieldWide}`}>
+            <label htmlFor="spell-metadata-tags">{t.spell.tagsLabel}</label>
+            <input
+              id="spell-metadata-tags"
+              data-testid="spell-metadata-tags"
+              type="text"
+              placeholder={t.spell.tagsPlaceholder}
+              value={tagsInput}
+              onChange={(e) => setTagsInput(e.target.value)}
+            />
+          </div>
+        </div>
+      )}
 
       <div className={s.editorContainer}>
         {isLoading && pdfProgress && !processingCollapsed && (

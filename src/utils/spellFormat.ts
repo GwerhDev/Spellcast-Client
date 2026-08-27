@@ -15,7 +15,11 @@ import { getCachedAudioEntriesForSpell, setCachedAudio, type CachedAudioEntry } 
 // store (src/db/originalPdfs.ts), and the folder was renamed source/ -> original/ to match.
 // v1 files are still importable (see importSpellFromFile) — their bundled PDF, if any, is
 // simply ignored (never migrated into the new store) per the ticket's own call.
-export const SPELL_FORMAT_VERSION = 2;
+//
+// Bumped 2 -> 3 (TCORE-97): manifest.json can now carry description/author/tags/language
+// (social/feed metadata) — unlike `progress`, this DOES travel with the work. v1/v2 files
+// are still importable; they simply predate these fields, which come back undefined.
+export const SPELL_FORMAT_VERSION = 3;
 
 export interface SpellManifest {
   formatVersion: number;
@@ -23,6 +27,10 @@ export interface SpellManifest {
   exportedAt: string;
   hasOriginalPdf: boolean;
   voices: string[];
+  description?: string;
+  author?: string;
+  tags?: string[];
+  language?: string;
 }
 
 export interface ExportSpellOptions {
@@ -120,6 +128,10 @@ export async function exportSpellToBlob(
     exportedAt: new Date().toISOString(),
     hasOriginalPdf,
     voices,
+    description: spell.description,
+    author: spell.author,
+    tags: spell.tags,
+    language: spell.language,
   };
   zip.file('manifest.json', JSON.stringify(manifest));
 
@@ -172,8 +184,11 @@ export async function importSpellFromFile(file: File, userId: string): Promise<s
   const manifest = JSON.parse(manifestJson) as SpellManifest & { hasSource?: boolean };
   // v1 (TCORE-78) is still importable: its bundled PDF (if any) is intentionally dropped
   // rather than migrated into the new store (see SPELL_FORMAT_VERSION's comment) — only
-  // its originalPagesContent JSON, if present, is worth carrying over for revert.
-  if (manifest.formatVersion !== 1 && manifest.formatVersion !== SPELL_FORMAT_VERSION) {
+  // its originalPagesContent JSON, if present, is worth carrying over for revert. v2
+  // (TCORE-90) predates description/author/tags/language (TCORE-97) — those simply come
+  // back undefined for either legacy version.
+  const SUPPORTED_IMPORT_VERSIONS = [1, 2, SPELL_FORMAT_VERSION];
+  if (!SUPPORTED_IMPORT_VERSIONS.includes(manifest.formatVersion)) {
     throw new SpellImportError(`Unsupported .spell format version: ${manifest.formatVersion}.`);
   }
   const sourceFolder = manifest.formatVersion === 1 ? 'source' : 'original';
@@ -183,8 +198,11 @@ export async function importSpellFromFile(file: File, userId: string): Promise<s
   const { title, pagesContent } = JSON.parse(spellJson) as { title: string; pagesContent: string };
 
   const originalPagesContent = await readZipFile(zip, `${sourceFolder}/originalPagesContent.json`);
-  // v2 only: v1's bundled PDF, if any, is never read back at all.
-  const originalPdf = manifest.formatVersion === SPELL_FORMAT_VERSION
+  // v1 only: its bundled PDF, if any, is never read back at all. v2 and v3 both use the
+  // original/ folder shape, so both must be read here -- gating this on
+  // `formatVersion === SPELL_FORMAT_VERSION` would silently stop reading v2 files' PDFs
+  // the moment the constant bumps for an unrelated reason (exactly what TCORE-97 did).
+  const originalPdf = manifest.formatVersion !== 1
     ? await readZipBlob(zip, 'original/original.pdf', 'application/pdf')
     : null;
 
@@ -193,6 +211,10 @@ export async function importSpellFromFile(file: File, userId: string): Promise<s
     userId,
     pagesContent,
     originalPagesContent: originalPagesContent ?? undefined,
+    description: manifest.description,
+    author: manifest.author,
+    tags: manifest.tags,
+    language: manifest.language,
   });
 
   if (originalPdf) await setOriginalPdf(newSpellId, originalPdf);
