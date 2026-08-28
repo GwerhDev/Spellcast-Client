@@ -119,6 +119,8 @@ export const en = {
     deleteSelected: 'Delete selected',
     cancelSelection: 'Cancel',
     nSelected: '{n} selected',
+    selectAll: 'Select all',
+    unselectAll: 'Unselect all',
     deleteSelectedConfirm: 'Are you sure you want to delete {n} spells? This action cannot be undone.',
     bulkRefreshMetadata: 'Update metadata from PDF',
     bulkRefreshMetadataConfirmTitle: 'Update metadata from the original PDF?',

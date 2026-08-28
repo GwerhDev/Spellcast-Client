@@ -25,6 +25,8 @@ const mockSpell = {
   userId: 'user-1',
 };
 
+const mockSpell2 = { ...mockSpell, id: 'spell-2', title: 'Another Spell' };
+
 const loggedStore = () => {
   const store = makeStore();
   store.dispatch({ type: 'session/setSession', payload: { logged: true, userData: { id: 'user-1', loader: false } } });
@@ -82,6 +84,36 @@ describe('GrimoireLanding', () => {
     const input = screen.getByTestId('grimoire-search') as HTMLInputElement;
     fireEvent.change(input, { target: { value: 'hello' } });
     expect(input.value).toBe('hello');
+  });
+
+  describe('select all / bulk bar always visible in selection mode', () => {
+    beforeEach(() => {
+      vi.spyOn(db, 'getSpellsFromDB').mockResolvedValue([mockSpell, mockSpell2] as never);
+    });
+
+    it('shows the bulk bar as soon as selection mode is entered, with nothing selected yet', async () => {
+      renderWithProviders(<GrimoireLanding />, { store: loggedStore() });
+      await screen.findByTestId('spell-card-spell-1');
+      fireEvent.click(screen.getByTestId('select-mode-btn'));
+
+      expect(await screen.findByTestId('bulk-bar')).toBeInTheDocument();
+      expect(screen.getByTestId('bulk-delete-btn')).toBeDisabled();
+      expect(screen.getByTestId('bulk-refresh-metadata-btn')).toBeDisabled();
+    });
+
+    it('select-all selects every listed spell; clicking again unselects them', async () => {
+      renderWithProviders(<GrimoireLanding />, { store: loggedStore() });
+      await screen.findByTestId('spell-card-spell-1');
+      fireEvent.click(screen.getByTestId('select-mode-btn'));
+      await screen.findByTestId('bulk-bar');
+
+      fireEvent.click(screen.getByTestId('select-all-btn'));
+      expect(screen.getByTestId('bulk-count')).toHaveTextContent('2 selected');
+      expect(screen.getByTestId('bulk-delete-btn')).not.toBeDisabled();
+
+      fireEvent.click(screen.getByTestId('select-all-btn'));
+      expect(screen.getByTestId('bulk-count')).toHaveTextContent('0 selected');
+    });
   });
 
   describe('bulk "update metadata from PDF" (TCORE-103)', () => {

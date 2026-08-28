@@ -121,6 +121,8 @@ export const es: Translations = {
     deleteSelected: 'Eliminar seleccionados',
     cancelSelection: 'Cancelar',
     nSelected: '{n} seleccionados',
+    selectAll: 'Seleccionar todo',
+    unselectAll: 'Deseleccionar todo',
     deleteSelectedConfirm: '¿Seguro que quieres eliminar {n} Spells? Esta acción no se puede deshacer.',
     bulkRefreshMetadata: 'Actualizar metadata desde PDF',
     bulkRefreshMetadataConfirmTitle: '¿Actualizar metadata desde el PDF original?',

@@ -4,7 +4,7 @@ import { useLanguage } from '../../../i18n';
 import { SegmentedTabs } from '../../components/Tabs/SegmentedTabs';
 import { SpellList, GrimoireFilter } from '../SpellList';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCloud, faHardDrive, faLayerGroup, faMagnifyingGlass, faPlus, faCheckSquare, faTrash, faXmark, faBuildingColumns, faArrowsRotate } from '@fortawesome/free-solid-svg-icons';
+import { faCloud, faHardDrive, faLayerGroup, faMagnifyingGlass, faPlus, faCheckSquare, faTrash, faXmark, faBuildingColumns, faArrowsRotate, faCheckDouble, faSquare } from '@fortawesome/free-solid-svg-icons';
 import { SectionHeader } from '../../components/SectionHeader';
 import { EmptyState } from '../../components/EmptyState';
 import { ImportOption } from '../../components/Start/ImportOption';
@@ -26,6 +26,7 @@ export const GrimoireLanding = () => {
   const [showImport, setShowImport] = useState(false);
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [selectableIds, setSelectableIds] = useState<string[]>([]);
   const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
   const [showBulkRefreshMetadataModal, setShowBulkRefreshMetadataModal] = useState(false);
   const { refreshMany, isRefreshing } = useRefreshSpellMetadataFromPdf();
@@ -61,6 +62,9 @@ export const GrimoireLanding = () => {
       prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
     );
   };
+
+  const allSelected = selectableIds.length > 0 && selectedIds.length === selectableIds.length;
+  const toggleSelectAll = () => setSelectedIds(allSelected ? [] : selectableIds);
 
   const handleBulkDeleteConfirm = async () => {
     if (!userData?.id) return;
@@ -130,24 +134,39 @@ export const GrimoireLanding = () => {
           selectionMode={selectionMode}
           selectedIds={selectedIds}
           onToggleSelect={toggleSelect}
+          onSelectableIdsChange={setSelectableIds}
         />
       )}
 
-      {selectionMode && selectedIds.length > 0 && (
+      {selectionMode && (
         <div className={s.bulkBar} data-testid="bulk-bar">
-          <span className={s.bulkCount}>
+          <span data-testid="bulk-count" className={s.bulkCount}>
             {t.grimoire.nSelected.replace('{n}', String(selectedIds.length))}
           </span>
           <button
+            data-testid="select-all-btn"
+            className={`${s.selectAllBtn} ${allSelected ? s.selectAllBtnActive : ''}`}
+            disabled={selectableIds.length === 0}
+            onClick={toggleSelectAll}
+          >
+            <FontAwesomeIcon icon={allSelected ? faSquare : faCheckDouble} />
+            {allSelected ? t.grimoire.unselectAll : t.grimoire.selectAll}
+          </button>
+          <button
             data-testid="bulk-refresh-metadata-btn"
             className={`${s.bulkActionBtn} ${s.bulkRefreshBtn}`}
-            disabled={isRefreshing}
+            disabled={isRefreshing || selectedIds.length === 0}
             onClick={() => setShowBulkRefreshMetadataModal(true)}
           >
             <FontAwesomeIcon icon={faArrowsRotate} />
             {t.grimoire.bulkRefreshMetadata}
           </button>
-          <button data-testid="bulk-delete-btn" className={`${s.bulkActionBtn} ${s.bulkDeleteBtn}`} onClick={() => setShowBulkDeleteModal(true)}>
+          <button
+            data-testid="bulk-delete-btn"
+            className={`${s.bulkActionBtn} ${s.bulkDeleteBtn}`}
+            disabled={selectedIds.length === 0}
+            onClick={() => setShowBulkDeleteModal(true)}
+          >
             <FontAwesomeIcon icon={faTrash} />
             {t.grimoire.deleteSelected}
           </button>

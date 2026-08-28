@@ -1,6 +1,6 @@
 import s from './index.module.css';
 import grid from '../../components/SpellGrid/index.module.css';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { getSpellsFromDB, deleteSpellFromDB } from '../../../db';
 import { getAllOriginalPdfIds } from '../../../db/originalPdfs';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -29,9 +29,10 @@ interface SpellListProps {
   selectionMode?: boolean;
   selectedIds?: string[];
   onToggleSelect?: (id: string) => void;
+  onSelectableIdsChange?: (ids: string[]) => void;
 }
 
-export const SpellList: React.FC<SpellListProps> = ({ query = '', filter = 'local', docFilter = 'all', selectionMode, selectedIds = [], onToggleSelect }) => {
+export const SpellList: React.FC<SpellListProps> = ({ query = '', filter = 'local', docFilter = 'all', selectionMode, selectedIds = [], onToggleSelect, onSelectableIdsChange }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useLanguage();
@@ -127,6 +128,16 @@ export const SpellList: React.FC<SpellListProps> = ({ query = '', filter = 'loca
     return true;
   });
   const { visible, hasMore, sentinelRef } = useInfiniteList(filtered);
+
+  // "Select all" (GrimoireLanding) needs every id matching the current search/tab, not
+  // just the paginated `visible` subset -- kept in a ref so this doesn't re-run just
+  // because the parent passed a new inline callback identity.
+  const onSelectableIdsChangeRef = useRef(onSelectableIdsChange);
+  onSelectableIdsChangeRef.current = onSelectableIdsChange;
+  useEffect(() => {
+    onSelectableIdsChangeRef.current?.(filtered.map(d => d.id));
+    //eslint-disable-next-line
+  }, [documents, query, docFilter, pdfIds]);
 
   if (isLoading) return (
     <div className={s.container}>

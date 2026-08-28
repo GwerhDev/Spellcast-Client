@@ -61,4 +61,30 @@ describe('SpellList', () => {
       expect(originalPdfsDb.getAllOriginalPdfIds).toHaveBeenCalledTimes(1);
     });
   });
+
+  describe('onSelectableIdsChange (GrimoireLanding "select all")', () => {
+    it('reports every id matching the current search/tab, not just the paginated subset', async () => {
+      const docA = { ...mockDoc, id: 'doc-1', title: 'Alpha' };
+      const docB = { ...mockDoc, id: 'doc-2', title: 'Beta' };
+      vi.spyOn(db, 'getSpellsFromDB').mockResolvedValue([docA, docB] as never);
+      const onSelectableIdsChange = vi.fn();
+
+      renderWithProviders(<SpellList onSelectableIdsChange={onSelectableIdsChange} />, { store: loggedStore() });
+
+      await screen.findByTestId('spell-card-doc-1');
+      expect(onSelectableIdsChange).toHaveBeenLastCalledWith(['doc-1', 'doc-2']);
+    });
+
+    it('narrows to only the ids matching the search query', async () => {
+      const docA = { ...mockDoc, id: 'doc-1', title: 'Alpha' };
+      const docB = { ...mockDoc, id: 'doc-2', title: 'Beta' };
+      vi.spyOn(db, 'getSpellsFromDB').mockResolvedValue([docA, docB] as never);
+      const onSelectableIdsChange = vi.fn();
+
+      renderWithProviders(<SpellList query="Alpha" onSelectableIdsChange={onSelectableIdsChange} />, { store: loggedStore() });
+
+      await screen.findByTestId('spell-card-doc-1');
+      expect(onSelectableIdsChange).toHaveBeenLastCalledWith(['doc-1']);
+    });
+  });
 });
