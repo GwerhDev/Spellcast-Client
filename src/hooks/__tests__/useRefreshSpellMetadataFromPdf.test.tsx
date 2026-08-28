@@ -88,6 +88,19 @@ describe('useRefreshSpellMetadataFromPdf', () => {
       });
     });
 
+    it('passes the title through when the PDF metadata includes one', async () => {
+      getOriginalPdfMock.mockResolvedValue(fakePdfBlob());
+      extractPdfMetadataMock.mockResolvedValue({ title: 'Title From PDF', author: 'Jane Doe' });
+      const { result } = renderTheHook(makeStore());
+
+      const outcome = await act(async () => result.current.refreshOne('spell-1'));
+
+      expect(outcome.metadata?.title).toBe('Title From PDF');
+      expect(updateSpellMetadataMock).toHaveBeenCalledWith('spell-1', 'user-1', {
+        title: 'Title From PDF', author: 'Jane Doe',
+      });
+    });
+
     it('treats an unparseable stored PDF as skipped rather than throwing', async () => {
       getOriginalPdfMock.mockResolvedValue(fakePdfBlob());
       getDocumentMock.mockReturnValue({ promise: Promise.reject(new Error('corrupt PDF')) });

@@ -521,16 +521,17 @@ export const updateSpellProgress = async (spellId: string, userId: string, progr
     });
 };
 
-// TCORE-103: updates ONLY description/author/tags/language -- used by the "re-extract
-// metadata from the stored original PDF" flow (individual and bulk), which must never
-// touch title/pagesContent. Unlike updateSpellContent's full-save semantics, this always
-// overwrites all four fields with whatever is passed (including `undefined`, clearing a
-// field the PDF no longer has) -- re-extracting is a sync with the source, not a
-// merge-if-empty prefill.
+// TCORE-103: updates description/author/tags/language, never pagesContent -- used by the
+// "re-extract metadata from the stored original PDF" flow (individual and bulk). Unlike
+// updateSpellContent's full-save semantics, this always overwrites those four fields with
+// whatever is passed (including `undefined`, clearing a field the PDF no longer has) --
+// re-extracting is a sync with the source, not a merge-if-empty prefill. `title` is the
+// one exception: a spell must always have one, so it's only overwritten when the PDF
+// actually has a title -- an absent title here means "leave it alone", not "clear it".
 export const updateSpellMetadata = async (
   id: string,
   userId: string,
-  metadata: { description?: string; author?: string; tags?: string[]; language?: string }
+  metadata: { title?: string; description?: string; author?: string; tags?: string[]; language?: string }
 ): Promise<void> => {
   const db = await openDB();
   const transaction = db.transaction(SPELLS_STORE_NAME, 'readwrite');
@@ -543,6 +544,7 @@ export const updateSpellMetadata = async (
       if (spell && sameUser(spell.userId, userId)) {
         const putRequest = store.put({
           ...spell,
+          title: metadata.title || spell.title,
           description: metadata.description,
           author: metadata.author,
           tags: metadata.tags,

@@ -249,6 +249,24 @@ describe('db/index.ts CRUD', () => {
     expect(spell?.pagesContent).toBe('[1,2,3]');
   });
 
+  it('updateSpellMetadata also updates the title when the PDF metadata includes one', async () => {
+    const { saveSpellToDB, updateSpellMetadata, getSpellById } = await importDb();
+    const id = await saveSpellToDB(seedSpell({ userId: 'user-1', title: 'Original Title' }));
+
+    await updateSpellMetadata(id, 'user-1', { title: 'Title From PDF' });
+
+    expect((await getSpellById(id, 'user-1'))?.title).toBe('Title From PDF');
+  });
+
+  it('updateSpellMetadata leaves the existing title untouched when the PDF metadata has none (title is required, unlike the other fields)', async () => {
+    const { saveSpellToDB, updateSpellMetadata, getSpellById } = await importDb();
+    const id = await saveSpellToDB(seedSpell({ userId: 'user-1', title: 'Original Title' }));
+
+    await updateSpellMetadata(id, 'user-1', { title: undefined, author: 'Jane Doe' });
+
+    expect((await getSpellById(id, 'user-1'))?.title).toBe('Original Title');
+  });
+
   it('updateSpellMetadata clears a field that used to have a value when re-extraction finds none (sync, not merge)', async () => {
     const { saveSpellToDB, updateSpellMetadata, getSpellById } = await importDb();
     const id = await saveSpellToDB(seedSpell({ userId: 'user-1' }));

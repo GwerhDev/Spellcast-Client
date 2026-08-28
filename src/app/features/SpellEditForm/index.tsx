@@ -314,6 +314,7 @@ export const SpellEditForm: React.FC = () => {
     if (!id) return;
     const result = await refreshOne(id);
     if (result.status === 'updated' && result.metadata) {
+      if (result.metadata.title) setSpellTitle(result.metadata.title);
       applyMetadataFromDoc(result.metadata);
       dispatch(invalidateSpellList());
       dispatch(addApiResponse({ message: t.spell.refreshMetadataSuccess, type: 'success' }));

@@ -109,7 +109,7 @@ export const en = {
     refreshMetadataFromPdf: 'Update from PDF',
     refreshMetadataNoPdf: 'No original PDF is stored for this spell',
     refreshMetadataConfirmTitle: 'Update metadata from the PDF?',
-    refreshMetadataConfirmDesc: 'This will overwrite the description, author, tags, and language below with whatever is in the original PDF. Any manual edits to these fields will be lost.',
+    refreshMetadataConfirmDesc: 'This will overwrite the description, author, tags, and language below with whatever is in the original PDF, and update the title too if the PDF has one. Any manual edits to these fields will be lost.',
     refreshMetadataSuccess: 'Metadata updated from the PDF.',
   },
   grimoire: {
@@ -122,7 +122,7 @@ export const en = {
     deleteSelectedConfirm: 'Are you sure you want to delete {n} spells? This action cannot be undone.',
     bulkRefreshMetadata: 'Update metadata from PDF',
     bulkRefreshMetadataConfirmTitle: 'Update metadata from the original PDF?',
-    bulkRefreshMetadataConfirmDesc: 'For each selected spell that has its original PDF stored, this will overwrite its description, author, tags, and language with whatever is in that PDF. Spells without a stored PDF are skipped. Manual edits to these fields will be lost.',
+    bulkRefreshMetadataConfirmDesc: 'For each selected spell that has its original PDF stored, this will overwrite its description, author, tags, and language with whatever is in that PDF, and update its title too if the PDF has one. Spells without a stored PDF are skipped. Manual edits to these fields will be lost.',
     bulkRefreshMetadataResult: '{updated} updated, {skipped} skipped (no stored PDF).',
   },
   overview: {

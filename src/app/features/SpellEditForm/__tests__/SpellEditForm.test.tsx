@@ -175,6 +175,41 @@ describe('SpellEditForm', () => {
       expect(store.getState().spellReader.listVersion).toBe(1);
     });
 
+    it('refresh-from-PDF: also applies the title when the PDF metadata includes one', async () => {
+      vi.mocked(hasOriginalPdf).mockResolvedValue(true);
+      refreshOneMock.mockResolvedValue({
+        status: 'updated',
+        metadata: { title: 'Title From PDF' },
+      });
+      renderForm();
+      await screen.findByTestId('spell-edit-form');
+      fireEvent.click(screen.getByTestId('spell-metadata-toggle'));
+      await waitFor(() => expect(screen.getByTestId('spell-metadata-refresh-btn')).not.toBeDisabled());
+
+      fireEvent.click(screen.getByTestId('spell-metadata-refresh-btn'));
+      fireEvent.click(await screen.findByTestId('refresh-metadata-confirm-btn'));
+
+      await waitFor(() => expect(screen.getByTestId('spell-edit-title-input')).toHaveValue('Title From PDF'));
+    });
+
+    it('refresh-from-PDF: leaves the title alone when the PDF metadata has none', async () => {
+      vi.mocked(hasOriginalPdf).mockResolvedValue(true);
+      refreshOneMock.mockResolvedValue({
+        status: 'updated',
+        metadata: { description: 'A tale' },
+      });
+      renderForm();
+      await screen.findByTestId('spell-edit-form');
+      fireEvent.click(screen.getByTestId('spell-metadata-toggle'));
+      await waitFor(() => expect(screen.getByTestId('spell-metadata-refresh-btn')).not.toBeDisabled());
+
+      fireEvent.click(screen.getByTestId('spell-metadata-refresh-btn'));
+      fireEvent.click(await screen.findByTestId('refresh-metadata-confirm-btn'));
+
+      await waitFor(() => expect(screen.getByTestId('spell-metadata-description')).toHaveValue('A tale'));
+      expect(screen.getByTestId('spell-edit-title-input')).toHaveValue('Test Doc');
+    });
+
     it('refresh-from-PDF: a skipped result reports it without changing the form fields', async () => {
       vi.mocked(hasOriginalPdf).mockResolvedValue(true);
       refreshOneMock.mockResolvedValue({ status: 'skipped' });
