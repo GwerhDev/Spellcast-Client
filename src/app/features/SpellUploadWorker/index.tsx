@@ -71,15 +71,17 @@ export const SpellUploadWorker: React.FC = () => {
           dispatch(setUploadDone({ id: next.id }));
         } else {
           const resultDocId = await saveSpellToDB({
-            title: next.title,
+            // Same merge-if-empty prefill SpellCreateForm does: prefer the PDF's own
+            // embedded title, but never clobber one the user already typed over the
+            // filename-derived default in the review card (titleWasEdited).
+            title: (!next.titleWasEdited && meta.title) ? meta.title : next.title,
             cover: coverBlob ?? undefined,
             userId: next.userId,
             pagesContent: JSON.stringify(pagesContent),
             originalPagesContent: next.saveOriginal ? JSON.stringify(pagesContent) : undefined,
             // TCORE-97 follow-up: same PDF-metadata prefill SpellCreateForm already does,
-            // so spells created via this background path get it too. Never overrides
-            // anything a user could edit here (there's no review step on this path), so
-            // there's no clobber risk to guard against, unlike the form's title field.
+            // so spells created via this background path get it too. There's no review
+            // step for these on this path, so there's no clobber risk to guard against.
             description: meta.description,
             author: meta.author,
             tags: meta.tags,

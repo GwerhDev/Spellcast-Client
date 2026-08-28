@@ -125,6 +125,39 @@ describe('SpellUploadWorker', () => {
       expect(payload.language).toBe('en');
     });
 
+    it('creation path: prefers the PDF\'s own title over the filename-derived one when the queued title was never edited', async () => {
+      extractPdfMetadataMock.mockResolvedValue({ title: 'PDF Title' });
+      const store = makeStore();
+      store.dispatch(enqueue({ title: 'filename derived', titleWasEdited: false } as never));
+      renderWithProviders(<SpellUploadWorker />, { store });
+
+      await waitFor(() => expect(saveSpellToDBMock).toHaveBeenCalled());
+      const payload = saveSpellToDBMock.mock.calls[0][0] as Record<string, unknown>;
+      expect(payload.title).toBe('PDF Title');
+    });
+
+    it('creation path: keeps the queued title when the user already edited it, even if the PDF has one', async () => {
+      extractPdfMetadataMock.mockResolvedValue({ title: 'PDF Title' });
+      const store = makeStore();
+      store.dispatch(enqueue({ title: 'User Typed Title', titleWasEdited: true } as never));
+      renderWithProviders(<SpellUploadWorker />, { store });
+
+      await waitFor(() => expect(saveSpellToDBMock).toHaveBeenCalled());
+      const payload = saveSpellToDBMock.mock.calls[0][0] as Record<string, unknown>;
+      expect(payload.title).toBe('User Typed Title');
+    });
+
+    it('creation path: falls back to the queued title when the PDF has none', async () => {
+      extractPdfMetadataMock.mockResolvedValue({});
+      const store = makeStore();
+      store.dispatch(enqueue({ title: 'filename derived', titleWasEdited: false } as never));
+      renderWithProviders(<SpellUploadWorker />, { store });
+
+      await waitFor(() => expect(saveSpellToDBMock).toHaveBeenCalled());
+      const payload = saveSpellToDBMock.mock.calls[0][0] as Record<string, unknown>;
+      expect(payload.title).toBe('filename derived');
+    });
+
     it('creation path: metadata fields are undefined when the PDF has none', async () => {
       extractPdfMetadataMock.mockResolvedValue({});
       const store = makeStore();

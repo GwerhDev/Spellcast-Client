@@ -6,6 +6,10 @@ export type QueueUiState = 'open' | 'minimized' | 'closed';
 export interface SpellUploadJob {
   id: string;
   title: string;
+  // Lets SpellUploadWorker know whether it's safe to prefer the PDF's own embedded title
+  // over this one when creating a new spell -- absent/false means this is still the
+  // untouched filename-derived default. Irrelevant for a targetDocId (replace-content) job.
+  titleWasEdited?: boolean;
   fileContent: string;
   saveOriginal: boolean;
   userId: string;

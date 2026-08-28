@@ -3,7 +3,6 @@ import { useEffect, useRef, useState } from 'react';
 import { faUpload, faFileCircleCheck, faFilePdf, faFileWord, faTrash, faHourglassHalf, faCheck } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useDispatch } from 'react-redux';
-import { setSpellTitle } from '../../../store/spellSlice';
 import { SpellState } from '../../../interfaces';
 import { useAppSelector } from '../../../store/hooks';
 import { enqueueUpload } from '../../../store/spellUploadSlice';
@@ -11,13 +10,14 @@ import { useLanguage } from '../../../i18n';
 
 interface SpellCreateInputProps {
   spell: SpellState;
+  onTitleChange: (title: string) => void;
   onRemove?: () => void;
   onDone?: (resultDocId?: string) => void;
   autoCreate?: boolean;
 }
 
 export const SpellCreateInput = (props: SpellCreateInputProps) => {
-  const { spell, onRemove, onDone, autoCreate } = props;
+  const { spell, onTitleChange, onRemove, onDone, autoCreate } = props;
   const [editTitle, setEditTitle] = useState(false);
   const [saveOriginal, setSaveOriginal] = useState(true);
   const [jobId, setJobId] = useState<string | null>(null);
@@ -27,6 +27,9 @@ export const SpellCreateInput = (props: SpellCreateInputProps) => {
   const job = useAppSelector(state => jobId ? state.spellUpload.queue.find(j => j.id === jobId) : null);
   const onDoneRef = useRef(onDone);
   onDoneRef.current = onDone;
+  // Mirrors SpellCreateForm's titleEditedByUserRef: lets SpellUploadWorker know whether
+  // it's safe to prefer the PDF's own embedded title over this filename-derived one.
+  const titleEditedRef = useRef(false);
 
   useEffect(() => {
     if (autoCreate && !jobId) handleCreate();
@@ -66,6 +69,7 @@ export const SpellCreateInput = (props: SpellCreateInputProps) => {
     dispatch(enqueueUpload({
       id,
       title: spell.title || t.spell.untitled,
+      titleWasEdited: titleEditedRef.current,
       fileContent: spell.fileContent,
       saveOriginal,
       userId: userData.id,
@@ -84,12 +88,13 @@ export const SpellCreateInput = (props: SpellCreateInputProps) => {
       <FontAwesomeIcon size="2x" icon={getFileTypeIcon(spell.type)} />
       <div className={s.metadata} onMouseLeave={() => setEditTitle(false)}>
         <input
+          data-testid="spell-create-input-title"
           placeholder={t.spell.titleInputPlaceholder}
           readOnly={spell.title.length > 0 && !editTitle || !!jobId}
           className={s.title}
           onClick={() => { if (!jobId) setEditTitle(true); }}
           value={spell.title}
-          onChange={(e) => { if (!jobId) dispatch(setSpellTitle(e.target.value)); }}
+          onChange={(e) => { if (!jobId) { titleEditedRef.current = true; onTitleChange(e.target.value); } }}
           type="text"
         />
         <div className={s.metaRow}>
@@ -126,7 +131,7 @@ export const SpellCreateInput = (props: SpellCreateInputProps) => {
           <FontAwesomeIcon icon={faCheck} className={s.doneIcon} />
         ) : (
           <>
-            <button onClick={handleCreate} className={s.continueButton} title={t.editor.createSpell}>
+            <button data-testid="spell-create-input-upload-btn" onClick={handleCreate} className={s.continueButton} title={t.editor.createSpell}>
               <FontAwesomeIcon icon={faUpload} />
             </button>
             {onRemove && (

@@ -7,7 +7,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { RootState } from '../../../../store';
-import { resetSpellState, setSpellDetails } from '../../../../store/spellSlice';
+import { resetSpellState, setSpellDetails, setSpellTitle } from '../../../../store/spellSlice';
 import { enqueueUpload } from '../../../../store/spellUploadSlice';
 import { useAppSelector } from '../../../../store/hooks';
 import { SpellCreateInput } from '../../../components/Inputs/SpellCreateInput';
@@ -123,6 +123,9 @@ export const ImportOption: React.FC = () => {
   const removePending = (index: number) =>
     setPendingFiles(prev => prev.filter((_, i) => i !== index));
 
+  const updatePendingTitle = (index: number, title: string) =>
+    setPendingFiles(prev => prev.map((f, i) => i === index ? { ...f, title } : f));
+
   const hasSingleReduxFile = spell.isLoaded;
   const hasAnyFile = hasSingleReduxFile || pendingFiles.length > 0;
   const hasMultiple = pendingFiles.length > 1 || (pendingFiles.length > 0 && spell.isLoaded);
@@ -163,6 +166,7 @@ export const ImportOption: React.FC = () => {
       {hasSingleReduxFile && (
         <SpellCreateInput
           spell={spell}
+          onTitleChange={(title) => dispatch(setSpellTitle(title))}
           onRemove={() => dispatch(resetSpellState())}
           onDone={(resultDocId) => {
             setDoneCount(prev => prev + 1);
@@ -174,6 +178,7 @@ export const ImportOption: React.FC = () => {
         <SpellCreateInput
           key={i}
           spell={{ ...f, currentPage: 0, isLoaded: true }}
+          onTitleChange={(title) => updatePendingTitle(i, title)}
           onRemove={() => removePending(i)}
           autoCreate={createAllTriggered}
           onDone={() => setDoneCount(prev => prev + 1)}
