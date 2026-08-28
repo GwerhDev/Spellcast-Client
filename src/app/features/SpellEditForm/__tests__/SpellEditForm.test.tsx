@@ -118,6 +118,26 @@ describe('SpellEditForm', () => {
       expect(call.tags).toEqual(['fantasy', 'adventure']);
     });
 
+    it('editing only the title enables the Save button', async () => {
+      renderForm();
+      await screen.findByTestId('spell-edit-form');
+
+      expect(screen.getByTestId('spell-edit-save-btn')).toBeDisabled();
+      fireEvent.change(screen.getByTestId('spell-edit-title-input'), { target: { value: 'Renamed Spell' } });
+      expect(screen.getByTestId('spell-edit-save-btn')).not.toBeDisabled();
+    });
+
+    it('Save also invalidates the spell list, so a renamed title shows up in Grimoire/EditorSelect', async () => {
+      const { store } = renderForm();
+      await screen.findByTestId('spell-edit-form');
+      expect(store.getState().spellReader.listVersion).toBe(0);
+
+      fireEvent.change(screen.getByTestId('spell-edit-title-input'), { target: { value: 'Renamed Spell' } });
+      fireEvent.click(screen.getByTestId('spell-edit-save-btn'));
+
+      await waitFor(() => expect(store.getState().spellReader.listVersion).toBe(1));
+    });
+
     it('the refresh-from-PDF button is disabled when the spell has no stored original PDF', async () => {
       vi.mocked(hasOriginalPdf).mockResolvedValue(false);
       renderForm();
@@ -152,6 +172,7 @@ describe('SpellEditForm', () => {
       expect(screen.getByTestId('spell-metadata-tags')).toHaveValue('x, y');
       expect(store.getState().apiResponses.responses).toHaveLength(1);
       expect(store.getState().apiResponses.responses[0].type).toBe('success');
+      expect(store.getState().spellReader.listVersion).toBe(1);
     });
 
     it('refresh-from-PDF: a skipped result reports it without changing the form fields', async () => {
@@ -174,6 +195,7 @@ describe('SpellEditForm', () => {
       await waitFor(() => expect(refreshOneMock).toHaveBeenCalled());
       expect(screen.getByTestId('spell-metadata-author')).toHaveValue('Original Author');
       expect(store.getState().apiResponses.responses[0].type).not.toBe('success');
+      expect(store.getState().spellReader.listVersion).toBe(0);
     });
   });
 });

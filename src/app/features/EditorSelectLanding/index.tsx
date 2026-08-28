@@ -21,6 +21,7 @@ export const EditorSelectLanding = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { userData } = useAppSelector((state) => state.session);
+  const { listVersion } = useAppSelector((state) => state.spellReader);
   const { t } = useLanguage();
 
   const [documents, setDocuments] = useState<Spell[]>([]);
@@ -35,7 +36,7 @@ export const EditorSelectLanding = () => {
       )
       .catch(console.error)
       .finally(() => setIsLoading(false));
-  }, [userData.id]);
+  }, [userData.id, listVersion]);
 
   const tabs = [
     { id: 'all',   label: t.common.all,  icon: faLayerGroup },

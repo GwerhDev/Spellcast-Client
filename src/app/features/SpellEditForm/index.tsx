@@ -8,7 +8,7 @@ import { selectCurrentCredential } from '../../../store/credentialsSlice';
 import { getSpellById, updateSpellContent } from '../../../db';
 import { hasOriginalPdf } from '../../../db/originalPdfs';
 import { setShowEditorSettings } from '../../../store/editorSlice';
-import { invalidateContent } from '../../../store/spellReaderSlice';
+import { invalidateContent, invalidateSpellList } from '../../../store/spellReaderSlice';
 import { enqueueUpload } from '../../../store/spellUploadSlice';
 import { addApiResponse } from '../../../store/apiResponsesSlice';
 import { textToSpeechService } from '../../../services/tts';
@@ -222,6 +222,7 @@ export const SpellEditForm: React.FC = () => {
         setHasChanges(false);
         setSaveStatus('saved');
         dispatch(invalidateContent());
+        dispatch(invalidateSpellList());
         setTimeout(() => setSaveStatus('idle'), 2000);
       } catch (err) {
         console.error('Auto-save failed:', err);
@@ -301,6 +302,7 @@ export const SpellEditForm: React.FC = () => {
       setHasChanges(false);
       setSaveStatus('saved');
       dispatch(invalidateContent());
+      dispatch(invalidateSpellList());
       setTimeout(() => setSaveStatus('idle'), 2000);
     } catch (err) {
       console.error('Failed to save document:', err);
@@ -313,6 +315,7 @@ export const SpellEditForm: React.FC = () => {
     const result = await refreshOne(id);
     if (result.status === 'updated' && result.metadata) {
       applyMetadataFromDoc(result.metadata);
+      dispatch(invalidateSpellList());
       dispatch(addApiResponse({ message: t.spell.refreshMetadataSuccess, type: 'success' }));
     } else {
       dispatch(addApiResponse({ message: t.spell.refreshMetadataNoPdf, type: 'error' }));
@@ -348,11 +351,12 @@ export const SpellEditForm: React.FC = () => {
         <IconButton icon={faArrowLeft} className={s.backButton} variant='transparent' title={t.common.back} onClick={() => navigate((location.state as { from?: string })?.from ?? `/spell/${id}`)} />
         <span className={s.titleContainer}>
           <input
+            data-testid="spell-edit-title-input"
             className={s.spellTitle}
             type="text"
             placeholder={t.spell.titlePlaceholder}
             value={spellTitle}
-            onChange={(e) => setSpellTitle(e.target.value)}
+            onChange={(e) => { setSpellTitle(e.target.value); setHasChanges(true); }}
           />
         </span>
 

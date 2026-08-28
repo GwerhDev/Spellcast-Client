@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { screen, fireEvent } from '@testing-library/react';
+import { screen, fireEvent, waitFor } from '@testing-library/react';
 import { renderWithProviders, makeStore } from '../../../../test/renderWithProviders';
 import { EditorSelectLanding } from '../index';
 import * as db from '../../../../db';
+import { invalidateSpellList } from '../../../../store/spellReaderSlice';
 
 const mockDoc = {
   id: 'doc-1',
@@ -47,5 +48,17 @@ describe('EditorSelectLanding', () => {
     await screen.findByTestId('editor-select-search');
     fireEvent.change(screen.getByTestId('editor-select-search'), { target: { value: 'zzznomatch' } });
     expect(await screen.findByTestId('editor-select-no-results')).toBeInTheDocument();
+  });
+
+  it('refetches the spell list when invalidateSpellList is dispatched, so a renamed title shows up', async () => {
+    const spy = vi.spyOn(db, 'getSpellsFromDB').mockResolvedValue([mockDoc] as never);
+    const store = loggedStore();
+    renderWithProviders(<EditorSelectLanding />, { store });
+    await screen.findByTestId('editor-select-search');
+    expect(spy).toHaveBeenCalledTimes(1);
+
+    store.dispatch(invalidateSpellList());
+
+    await waitFor(() => expect(spy).toHaveBeenCalledTimes(2));
   });
 });
