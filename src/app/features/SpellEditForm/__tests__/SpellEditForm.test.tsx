@@ -74,7 +74,7 @@ describe('SpellEditForm', () => {
   });
 
   describe('metadata editing (TCORE-103)', () => {
-    it('loads existing metadata and auto-expands the section', async () => {
+    it('loads existing metadata but keeps the section collapsed until toggled', async () => {
       vi.mocked(getSpellById).mockResolvedValue({
         ...mockDoc,
         description: 'A tale of dragons',
@@ -83,8 +83,11 @@ describe('SpellEditForm', () => {
         language: 'en',
       } as never);
       renderForm();
+      await screen.findByTestId('spell-edit-form');
 
-      await waitFor(() => expect(screen.getByTestId('spell-metadata-section')).toBeInTheDocument());
+      expect(screen.queryByTestId('spell-metadata-section')).not.toBeInTheDocument();
+      fireEvent.click(screen.getByTestId('spell-metadata-toggle'));
+
       expect(screen.getByTestId('spell-metadata-description')).toHaveValue('A tale of dragons');
       expect(screen.getByTestId('spell-metadata-author')).toHaveValue('Jane Doe');
       expect(screen.getByTestId('spell-metadata-tags')).toHaveValue('fantasy, adventure');
@@ -161,9 +164,8 @@ describe('SpellEditForm', () => {
         <Routes><Route path="/editor/:id" element={<SpellEditForm />} /></Routes>,
         { store, initialPath: '/editor/doc-1' }
       );
-      // The section auto-expands on its own here (the loaded doc already has an author),
-      // so unlike the other tests, no toggle click is needed -- clicking it would collapse it.
       await screen.findByTestId('spell-edit-form');
+      fireEvent.click(screen.getByTestId('spell-metadata-toggle'));
       await waitFor(() => expect(screen.getByTestId('spell-metadata-refresh-btn')).not.toBeDisabled());
 
       fireEvent.click(screen.getByTestId('spell-metadata-refresh-btn'));

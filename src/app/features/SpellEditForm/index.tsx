@@ -91,7 +91,6 @@ export const SpellEditForm: React.FC = () => {
     setAuthor(doc.author ?? '');
     setTagsInput(doc.tags?.length ? doc.tags.join(', ') : '');
     setLanguage(doc.language ?? '');
-    setMetadataExpanded(!!(doc.description || doc.author || doc.tags?.length || doc.language));
   };
 
   const [originalPages, setOriginalPages] = useState<JSONContent[] | null>(null);
