@@ -30,7 +30,7 @@ import { getCachedAudio, setCachedAudio, AUDIO_CACHE_VERSION } from '../../../db
 import { getSpellById } from '../../../db';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '../../../store/hooks';
-import { faFilePdf } from '@fortawesome/free-solid-svg-icons';
+import { faScroll } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Waveform } from '../../components/Waveform/Waveform';
 import { SpellDetailModal } from '../../components/Modals/SpellDetailModal';
@@ -590,7 +590,7 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
             >
               {coverUrl
                 ? <img data-testid="audio-player-cover" src={coverUrl} alt="" className={s.cover} />
-                : <div data-testid="audio-player-cover-placeholder" className={s.coverIcon}><FontAwesomeIcon icon={faFilePdf} /></div>
+                : <div data-testid="audio-player-cover-placeholder" className={s.coverIcon}><FontAwesomeIcon icon={faScroll} /></div>
               }
               {isPlaying && (
                 <div className={s.coverWaveOverlay}>

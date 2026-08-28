@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { addApiResponse } from '../store/apiResponsesSlice';
 import { invalidateSpellList } from '../store/spellReaderSlice';
@@ -6,24 +6,22 @@ import { useLanguage } from '../i18n';
 import { importSpellFromFile } from '../utils/spellFormat';
 
 /**
- * Shared "import a .spell file" flow (TCORE-78) — hides a file input, hydrates a new
- * Spell (+ any bundled audio) into IndexedDB on selection, then invalidates the spell
- * list so it shows up without a manual refresh. Lives in src/hooks/ for the same
- * layering reason as useSpellExport.
+ * Shared "import a .spell file" flow (TCORE-78) — hydrates a new Spell (+ any bundled
+ * audio) into IndexedDB, then invalidates the spell list so it shows up without a manual
+ * refresh. Lives in src/hooks/ for the same layering reason as useSpellExport.
+ *
+ * Exposes a plain `importFile(file)` rather than owning a hidden `<input>` itself: its one
+ * caller, ImportOption, already has its own file input/dropzone (shared with PDF import,
+ * TCORE-90-adjacent unification) and just needs to route a `.spell` File here.
  */
 export function useSpellImport() {
   const dispatch = useAppDispatch();
   const { t } = useLanguage();
   const { userData } = useAppSelector((state) => state.session);
-  const inputRef = useRef<HTMLInputElement>(null);
   const [isImporting, setIsImporting] = useState(false);
 
-  const triggerImport = () => inputRef.current?.click();
-
-  const handleFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = ''; // allow re-selecting the same file later
-    if (!file || !userData.id) return;
+  const importFile = async (file: File): Promise<void> => {
+    if (!userData.id) return;
 
     setIsImporting(true);
     try {
@@ -38,5 +36,5 @@ export function useSpellImport() {
     }
   };
 
-  return { inputRef, triggerImport, handleFileSelected, isImporting };
+  return { importFile, isImporting };
 }

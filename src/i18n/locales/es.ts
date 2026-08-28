@@ -385,7 +385,7 @@ export const es: Translations = {
     importTab: 'Importar',
     orImportNew: 'Importar nuevo archivo',
     addMore: 'Añadir más archivos',
-    dragDrop: 'Arrastra y suelta un archivo PDF aquí, o haz clic para seleccionar uno',
+    dragDrop: 'Arrastra y suelta un PDF o un archivo .spell aquí, o haz clic para seleccionar uno',
   },
   notifications: {
     title: 'Notifications',

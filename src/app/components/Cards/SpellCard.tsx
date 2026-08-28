@@ -2,7 +2,7 @@ import s from './SpellCard.module.css';
 import { useMemo, useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faFilePdf, faTrash, faPen, faEllipsisVertical, faHourglassHalf, faCheck, faFileExport } from '@fortawesome/free-solid-svg-icons';
+import { faScroll, faTrash, faPen, faEllipsisVertical, faHourglassHalf, faCheck, faFileExport } from '@fortawesome/free-solid-svg-icons';
 import { Spell } from '../../../interfaces';
 import { useLanguage } from '../../../i18n';
 import { Tag } from '../Tag/Tag';
@@ -134,7 +134,7 @@ export const SpellCard = ({ doc, isActive, isPlaying, onClick, onDelete, onEdit,
       <div className={s.coverWrapper}>
         {coverUrl
           ? <img src={coverUrl} alt={doc.title} className={s.cover} />
-          : <div className={s.iconWrapper}><FontAwesomeIcon icon={faFilePdf} className={s.icon} /></div>
+          : <div className={s.iconWrapper}><FontAwesomeIcon icon={faScroll} className={s.icon} /></div>
         }
         <div className={s.coverTags}>
           {isPlaying && <Tag tone="live" size="sm" dot>{t.spell.reading}</Tag>}

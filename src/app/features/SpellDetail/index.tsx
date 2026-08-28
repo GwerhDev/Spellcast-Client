@@ -16,7 +16,7 @@ import { DeleteConfirmModal } from '../../components/Modals/DeleteConfirmModal';
 // import { SpellExportModal } from '../../components/Modals/SpellExportModal'; // .spell export: future
 import { Tag } from '../../components/Tag/Tag';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faFilePdf, faBookOpen, faPen, faArrowLeft, faTrash } from '@fortawesome/free-solid-svg-icons';
+import { faScroll, faWandMagicSparkles, faArrowLeft, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { useLanguage } from '../../../i18n';
 // import { useSpellExport } from '../../../hooks/useSpellExport'; // .spell export: future
 
@@ -121,7 +121,7 @@ export const SpellDetail: React.FC = () => {
         <div className={s.header}>
           {coverUrl
             ? <img src={coverUrl} alt={doc.title} className={s.cover} />
-            : <FontAwesomeIcon icon={faFilePdf} size="4x" className={s.icon} />
+            : <FontAwesomeIcon icon={faScroll} size="4x" className={s.icon} />
           }
           <div className={s.info}>
             <h1 data-testid="spell-detail-title" className={s.title}>{doc.title}</h1>
@@ -145,10 +145,10 @@ export const SpellDetail: React.FC = () => {
           </div>
         </div>
         <div className={s.actions}>
-          <PrimaryButton data-testid="spell-detail-continue-btn" icon={faBookOpen} onClick={currentPage > 0 ? handleContinueReading : handlePlay}>
+          <PrimaryButton data-testid="spell-detail-continue-btn" icon={faScroll} onClick={currentPage > 0 ? handleContinueReading : handlePlay}>
             {currentPage > 0 ? t.spell.continueReading : t.spell.startReading}
           </PrimaryButton>
-          <SecondaryButton data-testid="spell-detail-edit-btn" icon={faPen} onClick={handleEdit}>{t.spell.editSpell}</SecondaryButton>
+          <SecondaryButton data-testid="spell-detail-edit-btn" icon={faWandMagicSparkles} onClick={handleEdit}>{t.spell.editSpell}</SecondaryButton>
           {/* .spell export: future
           <SecondaryButton data-testid="spell-detail-export-btn" icon={faFileExport} onClick={() => openExportModal({ id: doc.id, title: doc.title })}>{t.spell.exportSpell}</SecondaryButton>
           */}

@@ -2,7 +2,7 @@ import s from '../../components/EditorSelectLanding/index.module.css';
 import grid from '../../components/SpellGrid/index.module.css';
 import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { faArrowLeft, faCloud, faFeatherPointed, faHardDrive, faLayerGroup, faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
+import { faArrowLeft, faScroll, faCloud, faFeatherPointed, faHardDrive, faLayerGroup, faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { getSpellsFromDB } from '../../../db';
 import { useAppSelector } from '../../../store/hooks';
@@ -11,6 +11,7 @@ import { EditorPickerCard } from '../../components/Cards/EditorPickerCard';
 import { SegmentedTabs } from '../../components/Tabs/SegmentedTabs';
 import { SectionHeader } from '../../components/SectionHeader';
 import { IconButton } from '../../components/Buttons/IconButton';
+import { EmptyState } from '../../components/EmptyState';
 import { useLanguage } from '../../../i18n';
 import { useInfiniteList } from '../../../hooks/useInfiniteList';
 
@@ -53,10 +54,7 @@ export const EditorSelectLanding = () => {
 
   const renderBody = () => {
     if (filter === 'cloud') return (
-      <div className={s.cloudEmpty}>
-        <FontAwesomeIcon icon={faCloud} className={s.cloudIcon} />
-        <p>{t.storage.cloudSyncDesc}</p>
-      </div>
+      <EmptyState testId="editor-select-cloud-empty" icon={faCloud} message={t.storage.cloudSyncDesc} />
     );
     if (isLoading) return (
       <div className={grid.grid}>
@@ -72,8 +70,14 @@ export const EditorSelectLanding = () => {
         ))}
       </div>
     );
-    if (documents.length === 0) return <p data-testid="editor-select-empty" className={s.empty}>{t.spell.noLocalSpells}</p>;
-    if (filtered.length === 0) return <p data-testid="editor-select-no-results" className={s.empty}>{t.spell.noSpells}</p>;
+    if (documents.length === 0) return (
+      <EmptyState
+        testId="editor-select-empty"
+        icon={faScroll}
+        message={filter === 'local' ? t.spell.noLocalSpells : t.spell.noSpells}
+      />
+    );
+    if (filtered.length === 0) return <EmptyState testId="editor-select-no-results" icon={faMagnifyingGlass} message={t.spell.noSpells} />;
     return (
       <div className={grid.grid}>
         {visible.map((doc) => (

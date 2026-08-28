@@ -73,28 +73,3 @@
   overflow-y: auto;
 }
 
-.empty {
-  color: var(--color-light-400);
-  font-size: 0.9rem;
-}
-
-.cloudEmpty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-  padding: 3rem;
-  color: var(--color-light-400);
-  text-align: center;
-}
-
-.cloudIcon {
-  font-size: 2.5rem;
-  opacity: 0.35;
-}
-
-.cloudEmpty p {
-  max-width: 320px;
-  font-size: 0.9rem;
-  margin: 0;
-}

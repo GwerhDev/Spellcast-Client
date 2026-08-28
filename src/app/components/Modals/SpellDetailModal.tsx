@@ -12,7 +12,7 @@ import { CustomModal } from './CustomModal';
 import { PrimaryButton } from '../Buttons/PrimaryButton';
 import { SecondaryButton } from '../Buttons/SecondaryButton';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faFilePdf, faBookOpen, faPen, faTrash } from '@fortawesome/free-solid-svg-icons';
+import { faScroll, faWandMagicSparkles, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { Tag } from '../Tag/Tag';
 import { useLanguage } from '../../../i18n';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
@@ -100,7 +100,7 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
               <div className={s.coverWrap}>
                 {coverUrl
                   ? <img src={coverUrl} alt={doc.title} className={s.cover} />
-                  : <div className={s.coverPlaceholder}><FontAwesomeIcon icon={faFilePdf} /></div>
+                  : <div className={s.coverPlaceholder}><FontAwesomeIcon icon={faScroll} /></div>
                 }
               </div>
               <div className={s.info}>
@@ -127,10 +127,10 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
               </div>
             </div>
             <div className={s.actions}>
-              <PrimaryButton data-testid="spell-detail-modal-continue-btn" icon={faBookOpen} onClick={handleRead}>
+              <PrimaryButton data-testid="spell-detail-modal-continue-btn" icon={faScroll} onClick={handleRead}>
                 {currentPage > 0 ? t.spell.continueReading : t.spell.startReading}
               </PrimaryButton>
-              <SecondaryButton data-testid="spell-detail-modal-edit-btn" icon={faPen} onClick={handleEdit}>{t.spell.editSpell}</SecondaryButton>
+              <SecondaryButton data-testid="spell-detail-modal-edit-btn" icon={faWandMagicSparkles} onClick={handleEdit}>{t.spell.editSpell}</SecondaryButton>
               <PrimaryButton data-testid="spell-detail-modal-delete-btn" variant="danger" icon={faTrash} onClick={() => setShowDeleteModal(true)}>
                 {t.common.delete}
               </PrimaryButton>

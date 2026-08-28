@@ -12,6 +12,7 @@ import { enqueueUpload } from '../../../../store/spellUploadSlice';
 import { useAppSelector } from '../../../../store/hooks';
 import { SpellCreateInput } from '../../../components/Inputs/SpellCreateInput';
 import { useLanguage } from '../../../../i18n';
+import { useSpellImport } from '../../../../hooks/useSpellImport';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
@@ -35,6 +36,7 @@ export const ImportOption: React.FC = () => {
   const navigate = useNavigate();
   const { userData } = useAppSelector(state => state.session);
   const { t } = useLanguage();
+  const { importFile } = useSpellImport();
 
   const readFile = (file: File): Promise<PendingFile> =>
     new Promise((resolve, reject) => {
@@ -53,14 +55,27 @@ export const ImportOption: React.FC = () => {
       reader.readAsDataURL(file);
     });
 
+  const isSpellFile = (f: File) => f.name.toLowerCase().endsWith('.spell');
+
   const handleFiles = useCallback(async (files: FileList | File[]) => {
-    const arr = Array.from(files).filter(f => f.type === 'application/pdf');
-    if (arr.length === 0) return;
+    const all = Array.from(files);
+    const spellFiles = all.filter(isSpellFile);
+    const pdfFiles = all.filter(f => f.type === 'application/pdf');
+    if (pdfFiles.length === 0 && spellFiles.length === 0) return;
+
+    // .spell files are already complete spells -- they skip the PDF review flow below
+    // entirely and import straight away (same behavior as the import previously had its
+    // own separate button for).
+    if (spellFiles.length > 0) {
+      await Promise.all(spellFiles.map(f => importFile(f)));
+    }
+
+    if (pdfFiles.length === 0) return;
 
     setIsProcessing(true);
     try {
-      if (arr.length === 1 && pendingFiles.length === 0 && !spell.isLoaded) {
-        const f = arr[0];
+      if (pdfFiles.length === 1 && pendingFiles.length === 0 && !spell.isLoaded) {
+        const f = pdfFiles[0];
         const fileType = f.type.split('/').at(-1);
         const fileName = f.name.split('.').filter(e => e !== fileType).join(' ');
         await new Promise<void>((resolve, reject) => {
@@ -80,14 +95,14 @@ export const ImportOption: React.FC = () => {
         return;
       }
 
-      const results = await Promise.all(arr.map(readFile));
+      const results = await Promise.all(pdfFiles.map(readFile));
       setPendingFiles(prev => [...prev, ...results]);
     } catch (err) {
       console.error(err);
     } finally {
       setIsProcessing(false);
     }
-  }, [dispatch, spell.isLoaded, pendingFiles.length]);
+  }, [dispatch, spell.isLoaded, pendingFiles.length, importFile]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) handleFiles(e.target.files);
@@ -174,10 +189,11 @@ export const ImportOption: React.FC = () => {
           <input
             ref={addMoreInputRef}
             type="file"
-            accept=".pdf"
+            accept=".pdf,.spell"
             multiple
             className={s.fileInput}
             onChange={handleFileChange}
+            data-testid="import-option-file-input"
           />
           <button className={s.addMoreBtn} onClick={() => addMoreInputRef.current?.click()}>
             <FontAwesomeIcon icon={faPlus} />
@@ -201,11 +217,12 @@ export const ImportOption: React.FC = () => {
     >
       <input
         type="file"
-        accept=".pdf"
+        accept=".pdf,.spell"
         multiple
         onChange={handleFileChange}
         className={s.fileInput}
         id="file-input"
+        data-testid="import-option-file-input"
       />
       <label htmlFor="file-input" className={s.fileInputLabel}>
         <FontAwesomeIcon icon={faUpload} size="3x" />

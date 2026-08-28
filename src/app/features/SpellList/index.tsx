@@ -9,9 +9,9 @@ import { DeleteConfirmModal } from '../../components/Modals/DeleteConfirmModal';
 import { useAppSelector } from '../../../store/hooks';
 import { Spell } from '../../../interfaces';
 import { SpellCard } from '../../components/Cards/SpellCard';
+import { EmptyState } from '../../components/EmptyState';
 // import { useSpellExport } from '../../../hooks/useSpellExport'; // .spell export: future
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBookOpen, faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
+import { faScroll, faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
 import { useDispatch } from 'react-redux';
 import { setAutoPlayOnLoad, resetBrowserPlayer, requestTogglePlay } from '../../../store/browserPlayerSlice';
 import { setAutoPlayOnLoad as setAudioAutoPlayOnLoad, resetAudioPlayer, requestTogglePlay as requestAudioTogglePlay } from '../../../store/audioPlayerSlice';
@@ -145,16 +145,14 @@ export const SpellList: React.FC<SpellListProps> = ({ query = '', filter = 'loca
     </div>
   );
   if (documents.length === 0) return (
-    <div data-testid="spell-list-empty" className={s.empty}>
-      <FontAwesomeIcon icon={faBookOpen} className={s.emptyIcon} />
-      <p>{t.spell.noLocalSpells}</p>
-    </div>
+    <EmptyState
+      testId="spell-list-empty"
+      icon={faScroll}
+      message={filter === 'local' ? t.spell.noLocalSpells : t.spell.noSpells}
+    />
   );
   if (filtered.length === 0) return (
-    <div data-testid="spell-list-no-results" className={s.empty}>
-      <FontAwesomeIcon icon={faMagnifyingGlass} className={s.emptyIcon} />
-      <p>{t.spell.noSpells}</p>
-    </div>
+    <EmptyState testId="spell-list-no-results" icon={faMagnifyingGlass} message={t.spell.noSpells} />
   );
 
   return (

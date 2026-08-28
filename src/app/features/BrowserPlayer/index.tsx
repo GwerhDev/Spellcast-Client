@@ -26,7 +26,7 @@ import { useNavigate } from 'react-router-dom';
 import { setSelectedVoice } from '../../../store/voiceSlice';
 import { getSpellById } from '../../../db';
 import { useAppSelector } from '../../../store/hooks';
-import { faFilePdf } from '@fortawesome/free-solid-svg-icons';
+import { faScroll } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Waveform } from '../../components/Waveform/Waveform';
 import { SpellDetailModal } from '../../components/Modals/SpellDetailModal';
@@ -678,7 +678,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
             >
               {coverUrl
                 ? <img data-testid="browser-player-cover" src={coverUrl} alt="" className={s.cover} />
-                : <div data-testid="browser-player-cover-placeholder" className={s.coverIcon}><FontAwesomeIcon icon={faFilePdf} /></div>
+                : <div data-testid="browser-player-cover-placeholder" className={s.coverIcon}><FontAwesomeIcon icon={faScroll} /></div>
               }
               {isPlaying && (
                 <div className={s.coverWaveOverlay}>

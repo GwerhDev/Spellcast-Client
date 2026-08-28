@@ -35,22 +35,18 @@ const renderImport = (store: ReturnType<typeof makeStore>) =>
     ),
   });
 
-const fileChangeEvent = (file: File | undefined) => ({
-  target: { files: file ? [file] : [], value: '' },
-} as unknown as React.ChangeEvent<HTMLInputElement>);
-
 beforeEach(() => {
   vi.clearAllMocks();
 });
 
 describe('useSpellImport', () => {
-  it('imports the selected file, invalidates the spell list, and reports success', async () => {
+  it('imports the given file, invalidates the spell list, and reports success', async () => {
     importSpellFromFileMock.mockResolvedValue('new-spell-id');
     const store = makeStore('user-1');
     const { result } = renderImport(store);
 
     const file = new File(['zip-bytes'], 'My Book.spell');
-    await act(async () => { await result.current.handleFileSelected(fileChangeEvent(file)); });
+    await act(async () => { await result.current.importFile(file); });
 
     expect(importSpellFromFileMock).toHaveBeenCalledWith(file, 'user-1');
     expect(store.getState().spellReader.listVersion).toBe(1);
@@ -68,7 +64,7 @@ describe('useSpellImport', () => {
     const { result } = renderImport(store);
 
     const file = new File(['garbage'], 'Broken.spell');
-    await act(async () => { await result.current.handleFileSelected(fileChangeEvent(file)); });
+    await act(async () => { await result.current.importFile(file); });
 
     expect(store.getState().spellReader.listVersion).toBe(0);
     const responses = store.getState().apiResponses.responses;
@@ -78,34 +74,28 @@ describe('useSpellImport', () => {
     consoleErrorSpy.mockRestore();
   });
 
-  it('does nothing when no file was selected', async () => {
-    const store = makeStore('user-1');
-    const { result } = renderImport(store);
-
-    await act(async () => { await result.current.handleFileSelected(fileChangeEvent(undefined)); });
-
-    expect(importSpellFromFileMock).not.toHaveBeenCalled();
-    expect(store.getState().apiResponses.responses).toHaveLength(0);
-  });
-
   it('does nothing when there is no logged-in user id', async () => {
     const store = makeStore(undefined);
     const { result } = renderImport(store);
 
     const file = new File(['x'], 'x.spell');
-    await act(async () => { await result.current.handleFileSelected(fileChangeEvent(file)); });
+    await act(async () => { await result.current.importFile(file); });
 
     expect(importSpellFromFileMock).not.toHaveBeenCalled();
+    expect(store.getState().apiResponses.responses).toHaveLength(0);
   });
 
-  it('triggerImport clicks the hidden file input', () => {
+  it('sets isImporting to true while the import is in flight', async () => {
+    let resolveImport: (id: string) => void;
+    importSpellFromFileMock.mockReturnValue(new Promise((resolve) => { resolveImport = resolve; }));
     const store = makeStore('user-1');
     const { result } = renderImport(store);
-    const input = document.createElement('input');
-    const clickSpy = vi.spyOn(input, 'click');
-    result.current.inputRef.current = input;
 
-    result.current.triggerImport();
-    expect(clickSpy).toHaveBeenCalledTimes(1);
+    let importPromise!: Promise<void>;
+    act(() => { importPromise = result.current.importFile(new File(['x'], 'x.spell')); });
+    expect(result.current.isImporting).toBe(true);
+
+    await act(async () => { resolveImport!('new-id'); await importPromise; });
+    expect(result.current.isImporting).toBe(false);
   });
 });

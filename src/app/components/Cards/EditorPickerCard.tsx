@@ -1,7 +1,7 @@
 import s from './EditorPickerCard.module.css';
 import { useMemo, useEffect, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faFilePdf } from '@fortawesome/free-solid-svg-icons';
+import { faScroll } from '@fortawesome/free-solid-svg-icons';
 import { Spell } from 'src/interfaces';
 
 interface EditorPickerCardProps {
@@ -27,7 +27,7 @@ export const EditorPickerCard = ({ doc, onClick }: EditorPickerCardProps) => {
     <div className={s.card} onClick={onClick}>
       {coverUrl
         ? <img src={coverUrl} alt={doc.title} className={s.cover} />
-        : <div className={s.iconWrapper}><FontAwesomeIcon icon={faFilePdf} className={s.icon} /></div>
+        : <div className={s.iconWrapper}><FontAwesomeIcon icon={faScroll} className={s.icon} /></div>
       }
       <div className={s.footer}>
         <span className={s.title}>{doc.title}</span>

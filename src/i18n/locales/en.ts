@@ -383,7 +383,7 @@ export const en = {
     importTab: 'Import',
     orImportNew: 'Import new file',
     addMore: 'Add more files',
-    dragDrop: 'Drag and drop a PDF file here, or click to select a file',
+    dragDrop: 'Drag and drop a PDF or .spell file here, or click to select one',
   },
   notifications: {
     title: 'Notifications',

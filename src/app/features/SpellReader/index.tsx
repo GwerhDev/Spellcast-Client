@@ -6,7 +6,7 @@ import { useZoom } from '../../../hooks/useZoom';
 import { ZoomOverlay } from '../../components/Zoom/ZoomOverlay';
 import { useDispatch, useSelector } from 'react-redux';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowLeft, faEdit, faFilePdf, faGear, faExpand, faCompress, faInfoCircle } from '@fortawesome/free-solid-svg-icons';
+import { faArrowLeft, faEdit, faScroll, faGear, faExpand, faCompress, faInfoCircle } from '@fortawesome/free-solid-svg-icons';
 import { RootState } from '../../../store';
 import { goToPage, setCurrentSentenceIndex, setShowReaderSettings, recordReaderActivity } from '../../../store/spellReaderSlice';
 import { setPendingSeek } from '../../../store/audioPlayerSlice';
@@ -296,7 +296,7 @@ export const SpellReader = () => {
           {isLoaded && <SearcherButton />}
         </span>
         <div className={s.titleContainer}>
-          <FontAwesomeIcon icon={faFilePdf} />
+          <FontAwesomeIcon icon={faScroll} />
           {spellTitle}
         </div>
         <div className={s.controlsContainer}>
