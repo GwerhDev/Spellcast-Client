@@ -15,6 +15,7 @@ import { pageBackgrounds, companions } from '../../../config/assets';
 import { Spinner } from '../../components/Spinner';
 import { IconButton } from '../../components/Buttons/IconButton';
 import { CompanionGiftModal } from '../../components/Modals/CompanionGiftModal';
+import { SpellDetailModal } from '../../components/Modals/SpellDetailModal';
 import { useCompanionGiftAnnouncement } from '../../../hooks/useCompanionGiftAnnouncement';
 import { SearcherButton } from '../../components/SpellReader/Searcher/SearcherButton';
 import { PageList } from '../../components/SpellCreateForm/PageList';
@@ -113,6 +114,7 @@ export const SpellReader = () => {
   } as React.CSSProperties;
   const [editedText, setEditedText] = useState<JSONContent>(emptyContent);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showInfoModal, setShowInfoModal] = useState(false);
   const [sheetHeight, setSheetHeight] = useState(0);
   const { showModal: showCompanionGift, handleActivate: handleCompanionGiftActivate, handleDismiss: handleCompanionGiftDismiss } = useCompanionGiftAnnouncement(isLoaded);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -290,6 +292,11 @@ export const SpellReader = () => {
         onActivate={handleCompanionGiftActivate}
         onDismiss={handleCompanionGiftDismiss}
       />
+      <SpellDetailModal
+        spellId={spellId}
+        show={showInfoModal}
+        onClose={() => setShowInfoModal(false)}
+      />
       <div className={`${s.pageInfoContainer} reader-top-bar`}>
         <span className={s.headerControls}>
           <IconButton variant='transparent' icon={faArrowLeft} title={t.common.back} onClick={() => spellId ? navigate(`/spell/${spellId}`) : navigate(-1)} />
@@ -300,7 +307,7 @@ export const SpellReader = () => {
           {spellTitle}
         </div>
         <div className={s.controlsContainer}>
-          {isLoaded && <IconButton icon={faInfoCircle} variant='transparent' title={t.reader.spellInfo} />}
+          {isLoaded && <IconButton data-testid="spell-reader-info-btn" icon={faInfoCircle} variant='transparent' title={t.reader.spellInfo} onClick={() => setShowInfoModal(true)} />}
           {isLoaded && <IconButton icon={faEdit} variant='transparent' title={t.spell.editSpell} onClick={handleEdit} />}
           {isLoaded && <IconButton icon={faGear} variant='transparent' title={t.reader.readerSettings} onClick={() => dispatch(setShowReaderSettings(true))} />}
           {isLoaded && <IconButton icon={isFullscreen ? faCompress : faExpand} variant='transparent' title={isFullscreen ? t.reader.exitFullscreen : t.reader.enterFullscreen} onClick={() => setIsFullscreen(prev => !prev)} />}

@@ -126,6 +126,32 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
                 )}
               </div>
             </div>
+            {(doc.description || doc.author || doc.language || doc.tags?.length) ? (
+              <div className={s.metadata} data-testid="spell-detail-modal-metadata">
+                {doc.description && (
+                  <p className={s.metadataDescription} data-testid="spell-detail-modal-description">{doc.description}</p>
+                )}
+                {(doc.author || doc.language) && (
+                  <div className={s.metadataRow}>
+                    {doc.author && (
+                      <span data-testid="spell-detail-modal-author">
+                        <strong>{t.spell.authorLabel}:</strong> {doc.author}
+                      </span>
+                    )}
+                    {doc.language && (
+                      <span data-testid="spell-detail-modal-language">
+                        <strong>{t.spell.languageLabel}:</strong> {doc.language}
+                      </span>
+                    )}
+                  </div>
+                )}
+                {!!doc.tags?.length && (
+                  <div className={s.metadataTags} data-testid="spell-detail-modal-tags">
+                    {doc.tags.map((tag) => <Tag key={tag} tone="default" size="sm">{tag}</Tag>)}
+                  </div>
+                )}
+              </div>
+            ) : null}
             <div className={s.actions}>
               <PrimaryButton data-testid="spell-detail-modal-continue-btn" icon={faScroll} onClick={handleRead}>
                 {currentPage > 0 ? t.spell.continueReading : t.spell.startReading}

@@ -59,6 +59,45 @@ describe('SpellDetailModal', () => {
     expect(screen.getByTestId('spell-detail-modal-delete-btn')).toBeInTheDocument();
   });
 
+  describe('metadata section', () => {
+    it('shows description/author/language/tags when the spell has them', async () => {
+      vi.spyOn(db, 'getSpellById').mockResolvedValue({
+        ...mockDoc,
+        description: 'A tale of dragons',
+        author: 'Jane Doe',
+        language: 'en',
+        tags: ['fantasy', 'adventure'],
+      } as never);
+      renderWithProviders(<SpellDetailModal spellId="doc-1" show onClose={vi.fn()} />, { store: loggedStore() });
+
+      expect(await screen.findByTestId('spell-detail-modal-metadata')).toBeInTheDocument();
+      expect(screen.getByTestId('spell-detail-modal-description')).toHaveTextContent('A tale of dragons');
+      expect(screen.getByTestId('spell-detail-modal-author')).toHaveTextContent('Jane Doe');
+      expect(screen.getByTestId('spell-detail-modal-language')).toHaveTextContent('en');
+      expect(screen.getByTestId('spell-detail-modal-tags')).toHaveTextContent('fantasy');
+      expect(screen.getByTestId('spell-detail-modal-tags')).toHaveTextContent('adventure');
+    });
+
+    it('omits the metadata section entirely when the spell has none of these fields', async () => {
+      vi.spyOn(db, 'getSpellById').mockResolvedValue(mockDoc as never);
+      renderWithProviders(<SpellDetailModal spellId="doc-1" show onClose={vi.fn()} />, { store: loggedStore() });
+
+      await screen.findByTestId('spell-detail-modal-continue-btn');
+      expect(screen.queryByTestId('spell-detail-modal-metadata')).not.toBeInTheDocument();
+    });
+
+    it('only renders the fields that are actually set', async () => {
+      vi.spyOn(db, 'getSpellById').mockResolvedValue({ ...mockDoc, author: 'Jane Doe' } as never);
+      renderWithProviders(<SpellDetailModal spellId="doc-1" show onClose={vi.fn()} />, { store: loggedStore() });
+
+      expect(await screen.findByTestId('spell-detail-modal-metadata')).toBeInTheDocument();
+      expect(screen.getByTestId('spell-detail-modal-author')).toHaveTextContent('Jane Doe');
+      expect(screen.queryByTestId('spell-detail-modal-description')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('spell-detail-modal-language')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('spell-detail-modal-tags')).not.toBeInTheDocument();
+    });
+  });
+
   it('dispatches invalidateSpellList after confirming delete', async () => {
     vi.spyOn(db, 'getSpellById').mockResolvedValue(mockDoc as never);
     vi.spyOn(db, 'deleteSpellFromDB').mockResolvedValue(undefined);
