@@ -12,8 +12,6 @@ import { useAppSelector } from '../../../store/hooks';
 import { CustomModal } from '../../components/Modals/CustomModal';
 import { useLanguage } from '../../../i18n';
 
-type SearchMode = 'page' | 'text';
-
 interface TextMatch {
   page: number;
   context: string;
@@ -48,13 +46,14 @@ export const SearcherModal: React.FC = () => {
   );
   const { userData } = useAppSelector((state) => state.session);
   const [query, setQuery] = useState('');
-  const [mode, setMode] = useState<SearchMode>('page');
   const [snippets, setSnippets] = useState<string[]>([]);
   const [fullTexts, setFullTexts] = useState<string[]>([]);
   const pageListRef = useRef<HTMLUListElement>(null);
 
   useEffect(() => {
-    if (!showSearcher || mode !== 'page') return;
+    // Only relevant when the plain (unfiltered) page list is showing, which is the case
+    // right when the modal opens -- query is reset to '' on close/open.
+    if (!showSearcher) return;
     requestAnimationFrame(() => {
       const list = pageListRef.current;
       if (!list) return;
@@ -62,7 +61,7 @@ export const SearcherModal: React.FC = () => {
       if (!active) return;
       list.scrollTo({ top: active.getBoundingClientRect().top - list.getBoundingClientRect().top + list.scrollTop, behavior: 'smooth' });
     });
-  }, [showSearcher, mode]);
+  }, [showSearcher]);
 
   useEffect(() => {
     if (!showSearcher || !spellId) return;
@@ -88,27 +87,27 @@ export const SearcherModal: React.FC = () => {
     if (spellId) navigate(`/spell/${spellId}/reader`);
   };
 
+  const trimmedQuery = query.trim();
+  const jumpTarget = parseInt(query, 10);
+  const canJump = !isNaN(jumpTarget) && jumpTarget >= 1 && jumpTarget <= totalPages;
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key !== 'Enter' || mode !== 'page') return;
-    const n = parseInt(query, 10);
-    if (!isNaN(n) && n >= 1 && n <= totalPages) handlePageSelection(n);
+    if (e.key !== 'Enter' || !canJump) return;
+    handlePageSelection(jumpTarget);
   };
 
   const allPages = Array.from({ length: totalPages }, (_, i) => i + 1);
-  const filteredPages = query
+  const filteredPages = trimmedQuery
     ? allPages.filter(
         (p) =>
-          p.toString().includes(query) ||
-          snippets[p - 1]?.toLowerCase().includes(query.toLowerCase())
+          p.toString().includes(trimmedQuery) ||
+          snippets[p - 1]?.toLowerCase().includes(trimmedQuery.toLowerCase())
       )
     : allPages;
-  const jumpTarget = parseInt(query, 10);
-  const canJump =
-    mode === 'page' && !isNaN(jumpTarget) && jumpTarget >= 1 && jumpTarget <= totalPages;
 
   const textMatches: TextMatch[] = [];
-  if (mode === 'text' && query.trim().length >= 2) {
-    const q = query.toLowerCase();
+  if (trimmedQuery.length >= 2) {
+    const q = trimmedQuery.toLowerCase();
     fullTexts.forEach((text, idx) => {
       const lower = text.toLowerCase();
       let from = 0;
@@ -140,45 +139,47 @@ export const SearcherModal: React.FC = () => {
     </>
   );
 
+  const showNoResults = trimmedQuery.length >= 2 && textMatches.length === 0 && filteredPages.length === 0;
+
   return (
     <CustomModal title={t.reader.selectPage} show={showSearcher} onClose={onClose}>
-      <div className={s.tabContainer}>
-        <button
-          className={`${s.tabButton} ${s.left} ${mode === 'page' ? s.activeTab : ''}`}
-          onClick={() => { setMode('page'); setQuery(''); }}
-        >
-          {t.reader.byPage}
-        </button>
-        <button
-          className={`${s.tabButton} ${s.right} ${mode === 'text' ? s.activeTab : ''}`}
-          onClick={() => { setMode('text'); setQuery(''); }}
-        >
-          {t.reader.byText}
-        </button>
-      </div>
-
       <div className={s.searchRow}>
         <input
           type="text"
           autoFocus
-          placeholder={
-            mode === 'page'
-              ? t.reader.pageNumberHint.replace('{max}', String(totalPages))
-              : t.reader.searchTextHint
-          }
+          data-testid="searcher-input"
+          placeholder={t.reader.searchOrJump.replace('{max}', String(totalPages))}
           className={s.searchInput}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
         />
         {canJump && (
-          <button className={s.jumpButton} onClick={() => handlePageSelection(jumpTarget)}>
+          <button data-testid="searcher-jump-btn" className={s.jumpButton} onClick={() => handlePageSelection(jumpTarget)}>
             {t.reader.goTo} {jumpTarget}
           </button>
         )}
       </div>
 
-      {mode === 'page' && (
+      {showNoResults ? (
+        <p data-testid="searcher-no-results" className={s.hint}>{t.reader.noResultsFor.replace('{query}', query)}</p>
+      ) : textMatches.length > 0 ? (
+        <ul className={s.pageList}>
+          {textMatches.map((match, i) => (
+            <li
+              key={i}
+              data-testid="searcher-match"
+              className={`${s.pageOption} ${match.page === currentPage ? s.activePage : ''}`}
+              onClick={() => handlePageSelection(match.page)}
+            >
+              <span className={s.pageNumber}>{match.page}</span>
+              <span className={s.snippetWrap}>
+                {renderHighlight(match.context, match.matchStart, match.matchEnd)}
+              </span>
+            </li>
+          ))}
+        </ul>
+      ) : (
         <ul ref={pageListRef} className={s.pageList}>
           {filteredPages.map((page) => {
             const isCurrent = currentPage === page;
@@ -187,6 +188,7 @@ export const SearcherModal: React.FC = () => {
             return (
               <li
                 key={page}
+                data-testid={`searcher-page-${page}`}
                 className={`${s.pageOption} ${isCurrent ? s.activePage : ''} ${isRead ? s.readPage : ''}`}
                 onClick={() => handlePageSelection(page)}
               >
@@ -200,31 +202,6 @@ export const SearcherModal: React.FC = () => {
             );
           })}
         </ul>
-      )}
-
-      {mode === 'text' && (
-        <>
-          {query.trim().length < 2 ? (
-            <p className={s.hint}>{t.reader.typeAtLeast}</p>
-          ) : textMatches.length === 0 ? (
-            <p className={s.hint}>{t.reader.noResultsFor.replace('{query}', query)}</p>
-          ) : (
-            <ul className={s.pageList}>
-              {textMatches.map((match, i) => (
-                <li
-                  key={i}
-                  className={`${s.pageOption} ${match.page === currentPage ? s.activePage : ''}`}
-                  onClick={() => handlePageSelection(match.page)}
-                >
-                  <span className={s.pageNumber}>{match.page}</span>
-                  <span className={s.snippetWrap}>
-                    {renderHighlight(match.context, match.matchStart, match.matchEnd)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </>
       )}
     </CustomModal>
   );

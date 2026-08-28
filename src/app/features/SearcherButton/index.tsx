@@ -1,6 +1,7 @@
 import s from '../../components/SpellReader/Searcher/SearcherButton.module.css';
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
 import { RootState } from '../../../store';
 import { TertiaryButton } from '../../components/Buttons/TertiaryButton';
 import { setShowSearcher } from '../../../store/spellReaderSlice';
@@ -13,7 +14,7 @@ export const SearcherButton: React.FC = () => {
 
   return (
     <div data-testid="searcher-button" className={s.searcherButtonContainer}>
-      <TertiaryButton onClick={() => dispatch(setShowSearcher(true))}>
+      <TertiaryButton icon={faMagnifyingGlass} onClick={() => dispatch(setShowSearcher(true))}>
         {`${t.spell.page} ${currentPage} ${t.spell.of} ${totalPages}`}
       </TertiaryButton>
     </div>
