@@ -122,7 +122,7 @@ export const SpellCard = ({ doc, isActive, isPlaying, onClick, onDelete, onEdit,
         </div>,
         document.body
       )}
-      {onPlay && (
+      {onPlay && !selectionMode && (
         <div className={`${s.playAction} ${isPlaying ? s.playActionPlaying : isActive ? s.playActionActive : ''}`}>
           <PlayButton
             size="sm"
