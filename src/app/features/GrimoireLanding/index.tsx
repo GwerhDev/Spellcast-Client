@@ -140,14 +140,14 @@ export const GrimoireLanding = () => {
           </span>
           <button
             data-testid="bulk-refresh-metadata-btn"
-            className={s.bulkDeleteBtn}
+            className={`${s.bulkActionBtn} ${s.bulkRefreshBtn}`}
             disabled={isRefreshing}
             onClick={() => setShowBulkRefreshMetadataModal(true)}
           >
             <FontAwesomeIcon icon={faArrowsRotate} />
             {t.grimoire.bulkRefreshMetadata}
           </button>
-          <button data-testid="bulk-delete-btn" className={s.bulkDeleteBtn} onClick={() => setShowBulkDeleteModal(true)}>
+          <button data-testid="bulk-delete-btn" className={`${s.bulkActionBtn} ${s.bulkDeleteBtn}`} onClick={() => setShowBulkDeleteModal(true)}>
             <FontAwesomeIcon icon={faTrash} />
             {t.grimoire.deleteSelected}
           </button>

@@ -51,6 +51,7 @@
 .toolbarBtn:hover {
   border-color: var(--color-primary);
   color: var(--color-primary);
+  background: var(--component-background);
 }
 
 .toolbarBtnActive {
@@ -84,15 +85,13 @@
   white-space: nowrap;
 }
 
-.bulkDeleteBtn {
+.bulkActionBtn {
   display: flex;
   align-items: center;
   gap: 0.4rem;
   padding: 0.35rem 0.9rem;
   border-radius: 999px;
   border: none;
-  background: var(--color-danger);
-  color: #fff;
   font-size: 0.78rem;
   font-weight: 600;
   cursor: pointer;
@@ -100,7 +99,23 @@
   white-space: nowrap;
 }
 
+.bulkDeleteBtn {
+  background: var(--color-danger);
+  color: #fff;
+}
+
 .bulkDeleteBtn:hover {
+  background: var(--color-danger);
+  opacity: 0.85;
+}
+
+.bulkRefreshBtn {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.bulkRefreshBtn:hover {
+  background: var(--color-primary);
   opacity: 0.85;
 }
 
