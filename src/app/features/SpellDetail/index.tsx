@@ -125,6 +125,7 @@ export const SpellDetail: React.FC = () => {
           }
           <div className={s.info}>
             <h1 data-testid="spell-detail-title" className={s.title}>{doc.title}</h1>
+            {doc.author && <p data-testid="spell-detail-author" className={s.author}>{doc.author}</p>}
             <div className={s.tags}>
               {hasPdf && <span data-testid="spell-detail-pdf-tag"><Tag tone="default" size="sm">PDF</Tag></span>}
               {currentPage > 0 && progressPct !== null && (
@@ -142,6 +143,25 @@ export const SpellDetail: React.FC = () => {
             {currentPage > 0 && pagesCount && (
               <p className={s.meta}>{t.spell.page} {currentPage} {t.spell.of} {pagesCount}</p>
             )}
+            {(doc.description || doc.language || doc.tags?.length) ? (
+              <div className={s.metadata} data-testid="spell-detail-metadata">
+                {doc.description && (
+                  <p className={s.metadataDescription} data-testid="spell-detail-description">{doc.description}</p>
+                )}
+                {doc.language && (
+                  <div className={s.metadataRow}>
+                    <span data-testid="spell-detail-language">
+                      <strong>{t.spell.languageLabel}:</strong> {doc.language}
+                    </span>
+                  </div>
+                )}
+                {!!doc.tags?.length && (
+                  <div className={s.metadataTags} data-testid="spell-detail-tags">
+                    {doc.tags.map((tag) => <Tag key={tag} tone="default" size="sm">{tag}</Tag>)}
+                  </div>
+                )}
+              </div>
+            ) : null}
           </div>
         </div>
         <div className={s.actions}>

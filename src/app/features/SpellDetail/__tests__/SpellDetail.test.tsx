@@ -82,6 +82,34 @@ describe('SpellDetail', () => {
     expect(screen.getByTestId('spell-detail-delete-btn')).toBeInTheDocument();
   });
 
+  describe('metadata section', () => {
+    it('shows description/author/language/tags when the spell has them', async () => {
+      vi.spyOn(db, 'getSpellById').mockResolvedValue({
+        ...mockDoc,
+        description: 'A tale of dragons',
+        author: 'Jane Doe',
+        language: 'en',
+        tags: ['fantasy', 'adventure'],
+      } as never);
+      renderDetail();
+      await screen.findByTestId('spell-detail-title');
+
+      expect(screen.getByTestId('spell-detail-metadata')).toBeInTheDocument();
+      expect(screen.getByTestId('spell-detail-description')).toHaveTextContent('A tale of dragons');
+      expect(screen.getByTestId('spell-detail-author')).toHaveTextContent('Jane Doe');
+      expect(screen.getByTestId('spell-detail-language')).toHaveTextContent('en');
+      expect(screen.getByTestId('spell-detail-tags')).toHaveTextContent('fantasy');
+      expect(screen.getByTestId('spell-detail-tags')).toHaveTextContent('adventure');
+    });
+
+    it('omits the metadata section entirely when the spell has none of these fields', async () => {
+      vi.spyOn(db, 'getSpellById').mockResolvedValue(mockDoc as never);
+      renderDetail();
+      await screen.findByTestId('spell-detail-title');
+      expect(screen.queryByTestId('spell-detail-metadata')).not.toBeInTheDocument();
+    });
+  });
+
   it('dispatches invalidateSpellList after confirming delete, so SpellList/LastSpells refresh', async () => {
     vi.spyOn(db, 'getSpellById').mockResolvedValue(mockDoc as never);
     vi.spyOn(db, 'deleteSpellFromDB').mockResolvedValue(undefined);

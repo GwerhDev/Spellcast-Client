@@ -86,12 +86,12 @@ describe('SpellDetailModal', () => {
       expect(screen.queryByTestId('spell-detail-modal-metadata')).not.toBeInTheDocument();
     });
 
-    it('only renders the fields that are actually set', async () => {
+    it('shows the author as a byline under the title even with no other metadata set, and omits the metadata block', async () => {
       vi.spyOn(db, 'getSpellById').mockResolvedValue({ ...mockDoc, author: 'Jane Doe' } as never);
       renderWithProviders(<SpellDetailModal spellId="doc-1" show onClose={vi.fn()} />, { store: loggedStore() });
 
-      expect(await screen.findByTestId('spell-detail-modal-metadata')).toBeInTheDocument();
-      expect(screen.getByTestId('spell-detail-modal-author')).toHaveTextContent('Jane Doe');
+      expect(await screen.findByTestId('spell-detail-modal-author')).toHaveTextContent('Jane Doe');
+      expect(screen.queryByTestId('spell-detail-modal-metadata')).not.toBeInTheDocument();
       expect(screen.queryByTestId('spell-detail-modal-description')).not.toBeInTheDocument();
       expect(screen.queryByTestId('spell-detail-modal-language')).not.toBeInTheDocument();
       expect(screen.queryByTestId('spell-detail-modal-tags')).not.toBeInTheDocument();

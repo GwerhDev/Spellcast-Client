@@ -67,6 +67,12 @@
   margin: 0;
 }
 
+.author {
+  font-size: 0.95rem;
+  color: var(--color-light-400);
+  margin: 0;
+}
+
 .tags {
   display: flex;
   flex-wrap: wrap;
@@ -93,6 +99,34 @@
   background: linear-gradient(to right, var(--color-primary), var(--color-secondary));
   border-radius: 999px;
   transition: width 0.4s ease;
+}
+
+.metadata {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.metadataDescription {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--color-light-300);
+  line-height: 1.5;
+}
+
+.metadataRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  font-size: 0.85rem;
+  color: var(--color-light-400);
+}
+
+.metadataTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
 }
 
 .actions {

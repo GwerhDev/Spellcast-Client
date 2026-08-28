@@ -105,6 +105,7 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
               </div>
               <div className={s.info}>
                 <h2 className={s.title}>{doc.title}</h2>
+                {doc.author && <p data-testid="spell-detail-modal-author" className={s.author}>{doc.author}</p>}
                 <div className={s.tags}>
                   {hasPdf && <span data-testid="spell-detail-modal-pdf-tag"><Tag tone="default" size="sm">PDF</Tag></span>}
                   {currentPage > 0 && progressPct !== null && (
@@ -124,34 +125,27 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
                 {currentPage > 0 && pagesCount && (
                   <p className={s.progressText}>{t.spell.page} {currentPage} {t.spell.of} {pagesCount}</p>
                 )}
-              </div>
-            </div>
-            {(doc.description || doc.author || doc.language || doc.tags?.length) ? (
-              <div className={s.metadata} data-testid="spell-detail-modal-metadata">
-                {doc.description && (
-                  <p className={s.metadataDescription} data-testid="spell-detail-modal-description">{doc.description}</p>
-                )}
-                {(doc.author || doc.language) && (
-                  <div className={s.metadataRow}>
-                    {doc.author && (
-                      <span data-testid="spell-detail-modal-author">
-                        <strong>{t.spell.authorLabel}:</strong> {doc.author}
-                      </span>
+                {(doc.description || doc.language || doc.tags?.length) ? (
+                  <div className={s.metadata} data-testid="spell-detail-modal-metadata">
+                    {doc.description && (
+                      <p className={s.metadataDescription} data-testid="spell-detail-modal-description">{doc.description}</p>
                     )}
                     {doc.language && (
-                      <span data-testid="spell-detail-modal-language">
-                        <strong>{t.spell.languageLabel}:</strong> {doc.language}
-                      </span>
+                      <div className={s.metadataRow}>
+                        <span data-testid="spell-detail-modal-language">
+                          <strong>{t.spell.languageLabel}:</strong> {doc.language}
+                        </span>
+                      </div>
+                    )}
+                    {!!doc.tags?.length && (
+                      <div className={s.metadataTags} data-testid="spell-detail-modal-tags">
+                        {doc.tags.map((tag) => <Tag key={tag} tone="default" size="sm">{tag}</Tag>)}
+                      </div>
                     )}
                   </div>
-                )}
-                {!!doc.tags?.length && (
-                  <div className={s.metadataTags} data-testid="spell-detail-modal-tags">
-                    {doc.tags.map((tag) => <Tag key={tag} tone="default" size="sm">{tag}</Tag>)}
-                  </div>
-                )}
+                ) : null}
               </div>
-            ) : null}
+            </div>
             <div className={s.actions}>
               <PrimaryButton data-testid="spell-detail-modal-continue-btn" icon={faScroll} onClick={handleRead}>
                 {currentPage > 0 ? t.spell.continueReading : t.spell.startReading}
