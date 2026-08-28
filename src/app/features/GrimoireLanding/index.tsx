@@ -4,15 +4,18 @@ import { useLanguage } from '../../../i18n';
 import { SegmentedTabs } from '../../components/Tabs/SegmentedTabs';
 import { SpellList, GrimoireFilter } from '../SpellList';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCloud, faHardDrive, faLayerGroup, faMagnifyingGlass, faPlus, faCheckSquare, faTrash, faXmark, faBuildingColumns, faFileImport } from '@fortawesome/free-solid-svg-icons';
+import { faCloud, faHardDrive, faLayerGroup, faMagnifyingGlass, faPlus, faCheckSquare, faTrash, faXmark, faBuildingColumns, faArrowsRotate } from '@fortawesome/free-solid-svg-icons';
 import { SectionHeader } from '../../components/SectionHeader';
+import { EmptyState } from '../../components/EmptyState';
 import { ImportOption } from '../../components/Start/ImportOption';
 import { CustomModal } from '../../components/Modals/CustomModal';
 import { DeleteConfirmModal } from '../../components/Modals/DeleteConfirmModal';
+import { PrimaryButton } from '../../components/Buttons/PrimaryButton';
+import { SecondaryButton } from '../../components/Buttons/SecondaryButton';
 import { deleteSpellFromDB } from '../../../db';
 import { useAppSelector, useAppDispatch } from '../../../store/hooks';
 import { invalidateSpellList } from '../../../store/spellReaderSlice';
-import { useSpellImport } from '../../../hooks/useSpellImport';
+import { useRefreshSpellMetadataFromPdf } from '../../../hooks/useRefreshSpellMetadataFromPdf';
 
 export const GrimoireLanding = () => {
   const { t } = useLanguage();
@@ -24,7 +27,8 @@ export const GrimoireLanding = () => {
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
-  const { inputRef: spellFileInputRef, triggerImport, handleFileSelected, isImporting } = useSpellImport();
+  const [showBulkRefreshMetadataModal, setShowBulkRefreshMetadataModal] = useState(false);
+  const { refreshMany, isRefreshing } = useRefreshSpellMetadataFromPdf();
 
   const tabs = [
     { id: 'all',   label: t.common.all,  icon: faLayerGroup },
@@ -35,6 +39,11 @@ export const GrimoireLanding = () => {
   const handleFilterChange = (id: string) => {
     setFilter(id as GrimoireFilter);
     setQuery('');
+    // Switching tabs abandons whatever selection was in progress -- the list backing it
+    // (and the actions toolbar that would let you cancel selection mode) may no longer
+    // even be visible on the new tab (e.g. Cloud).
+    setSelectionMode(false);
+    setSelectedIds([]);
   };
 
   const toggleSelectionMode = () => {
@@ -60,6 +69,13 @@ export const GrimoireLanding = () => {
     setSelectedIds([]);
     setSelectionMode(false);
     setShowBulkDeleteModal(false);
+  };
+
+  const handleBulkRefreshMetadataConfirm = async () => {
+    setShowBulkRefreshMetadataModal(false);
+    await refreshMany(selectedIds);
+    setSelectedIds([]);
+    setSelectionMode(false);
   };
 
   return (
@@ -103,31 +119,10 @@ export const GrimoireLanding = () => {
           <FontAwesomeIcon icon={selectionMode ? faXmark : faCheckSquare} />
           {selectionMode ? t.grimoire.cancelSelection : t.grimoire.selectMode}
         </button>
-        <button
-          data-testid="import-spell-btn"
-          className={s.toolbarBtn}
-          onClick={triggerImport}
-          disabled={isImporting}
-          title={t.spell.importSpell}
-        >
-          <FontAwesomeIcon icon={faFileImport} />
-          {isImporting ? `${t.spell.importSpell}…` : t.spell.importSpell}
-        </button>
-        <input
-          ref={spellFileInputRef}
-          type="file"
-          accept=".spell"
-          onChange={handleFileSelected}
-          style={{ display: 'none' }}
-          data-testid="import-spell-input"
-        />
       </div>
 
       {filter === 'cloud' ? (
-        <div className={s.empty}>
-          <FontAwesomeIcon icon={faCloud} className={s.emptyIcon} />
-          <p>{t.storage.cloudSyncDesc}</p>
-        </div>
+        <EmptyState testId="grimoire-cloud-empty" icon={faCloud} message={t.storage.cloudSyncDesc} />
       ) : (
         <SpellList
           query={query}
@@ -143,6 +138,15 @@ export const GrimoireLanding = () => {
           <span className={s.bulkCount}>
             {t.grimoire.nSelected.replace('{n}', String(selectedIds.length))}
           </span>
+          <button
+            data-testid="bulk-refresh-metadata-btn"
+            className={s.bulkDeleteBtn}
+            disabled={isRefreshing}
+            onClick={() => setShowBulkRefreshMetadataModal(true)}
+          >
+            <FontAwesomeIcon icon={faArrowsRotate} />
+            {t.grimoire.bulkRefreshMetadata}
+          </button>
           <button data-testid="bulk-delete-btn" className={s.bulkDeleteBtn} onClick={() => setShowBulkDeleteModal(true)}>
             <FontAwesomeIcon icon={faTrash} />
             {t.grimoire.deleteSelected}
@@ -159,6 +163,18 @@ export const GrimoireLanding = () => {
           message={t.grimoire.deleteSelectedConfirm.replace('{n}', String(selectedIds.length))}
         />
       )}
+
+      <CustomModal compact show={showBulkRefreshMetadataModal} onClose={() => setShowBulkRefreshMetadataModal(false)} title={t.grimoire.bulkRefreshMetadataConfirmTitle}>
+        <div className={s.bulkModalBody}>
+          <p>{t.grimoire.bulkRefreshMetadataConfirmDesc}</p>
+          <div className={s.bulkModalActions}>
+            <SecondaryButton onClick={() => setShowBulkRefreshMetadataModal(false)}>{t.common.cancel}</SecondaryButton>
+            <PrimaryButton data-testid="bulk-refresh-metadata-confirm-btn" onClick={handleBulkRefreshMetadataConfirm}>
+              {t.grimoire.bulkRefreshMetadata}
+            </PrimaryButton>
+          </div>
+        </div>
+      </CustomModal>
     </div>
   );
 };

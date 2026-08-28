@@ -6,10 +6,13 @@ import { useDispatch } from 'react-redux';
 import { useAppSelector } from '../../../store/hooks';
 import { selectCurrentCredential } from '../../../store/credentialsSlice';
 import { getSpellById, updateSpellContent } from '../../../db';
+import { hasOriginalPdf } from '../../../db/originalPdfs';
 import { setShowEditorSettings } from '../../../store/editorSlice';
 import { invalidateContent } from '../../../store/spellReaderSlice';
 import { enqueueUpload } from '../../../store/spellUploadSlice';
+import { addApiResponse } from '../../../store/apiResponsesSlice';
 import { textToSpeechService } from '../../../services/tts';
+import { useRefreshSpellMetadataFromPdf } from '../../../hooks/useRefreshSpellMetadataFromPdf';
 import { Spinner } from '../../components/Spinner';
 import { PageList } from '../../components/SpellCreateForm/PageList';
 import { SpellEditor, PageMargins } from '../../components/Editors/SpellEditor';
@@ -19,6 +22,7 @@ import { IconButton } from '../../components/Buttons/IconButton';
 import { CustomModal } from '../../components/Modals/CustomModal';
 import { PrimaryButton } from '../../components/Buttons/PrimaryButton';
 import { SecondaryButton } from '../../components/Buttons/SecondaryButton';
+import { SpellMetadataFields } from '../../components/SpellMetadataFields';
 import type { TTSPlayPayload } from '../../../magictext/types';
 import { useLanguage } from '../../../i18n';
 
@@ -52,6 +56,16 @@ export const SpellEditForm: React.FC = () => {
   const [hasChanges, setHasChanges] = useState(false);
   const [currentMargins, setCurrentMargins] = useState<PageMargins>({ marginTop: 48, marginRight: 64, marginBottom: 48, marginLeft: 64 });
 
+  // TCORE-103: editing the same social/feed metadata TCORE-97 introduced at creation time.
+  const [description, setDescription] = useState('');
+  const [author, setAuthor] = useState('');
+  const [tagsInput, setTagsInput] = useState('');
+  const [language, setLanguage] = useState('');
+  const [metadataExpanded, setMetadataExpanded] = useState(false);
+  const [spellHasOriginalPdf, setSpellHasOriginalPdf] = useState(false);
+  const [showRefreshMetadataModal, setShowRefreshMetadataModal] = useState(false);
+  const { refreshOne, isRefreshing } = useRefreshSpellMetadataFromPdf();
+
   const isCoverPage = (p: JSONContent): boolean => {
     const first = p?.content?.[0];
     return first?.type === 'image' && (first?.attrs as Record<string, unknown>)?.title !== 'pdf-graphic';
@@ -67,6 +81,19 @@ export const SpellEditForm: React.FC = () => {
       marginLeft: a?.marginLeft ?? 64,
     };
   };
+  const parseTagsInput = (raw: string): string[] | undefined => {
+    const trimmed = raw.split(/[,;]/).map((t) => t.trim()).filter(Boolean);
+    return trimmed.length ? trimmed : undefined;
+  };
+
+  const applyMetadataFromDoc = (doc: { description?: string; author?: string; tags?: string[]; language?: string }) => {
+    setDescription(doc.description ?? '');
+    setAuthor(doc.author ?? '');
+    setTagsInput(doc.tags?.length ? doc.tags.join(', ') : '');
+    setLanguage(doc.language ?? '');
+    setMetadataExpanded(!!(doc.description || doc.author || doc.tags?.length || doc.language));
+  };
+
   const [originalPages, setOriginalPages] = useState<JSONContent[] | null>(null);
   const [showResetAllModal, setShowResetAllModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
@@ -91,6 +118,7 @@ export const SpellEditForm: React.FC = () => {
       const finalPages = pages.length > 0 ? pages : [emptyContent];
       setPagesContent(finalPages);
       if (doc.originalPagesContent) setOriginalPages(JSON.parse(doc.originalPagesContent));
+      applyMetadataFromDoc(doc);
       setHasChanges(false);
     });
     //eslint-disable-next-line
@@ -154,6 +182,7 @@ export const SpellEditForm: React.FC = () => {
         if (doc.originalPagesContent) {
           setOriginalPages(JSON.parse(doc.originalPagesContent));
         }
+        applyMetadataFromDoc(doc);
         const initIndex = Number(page) - 1 || 0;
         setCurrentMargins(getMarginsFromPage(finalPages[initIndex] ?? finalPages[0]));
         hasLoaded.current = true;
@@ -167,6 +196,14 @@ export const SpellEditForm: React.FC = () => {
     //eslint-disable-next-line
   }, [id, logged, userData.id]);
 
+  // TCORE-103: gates the "Update from PDF" action -- same pattern as SpellDetail's "PDF"
+  // tag (TCORE-90), re-checked on contentVersion since a "replace content" upload can
+  // change whether an original PDF is stored for this spell.
+  useEffect(() => {
+    if (!id) { setSpellHasOriginalPdf(false); return; }
+    hasOriginalPdf(id).then(setSpellHasOriginalPdf);
+  }, [id, contentVersion]);
+
   useEffect(() => {
     if (!autoSave || !hasLoaded.current || !logged || !id || !spellTitle || pagesContent.length === 0) return;
 
@@ -178,6 +215,10 @@ export const SpellEditForm: React.FC = () => {
         await updateSpellContent(id, userData.id!, {
           title: spellTitle,
           pagesContent: JSON.stringify(pagesContent),
+          description: description || undefined,
+          author: author || undefined,
+          tags: parseTagsInput(tagsInput),
+          language: language || undefined,
         });
         setHasChanges(false);
         setSaveStatus('saved');
@@ -193,7 +234,7 @@ export const SpellEditForm: React.FC = () => {
       if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
     };
     //eslint-disable-next-line
-  }, [pagesContent, spellTitle, autoSave]);
+  }, [pagesContent, spellTitle, description, author, tagsInput, language, autoSave]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -253,6 +294,10 @@ export const SpellEditForm: React.FC = () => {
       await updateSpellContent(id, userData.id!, {
         title: spellTitle,
         pagesContent: JSON.stringify(pagesContent),
+        description: description || undefined,
+        author: author || undefined,
+        tags: parseTagsInput(tagsInput),
+        language: language || undefined,
       });
       setHasChanges(false);
       setSaveStatus('saved');
@@ -260,6 +305,18 @@ export const SpellEditForm: React.FC = () => {
       setTimeout(() => setSaveStatus('idle'), 2000);
     } catch (err) {
       console.error('Failed to save document:', err);
+    }
+  };
+
+  const handleRefreshMetadataConfirm = async () => {
+    setShowRefreshMetadataModal(false);
+    if (!id) return;
+    const result = await refreshOne(id);
+    if (result.status === 'updated' && result.metadata) {
+      applyMetadataFromDoc(result.metadata);
+      dispatch(addApiResponse({ message: t.spell.refreshMetadataSuccess, type: 'success' }));
+    } else {
+      dispatch(addApiResponse({ message: t.spell.refreshMetadataNoPdf, type: 'error' }));
     }
   };
 
@@ -315,10 +372,26 @@ export const SpellEditForm: React.FC = () => {
         <IconButton icon={faPaperclip} variant='transparent' title={t.spell.replaceContent} disabled={isProcessingPdf} onClick={() => pdfInputRef.current?.click()} />
         <input ref={pdfInputRef} type="file" accept=".pdf" style={{ display: 'none' }} onChange={handleFileSelect} />
         {originalPages && <IconButton icon={faRotateLeft} variant='transparent' title={t.spell.resetAllTitle} disabled={isProcessingPdf} onClick={() => setShowResetAllModal(true)} />}
-        <IconButton icon={faSave} variant='transparent' title={t.common.save} disabled={!hasChanges || isProcessingPdf} onClick={handleSave} />
+        <IconButton data-testid="spell-edit-save-btn" icon={faSave} variant='transparent' title={t.common.save} disabled={!hasChanges || isProcessingPdf} onClick={handleSave} />
         <IconButton icon={faCloudUpload} disabled variant='transparent' title={t.nav.cloud} onClick={() => {}} />
         <IconButton icon={faGear} variant='transparent' onClick={() => dispatch(setShowEditorSettings(true))} />
       </div>
+
+      <SpellMetadataFields
+        expanded={metadataExpanded}
+        onToggleExpanded={() => setMetadataExpanded((v) => !v)}
+        description={description}
+        onDescriptionChange={(v) => { setDescription(v); setHasChanges(true); }}
+        author={author}
+        onAuthorChange={(v) => { setAuthor(v); setHasChanges(true); }}
+        tagsInput={tagsInput}
+        onTagsInputChange={(v) => { setTagsInput(v); setHasChanges(true); }}
+        language={language}
+        onLanguageChange={(v) => { setLanguage(v); setHasChanges(true); }}
+        onRefreshFromPdf={() => setShowRefreshMetadataModal(true)}
+        refreshDisabled={!spellHasOriginalPdf}
+        isRefreshing={isRefreshing}
+      />
 
       <div className={s.editorContainer}>
         {isProcessingPdf && !processingCollapsed && (
@@ -380,6 +453,16 @@ export const SpellEditForm: React.FC = () => {
           <div className={s.importModalActions}>
             <SecondaryButton onClick={() => setShowResetAllModal(false)}>{t.common.cancel}</SecondaryButton>
             <PrimaryButton onClick={handleResetAll}>{t.spell.resetAll}</PrimaryButton>
+          </div>
+        </div>
+      </CustomModal>
+
+      <CustomModal compact show={showRefreshMetadataModal} onClose={() => setShowRefreshMetadataModal(false)} title={t.spell.refreshMetadataConfirmTitle}>
+        <div className={s.importModalBody}>
+          <p>{t.spell.refreshMetadataConfirmDesc}</p>
+          <div className={s.importModalActions}>
+            <SecondaryButton onClick={() => setShowRefreshMetadataModal(false)}>{t.common.cancel}</SecondaryButton>
+            <PrimaryButton data-testid="refresh-metadata-confirm-btn" onClick={handleRefreshMetadataConfirm}>{t.spell.refreshMetadataFromPdf}</PrimaryButton>
           </div>
         </div>
       </CustomModal>

@@ -108,6 +108,11 @@ export const es: Translations = {
     tagsPlaceholder: 'Etiquetas separadas por coma',
     languageLabel: 'Idioma',
     languagePlaceholder: 'ej. Español',
+    refreshMetadataFromPdf: 'Actualizar desde PDF',
+    refreshMetadataNoPdf: 'Este spell no tiene un PDF original guardado',
+    refreshMetadataConfirmTitle: '¿Actualizar metadata desde el PDF?',
+    refreshMetadataConfirmDesc: 'Esto sobrescribirá la descripción, autor, etiquetas e idioma de abajo con lo que tenga el PDF original. Cualquier edición manual de estos campos se perderá.',
+    refreshMetadataSuccess: 'Metadata actualizada desde el PDF.',
   },
   grimoire: {
     subtitle: 'Tus Spells, siempre a mano',
@@ -117,6 +122,10 @@ export const es: Translations = {
     cancelSelection: 'Cancelar',
     nSelected: '{n} seleccionados',
     deleteSelectedConfirm: '¿Seguro que quieres eliminar {n} Spells? Esta acción no se puede deshacer.',
+    bulkRefreshMetadata: 'Actualizar metadata desde PDF',
+    bulkRefreshMetadataConfirmTitle: '¿Actualizar metadata desde el PDF original?',
+    bulkRefreshMetadataConfirmDesc: 'Para cada spell seleccionado que tenga su PDF original guardado, esto sobrescribirá su descripción, autor, etiquetas e idioma con lo que tenga ese PDF. Los spells sin PDF guardado se saltan. Las ediciones manuales de estos campos se perderán.',
+    bulkRefreshMetadataResult: '{updated} actualizados, {skipped} saltados (sin PDF guardado).',
   },
   overview: {
     activity: 'Actividad',

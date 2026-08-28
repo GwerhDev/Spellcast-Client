@@ -155,6 +155,37 @@ describe('db/index.ts CRUD', () => {
     expect((await getSpellById(id, 'user-1'))?.title).toBe('Old');
   });
 
+  it('updateSpellContent also persists description/author/tags/language when provided (TCORE-103)', async () => {
+    const { saveSpellToDB, updateSpellContent, getSpellById } = await importDb();
+    const id = await saveSpellToDB(seedSpell({ userId: 'user-1' }));
+
+    await updateSpellContent(id, 'user-1', {
+      title: 'New',
+      pagesContent: '[1]',
+      description: 'A tale of dragons',
+      author: 'Jane Doe',
+      tags: ['fantasy', 'adventure'],
+      language: 'en',
+    });
+
+    const spell = await getSpellById(id, 'user-1');
+    expect(spell?.description).toBe('A tale of dragons');
+    expect(spell?.author).toBe('Jane Doe');
+    expect(spell?.tags).toEqual(['fantasy', 'adventure']);
+    expect(spell?.language).toBe('en');
+  });
+
+  it('updateSpellContent still works with none of the metadata fields set', async () => {
+    const { saveSpellToDB, updateSpellContent, getSpellById } = await importDb();
+    const id = await saveSpellToDB(seedSpell({ userId: 'user-1' }));
+
+    await updateSpellContent(id, 'user-1', { title: 'New', pagesContent: '[1]' });
+
+    const spell = await getSpellById(id, 'user-1');
+    expect(spell?.title).toBe('New');
+    expect(spell?.description).toBeUndefined();
+  });
+
   it('updateSpellFull replaces content fields while preserving the rest of the record', async () => {
     const { saveSpellToDB, updateSpellFull, getSpellById } = await importDb();
     const id = await saveSpellToDB(seedSpell({ userId: 'user-1', title: 'Old' }));
@@ -195,6 +226,50 @@ describe('db/index.ts CRUD', () => {
     await expect(
       updateSpellProgress(id, 'user-2', { currentPage: 1, pagesProgress: [], lastReadSentenceIndex: 0 })
     ).rejects.toThrow();
+  });
+
+  it('updateSpellMetadata updates only description/author/tags/language, never touching title/pagesContent (TCORE-103)', async () => {
+    const { saveSpellToDB, updateSpellMetadata, getSpellById } = await importDb();
+    const id = await saveSpellToDB(seedSpell({ userId: 'user-1', title: 'Original Title', pagesContent: '[1,2,3]' }));
+
+    await updateSpellMetadata(id, 'user-1', {
+      description: 'A tale of dragons',
+      author: 'Jane Doe',
+      tags: ['fantasy', 'adventure'],
+      language: 'en',
+    });
+
+    const spell = await getSpellById(id, 'user-1');
+    expect(spell?.description).toBe('A tale of dragons');
+    expect(spell?.author).toBe('Jane Doe');
+    expect(spell?.tags).toEqual(['fantasy', 'adventure']);
+    expect(spell?.language).toBe('en');
+    // Untouched -- this is the whole point of a metadata-only update.
+    expect(spell?.title).toBe('Original Title');
+    expect(spell?.pagesContent).toBe('[1,2,3]');
+  });
+
+  it('updateSpellMetadata clears a field that used to have a value when re-extraction finds none (sync, not merge)', async () => {
+    const { saveSpellToDB, updateSpellMetadata, getSpellById } = await importDb();
+    const id = await saveSpellToDB(seedSpell({ userId: 'user-1' }));
+    await updateSpellMetadata(id, 'user-1', { author: 'Old Author' });
+
+    await updateSpellMetadata(id, 'user-1', { author: undefined });
+
+    expect((await getSpellById(id, 'user-1'))?.author).toBeUndefined();
+  });
+
+  it('updateSpellMetadata rejects for a mismatched user without changing the record', async () => {
+    const { saveSpellToDB, updateSpellMetadata, getSpellById } = await importDb();
+    const id = await saveSpellToDB(seedSpell({ userId: 'user-1' }));
+
+    await expect(updateSpellMetadata(id, 'user-2', { author: 'Someone' })).rejects.toThrow();
+    expect((await getSpellById(id, 'user-1'))?.author).toBeUndefined();
+  });
+
+  it('updateSpellMetadata rejects for a non-existent id', async () => {
+    const { updateSpellMetadata } = await importDb();
+    await expect(updateSpellMetadata('missing', 'user-1', { author: 'Someone' })).rejects.toThrow();
   });
 
   it('clearAllData empties the spells store', async () => {

@@ -422,7 +422,11 @@ export const deleteSpellFromDB = async (id: string, userId: string | undefined):
   });
 };
 
-export const updateSpellContent = async (id: string, userId: string, updates: { title: string; pagesContent: string }): Promise<void> => {
+export const updateSpellContent = async (
+  id: string,
+  userId: string,
+  updates: { title: string; pagesContent: string; description?: string; author?: string; tags?: string[]; language?: string }
+): Promise<void> => {
   const db = await openDB();
   const transaction = db.transaction(SPELLS_STORE_NAME, 'readwrite');
   const store = transaction.objectStore(SPELLS_STORE_NAME);
@@ -432,7 +436,15 @@ export const updateSpellContent = async (id: string, userId: string, updates: { 
     getRequest.onsuccess = () => {
       const spell = getRequest.result as Spell | undefined;
       if (spell && sameUser(spell.userId, userId)) {
-        const putRequest = store.put({ ...spell, title: updates.title, pagesContent: updates.pagesContent });
+        const putRequest = store.put({
+          ...spell,
+          title: updates.title,
+          pagesContent: updates.pagesContent,
+          description: updates.description,
+          author: updates.author,
+          tags: updates.tags,
+          language: updates.language,
+        });
         putRequest.onsuccess = () => resolve();
         putRequest.onerror = (e) => reject((e.target as IDBRequest).error);
       } else {
@@ -507,4 +519,41 @@ export const updateSpellProgress = async (spellId: string, userId: string, progr
 
         getRequest.onerror = (event) => reject((event.target as IDBRequest).error);
     });
+};
+
+// TCORE-103: updates ONLY description/author/tags/language -- used by the "re-extract
+// metadata from the stored original PDF" flow (individual and bulk), which must never
+// touch title/pagesContent. Unlike updateSpellContent's full-save semantics, this always
+// overwrites all four fields with whatever is passed (including `undefined`, clearing a
+// field the PDF no longer has) -- re-extracting is a sync with the source, not a
+// merge-if-empty prefill.
+export const updateSpellMetadata = async (
+  id: string,
+  userId: string,
+  metadata: { description?: string; author?: string; tags?: string[]; language?: string }
+): Promise<void> => {
+  const db = await openDB();
+  const transaction = db.transaction(SPELLS_STORE_NAME, 'readwrite');
+  const store = transaction.objectStore(SPELLS_STORE_NAME);
+
+  return new Promise((resolve, reject) => {
+    const getRequest = store.get(id);
+    getRequest.onsuccess = () => {
+      const spell = getRequest.result as Spell | undefined;
+      if (spell && sameUser(spell.userId, userId)) {
+        const putRequest = store.put({
+          ...spell,
+          description: metadata.description,
+          author: metadata.author,
+          tags: metadata.tags,
+          language: metadata.language,
+        });
+        putRequest.onsuccess = () => resolve();
+        putRequest.onerror = (e) => reject((e.target as IDBRequest).error);
+      } else {
+        reject(new Error('Spell not found or user mismatch.'));
+      }
+    };
+    getRequest.onerror = (e) => reject((e.target as IDBRequest).error);
+  });
 };

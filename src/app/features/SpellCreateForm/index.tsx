@@ -14,9 +14,9 @@ import { useNavigate } from 'react-router-dom';
 import type { JSONContent } from '../../../magictext';
 import type { TTSPlayPayload } from '../../../magictext';
 import workerSrc from 'pdfjs-dist/build/pdf.worker?url';
-import { faArrowLeft, faCloudUpload, faPaperclip, faSave, faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faArrowLeft, faCloudUpload, faPaperclip, faSave } from '@fortawesome/free-solid-svg-icons';
 import { PdfProcessingStatus } from '../../components/PdfProcessingStatus';
+import { SpellMetadataFields } from '../../components/SpellMetadataFields';
 import { IconButton } from '../../components/Buttons/IconButton';
 import { resetSpellState, setSpellDetails, setSpellTitle as setSpellTitleAction } from '../../../store/spellSlice';
 import { resetSpellReader } from '../../../store/spellReaderSlice';
@@ -319,63 +319,18 @@ export const SpellCreateForm: React.FC = () => {
         <IconButton icon={faCloudUpload} disabled variant='transparent' title={t.nav.cloud} onClick={() => {}} />
       </div>
 
-      <button
-        type="button"
-        data-testid="spell-metadata-toggle"
-        className={s.metadataToggle}
-        onClick={() => setMetadataExpanded((v) => !v)}
-      >
-        <FontAwesomeIcon icon={metadataExpanded ? faChevronUp : faChevronDown} />
-        {t.spell.metadataSectionTitle}
-      </button>
-      {metadataExpanded && (
-        <div data-testid="spell-metadata-section" className={s.metadataSection}>
-          <div className={`${s.metadataField} ${s.metadataFieldWide}`}>
-            <label htmlFor="spell-metadata-description">{t.spell.descriptionLabel}</label>
-            <textarea
-              id="spell-metadata-description"
-              data-testid="spell-metadata-description"
-              rows={2}
-              placeholder={t.spell.descriptionPlaceholder}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-          </div>
-          <div className={s.metadataField}>
-            <label htmlFor="spell-metadata-author">{t.spell.authorLabel}</label>
-            <input
-              id="spell-metadata-author"
-              data-testid="spell-metadata-author"
-              type="text"
-              placeholder={t.spell.authorPlaceholder}
-              value={author}
-              onChange={(e) => setAuthor(e.target.value)}
-            />
-          </div>
-          <div className={s.metadataField}>
-            <label htmlFor="spell-metadata-language">{t.spell.languageLabel}</label>
-            <input
-              id="spell-metadata-language"
-              data-testid="spell-metadata-language"
-              type="text"
-              placeholder={t.spell.languagePlaceholder}
-              value={language}
-              onChange={(e) => setLanguage(e.target.value)}
-            />
-          </div>
-          <div className={`${s.metadataField} ${s.metadataFieldWide}`}>
-            <label htmlFor="spell-metadata-tags">{t.spell.tagsLabel}</label>
-            <input
-              id="spell-metadata-tags"
-              data-testid="spell-metadata-tags"
-              type="text"
-              placeholder={t.spell.tagsPlaceholder}
-              value={tagsInput}
-              onChange={(e) => setTagsInput(e.target.value)}
-            />
-          </div>
-        </div>
-      )}
+      <SpellMetadataFields
+        expanded={metadataExpanded}
+        onToggleExpanded={() => setMetadataExpanded((v) => !v)}
+        description={description}
+        onDescriptionChange={setDescription}
+        author={author}
+        onAuthorChange={setAuthor}
+        tagsInput={tagsInput}
+        onTagsInputChange={setTagsInput}
+        language={language}
+        onLanguageChange={setLanguage}
+      />
 
       <div className={s.editorContainer}>
         {isLoading && pdfProgress && !processingCollapsed && (
