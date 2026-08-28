@@ -82,7 +82,7 @@ export const SpellList: React.FC<SpellListProps> = ({ query = '', filter = 'loca
       setDocuments(docs.sort((a: Spell, b: Spell) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
       setPdfIds(ids);
     } catch (error) {
-      console.error('Failed to fetch local documents:', error);
+      console.error('Failed to fetch local spells:', error);
     } finally {
       setIsLoading(false);
     }
@@ -112,7 +112,7 @@ export const SpellList: React.FC<SpellListProps> = ({ query = '', filter = 'loca
         await deleteSpellFromDB(selectedDoc.id, userData.id);
         fetchLocal();
       } catch (error) {
-        console.error('Failed to delete document:', error);
+        console.error('Failed to delete spell:', error);
       } finally {
         closeDeleteModal();
       }

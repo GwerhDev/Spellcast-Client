@@ -46,10 +46,10 @@ export const SpellDetail: React.FC = () => {
       if (!id || !logged) { setIsLoading(false); return; }
       try {
         const spellDoc = await getSpellById(id, userData.id);
-        if (!spellDoc) { setError('Document not found.'); setIsLoading(false); return; }
+        if (!spellDoc) { setError('Spell not found.'); setIsLoading(false); return; }
         setDoc(spellDoc);
       } catch {
-        setError('Failed to load document.');
+        setError('Failed to load spell.');
       } finally {
         setIsLoading(false);
       }
@@ -89,7 +89,7 @@ export const SpellDetail: React.FC = () => {
       dispatch(invalidateSpellList());
       navigate('/');
     } catch {
-      setError('Failed to delete document.');
+      setError('Failed to delete spell.');
     } finally {
       setShowDeleteModal(false);
     }

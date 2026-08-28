@@ -22,7 +22,7 @@ export const LocalSpellReader: React.FC = () => {
   const { spellId } = useAppSelector((state) => state.spellReader);
 
   useEffect(() => {
-    const loadDocument = async () => {
+    const loadSpell = async () => {
       if (!id) { setError('No document ID provided.'); setIsLoading(false); return; }
       if (!logged) { setError('You must be logged in to view this document.'); setIsLoading(false); return; }
 
@@ -50,7 +50,7 @@ export const LocalSpellReader: React.FC = () => {
         dispatch(setSpellLoaded(false));
 
         const doc = await getSpellById(id, userData.id);
-        if (!doc) { setError('Document not found.'); setIsLoading(false); return; }
+        if (!doc) { setError('Spell not found.'); setIsLoading(false); return; }
 
         const totalPages = doc.pagesContent
           ? (JSON.parse(doc.pagesContent) as unknown[]).length
@@ -61,13 +61,13 @@ export const LocalSpellReader: React.FC = () => {
         dispatch(setHasInitialPageSet(true));
         setIsLoading(false);
       } catch (err) {
-        console.error('Failed to load local document:', err);
-        setError('Failed to load document.');
+        console.error('Failed to load local spell:', err);
+        setError('Failed to load spell.');
         setIsLoading(false);
       }
     };
 
-    loadDocument();
+    loadSpell();
     //eslint-disable-next-line
   }, [id, dispatch, spellId, logged, userData.id]);
 

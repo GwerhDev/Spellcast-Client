@@ -72,20 +72,20 @@ export const LastSpells: React.FC = () => {
     dispatch(setSpellInfo({ totalPages }));
   };
 
-  const fetchDocuments = async () => {
+  const fetchSpells = async () => {
     try {
       setIsLoading(true);
       const docs = await getSpellsFromDB(userData.id);
       setDocuments(docs.sort((a: Spell, b: Spell) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
     } catch (error) {
-      console.error('Failed to fetch local documents:', error);
+      console.error('Failed to fetch local spells:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchDocuments();
+    fetchSpells();
     //eslint-disable-next-line
   }, [userData.id, listVersion]);
 
@@ -123,9 +123,9 @@ export const LastSpells: React.FC = () => {
     if (selectedDoc) {
       try {
         await deleteSpellFromDB(selectedDoc.id, userData.id);
-        fetchDocuments();
+        fetchSpells();
       } catch (error) {
-        console.error('Failed to delete document:', error);
+        console.error('Failed to delete spell:', error);
       } finally {
         closeDeleteModal();
       }

@@ -171,7 +171,7 @@ export const SpellEditForm: React.FC = () => {
       if (!id || !logged) return;
       try {
         const doc = await getSpellById(id, userData.id);
-        if (!doc) { setError('Document not found.'); return; }
+        if (!doc) { setError('Spell not found.'); return; }
         setSpellTitle(doc.title);
         const pages: JSONContent[] = doc.pagesContent
           ? JSON.parse(doc.pagesContent)
@@ -186,7 +186,7 @@ export const SpellEditForm: React.FC = () => {
         setCurrentMargins(getMarginsFromPage(finalPages[initIndex] ?? finalPages[0]));
         hasLoaded.current = true;
       } catch {
-        setError('Failed to load document.');
+        setError('Failed to load spell.');
       } finally {
         setIsLoading(false);
       }
@@ -305,7 +305,7 @@ export const SpellEditForm: React.FC = () => {
       dispatch(invalidateSpellList());
       setTimeout(() => setSaveStatus('idle'), 2000);
     } catch (err) {
-      console.error('Failed to save document:', err);
+      console.error('Failed to save spell:', err);
     }
   };
 

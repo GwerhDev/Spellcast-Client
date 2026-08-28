@@ -278,7 +278,7 @@ export const SpellCreateForm: React.FC = () => {
       navigate(`/spell/${newId}`);
 
     } catch (error) {
-      console.error('Failed to save document locally:', error);
+      console.error('Failed to save spell locally:', error);
     } finally {
       setIsSaving(false);
     }
