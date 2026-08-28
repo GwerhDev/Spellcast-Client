@@ -494,6 +494,27 @@ describe('db/index.ts schema setup and legacy migration', () => {
   });
 });
 
+describe('connection lifecycle', () => {
+  it('closes gracefully instead of blocking another connection that requests a version bump (e.g. a newer tab after a deploy)', async () => {
+    const { saveSpellToDB } = await importDb();
+    await saveSpellToDB(seedSpell({ userId: 'user-1' }));
+
+    // Without an onversionchange handler, this module's cached connection would never
+    // close itself, and the request below would block forever (onblocked fires, and
+    // onupgradeneeded/onsuccess never do) instead of completing.
+    let blocked = false;
+    await new Promise<void>((resolve, reject) => {
+      const bump = globalThis.indexedDB.open(DB_NAME, DB_VERSION + 1);
+      bump.onupgradeneeded = () => {};
+      bump.onblocked = () => { blocked = true; };
+      bump.onsuccess = () => { bump.result.close(); resolve(); };
+      bump.onerror = () => reject(bump.error);
+    });
+
+    expect(blocked).toBe(false);
+  });
+});
+
 // Sanity check that this suite is actually exercising the real, configured store
 // name rather than an assumption baked into the test file.
 describe('config sanity', () => {

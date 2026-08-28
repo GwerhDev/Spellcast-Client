@@ -17,6 +17,27 @@ const sameUser = (a: string | undefined, b: string | undefined): boolean =>
 
 let dbPromise: Promise<IDBDatabase> | null = null;
 
+// Once a connection closes for ANY reason -- another tab (or a future openDB() call
+// here) bumping the schema version, or the browser force-closing it unexpectedly
+// (storage pressure, a crash) -- every future transaction on it throws
+// "InvalidStateError: The database connection is closing" forever, because dbPromise
+// stays cached and keeps resolving to that same dead connection. Every read across the
+// app starts failing at once, which from the UI looks exactly like every spell just
+// vanished, even though nothing was ever deleted. Attaching these listeners to every
+// connection this module hands out means the next openDB() call after either event
+// transparently reopens a fresh connection instead of the app being permanently broken
+// until a manual reload.
+const registerConnectionLifecycle = (db: IDBDatabase): IDBDatabase => {
+  db.onversionchange = () => {
+    db.close();
+    dbPromise = null;
+  };
+  db.onclose = () => {
+    dbPromise = null;
+  };
+  return db;
+};
+
 export const clearAllData = async (): Promise<void> => {
   const db = await openDB();
   const transaction = db.transaction(SPELLS_STORE_NAME, 'readwrite');
@@ -267,7 +288,7 @@ const openDB = (): Promise<IDBDatabase> => {
           ensureSpellsStore((bumpEvent.target as IDBOpenDBRequest).result);
         };
         bumpRequest.onsuccess = (bumpEvent) => {
-          const bumpedDb = (bumpEvent.target as IDBOpenDBRequest).result;
+          const bumpedDb = registerConnectionLifecycle((bumpEvent.target as IDBOpenDBRequest).result);
           resolve(bumpedDb);
           void migrateLegacyDocumentsStore(bumpedDb);
           void migrateEmbeddedPdfsToOwnStore(bumpedDb);
@@ -276,7 +297,7 @@ const openDB = (): Promise<IDBDatabase> => {
           reject((bumpEvent.target as IDBOpenDBRequest).error ?? new Error('Failed to add the spells store to an existing database.'));
         };
       } else {
-        resolve(db);
+        resolve(registerConnectionLifecycle(db));
         void migrateLegacyDocumentsStore(db);
         void migrateEmbeddedPdfsToOwnStore(db);
       }
