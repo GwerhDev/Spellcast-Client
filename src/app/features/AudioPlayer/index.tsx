@@ -41,6 +41,18 @@ interface PlayerProps {
   showPlayerConfigModal: React.Dispatch<SetStateAction<boolean>>;
 }
 
+// Shared by fetchAndPlay and prefetchNextPage so they can never drift on what "already
+// cached" means. A record missing cacheVersion (or stamped with an older one) was
+// synthesized under a since-invalidated request/parsing contract -- serving it as-is would
+// desync the timeline from the doc, so it counts as a miss requiring a fresh fetch just
+// like an empty cache slot. prefetchNextPage used to skip this check entirely: a
+// stale-but-present record made it return early as if the page were already warm, so the
+// user still hit a cold, blocking fetch when they actually turned to that page.
+const isCachedAudioValid = <T extends { timeline: TimelineEntry[]; cacheVersion?: number }>(
+  cached: T | null,
+): cached is T =>
+  !!cached && cached.cacheVersion === AUDIO_CACHE_VERSION && cached.timeline.length > 0;
+
 export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, showPlayerConfigModal }) => {
   const { t } = useLanguage();
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -281,7 +293,7 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
   const prefetchNextPage = async (nextPage: number) => {
     if (!spellId || !userData?.id) return;
     const cached = await getCachedAudio(spellId, nextPage, selectedVoice.value);
-    if (cached?.timeline.length) return;
+    if (isCachedAudioValid(cached)) return;
 
     const controller = new AbortController();
     prefetchAbortRef.current = controller;
@@ -338,12 +350,10 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
 
       // No more client-side segment count to compare against the cached timeline length —
       // the backend now parses the doc tree itself. AUDIO_CACHE_VERSION alone gates
-      // invalidation (bumped whenever the request/parsing contract changes).
-      const cacheValid = cachedResult &&
-        cachedResult.cacheVersion === AUDIO_CACHE_VERSION &&
-        cachedResult.timeline.length > 0;
-
-      if (cacheValid) {
+      // invalidation (bumped whenever the request/parsing contract changes). Shared with
+      // prefetchNextPage via isCachedAudioValid so the two can't drift on what counts as
+      // a hit.
+      if (isCachedAudioValid(cachedResult)) {
         aiTimelineRef.current = cachedResult.timeline;
         dispatch(setAiTimeline(cachedResult.timeline));
       } else {
