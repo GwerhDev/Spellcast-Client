@@ -6,11 +6,13 @@ export interface SpellQuoteSelection {
   text: string
   fromSentenceIndex: number
   toSentenceIndex: number
-  /** The selection's bounding rect, captured at the moment it was resolved -- used to
-   * position the floating share icon. Captured once here rather than re-read from
-   * `window.getSelection()` later (e.g. inside a delay timer), which can no longer
-   * reflect this selection by the time a delayed callback runs. */
-  rect: { top: number; left: number; right: number; bottom: number }
+  /** The client rect of the LAST line the selection spans (not the aggregate bounding
+   * box of the whole, possibly multi-line, selection) -- so the floating share icon
+   * anchors near the end of the selected text rather than its top-left. Captured once
+   * here rather than re-read from `window.getSelection()` later (e.g. inside a delay
+   * timer), which can no longer reflect this selection by the time a delayed callback
+   * runs. */
+  endRect: { top: number; left: number; right: number; bottom: number }
 }
 
 /** Walks up from `node` to the nearest ancestor (or self) carrying TTSSpellReader's
@@ -67,12 +69,17 @@ export function useSpellQuoteSelection(containerRef: RefObject<HTMLElement | nul
         return
       }
 
-      const domRect = range.getBoundingClientRect()
+      // getBoundingClientRect() merges every line the selection spans into one aggregate
+      // box -- for a multi-line selection its top-left is the FIRST line, not where the
+      // text actually ends. getClientRects() gives one rect per line in document order,
+      // so its last entry is the line the selection ends on.
+      const lineRects = range.getClientRects()
+      const domRect = lineRects.length > 0 ? lineRects[lineRects.length - 1] : range.getBoundingClientRect()
       setSelection({
         text,
         fromSentenceIndex: Math.min(fromIdx, toIdx),
         toSentenceIndex: Math.max(fromIdx, toIdx),
-        rect: { top: domRect.top, left: domRect.left, right: domRect.right, bottom: domRect.bottom },
+        endRect: { top: domRect.top, left: domRect.left, right: domRect.right, bottom: domRect.bottom },
       })
     }
 

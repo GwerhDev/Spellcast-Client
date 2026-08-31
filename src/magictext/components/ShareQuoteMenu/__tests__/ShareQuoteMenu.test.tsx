@@ -105,7 +105,7 @@ describe('ShareQuoteMenu', () => {
 
     fireEvent.click(screen.getByTestId('share-quote-menu-item'))
 
-    expect(onShareQuote).toHaveBeenCalledWith({ text: 'Second', fromSentenceIndex: 1, toSentenceIndex: 1, rect: { top: 100, left: 50, right: 90, bottom: 116 } })
+    expect(onShareQuote).toHaveBeenCalledWith({ text: 'Second', fromSentenceIndex: 1, toSentenceIndex: 1, endRect: { top: 100, left: 50, right: 90, bottom: 116 } })
     expect(screen.queryByTestId('share-quote-menu')).not.toBeInTheDocument()
   })
 
@@ -194,7 +194,7 @@ describe('ShareQuoteMenu', () => {
 
     fireEvent.click(screen.getByTestId('share-quote-icon'))
 
-    expect(onShareQuote).toHaveBeenCalledWith({ text: 'Second', fromSentenceIndex: 1, toSentenceIndex: 1, rect: { top: 100, left: 50, right: 90, bottom: 116 } })
+    expect(onShareQuote).toHaveBeenCalledWith({ text: 'Second', fromSentenceIndex: 1, toSentenceIndex: 1, endRect: { top: 100, left: 50, right: 90, bottom: 116 } })
     expect(screen.queryByTestId('share-quote-icon')).not.toBeInTheDocument()
   })
 })

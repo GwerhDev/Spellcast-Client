@@ -88,7 +88,7 @@ describe('useSpellQuoteSelection', () => {
       text: 'Second',
       fromSentenceIndex: 1,
       toSentenceIndex: 1,
-      rect: { top: 0, left: 0, right: 0, bottom: 0 },
+      endRect: { top: 0, left: 0, right: 0, bottom: 0 },
     })
   })
 
@@ -111,8 +111,37 @@ describe('useSpellQuoteSelection', () => {
       text: 'First sentence. Second sentence. Third',
       fromSentenceIndex: 0,
       toSentenceIndex: 2,
-      rect: { top: 0, left: 0, right: 0, bottom: 0 },
+      endRect: { top: 0, left: 0, right: 0, bottom: 0 },
     })
+  })
+
+  it('anchors endRect on the LAST line of a selection that wraps multiple lines, not the aggregate bounding box', () => {
+    buildReader()
+    const ref = createRef<HTMLElement | null>()
+    ;(ref as { current: HTMLElement }).current = container
+
+    const range = document.createRange()
+    range.setStart(sentenceTextNode(0), 0)
+    range.setEnd(sentenceTextNode(2), 5)
+    // getBoundingClientRect() would merge both lines into one aggregate box (e.g.
+    // top: 0, bottom: 40) -- getClientRects() instead gives one rect per line, and only
+    // the LAST one (where the selection actually ends) should be used.
+    range.getClientRects = () => ([
+      { top: 0, left: 10, right: 200, bottom: 20 },
+      { top: 20, left: 10, right: 90, bottom: 40 },
+    ] as unknown as DOMRectList)
+    const fakeSelection = {
+      isCollapsed: false,
+      rangeCount: 1,
+      getRangeAt: () => range,
+      toString: () => 'First sentence. Second sentence. Third',
+    } as unknown as Selection
+    vi.spyOn(window, 'getSelection').mockReturnValue(fakeSelection)
+
+    const { result } = renderHook(() => useSpellQuoteSelection(ref))
+    act(() => { document.dispatchEvent(new Event('selectionchange')) })
+
+    expect(result.current?.endRect).toEqual({ top: 20, left: 10, right: 90, bottom: 40 })
   })
 
   it('is null when the selection lands outside the given containerRef', () => {

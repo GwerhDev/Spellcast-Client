@@ -39,10 +39,10 @@ function ShareQuoteMenuInner({ containerRef, onShareQuote }: Omit<Props, 'locale
   useEffect(() => {
     if (iconTimerRef.current) { clearTimeout(iconTimerRef.current); iconTimerRef.current = null }
     if (!selection) { setShowIcon(false); return }
-    const { rect } = selection
+    const { endRect } = selection
     iconTimerRef.current = setTimeout(() => {
       iconTimerRef.current = null
-      setIconPos({ top: rect.top, left: rect.right })
+      setIconPos({ top: endRect.top, left: endRect.right })
       setShowIcon(true)
     }, ICON_DELAY_MS)
     return () => { if (iconTimerRef.current) { clearTimeout(iconTimerRef.current); iconTimerRef.current = null } }
@@ -108,17 +108,22 @@ function ShareQuoteMenuInner({ containerRef, onShareQuote }: Omit<Props, 'locale
   return (
     <>
       {showIcon && selection && (
-        <button
-          type="button"
-          data-testid="share-quote-icon"
-          className={s.icon}
-          style={{ top: iconPos.top, left: iconPos.left }}
-          title={t.quote.shareQuote}
-          aria-label={t.quote.shareQuote}
-          onClick={share}
-        >
-          <QuoteIcon />
-        </button>
+        // Reuses TTSPopover's own floating hover-icon chrome (magic-text-editor__tts-
+        // hover-icon + __btn) instead of custom styling, so this looks and behaves
+        // (hover state included) exactly like that other "selection -> floating icon"
+        // affordance elsewhere in the same editor.
+        <div className="magic-text-editor__tts-hover-icon" style={{ top: iconPos.top, left: iconPos.left }}>
+          <button
+            type="button"
+            data-testid="share-quote-icon"
+            className="magic-text-editor__btn"
+            title={t.quote.shareQuote}
+            aria-label={t.quote.shareQuote}
+            onClick={share}
+          >
+            <QuoteIcon />
+          </button>
+        </div>
       )}
       {menuPos && selection && (
         <div
