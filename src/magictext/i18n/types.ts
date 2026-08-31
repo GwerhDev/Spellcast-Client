@@ -12,6 +12,7 @@ export type PartialTranslations = {
     typeLabels?: Partial<Translations['variables']['typeLabels']>
   }
   variableNode?: Partial<Translations['variableNode']>
+  quote?: Partial<Translations['quote']>
 }
 
 export interface Translations {
@@ -26,4 +27,5 @@ export interface Translations {
   variables: { insertVariable: string; pickerAriaLabel: string; addCustomVariable: string; back: string; backAriaLabel: string; newVariableTitle: string; namePlaceholder: string; addButton: string; addOptionButton: string; addOptionPlaceholder: string; removeOption: (option: string) => string; typeLabels: { text: string; textarea: string; select: string; date: string; daterange: string } }
   tts: { insertTTS: string; popoverAriaLabel: string; marksTab: string; assignTab: string; markLabel: string; markPlaceholder: string; voiceLabel: string; voiceSelectDefault: string; inflectionLabel: string; inflectionSelectDefault: string; applyButton: string; playButton: string; stopButton: string; removeButton: string }
   variableNode: { fromLabel: string; toLabel: string; clickToFill: (label: string) => string; variableTitle: (label: string, value: string) => string }
+  quote: { shareQuote: string }
 }

@@ -12,4 +12,5 @@ export const en: Translations = {
   variables: { insertVariable: 'Insert variable', pickerAriaLabel: 'Variable picker', addCustomVariable: '+ Add custom variable…', back: '← Back', backAriaLabel: 'Back to variable list', newVariableTitle: 'New variable', namePlaceholder: 'Variable name…', addButton: 'Add', addOptionButton: '+', addOptionPlaceholder: 'Add option…', removeOption: (option) => `Remove ${option}`, typeLabels: { text: 'Text field', textarea: 'Text area', select: 'Dropdown list', date: 'Date', daterange: 'Date range' } },
   tts: { insertTTS: 'Assign voice', popoverAriaLabel: 'Voice assignment', marksTab: 'Saved marks', assignTab: 'Assign', markLabel: 'Mark', markPlaceholder: 'Mark name…', voiceLabel: 'Voice / model', voiceSelectDefault: 'Select voice…', inflectionLabel: 'Inflection', inflectionSelectDefault: 'Select inflection…', applyButton: 'Apply', playButton: 'Play', stopButton: 'Stop', removeButton: 'Remove mark' },
   variableNode: { fromLabel: 'From', toLabel: 'To', clickToFill: (label) => `Click to fill ${label}`, variableTitle: (label, value) => `${label}: ${value}` },
+  quote: { shareQuote: 'Share quote' },
 }

@@ -200,3 +200,10 @@ export const VariableIcon = () => (
     <text x="22" y="15.5" textAnchor="middle" fontSize="14" fontFamily="monospace" stroke="none" fill="currentColor" fontWeight="bold">var</text>
   </svg>
 )
+
+export const QuoteIcon = () => (
+  <svg {...SVG_PROPS} aria-hidden="true">
+    <path d="M7 8a3 3 0 0 0-3 3v2a3 3 0 0 0 3 3h1v3l-2 3" />
+    <path d="M17 8a3 3 0 0 0-3 3v2a3 3 0 0 0 3 3h1v3l-2 3" />
+  </svg>
+)

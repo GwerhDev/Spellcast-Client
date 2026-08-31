@@ -25,6 +25,7 @@ function mergeTranslations(base: Translations, patch: PartialTranslations): Tran
     variables: { ...base.variables, ...(patch.variables ?? {}), typeLabels: { ...base.variables.typeLabels, ...(patch.variables?.typeLabels ?? {}) } },
     tts:          { ...base.tts,          ...(patch.tts          ?? {}) },
     variableNode: { ...base.variableNode, ...(patch.variableNode ?? {}) },
+    quote:        { ...base.quote,        ...(patch.quote        ?? {}) },
   }
 }
 

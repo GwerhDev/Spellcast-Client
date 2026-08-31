@@ -19,7 +19,8 @@ import { SpellDetailModal } from '../../components/Modals/SpellDetailModal';
 import { useCompanionGiftAnnouncement } from '../../../hooks/useCompanionGiftAnnouncement';
 import { SearcherButton } from '../../components/SpellReader/Searcher/SearcherButton';
 import { PageList } from '../../components/SpellCreateForm/PageList';
-import { TTSSpellReader, type JSONContent } from '../../../magictext';
+import { TTSSpellReader, ShareQuoteMenu, type JSONContent, type SpellQuoteSelection } from '../../../magictext';
+import { addApiResponse } from '../../../store/apiResponsesSlice';
 import { useLanguage } from '../../../i18n';
 
 // three/@react-three/fiber are only downloaded once a companion is actually active —
@@ -45,7 +46,7 @@ const safeParseJSON = (str: string): JSONContent => {
 export const SpellReader = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const {
     currentPage, totalPages, currentPageText, spellTitle, spellId,
     isLoaded, currentSentenceIndex, fitToWidth,
@@ -121,6 +122,7 @@ export const SpellReader = () => {
   const paperBgRef = useRef<HTMLDivElement>(null);
   const paperSheetRef = useRef<HTMLDivElement>(null);
   const playerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const readerContentRef = useRef<HTMLDivElement>(null);
 
   const { zoom, showIndicator, adjustZoom, resetZoom, ZOOM_STEP } = useZoom(paperBgRef);
 
@@ -213,12 +215,30 @@ export const SpellReader = () => {
     }
   };
 
+  // TCORE-98: selecting text here offers "Compartir cita" (ShareQuoteMenu, from
+  // MagicText) -- it only reads the data-sentence-index attributes TTSSpellReader
+  // already renders, so wrapping it in this ref doesn't require touching that
+  // component at all.
+  const handleShareQuote = (quote: SpellQuoteSelection) => {
+    // MagicText only knows the sentence range + text -- spellId/page are app-level
+    // concepts it's deliberately not coupled to. There's no posts/quotes backend yet
+    // (TCORE-91's social layer, split into future backend tickets), so this payload has
+    // nowhere to go yet; the placeholder toast confirms the action instead of silently
+    // doing nothing, same spirit as "Cloud sync is not configured" elsewhere in the
+    // reader. Swap this for the real POST /posts call once that backend exists.
+    const payload = { spellId, page: currentPage, ...quote };
+    console.log('[TCORE-98] Quote shared (no backend yet):', payload);
+    dispatch(addApiResponse({ message: t.spell.quoteCopiedSoon, type: 'success' }));
+  };
+
   const documentBody = (
-    <TTSSpellReader
-      content={editedText}
-      currentSentenceIndex={activeSentenceIndex}
-      onSentenceClick={handleSentenceClick}
-    />
+    <div ref={readerContentRef}>
+      <TTSSpellReader
+        content={editedText}
+        currentSentenceIndex={activeSentenceIndex}
+        onSentenceClick={handleSentenceClick}
+      />
+    </div>
   );
 
   // Track the real rendered height of the paper sheet so the (scaled) zoom wrapper
@@ -297,6 +317,13 @@ export const SpellReader = () => {
         show={showInfoModal}
         onClose={() => setShowInfoModal(false)}
       />
+      {isLoaded && (
+        <ShareQuoteMenu
+          containerRef={readerContentRef}
+          onShareQuote={handleShareQuote}
+          locale={language}
+        />
+      )}
       <div className={`${s.pageInfoContainer} reader-top-bar`}>
         <span className={s.headerControls}>
           <IconButton variant='transparent' icon={faArrowLeft} title={t.common.back} onClick={() => spellId ? navigate(`/spell/${spellId}`) : navigate(-1)} />

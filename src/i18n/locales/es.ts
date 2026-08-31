@@ -68,6 +68,7 @@ export const es: Translations = {
     allSpells: 'Todos los Spells',
     noSpells: 'No se encontraron Spells.',
     noLocalSpells: 'No se encontraron Spells locales.',
+    quoteCopiedSoon: 'Cita copiada — compartirla en tu perfil y el feed estará disponible pronto.',
     reading: 'LEYENDO',
     titlePlaceholder: 'Título del Spell…',
     processingPdf: 'Procesando PDF…',

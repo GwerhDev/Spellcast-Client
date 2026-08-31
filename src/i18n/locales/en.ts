@@ -66,6 +66,7 @@ export const en = {
     allSpells: 'All Spells',
     noSpells: 'No spells found.',
     noLocalSpells: 'No local spells found.',
+    quoteCopiedSoon: 'Quote copied — sharing to your profile and the feed is coming soon.',
     reading: 'READING',
     titlePlaceholder: 'Spell title…',
     processingPdf: 'Processing PDF…',
