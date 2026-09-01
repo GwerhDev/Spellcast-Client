@@ -57,8 +57,7 @@ export const es: Translations = {
     create: 'Crear',
     caster: 'Caster',
     profile: 'Perfil',
-    // Literal, sin traducir -- pedido explícito del usuario ("que se llame Stats").
-    stats: 'Stats',
+    stats: 'Estadísticas',
   },
   spell: {
     untitled: 'Sin título',

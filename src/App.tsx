@@ -1,14 +1,13 @@
 import { useState, useEffect } from 'react';
 import { RootState } from './store';
 import { useSelector } from 'react-redux';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 
 import { ThemeProvider } from './context/ThemeContext';
 import { useInitSession } from './hooks/useInitSession';
 
 import { Toast } from './app/components/Toast';
 import { Loader } from './app/components/Loader';
-import { RootBackground } from './app/components/Backgrounds/RootBackground';
 
 import { Home } from './app/pages/Home';
 import { StorageLocal } from './app/pages/StorageLocal';
@@ -68,7 +67,7 @@ function App() {
           <Route path="/spell/:id/reader" element={<LocalSpellReader />} />
           <Route path="/caster/archive" element={<UserArchive />} />
 
-          <Route path="/caster" element={<RootBackground />} />
+          <Route path="/caster" element={<Navigate to="/caster/profile" replace />} />
 
           <Route element={<CasterLayout />}>
             <Route path="/caster/profile" element={<CasterProfile />} />
@@ -92,8 +91,6 @@ function App() {
           <Route path="/caster/*" element={<NotFound />} />
           <Route path="/explore/*" element={<NotFound />} />
         </Route>
-        <Route path="/caster/not-found" element={<NotFound />} />
-        <Route path="/caster/*" element={<NotFound />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       {showLoader && <Loader progress={loaderProgress} message={loaderMessage} exiting={loaderExiting} />}
