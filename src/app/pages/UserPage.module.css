@@ -41,6 +41,10 @@
   width: 100%;
   display: flex;
   align-items: center;
+  /* .dashboard-sections (the outer PageTransition wrapper every /caster/* page renders
+     into) is a plain flex column with no gap of its own, so without this the back button
+     sits flush against whatever content follows it. */
+  margin-bottom: 1rem;
 }
 
 .backButton {

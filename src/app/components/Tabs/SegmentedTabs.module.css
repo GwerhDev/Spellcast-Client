@@ -1,7 +1,6 @@
 .container {
   display: flex;
   border-radius: 8px;
-  margin-bottom: 1.5rem;
   background: var(--component-background);
   box-shadow: 0 1px 12px rgba(0, 0, 0, 0.212);
 }
