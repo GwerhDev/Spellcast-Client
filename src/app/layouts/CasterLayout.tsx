@@ -14,6 +14,17 @@ import { useLanguage } from '../../i18n';
 // keeps the same header+tabs, only the body below (the route's own <Outlet /> content)
 // changes. The tab set mirrors sidebarAccordionSections' "caster" entry (see casterTabs in
 // config/consts.ts) so the sidebar and this tab bar can never drift apart.
+//
+// This IS the "dashboard-sections" for the whole /caster/* section -- the shared global
+// class (src/styles/globals.css) that gives a page its flex-grow+scroll frame, normally
+// applied once by whichever page mounts directly under .app-viewer. Since CasterLayout is
+// now that direct child instead, it carries the class itself; the individual routed pages
+// underneath (Storage, Settings, Appearance, etc.) render their own <PageTransition> WITHOUT
+// it, since they're no longer that outer "section" -- applying it a second time, on each of
+// them too, stacked another overflow:auto boundary right around each page's own content,
+// close enough to clip things like a hover glow that bleeds past a card's own edges.
+// .page (below) adds only the one thing CasterLayout needs on top of that: centering
+// .content.
 export const CasterLayout = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
@@ -34,7 +45,7 @@ export const CasterLayout = () => {
   };
 
   return (
-    <div data-testid="caster-layout" className={s.page}>
+    <div data-testid="caster-layout" className={`dashboard-sections ${s.page}`}>
       <div className={s.content}>
         <CasterHeader username={username} profilePic={profilePic} loader={loader} />
         <SegmentedTabs tabs={tabs} active={active} onChange={handleTabChange} />

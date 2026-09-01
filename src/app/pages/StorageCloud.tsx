@@ -10,11 +10,13 @@ import { faArrowLeft, faCloud } from '@fortawesome/free-solid-svg-icons';
 
 // TCORE-107 follow-up: this page's own title/subtitle heading is dropped -- it's now
 // redundant with CasterLayout's persistent tab bar, which every /caster/* route renders
-// under (reached here via the "Storage" tab -> Cloud). Its own UserPage.module.css
-// .page/.content wrapper is dropped too -- CasterLayout's .content already establishes the
-// full-width-then-centered-1024 frame. A back button is added since this is a level deeper
-// than what the tab bar itself represents (its "Storage" tab lands on /caster/storage, not
-// here) -- without it there'd be no way back except the browser's own back button.
+// under (reached here via the "Storage" tab -> Cloud). No "dashboard-sections" className
+// here either -- CasterLayout itself now carries that global class as the section's own
+// outer scroll frame; applying it again on every nested page stacked a second
+// overflow:auto boundary tight around each page's own content (see CasterLayout.tsx). A
+// back button is added since this is a level deeper than what the tab bar itself
+// represents (its "Storage" tab lands on /caster/storage, not here) -- without it there'd
+// be no way back except the browser's own back button.
 export const StorageCloud = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
@@ -27,7 +29,7 @@ export const StorageCloud = () => {
   ];
 
   return (
-    <PageTransition className="dashboard-sections">
+    <PageTransition>
       <div className={page.pageInfoContainer}>
         <IconButton icon={faArrowLeft} className={page.backButton} variant="transparent" title={t.common.back} onClick={() => navigate('/caster/storage')} />
       </div>
