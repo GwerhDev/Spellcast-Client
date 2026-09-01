@@ -40,7 +40,9 @@ export const HavenStoreLanding = () => {
 
   return (
     <div data-testid="haven-store" className={s.container}>
-      <SectionHeader icon={faStore} title={t.havenStore.title} subtitle={t.havenStore.subtitle} align="center" />
+      <span className={s.header}>
+        <SectionHeader icon={faStore} title={t.havenStore.title} subtitle={t.havenStore.subtitle} align="center" />
+      </span>
 
       <div className={s.panel}>
         <div className={s.panelHeader}>
