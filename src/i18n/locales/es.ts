@@ -55,7 +55,10 @@ export const es: Translations = {
     editor: 'Editor',
     select: 'Seleccionar',
     create: 'Crear',
-    user: 'Usuario',
+    caster: 'Caster',
+    profile: 'Perfil',
+    // Literal, sin traducir -- pedido explícito del usuario ("que se llame Stats").
+    stats: 'Stats',
   },
   spell: {
     untitled: 'Sin título',
@@ -331,6 +334,9 @@ export const es: Translations = {
   shared: {
     public: 'Público',
     inGroups: 'En grupos',
+    subtitle: 'Spells que compartiste públicamente o con tus grupos.',
+    // TCORE-107 follow-up: página placeholder, aún no existe el concepto en el backend.
+    empty: 'Aún no hay nada compartido.',
   },
   archive: {
     title: 'Archivo',
@@ -366,6 +372,23 @@ export const es: Translations = {
   },
   permissions: {
     subtitle: 'Controla los niveles de acceso y lo que otros pueden hacer con tu contenido.',
+  },
+  caster: {
+    profileTitle: 'Perfil de Caster',
+    profileSubtitle: 'Tu identidad en Spellcast',
+    myQuotes: 'Mis citas',
+    myGrimoire: 'Mi grimorio',
+    // TCORE-107: datos mock, marcados como tales. TCORE-100 (backend de perfil público) y
+    // TCORE-101 (perfil real + tarjetas de cita) reemplazan toda esta sección por llamadas reales.
+    mockNotice: 'Datos de ejemplo — las citas y el grimorio reales estarán disponibles pronto.',
+    mockQuotes: [
+      { text: 'El dragón dormía en la cueva, soñando con oro y fuego.', spell: 'Patrones de Diseño' },
+      { text: 'Una sola chispa puede terminar mil años de silencio.', spell: 'Cuentos Inconclusos' },
+    ],
+    mockGrimoire: [
+      { title: 'Patrones de Diseño', author: 'Erich Gamma' },
+      { title: 'Cuentos Inconclusos', author: 'J.R.R. Tolkien' },
+    ],
   },
   gamification: {
     level: 'Nivel',

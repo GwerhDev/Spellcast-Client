@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../../store/hooks';
 import { setSectionOpen, toggleSection, toggleSidebarCollapsed, type SidebarSectionKey } from '../../../store/layoutSlice';
 import { sidebarDirectLinks, sidebarAccordionSections, type SidebarAccordionSectionConfig } from '../../../config/consts';
+import { matchesRoute } from '../../../utils/routeMatch';
 import { useLanguage } from '../../../i18n';
 import { SidebarView } from '../../components/Sidebar/SidebarView';
 import type { SidebarAccordionSection } from '../../components/Sidebar/SidebarView';
@@ -11,18 +12,18 @@ interface SidebarProps {
   onNavigate?: () => void;
 }
 
-const matchesRoute = (pathname: string, path: string): boolean =>
-  pathname === path || pathname.startsWith(`${path}/`);
-
 // Collects the keys of every section that should auto-open for the current route: a
-// section matching the route directly, PLUS every ancestor of a matching descendant (e.g.
-// landing on /user/storage/local matches "storage" directly, and "user" must also open
-// since "storage" is nested inside it, even though /user/storage/local doesn't match
-// "user"'s own path of /user/dashboard).
+// section matching the route directly, one of its own flat `items` matching (e.g. landing
+// on /caster/groups -- a sibling of "caster"'s own /caster/profile path, not a descendant
+// of it, since TCORE-107's follow-up flattened Groups/Shared/Stats out from under
+// /caster/dashboard), PLUS every ancestor of a matching descendant sub-section (e.g.
+// landing on /caster/storage/local matches "storage" directly, and "caster" must also open
+// since "storage" is nested inside it).
 const collectKeysToOpen = (sections: SidebarAccordionSectionConfig[], pathname: string): string[] =>
   sections.flatMap(section => {
     const childKeys = collectKeysToOpen(section.subSections, pathname);
-    const selfMatches = matchesRoute(pathname, section.path);
+    const selfMatches = matchesRoute(pathname, section.path)
+      || section.items.some(item => matchesRoute(pathname, `${section.basePath}${item.path}`));
     return selfMatches || childKeys.length > 0 ? [section.key, ...childKeys] : childKeys;
   });
 

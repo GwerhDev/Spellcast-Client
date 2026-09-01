@@ -2,16 +2,54 @@
   display: flex;
   border-radius: 8px;
   margin-bottom: 1.5rem;
-  background: var(--component-background-transparency);
-  backdrop-filter: blur(10px);
+  background: var(--component-background);
   box-shadow: 0 1px 12px rgba(0, 0, 0, 0.212);
 }
 
 .buttonsContainer {
   width: 100%;
+  min-width: 0;
   display: flex;
   border-radius: 8px;
   background: var(--component-background);
+}
+
+.buttonsContainer.scrollable {
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.buttonsContainer.scrollable::-webkit-scrollbar {
+  display: none;
+}
+
+.buttonsContainer.scrollable .tabButton {
+  width: auto;
+  flex: 0 0 auto;
+}
+
+.arrowButton {
+  padding: 0;
+  padding-inline: .5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-light-300);
+  cursor: pointer;
+}
+
+.arrowButton:hover:not(:disabled) {
+  color: var(--color-primary);
+}
+
+.arrowButton:disabled {
+  opacity: 0.3;
+  cursor: default;
 }
 
 .tabButton {

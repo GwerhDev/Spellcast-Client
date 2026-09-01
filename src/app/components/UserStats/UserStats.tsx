@@ -10,7 +10,7 @@ export const UserStats = () => {
 
   return (
     <div className={s.statsContainer}>
-      <button className={s.card} onClick={() => navigate('/user/dashboard/groups')}>
+      <button className={s.card} onClick={() => navigate('/caster/groups')}>
         <div className={s.cardHeader}>
           <span className={s.cardIcon}><FontAwesomeIcon icon={faUsers} /></span>
           <span className={s.cardTitle}>{t.nav.groups}</span>
@@ -32,7 +32,7 @@ export const UserStats = () => {
         </div>
       </button>
 
-      <button className={s.card} onClick={() => navigate('/user/dashboard/shared')}>
+      <button className={s.card} onClick={() => navigate('/caster/shared')}>
         <div className={s.cardHeader}>
           <span className={s.cardIcon}><FontAwesomeIcon icon={faShare} /></span>
           <span className={s.cardTitle}>{t.nav.shared}</span>

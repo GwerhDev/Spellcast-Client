@@ -108,7 +108,7 @@ export const VoiceSelectorContent: React.FC<VoiceSelectorContentProps> = ({ onCl
         ) : (
           <p className={s.description}>
             {t.player.aiVoicesDesc}{' '}
-            <Link onClick={onClose} to="/user/settings/credentials">{t.player.credentialsSettings}</Link>
+            <Link onClick={onClose} to="/caster/settings/credentials">{t.player.credentialsSettings}</Link>
           </p>
         )}
       </div>

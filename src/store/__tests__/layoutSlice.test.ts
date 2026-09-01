@@ -15,7 +15,7 @@ beforeEach(() => {
 
 const baseState = {
   sidebarCollapsed: false,
-  sidebarOpenSections: { editor: false, user: false, storage: false, settings: false },
+  sidebarOpenSections: { editor: false, caster: false, storage: false, settings: false },
   version: 1,
 };
 
@@ -25,7 +25,7 @@ describe('layoutSlice', () => {
     expect(state.sidebarCollapsed).toBe(false);
     expect(state.sidebarOpenSections).toEqual({
       editor: false,
-      user: false,
+      caster: false,
       storage: false,
       settings: false,
     });
@@ -42,17 +42,17 @@ describe('layoutSlice', () => {
   });
 
   it('setSectionOpen sets only the given section, leaving others untouched', () => {
-    const state = reducer(baseState, setSectionOpen({ key: 'user', open: true }));
-    expect(state.sidebarOpenSections.user).toBe(true);
+    const state = reducer(baseState, setSectionOpen({ key: 'caster', open: true }));
+    expect(state.sidebarOpenSections.caster).toBe(true);
     expect(state.sidebarOpenSections.storage).toBe(false);
     expect(state.sidebarOpenSections.settings).toBe(false);
   });
 
   it('toggleSection flips only the given section (multi-open supported)', () => {
-    const withDashboardOpen = { ...baseState, sidebarOpenSections: { ...baseState.sidebarOpenSections, user: true } };
+    const withDashboardOpen = { ...baseState, sidebarOpenSections: { ...baseState.sidebarOpenSections, caster: true } };
     const state = reducer(withDashboardOpen, toggleSection('storage'));
-    // Toggling storage should not close user — multiple sections can be open at once.
-    expect(state.sidebarOpenSections.user).toBe(true);
+    // Toggling storage should not close caster — multiple sections can be open at once.
+    expect(state.sidebarOpenSections.caster).toBe(true);
     expect(state.sidebarOpenSections.storage).toBe(true);
   });
 

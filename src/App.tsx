@@ -16,10 +16,11 @@ import { StorageCloud } from './app/pages/StorageCloud';
 import { Editor } from './app/pages/Editor';
 import { Grimoire } from './app/pages/Grimoire';
 import { Storage } from './app/pages/Storage';
-import { Overview } from './app/pages/Overview';
 import { NotFound } from './app/pages/NotFound';
 import { Settings } from './app/pages/Settings';
 import { UserGroups } from './app/pages/UserGroups';
+import { UserShared } from './app/pages/UserShared';
+import { CasterStats } from './app/pages/CasterStats';
 import { Appearance } from './app/pages/Appearance';
 import { UserArchive } from './app/pages/UserArchive';
 import { Unauthorized } from './app/pages/Unauthorized';
@@ -30,8 +31,10 @@ import { UserCredentials } from './app/pages/UserCredentials';
 import { SpellDetailPage } from './app/pages/SpellDetail';
 import { LocalSpellReader } from './app/pages/LocalSpellReader';
 import { HavenStore } from './app/pages/HavenStore';
+import { CasterProfile } from './app/pages/CasterProfile';
 
 import DefaultLayout from './app/layouts/DefaultLayout';
+import { CasterLayout } from './app/layouts/CasterLayout';
 
 function App() {
   const { loader } = useSelector((state: RootState) => state.session.userData);
@@ -63,30 +66,34 @@ function App() {
           <Route path="/editor/:id/:page" element={<SpellEdit />} />
           <Route path="/spell/:id" element={<SpellDetailPage />} />
           <Route path="/spell/:id/reader" element={<LocalSpellReader />} />
-          <Route path="/user/archive" element={<UserArchive />} />
+          <Route path="/caster/archive" element={<UserArchive />} />
 
-          <Route path="/user/dashboard" element={<Overview />} />
-          <Route path="/user" element={<RootBackground />} />
-          <Route path="/user/dashboard/groups" element={<UserGroups />} />
+          <Route path="/caster" element={<RootBackground />} />
+
+          <Route element={<CasterLayout />}>
+            <Route path="/caster/profile" element={<CasterProfile />} />
+            <Route path="/caster/stats" element={<CasterStats />} />
+            <Route path="/caster/groups" element={<UserGroups />} />
+            <Route path="/caster/shared" element={<UserShared />} />
+
+            <Route path="/caster/storage" element={<Storage />} />
+            <Route path="/caster/storage/local" element={<StorageLocal />} />
+            <Route path="/caster/storage/cloud" element={<StorageCloud />} />
+
+            <Route path="/caster/settings" element={<Settings />} />
+            <Route path="/caster/settings/credentials" element={<UserCredentials />} />
+            <Route path="/caster/settings/appearance" element={<Appearance />} />
+          </Route>
 
           <Route path="/grimoire" element={<Grimoire />} />
           <Route path="/havenstore" element={<HavenStore />} />
 
-          <Route path="/user/storage" element={<Storage />} />
-          <Route path="/user/storage/local" element={<StorageLocal />} />
-          <Route path="/user/storage/cloud" element={<StorageCloud />} />
-
-          <Route path="/user/settings" element={<Settings />} />
-          <Route path="/user/settings/credentials" element={<UserCredentials />} />
-          <Route path="/user/settings/appearance" element={<Appearance />} />
-          <Route path="/user/not-found" element={<NotFound />} />
-          <Route path="/user/*" element={<NotFound />} />
+          <Route path="/caster/not-found" element={<NotFound />} />
+          <Route path="/caster/*" element={<NotFound />} />
           <Route path="/explore/*" element={<NotFound />} />
         </Route>
-        <Route path="/user/not-found" element={<NotFound />} />
-        <Route path="/user/*" element={<NotFound />} />
-        <Route path="/user/not-found" element={<NotFound />} />
-        <Route path="/user/*" element={<NotFound />} />
+        <Route path="/caster/not-found" element={<NotFound />} />
+        <Route path="/caster/*" element={<NotFound />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       {showLoader && <Loader progress={loaderProgress} message={loaderMessage} exiting={loaderExiting} />}

@@ -1,0 +1,38 @@
+/* Mirrors the same full-width-outer / max-width-inner split every other Caster page
+   already uses (see UserPage.module.css's .page/.content) -- .page spans the full width of
+   .app-viewer and is the single scroll frame for the whole route (header, tabs AND body
+   scrolling together); .content is the centered 1024px column that actually holds
+   everything, so the scrollbar/background sit at the true edges instead of alongside a
+   pre-narrowed column. */
+.page {
+  width: 100%;
+  flex-grow: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow-y: auto;
+}
+
+.content {
+  width: 100%;
+  max-width: 1024px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1rem;
+}
+
+.outlet {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  /* Deliberately no flex-grow/overflow here -- .page above is already the single scroll
+     frame. Giving this its own flex-grow+overflow too would make the routed page's own
+     .dashboard-sections (which also sets flex-grow+overflow:auto, designed for being
+     .app-viewer's *direct* child on every other route) become a SECOND, nested scroll
+     region -- header+tabs pinned in place while only the body scrolls beneath them, instead
+     of the whole route scrolling as one, like every other page. Left unconstrained,
+     .dashboard-sections just renders at its natural height and defers all actual scrolling
+     up to .page. */
+}

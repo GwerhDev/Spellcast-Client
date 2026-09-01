@@ -5,7 +5,6 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 1rem;
   gap: 1rem;
 }
 
@@ -30,4 +29,20 @@
   margin: 0;
   color: var(--color-light-400);
   font-size: 0.9rem;
+}
+
+/* TCORE-107 follow-up: back-navigation row for a "level-2" /caster/* subroute (e.g.
+   Appearance/Credentials under Settings, Local/Cloud under Storage) -- CasterLayout's tab
+   bar only represents the level-1 destinations, so once you're a level deeper than that,
+   there's no other way back except this button. Same pattern as
+   SpellDetail/SpellEditForm's own error-state back button. */
+.pageInfoContainer {
+  gap: 1rem;
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.backButton {
+  width: auto;
 }

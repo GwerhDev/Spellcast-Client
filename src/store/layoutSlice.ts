@@ -2,11 +2,11 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 const STATE_VERSION = 1;
 
-export type SidebarSectionKey = 'editor' | 'user' | 'storage' | 'settings';
+export type SidebarSectionKey = 'editor' | 'caster' | 'storage' | 'settings';
 
 const DEFAULT_OPEN_SECTIONS: Record<SidebarSectionKey, boolean> = {
   editor: false,
-  user: false,
+  caster: false,
   storage: false,
   settings: false,
 };

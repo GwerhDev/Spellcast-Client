@@ -31,7 +31,7 @@ export const ProfileButton = (props: { userData: userData }) => {
 
   const handleAccount = () => {
     setShowCanvas(false);
-    navigate("/user");
+    navigate("/caster");
   };
 
   useEffect(() => {

@@ -10,18 +10,18 @@ const directLinks: SidebarDirectLink[] = [{ key: 'home', icon: faHome, path: '/'
 
 const accordionSections: SidebarAccordionSection[] = [
   {
-    key: 'user',
+    key: 'caster',
     icon: faUser,
-    path: '/user/dashboard',
-    label: 'User',
-    items: [{ path: '/user/dashboard/groups', icon: faUsers, label: 'Groups' }],
+    path: '/caster/dashboard',
+    label: 'Caster',
+    items: [{ path: '/caster/dashboard/groups', icon: faUsers, label: 'Groups' }],
     subSections: [
       {
         key: 'storage',
         icon: faBox,
-        path: '/user/storage',
+        path: '/caster/storage',
         label: 'Storage',
-        items: [{ path: '/user/storage/local', icon: faHardDrive, label: 'Local' }],
+        items: [{ path: '/caster/storage/local', icon: faHardDrive, label: 'Local' }],
       },
     ],
   },
@@ -31,7 +31,7 @@ const baseProps = {
   directLinks,
   accordionSections,
   activePathname: '/',
-  openSections: { editor: false, user: false, storage: false, settings: false },
+  openSections: { editor: false, caster: false, storage: false, settings: false },
   onToggleCollapsed: vi.fn(),
   onToggleSection: vi.fn(),
 };
@@ -61,9 +61,9 @@ describe('SidebarView', () => {
   it('collapsed rail renders direct links and top-level section icons only, with no sub-items', () => {
     render(<SidebarView {...baseProps} collapsed />);
     expect(screen.getByTestId('sidebar-rail-icon-home')).toBeInTheDocument();
-    expect(screen.getByTestId('sidebar-rail-icon-user')).toBeInTheDocument();
+    expect(screen.getByTestId('sidebar-rail-icon-caster')).toBeInTheDocument();
     expect(screen.queryByTestId('sidebar-rail-icon-storage')).not.toBeInTheDocument();
-    expect(screen.queryByTestId('sidebar-section-body-user')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('sidebar-section-body-caster')).not.toBeInTheDocument();
   });
 
   it('calls onToggleCollapsed when the toggle button is clicked', () => {
@@ -76,13 +76,13 @@ describe('SidebarView', () => {
   it('calls onToggleSection with the section key when a section header chevron is clicked', () => {
     const onToggleSection = vi.fn();
     render(<SidebarView {...baseProps} collapsed={false} onToggleSection={onToggleSection} />);
-    fireEvent.click(screen.getByTestId('sidebar-section-header-user'));
-    expect(onToggleSection).toHaveBeenCalledWith('user');
+    fireEvent.click(screen.getByTestId('sidebar-section-header-caster'));
+    expect(onToggleSection).toHaveBeenCalledWith('caster');
   });
 
   it('does not render a section body until its section is open', () => {
     render(<SidebarView {...baseProps} collapsed={false} />);
-    expect(screen.queryByTestId('sidebar-section-body-user')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('sidebar-section-body-caster')).not.toBeInTheDocument();
   });
 
   it('supports multiple sections open at the same time', () => {
@@ -90,18 +90,18 @@ describe('SidebarView', () => {
       <SidebarView
         {...baseProps}
         collapsed={false}
-        openSections={{ editor: false, user: true, storage: true, settings: false }}
+        openSections={{ editor: false, caster: true, storage: true, settings: false }}
       />
     );
-    expect(screen.getByTestId('sidebar-section-body-user')).toBeInTheDocument();
+    expect(screen.getByTestId('sidebar-section-body-caster')).toBeInTheDocument();
     expect(screen.getByTestId('sidebar-section-body-storage')).toBeInTheDocument();
   });
 
   it('renders a nested sub-section only once its parent section is open', () => {
-    render(<SidebarView {...baseProps} collapsed={false} openSections={{ editor: false, user: false, storage: false, settings: false }} />);
+    render(<SidebarView {...baseProps} collapsed={false} openSections={{ editor: false, caster: false, storage: false, settings: false }} />);
     expect(screen.queryByTestId('sidebar-nav-item-storage')).not.toBeInTheDocument();
 
-    render(<SidebarView {...baseProps} collapsed={false} openSections={{ editor: false, user: true, storage: false, settings: false }} />);
+    render(<SidebarView {...baseProps} collapsed={false} openSections={{ editor: false, caster: true, storage: false, settings: false }} />);
     expect(screen.getByTestId('sidebar-nav-item-storage')).toBeInTheDocument();
     // The nested sub-section's own body (its sub-items) stays closed independently.
     expect(screen.queryByTestId('sidebar-section-body-storage')).not.toBeInTheDocument();
@@ -112,11 +112,11 @@ describe('SidebarView', () => {
       <SidebarView
         {...baseProps}
         collapsed={false}
-        openSections={{ editor: false, user: true, storage: true, settings: false }}
+        openSections={{ editor: false, caster: true, storage: true, settings: false }}
       />
     );
     expect(screen.getByTestId('sidebar-section-body-storage')).toBeInTheDocument();
-    expect(screen.getByTestId('sidebar-sub-item-storage-/user/storage/local')).toBeInTheDocument();
+    expect(screen.getByTestId('sidebar-sub-item-storage-/caster/storage/local')).toBeInTheDocument();
   });
 
   it('marks a direct link as active when activePathname matches its path', () => {
@@ -129,11 +129,11 @@ describe('SidebarView', () => {
       <SidebarView
         {...baseProps}
         collapsed={false}
-        activePathname="/user/storage/local"
-        openSections={{ editor: false, user: true, storage: true, settings: false }}
+        activePathname="/caster/storage/local"
+        openSections={{ editor: false, caster: true, storage: true, settings: false }}
       />
     );
-    expect(screen.getByTestId('sidebar-sub-item-storage-/user/storage/local').className).toMatch(/activeLink/);
+    expect(screen.getByTestId('sidebar-sub-item-storage-/caster/storage/local').className).toMatch(/activeLink/);
   });
 });
 
@@ -159,17 +159,17 @@ describe('SidebarView on mobile', () => {
 
   it('collapsed row renders direct links and only sections with no expandable body (no items, no sub-sections)', () => {
     // A section morphs into a plain row icon only if it has nothing to expand. Any section
-    // with items and/or nested subSections — "editor" and "user" in the real config — always
+    // with items and/or nested subSections — "editor" and "caster" in the real config — always
     // renders as a full accordion in the expanded panel instead, and gets no rail icon here.
     const bareSection: SidebarAccordionSection = { key: 'editor', icon: faBox, path: '/editor', label: 'Editor', items: [] };
     render(<SidebarView {...baseProps} collapsed accordionSections={[bareSection, ...accordionSections]} />);
     expect(screen.getByTestId('sidebar-rail-icon-home')).toBeInTheDocument();
     expect(screen.getByTestId('sidebar-rail-icon-editor')).toBeInTheDocument();
-    expect(screen.queryByTestId('sidebar-rail-icon-user')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('sidebar-rail-icon-caster')).not.toBeInTheDocument();
   });
 
   it('expanded panel renders the direct links and accordion sections, including nested ones', () => {
-    render(<SidebarView {...baseProps} collapsed={false} openSections={{ editor: false, user: true, storage: false, settings: false }} />);
+    render(<SidebarView {...baseProps} collapsed={false} openSections={{ editor: false, caster: true, storage: false, settings: false }} />);
     expect(screen.getByTestId('sidebar-nav-item-home')).toBeInTheDocument();
     expect(screen.getByTestId('sidebar-nav-item-storage')).toBeInTheDocument();
   });

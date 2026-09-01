@@ -1,7 +1,7 @@
 import {
   faUsers, faFingerprint, faShield, faShare, faPalette, faHardDrive, faCloud,
   faHome, faBuildingColumns, faFeatherPointed, faStore, faUser, faBox, faGear,
-  faList, faPlus,
+  faList, faPlus, faIdBadge, faChartLine,
 } from "@fortawesome/free-solid-svg-icons";
 
 // Silent, single-cycle WAV looped by both BrowserPlayer and AudioPlayer as a
@@ -19,8 +19,9 @@ import {
 export const SILENT_AUDIO_SRC = 'data:audio/wav;base64,UklGRkQDAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YSADAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA==';
 
 export const dashboardDirectoryList = [
-  { name: "Groups", icon: faUsers, path: "dashboard/groups" },
-  { name: "Shared", icon: faShare, path: "dashboard/shared" },
+  { name: "Stats", icon: faChartLine, path: "stats" },
+  { name: "Groups", icon: faUsers, path: "groups" },
+  { name: "Shared", icon: faShare, path: "shared" },
 ];
 
 export const storageDirectoryList = [
@@ -55,18 +56,35 @@ export interface SidebarAccordionSectionConfig {
   subSections: SidebarAccordionSectionConfig[];
 }
 
-// Sub-sections nested one level under "user" — each has its own sub-items, rendered as a
-// nested accordion within the "user" section body.
+// Sub-sections nested one level under "caster" — each has its own sub-items, rendered as
+// a nested accordion within the "caster" section body. Also reachable as tabs from
+// CasterLayout, the shared header+tabs shell every /caster/* route renders under.
 export const userSubSections: SidebarAccordionSectionConfig[] = [
-  { key: "storage", icon: faBox, path: "/user/storage", items: storageDirectoryList, basePath: "/user/", subSections: [] },
-  { key: "settings", icon: faGear, path: "/user/settings", items: settingsDirectoryList, basePath: "/user/", subSections: [] },
+  { key: "storage", icon: faBox, path: "/caster/storage", items: storageDirectoryList, basePath: "/caster/", subSections: [] },
+  { key: "settings", icon: faGear, path: "/caster/settings", items: settingsDirectoryList, basePath: "/caster/", subSections: [] },
 ];
 
 // Top-level sections with sub-items — rendered as accordions in the expanded panel,
 // icon-only in the collapsed rail. basePath is prefixed to each item's relative `path` to
-// build its route. "user" nests storage/settings as sub-sections (see userSubSections)
-// alongside its own direct items (dashboardDirectoryList).
+// build its route. "caster" nests storage/settings as sub-sections (see userSubSections)
+// alongside its own direct items (dashboardDirectoryList) -- its own path points at the
+// Caster profile page (TCORE-107 follow-up), the default landing for "Caster". All of these
+// destinations are mirrored flat in `casterTabs` below, which CasterLayout renders as a tab
+// bar atop every /caster/* route.
 export const sidebarAccordionSections: SidebarAccordionSectionConfig[] = [
   { key: "editor", icon: faFeatherPointed, path: "/editor", items: editorDirectoryList, basePath: "/", subSections: [] },
-  { key: "user", icon: faUser, path: "/user/dashboard", items: dashboardDirectoryList, basePath: "/user/", subSections: userSubSections },
+  { key: "caster", icon: faUser, path: "/caster/profile", items: dashboardDirectoryList, basePath: "/caster/", subSections: userSubSections },
+];
+
+// Flat mirror of the sidebar's Caster section (Profile + Stats/Groups/Shared items +
+// Storage/Settings sub-sections, all flattened to one level) -- the tab bar CasterLayout
+// renders atop every /caster/* route. Labels are resolved from `t.nav[id]` at render time,
+// same lookup the sidebar itself uses, so the two can never show mismatched text.
+export const casterTabs = [
+  { id: "profile", icon: faIdBadge, path: "/caster/profile" },
+  { id: "stats", icon: faChartLine, path: "/caster/stats" },
+  { id: "groups", icon: faUsers, path: "/caster/groups" },
+  { id: "shared", icon: faShare, path: "/caster/shared" },
+  { id: "storage", icon: faBox, path: "/caster/storage" },
+  { id: "settings", icon: faGear, path: "/caster/settings" },
 ];

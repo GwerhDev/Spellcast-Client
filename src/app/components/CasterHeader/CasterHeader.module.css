@@ -1,30 +1,9 @@
-.container {
-  gap: 1rem;
-  width: 100%;
-  padding: 1rem;
-  flex-grow: 1;
-  min-height: 0;
-  display: flex;
-  align-items: center;
-  flex-direction: column;
-}
-
 .header {
   gap: 3rem;
   width: 100%;
   padding: 1rem;
   display: flex;
   justify-content: center;
-}
-
-.stats {
-  gap: 1rem;
-  width: 100%;
-  max-width: 1024px;
-  padding-bottom: 1rem;
-  display: flex;
-  align-items: center;
-  flex-direction: column;
 }
 
 @media screen and (max-width: 1024px) {
@@ -112,23 +91,6 @@
   opacity: 0.4;
 }
 
-.buttonContainer {
-  gap: 1rem;
-  padding-top: 1rem;
-  padding-bottom: 1rem;
-  width: 100%;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-}
-
-@media screen and (max-width: 720px) {
-  .buttonContainer {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-  }
-}
-
 .imgContainer {
   width: 10rem;
   height: 10rem;
@@ -141,18 +103,6 @@
   align-items: center;
   justify-content: center;
   border-color: var(--color-primary);
-}
-
-.plusContainer {
-  bottom: 0;
-  right: 1rem;
-  padding: .3rem;
-  border-radius: 100%;
-  display: flex;
-  position: absolute;
-  align-items: center;
-  justify-content: center;
-  background-color: var(--color-primary);
 }
 
 .imageContainer {
@@ -183,19 +133,6 @@
   align-items: center;
   text-overflow: ellipsis;
   position: relative;
-}
-
-.dbType {
-  gap: .5rem;
-  background-color: var(--color-dark-400);
-  border-radius: 10px;
-  padding: .2rem;
-  font-size: 0.8rem;
-  color: var(--color-primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid var(--color-primary);
 }
 
 .borderAnimate {

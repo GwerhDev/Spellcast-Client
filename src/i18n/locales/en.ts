@@ -53,7 +53,9 @@ export const en = {
     editor: 'Editor',
     select: 'Select',
     create: 'Create',
-    user: 'User',
+    caster: 'Caster',
+    profile: 'Profile',
+    stats: 'Stats',
   },
   spell: {
     untitled: 'Untitled',
@@ -329,6 +331,9 @@ export const en = {
   shared: {
     public: 'Public',
     inGroups: 'In groups',
+    subtitle: 'Spells you\'ve shared publicly or with your groups.',
+    // TCORE-107 follow-up: placeholder page, no backend concept for this yet.
+    empty: 'Nothing shared yet.',
   },
   archive: {
     title: 'Archive',
@@ -364,6 +369,23 @@ export const en = {
   },
   permissions: {
     subtitle: 'Control access levels and what others can do with your content.',
+  },
+  caster: {
+    profileTitle: 'Caster Profile',
+    profileSubtitle: 'Your Spellcast identity',
+    myQuotes: 'My Quotes',
+    myGrimoire: 'My Grimoire',
+    // TCORE-107: mock data, marked as such. TCORE-100 (public profile backend) and
+    // TCORE-101 (real profile + quote cards) replace this whole section with real calls.
+    mockNotice: 'Placeholder data — real quotes and grimoire are coming soon.',
+    mockQuotes: [
+      { text: 'The dragon slept in the cave, dreaming of gold and fire.', spell: 'Patrones de Diseño' },
+      { text: 'A single spark can end a thousand years of silence.', spell: 'Cuentos Inconclusos' },
+    ],
+    mockGrimoire: [
+      { title: 'Patrones de Diseño', author: 'Erich Gamma' },
+      { title: 'Cuentos Inconclusos', author: 'J.R.R. Tolkien' },
+    ],
   },
   gamification: {
     level: 'Level',
