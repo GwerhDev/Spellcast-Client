@@ -31,6 +31,7 @@ import { SpellDetailPage } from './app/pages/SpellDetail';
 import { LocalSpellReader } from './app/pages/LocalSpellReader';
 import { HavenStore } from './app/pages/HavenStore';
 import { CasterProfile } from './app/pages/CasterProfile';
+import { CasterInventory } from './app/pages/CasterInventory';
 
 import DefaultLayout from './app/layouts/DefaultLayout';
 import { CasterLayout } from './app/layouts/CasterLayout';
@@ -72,16 +73,18 @@ function App() {
           <Route element={<CasterLayout />}>
             <Route path="/caster/profile" element={<CasterProfile />} />
             <Route path="/caster/stats" element={<CasterStats />} />
+            <Route path="/caster/inventory" element={<CasterInventory />} />
             <Route path="/caster/groups" element={<UserGroups />} />
             <Route path="/caster/shared" element={<UserShared />} />
-
-            <Route path="/caster/storage" element={<Storage />} />
-            <Route path="/caster/storage/local" element={<StorageLocal />} />
-            <Route path="/caster/storage/cloud" element={<StorageCloud />} />
 
             <Route path="/caster/settings" element={<Settings />} />
             <Route path="/caster/settings/credentials" element={<UserCredentials />} />
             <Route path="/caster/settings/appearance" element={<Appearance />} />
+            {/* TCORE-109 (reverted): Storage lives inside Settings now, a flat item like
+                Credentials/Permissions/Appearance -- not its own Inventory sub-tab. */}
+            <Route path="/caster/settings/storage" element={<Storage />} />
+            <Route path="/caster/settings/storage/local" element={<StorageLocal />} />
+            <Route path="/caster/settings/storage/cloud" element={<StorageCloud />} />
           </Route>
 
           <Route path="/grimoire" element={<Grimoire />} />

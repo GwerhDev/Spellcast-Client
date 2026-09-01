@@ -13,12 +13,15 @@ export const DirectoryList = () => {
     'settings/credentials': t.credentials.subtitle,
     'settings/permissions': t.permissions.subtitle,
     'settings/appearance':  t.appearance.subtitle,
+    // TCORE-109 (reverted): Storage is a flat Settings item again, same as the three above.
+    'settings/storage':     t.storage.subtitle,
   };
 
   const names: Record<string, string> = {
     'settings/credentials': t.nav.credentials,
     'settings/permissions': t.nav.permissions,
     'settings/appearance':  t.nav.appearance,
+    'settings/storage':     t.nav.storage,
   };
 
   return (

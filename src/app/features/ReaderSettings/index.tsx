@@ -100,9 +100,9 @@ const CompanionsTab: React.FC = () => {
 
   const isUnlocked = (id: string) => unlockedIds.includes(id);
 
-  // Same gating as the Havenstore "Companions" tab: comingSoon companions never count
-  // as unlocked/active regardless of unlockedIds, so the release-date gate in
-  // companions.ts is respected identically on both surfaces.
+  // Same gating as Havenstore/CasterInventoryLanding (TCORE-109): comingSoon companions
+  // never count as unlocked/active regardless of unlockedIds, so the release-date gate in
+  // companions.ts is respected identically across every surface.
   const handleCompanionAction = (id: string) => {
     if (!isUnlocked(id)) {
       dispatch(unlockAsset(id));

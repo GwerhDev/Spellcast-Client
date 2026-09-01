@@ -58,6 +58,7 @@ export const es: Translations = {
     caster: 'Caster',
     profile: 'Perfil',
     stats: 'Estadísticas',
+    inventory: 'Inventario',
   },
   spell: {
     untitled: 'Sin título',
@@ -388,6 +389,11 @@ export const es: Translations = {
       { title: 'Patrones de Diseño', author: 'Erich Gamma' },
       { title: 'Cuentos Inconclusos', author: 'J.R.R. Tolkien' },
     ],
+    // TCORE-109: /caster/inventory -- se muestra por sección cuando aún no hay nada de ese
+    // tipo conseguido.
+    inventoryEmptySounds: 'Aún no desbloqueaste fondos de sonido — busca algunos en la Havenstore.',
+    inventoryEmptyPages: 'Aún no desbloqueaste fondos de hoja — busca algunos en la Havenstore.',
+    inventoryEmptyCompanions: 'Aún no desbloqueaste compañeros — busca algunos en la Havenstore.',
   },
   gamification: {
     level: 'Nivel',
@@ -430,15 +436,18 @@ export const es: Translations = {
     achievementRequired: 'Requiere logro',
     featured: 'Destacados',
     exploreFullStore: 'Explorar la tienda completa',
-    assets: 'Recursos',
     companions: 'Compañeros',
     companionsComingSoon: 'Compañeros próximamente',
     companionsComingSoonDesc: 'Los compañeros 3D interactuarán en tus entornos de lectura y escritura en una actualización futura.',
     comingSoon: 'Próximamente',
+    // TCORE-109: Havenstore es solo de adquisición ahora -- se muestra en un item ya
+    // desbloqueado en vez de un botón activar/desactivar (equipar se mudó a /caster/inventory).
+    owned: 'Conseguido',
   },
   companionGift: {
     title: 'Un regalo para ti',
-    body: 'Kuro & Sunny ya llegaron — un par de gatos que rondan mientras lees. Actívalos ahora, o encuéntralos más tarde en el Havenstore.',
+    // TCORE-109: equipar se mudó fuera de Havenstore -- "más tarde" ahora es tu inventario del Caster.
+    body: 'Kuro & Sunny ya llegaron — un par de gatos que rondan mientras lees. Actívalos ahora, o encuéntralos más tarde en tu inventario del Caster.',
     cta: 'Activar',
     dismiss: 'Más tarde',
   },

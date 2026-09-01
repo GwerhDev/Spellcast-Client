@@ -15,7 +15,7 @@ beforeEach(() => {
 
 const baseState = {
   sidebarCollapsed: false,
-  sidebarOpenSections: { editor: false, caster: false, storage: false, settings: false },
+  sidebarOpenSections: { editor: false, caster: false, settings: false },
   version: 1,
 };
 
@@ -26,7 +26,6 @@ describe('layoutSlice', () => {
     expect(state.sidebarOpenSections).toEqual({
       editor: false,
       caster: false,
-      storage: false,
       settings: false,
     });
   });
@@ -44,21 +43,21 @@ describe('layoutSlice', () => {
   it('setSectionOpen sets only the given section, leaving others untouched', () => {
     const state = reducer(baseState, setSectionOpen({ key: 'caster', open: true }));
     expect(state.sidebarOpenSections.caster).toBe(true);
-    expect(state.sidebarOpenSections.storage).toBe(false);
+    expect(state.sidebarOpenSections.editor).toBe(false);
     expect(state.sidebarOpenSections.settings).toBe(false);
   });
 
   it('toggleSection flips only the given section (multi-open supported)', () => {
     const withDashboardOpen = { ...baseState, sidebarOpenSections: { ...baseState.sidebarOpenSections, caster: true } };
-    const state = reducer(withDashboardOpen, toggleSection('storage'));
-    // Toggling storage should not close caster — multiple sections can be open at once.
+    const state = reducer(withDashboardOpen, toggleSection('settings'));
+    // Toggling settings should not close caster — multiple sections can be open at once.
     expect(state.sidebarOpenSections.caster).toBe(true);
-    expect(state.sidebarOpenSections.storage).toBe(true);
+    expect(state.sidebarOpenSections.settings).toBe(true);
   });
 
   it('toggleSection closes an already-open section', () => {
-    const withStorageOpen = { ...baseState, sidebarOpenSections: { ...baseState.sidebarOpenSections, storage: true } };
-    const state = reducer(withStorageOpen, toggleSection('storage'));
-    expect(state.sidebarOpenSections.storage).toBe(false);
+    const withSettingsOpen = { ...baseState, sidebarOpenSections: { ...baseState.sidebarOpenSections, settings: true } };
+    const state = reducer(withSettingsOpen, toggleSection('settings'));
+    expect(state.sidebarOpenSections.settings).toBe(false);
   });
 });

@@ -1,223 +1,42 @@
 import { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faMusic, faLock, faTrophy, faCheck, faMagnifyingGlass, faStore } from '@fortawesome/free-solid-svg-icons';
+import { faMagnifyingGlass, faStore } from '@fortawesome/free-solid-svg-icons';
 import { SectionHeader } from '../../components/SectionHeader';
 import { CompanionCard } from '../../components/Cards/CompanionCard';
+import { SoundBackgroundCard } from '../../components/Cards/SoundBackgroundCard';
+import { PageBackgroundCard } from '../../components/Cards/PageBackgroundCard';
 import { useAppSelector, useAppDispatch } from '../../../store/hooks';
-import { unlockAsset, setActiveSoundBg, setActivePageBg, setActiveCompanion } from '../../../store/casterInventorySlice';
+import { unlockAsset } from '../../../store/casterInventorySlice';
 import { soundBackgrounds, pageBackgrounds, companions } from '../../../config/assets';
 import { useLanguage } from '../../../i18n';
 import s from '../../components/HavenStoreLanding/index.module.css';
 
-type Tab = 'assets' | 'companions';
-
-const SOUND_ARTWORK: Record<string, string> = {
-  'rain-window':      'linear-gradient(145deg, #0e2a40 0%, #1e5a8a 100%)',
-  'cafe-murmur':      'linear-gradient(145deg, #2e1808 0%, #8a4010 100%)',
-  'ancient-forest':   'linear-gradient(145deg, #0a2414 0%, #145c30 100%)',
-  'ocean-tides':      'linear-gradient(145deg, #082430 0%, #0e6e80 100%)',
-  'crackling-hearth': 'linear-gradient(145deg, #2e0e08 0%, #a03010 100%)',
-  'northern-winds':   'linear-gradient(145deg, #120a30 0%, #3a1870 100%)',
-};
-
+// TCORE-109: Havenstore is acquisition-only -- POSSESSION (unlockedIds), never ACTIVATION
+// (activeSoundBgId/activePageBgId/activeCompanionId). It only ever dispatches unlockAsset;
+// equipping what you own lives at /caster/inventory (CasterInventoryLanding) and in the
+// existing contextual surfaces (ReaderSettings, PlayerPreferences) -- all of them dispatch
+// the same setActiveXxx actions this page never touches, so they stay in sync regardless of
+// where something gets equipped. No tabs either: sounds, pages and companions all render in
+// one searchable page (light section headings for scannability, not navigation).
 export const HavenStoreLanding = () => {
   const dispatch = useAppDispatch();
   const { t } = useLanguage();
-  const [activeTab, setActiveTab] = useState<Tab>('assets');
   const [query, setQuery] = useState('');
-  const { unlockedIds, activeSoundBgId, activePageBgId, activeCompanionId } = useAppSelector(state => state.casterInventory);
+  const { unlockedIds } = useAppSelector(state => state.casterInventory);
 
   const isUnlocked = (id: string) => unlockedIds.includes(id);
 
   const q = query.toLowerCase().trim();
-  const filteredSounds = soundBackgrounds.filter(bg =>
-    !q || bg.name.toLowerCase().includes(q) || bg.description.toLowerCase().includes(q) || bg.tags.some(t => t.includes(q))
-  );
-  const filteredPages = pageBackgrounds.filter(bg =>
-    !q || bg.name.toLowerCase().includes(q) || bg.description.toLowerCase().includes(q) || bg.tags.some(t => t.includes(q))
-  );
+  const matches = (item: { name: string; description: string; tags: string[] }) =>
+    !q || item.name.toLowerCase().includes(q) || item.description.toLowerCase().includes(q) || item.tags.some(tag => tag.includes(q));
 
-  const handleSoundAction = (id: string) => {
-    if (!isUnlocked(id)) {
-      dispatch(unlockAsset(id));
-      dispatch(setActiveSoundBg(id));
-      return;
-    }
-    dispatch(setActiveSoundBg(activeSoundBgId === id ? null : id));
+  const filteredSounds = soundBackgrounds.filter(matches);
+  const filteredPages = pageBackgrounds.filter(matches);
+  const filteredCompanions = companions.filter(matches);
+
+  const handleUnlock = (id: string) => {
+    if (!isUnlocked(id)) dispatch(unlockAsset(id));
   };
-
-  const handlePageAction = (id: string) => {
-    if (!isUnlocked(id)) {
-      dispatch(unlockAsset(id));
-      dispatch(setActivePageBg(id));
-      return;
-    }
-    dispatch(setActivePageBg(id));
-  };
-
-  const handleCompanionAction = (id: string) => {
-    if (!isUnlocked(id)) {
-      dispatch(unlockAsset(id));
-      dispatch(setActiveCompanion(id));
-      return;
-    }
-    dispatch(setActiveCompanion(activeCompanionId === id ? null : id));
-  };
-
-  const renderSoundGrid = () => (
-    <div className={s.soundGrid}>
-      {filteredSounds.map(bg => {
-        const unlocked = isUnlocked(bg.id);
-        const isActive = activeSoundBgId === bg.id;
-        const locked = !unlocked;
-        return (
-          <div key={bg.id} className={`${s.productCard} ${isActive ? s.productCardActive : ''} ${locked ? s.productCardLocked : ''}`}>
-            <div className={s.artwork} style={{ background: SOUND_ARTWORK[bg.id] ?? 'var(--color-dark-300)' }}>
-              <FontAwesomeIcon icon={faMusic} className={s.artworkIcon} />
-              {locked && (
-                <div className={s.lockOverlay}>
-                  <FontAwesomeIcon icon={bg.unlockMethod === 'achievement' ? faTrophy : faLock} className={s.lockIcon} />
-                </div>
-              )}
-              {isActive && (
-                <span className={s.activePill}>
-                  <FontAwesomeIcon icon={faCheck} /> {t.havenStore.active}
-                </span>
-              )}
-            </div>
-            <div className={s.productBody}>
-              <span className={s.productName}>{bg.name}</span>
-              <p className={s.productDesc}>{bg.description}</p>
-              <div className={s.productFooter}>
-                {bg.unlockMethod === 'free' && (
-                  <span className={s.freeBadge}>{t.havenStore.free}</span>
-                )}
-                {bg.unlockMethod === 'achievement' && (
-                  <span className={s.achievementBadge}>
-                    <FontAwesomeIcon icon={faTrophy} />
-                  </span>
-                )}
-                {locked && bg.unlockMethod === 'free' && (
-                  <button className={s.btnBuy} onClick={() => handleSoundAction(bg.id)}>
-                    {t.havenStore.unlock}
-                  </button>
-                )}
-                {locked && bg.unlockMethod === 'achievement' && (
-                  <span className={s.achievementLabel}>{t.havenStore.achievementRequired}</span>
-                )}
-                {unlocked && (
-                  <button
-                    className={isActive ? s.btnActive : s.btnSet}
-                    onClick={() => handleSoundAction(bg.id)}
-                  >
-                    {isActive ? t.havenStore.deactivate : t.havenStore.setActive}
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-
-  const renderPageGrid = () => (
-    <div className={s.pageGrid}>
-      {filteredPages.map(bg => {
-        const unlocked = isUnlocked(bg.id);
-        const isActive = activePageBgId === bg.id;
-        const locked = !unlocked;
-        const isDark = bg.thumbnail === '#1e2433' || bg.thumbnail === '#2a1f0e';
-        const thumbStyle = bg.thumbnail.startsWith('var(') ? { background: 'var(--paper-bg)' } : { background: bg.thumbnail };
-        return (
-          <div
-            key={bg.id}
-            className={`${s.productCard} ${s.pageProductCard} ${isActive ? s.productCardActive : ''} ${locked ? s.productCardLocked : ''}`}
-            onClick={() => unlocked && handlePageAction(bg.id)}
-          >
-            <div className={s.pageThumbnail} style={thumbStyle}>
-              {unlocked && (
-                <div className={s.pageThumbnailLines} style={{ color: isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.2)' }}>
-                  {[100, 75, 90, 60, 85].map((w, i) => (
-                    <div key={i} className={s.pageThumbnailLine} style={{ width: `${w}%` }} />
-                  ))}
-                </div>
-              )}
-              {locked && (
-                <div className={s.lockOverlay}>
-                  <FontAwesomeIcon icon={bg.unlockMethod === 'achievement' ? faTrophy : faLock} className={s.lockIcon} />
-                </div>
-              )}
-              {isActive && (
-                <span className={s.activePill}>
-                  <FontAwesomeIcon icon={faCheck} /> {t.havenStore.active}
-                </span>
-              )}
-            </div>
-            <div className={s.productBody}>
-              <span className={s.productName}>{bg.name}</span>
-              <div className={s.productFooter}>
-                {bg.unlockMethod === 'free' && <span className={s.freeBadge}>{t.havenStore.free}</span>}
-                {bg.unlockMethod === 'achievement' && (
-                  <span className={s.achievementBadge}><FontAwesomeIcon icon={faTrophy} /></span>
-                )}
-                {locked && bg.unlockMethod === 'free' && (
-                  <button className={s.btnBuy} onClick={e => { e.stopPropagation(); handlePageAction(bg.id); }}>
-                    {t.havenStore.unlock}
-                  </button>
-                )}
-                {locked && bg.unlockMethod === 'achievement' && (
-                  <span className={s.achievementLabel}>{t.havenStore.achievementRequired}</span>
-                )}
-                {unlocked && (
-                  <button
-                    className={isActive ? s.btnActive : s.btnSet}
-                    onClick={e => { e.stopPropagation(); handlePageAction(bg.id); }}
-                  >
-                    {isActive ? t.havenStore.deactivate : t.havenStore.setActive}
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-
-  const renderAssetsTab = () => (
-    <div className={s.assetsBody}>
-      <div className={s.assetsSection}>
-        <p className={s.sectionLabel}>{t.havenStore.soundBackgrounds}</p>
-        {renderSoundGrid()}
-      </div>
-      <div className={s.assetsSection}>
-        <p className={s.sectionLabel}>{t.havenStore.pageBackgrounds}</p>
-        {renderPageGrid()}
-      </div>
-    </div>
-  );
-
-  const renderCompanionsTab = () => (
-    <div className={s.assetsBody} data-testid="companions-grid">
-      <div className={s.soundGrid}>
-        {companions.map(companion => {
-          const comingSoon = !!companion.comingSoon;
-          const unlocked = !comingSoon && isUnlocked(companion.id);
-          const isActive = !comingSoon && activeCompanionId === companion.id;
-          return (
-            <CompanionCard
-              key={companion.id}
-              companion={companion}
-              unlocked={unlocked}
-              isActive={isActive}
-              onAction={handleCompanionAction}
-            />
-          );
-        })}
-      </div>
-    </div>
-  );
 
   return (
     <div data-testid="haven-store" className={s.container}>
@@ -225,35 +44,72 @@ export const HavenStoreLanding = () => {
 
       <div className={s.panel}>
         <div className={s.panelHeader}>
-          <button
-            data-testid="haven-tab-assets"
-            className={`${s.tab} ${activeTab === 'assets' ? s.tabActive : ''}`}
-            onClick={() => setActiveTab('assets')}
-          >
-            {t.havenStore.assets}
-          </button>
-          <button
-            data-testid="haven-tab-companions"
-            className={`${s.tab} ${activeTab === 'companions' ? s.tabActive : ''}`}
-            onClick={() => setActiveTab('companions')}
-          >
-            {t.havenStore.companions}
-          </button>
-          {activeTab === 'assets' && (
-            <div className={s.searchWrapper}>
-              <FontAwesomeIcon icon={faMagnifyingGlass} className={s.searchIcon} />
-              <input
-                data-testid="haven-search"
-                className={s.searchInput}
-                placeholder={t.common.search}
-                value={query}
-                onChange={e => setQuery(e.target.value)}
-              />
-            </div>
-          )}
+          <div className={s.searchWrapper}>
+            <FontAwesomeIcon icon={faMagnifyingGlass} className={s.searchIcon} />
+            <input
+              data-testid="haven-search"
+              className={s.searchInput}
+              placeholder={t.common.search}
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+            />
+          </div>
         </div>
+
         <div className={s.panelBody}>
-          {activeTab === 'assets' ? renderAssetsTab() : renderCompanionsTab()}
+          <div className={s.body}>
+            <div className={s.section}>
+              <p className={s.sectionLabel}>{t.havenStore.soundBackgrounds}</p>
+              <div className={s.soundGrid}>
+                {filteredSounds.map(bg => (
+                  <SoundBackgroundCard
+                    key={bg.id}
+                    asset={bg}
+                    unlocked={isUnlocked(bg.id)}
+                    isActive={false}
+                    onAction={handleUnlock}
+                    showEquipControls={false}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div className={s.section}>
+              <p className={s.sectionLabel}>{t.havenStore.pageBackgrounds}</p>
+              <div className={s.pageGrid}>
+                {filteredPages.map(bg => (
+                  <PageBackgroundCard
+                    key={bg.id}
+                    asset={bg}
+                    unlocked={isUnlocked(bg.id)}
+                    isActive={false}
+                    onAction={handleUnlock}
+                    showEquipControls={false}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div className={s.section}>
+              <p className={s.sectionLabel}>{t.havenStore.companions}</p>
+              <div data-testid="companions-grid" className={s.soundGrid}>
+                {filteredCompanions.map(companion => {
+                  const comingSoon = !!companion.comingSoon;
+                  const unlocked = !comingSoon && isUnlocked(companion.id);
+                  return (
+                    <CompanionCard
+                      key={companion.id}
+                      companion={companion}
+                      unlocked={unlocked}
+                      isActive={false}
+                      onAction={handleUnlock}
+                      showEquipControls={false}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

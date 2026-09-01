@@ -112,17 +112,6 @@
   border-radius: 4px;
 }
 
-.soonBadge {
-  font-size: 0.62rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: #f5b342;
-  background: color-mix(in srgb, #f5b342 14%, transparent);
-  padding: 2px 6px;
-  border-radius: 4px;
-}
-
 .achievementBadge {
   font-size: 0.72rem;
   color: var(--color-accent-bronze);

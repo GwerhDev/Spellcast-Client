@@ -16,9 +16,10 @@ interface SidebarProps {
 // section matching the route directly, one of its own flat `items` matching (e.g. landing
 // on /caster/groups -- a sibling of "caster"'s own /caster/profile path, not a descendant
 // of it, since TCORE-107's follow-up flattened Groups/Shared/Stats out from under
-// /caster/dashboard), PLUS every ancestor of a matching descendant sub-section (e.g.
-// landing on /caster/storage/local matches "storage" directly, and "caster" must also open
-// since "storage" is nested inside it).
+// /caster/dashboard), PLUS every ancestor of a matching descendant sub-section, at any
+// depth (e.g. landing on /caster/settings/storage matches "settings" directly, since
+// "storage" is one of its flat items, TCORE-109 -- the recursion itself supports deeper
+// sub-section nesting too, should a future section need it).
 const collectKeysToOpen = (sections: SidebarAccordionSectionConfig[], pathname: string): string[] =>
   sections.flatMap(section => {
     const childKeys = collectKeysToOpen(section.subSections, pathname);

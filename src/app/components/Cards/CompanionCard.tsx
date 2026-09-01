@@ -10,19 +10,27 @@ interface CompanionCardProps {
   unlocked: boolean;
   isActive: boolean;
   onAction: (id: string) => void;
+  // TCORE-109: Havenstore is acquisition-only now -- when false, hides the equip
+  // affordances (active pill, activate/deactivate button); an already-unlocked item shows a
+  // static "owned" status instead of a button. Defaults to true so ReaderSettings' existing
+  // equip usage, and the new Caster inventory view, are unaffected.
+  showEquipControls?: boolean;
 }
 
-// Same card used for the Havenstore "Companions" tab and the Reader Settings
-// "Companions" tab, so both surfaces show a companion identically.
-export const CompanionCard: React.FC<CompanionCardProps> = ({ companion, unlocked, isActive, onAction }) => {
+// Same card used for the Havenstore acquisition grid and the Reader Settings/Caster
+// inventory "Companions" surfaces, so a companion looks identical everywhere -- only
+// showEquipControls differs between "can I get this" (Havenstore) and "can I equip this"
+// (everywhere else).
+export const CompanionCard: React.FC<CompanionCardProps> = ({ companion, unlocked, isActive, onAction, showEquipControls = true }) => {
   const { t } = useLanguage();
   const comingSoon = !!companion.comingSoon;
   const locked = !unlocked;
+  const showActive = isActive && showEquipControls;
 
   return (
     <div
       data-testid={`companion-card-${companion.id}`}
-      className={`${s.productCard} ${isActive ? s.productCardActive : ''} ${locked ? s.productCardLocked : ''}`}
+      className={`${s.productCard} ${showActive ? s.productCardActive : ''} ${locked ? s.productCardLocked : ''}`}
     >
       <div className={s.artwork} style={{ background: companion.thumbnail }}>
         <FontAwesomeIcon icon={faCat} className={s.artworkIcon} />
@@ -31,7 +39,7 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({ companion, unlocke
             <FontAwesomeIcon icon={companion.unlockMethod === 'achievement' ? faTrophy : faLock} className={s.lockIcon} />
           </div>
         )}
-        {isActive && (
+        {showActive && (
           <span className={s.activePill}>
             <FontAwesomeIcon icon={faCheck} /> {t.havenStore.active}
           </span>
@@ -67,7 +75,7 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({ companion, unlocke
               {locked && companion.unlockMethod === 'achievement' && (
                 <span className={s.achievementLabel}>{t.havenStore.achievementRequired}</span>
               )}
-              {unlocked && (
+              {unlocked && showEquipControls && (
                 <button
                   data-testid={`companion-toggle-${companion.id}`}
                   className={isActive ? s.btnActive : s.btnSet}
@@ -75,6 +83,11 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({ companion, unlocke
                 >
                   {isActive ? t.havenStore.deactivate : t.havenStore.setActive}
                 </button>
+              )}
+              {unlocked && !showEquipControls && (
+                <span className={s.ownedBadge} data-testid={`companion-owned-${companion.id}`}>
+                  <FontAwesomeIcon icon={faCheck} /> {t.havenStore.owned}
+                </span>
               )}
             </>
           )}

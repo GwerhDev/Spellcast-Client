@@ -22,8 +22,10 @@ const renderLayout = (initialPath: string) =>
     <Routes>
       <Route element={<CasterLayout />}>
         <Route path="/caster/profile" element={<div data-testid="outlet-child">profile body</div>} />
-        <Route path="/caster/storage" element={<div data-testid="outlet-child">storage body</div>} />
-        <Route path="/caster/storage/local" element={<div data-testid="outlet-child">storage local body</div>} />
+        <Route path="/caster/settings" element={<div data-testid="outlet-child">settings body</div>} />
+        {/* Storage/Credentials/etc. are flat items reached one level under Settings
+            (TCORE-109) -- this stands in for any such nested route under a top-level tab. */}
+        <Route path="/caster/settings/storage" element={<div data-testid="outlet-child">settings storage body</div>} />
       </Route>
     </Routes>,
     { store: loggedStore(), initialPath }
@@ -46,7 +48,7 @@ describe('CasterLayout', () => {
 
   it('renders a tab for every caster section, mirroring the sidebar', () => {
     renderLayout('/caster/profile');
-    ['profile', 'stats', 'groups', 'shared', 'storage', 'settings'].forEach(id => {
+    ['profile', 'stats', 'inventory', 'groups', 'shared', 'settings'].forEach(id => {
       expect(screen.getByTestId(`segmented-tab-${id}`)).toBeInTheDocument();
     });
   });
@@ -56,15 +58,15 @@ describe('CasterLayout', () => {
     expect(screen.getByTestId('segmented-tab-profile').className).toMatch(/active/);
   });
 
-  it('marks "Storage" active even on a descendant route like /caster/storage/local', () => {
-    renderLayout('/caster/storage/local');
-    expect(screen.getByTestId('segmented-tab-storage').className).toMatch(/active/);
-    expect(screen.getByTestId('outlet-child')).toHaveTextContent('storage local body');
+  it('marks "Settings" active even on a descendant route like /caster/settings/storage', () => {
+    renderLayout('/caster/settings/storage');
+    expect(screen.getByTestId('segmented-tab-settings').className).toMatch(/active/);
+    expect(screen.getByTestId('outlet-child')).toHaveTextContent('settings storage body');
   });
 
   it('navigates to the clicked tab\'s route', () => {
     renderLayout('/caster/profile');
-    fireEvent.click(screen.getByTestId('segmented-tab-storage'));
-    expect(mockNavigate).toHaveBeenCalledWith('/caster/storage');
+    fireEvent.click(screen.getByTestId('segmented-tab-inventory'));
+    expect(mockNavigate).toHaveBeenCalledWith('/caster/inventory');
   });
 });

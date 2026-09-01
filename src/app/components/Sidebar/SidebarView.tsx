@@ -45,6 +45,17 @@ interface SidebarViewProps {
 const isActive = (activePathname: string, path: string): boolean =>
   activePathname === path || activePathname.startsWith(`${path}/`);
 
+// A top-level accordion section's own `path` is just its default landing route (e.g.
+// "caster"'s is /caster/profile) -- being on a SIBLING destination under it (/caster/shared,
+// /caster/settings/storage, ...) would fail a plain isActive(section.path) check even though
+// the section itself should still read as "active" while you're anywhere inside it. Checks
+// the section's own path, every flat item, and recurses into subSections so any depth of
+// nesting keeps every ancestor highlighted, not just the one route that matches exactly.
+const sectionOrDescendantActive = (section: SidebarAccordionSection, activePathname: string): boolean =>
+  isActive(activePathname, section.path)
+  || section.items.some(item => isActive(activePathname, item.path))
+  || (section.subSections?.some(sub => sectionOrDescendantActive(sub, activePathname)) ?? false);
+
 interface SidebarAccordionProps {
   section: SidebarAccordionSection;
   depth: number;
@@ -67,7 +78,7 @@ const SidebarAccordion = ({
   onNavigate,
 }: SidebarAccordionProps) => {
   const open = openSections[section.key];
-  const sectionActive = isActive(activePathname, section.path);
+  const sectionActive = sectionOrDescendantActive(section, activePathname);
   const labelClassName = depth === 0 ? s.sectionLabel : s.subSectionLabel;
 
   return (
@@ -180,7 +191,7 @@ const DesktopSidebar = ({
               to={section.path}
               title={section.label}
               data-testid={`sidebar-rail-icon-${section.key}`}
-              className={`${s.railIcon} ${isActive(activePathname, section.path) ? s.railIconActive : ''}`}
+              className={`${s.railIcon} ${sectionOrDescendantActive(section, activePathname) ? s.railIconActive : ''}`}
               onClick={onNavigate}
               tabIndex={collapsed ? undefined : -1}
             >
@@ -281,7 +292,7 @@ const MobileSidebar = ({
                   to={section.path}
                   title={section.label}
                   data-testid={`sidebar-rail-icon-${section.key}`}
-                  className={`${s.railIcon} ${isActive(activePathname, section.path) ? s.railIconActive : ''}`}
+                  className={`${s.railIcon} ${sectionOrDescendantActive(section, activePathname) ? s.railIconActive : ''}`}
                   onClick={onNavigate}
                 >
                   <FontAwesomeIcon icon={section.icon} />
@@ -315,7 +326,7 @@ const MobileSidebar = ({
                   <Link
                     to={section.path}
                     data-testid={`sidebar-nav-item-${section.key}`}
-                    className={`${s.navItem} ${isActive(activePathname, section.path) ? s.activeLink : ''}`}
+                    className={`${s.navItem} ${sectionOrDescendantActive(section, activePathname) ? s.activeLink : ''}`}
                     onClick={onNavigate}
                   >
                     <FontAwesomeIcon icon={section.icon} />

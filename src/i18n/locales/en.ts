@@ -56,6 +56,7 @@ export const en = {
     caster: 'Caster',
     profile: 'Profile',
     stats: 'Stats',
+    inventory: 'Inventory',
   },
   spell: {
     untitled: 'Untitled',
@@ -386,6 +387,10 @@ export const en = {
       { title: 'Patrones de Diseño', author: 'Erich Gamma' },
       { title: 'Cuentos Inconclusos', author: 'J.R.R. Tolkien' },
     ],
+    // TCORE-109: /caster/inventory -- shown per-section when nothing owned of that type yet.
+    inventoryEmptySounds: 'No sound backgrounds unlocked yet — find some in the Havenstore.',
+    inventoryEmptyPages: 'No page backgrounds unlocked yet — find some in the Havenstore.',
+    inventoryEmptyCompanions: 'No companions unlocked yet — find some in the Havenstore.',
   },
   gamification: {
     level: 'Level',
@@ -428,15 +433,18 @@ export const en = {
     achievementRequired: 'Achievement required',
     featured: 'Featured',
     exploreFullStore: 'Explore the full store',
-    assets: 'Assets',
     companions: 'Companions',
     companionsComingSoon: 'Companions coming soon',
     companionsComingSoonDesc: '3D companions will interact across your reading and writing environments in a future update.',
     comingSoon: 'Soon',
+    // TCORE-109: Havenstore is acquisition-only now -- shown on an already-unlocked item
+    // instead of an activate/deactivate button (equipping moved to /caster/inventory).
+    owned: 'Owned',
   },
   companionGift: {
     title: 'A gift for you',
-    body: 'Kuro & Sunny have arrived — a pair of cats that wander around while you read. Activate them now, or find them later in the Havenstore.',
+    // TCORE-109: equipping moved out of Havenstore -- "later" is your Caster inventory now.
+    body: 'Kuro & Sunny have arrived — a pair of cats that wander around while you read. Activate them now, or find them later in your Caster inventory.',
     cta: 'Activate',
     dismiss: 'Maybe later',
   },

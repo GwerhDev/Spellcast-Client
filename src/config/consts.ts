@@ -1,7 +1,7 @@
 import {
   faUsers, faFingerprint, faShield, faShare, faPalette, faHardDrive, faCloud,
   faHome, faBuildingColumns, faFeatherPointed, faStore, faUser, faBox, faGear,
-  faList, faPlus, faIdBadge, faChartLine,
+  faList, faPlus, faIdBadge, faChartLine, faBoxOpen,
 } from "@fortawesome/free-solid-svg-icons";
 
 // Silent, single-cycle WAV looped by both BrowserPlayer and AudioPlayer as a
@@ -20,6 +20,9 @@ export const SILENT_AUDIO_SRC = 'data:audio/wav;base64,UklGRkQDAABXQVZFZm10IBAAA
 
 export const dashboardDirectoryList = [
   { name: "Stats", icon: faChartLine, path: "stats" },
+  // TCORE-109: possession + equip surface (unlockedIds + the same setActiveXxx actions
+  // ReaderSettings/PlayerPreferences already dispatch) -- Havenstore stays acquisition-only.
+  { name: "Inventory", icon: faBoxOpen, path: "inventory" },
   { name: "Groups", icon: faUsers, path: "groups" },
   { name: "Shared", icon: faShare, path: "shared" },
 ];
@@ -29,10 +32,15 @@ export const storageDirectoryList = [
   { name: "Cloud", icon: faCloud,    path: "storage/cloud" },
 ];
 
+// TCORE-109 (reverted): Storage lives inside Settings now, one flat item alongside
+// Credentials/Permissions/Appearance -- same shape as those three (a single item, a single
+// subroute), not its own nested sub-accordion. Local/Cloud stay reachable the way they
+// already were, one click further in, via Storage's own StorageOverview cards.
 export const settingsDirectoryList = [
   { name: "Credentials", icon: faFingerprint, path: "settings/credentials" },
   { name: "Permissions", icon: faShield, path: "settings/permissions" },
   { name: "Appearance", icon: faPalette, path: "settings/appearance" },
+  { name: "Storage", icon: faBox, path: "settings/storage" },
 ];
 
 export const editorDirectoryList = [
@@ -60,15 +68,14 @@ export interface SidebarAccordionSectionConfig {
 // a nested accordion within the "caster" section body. Also reachable as tabs from
 // CasterLayout, the shared header+tabs shell every /caster/* route renders under.
 export const userSubSections: SidebarAccordionSectionConfig[] = [
-  { key: "storage", icon: faBox, path: "/caster/storage", items: storageDirectoryList, basePath: "/caster/", subSections: [] },
   { key: "settings", icon: faGear, path: "/caster/settings", items: settingsDirectoryList, basePath: "/caster/", subSections: [] },
 ];
 
 // Top-level sections with sub-items — rendered as accordions in the expanded panel,
 // icon-only in the collapsed rail. basePath is prefixed to each item's relative `path` to
-// build its route. "caster" nests storage/settings as sub-sections (see userSubSections)
-// alongside its own direct items (dashboardDirectoryList) -- its own path points at the
-// Caster profile page (TCORE-107 follow-up), the default landing for "Caster". All of these
+// build its route. "caster" nests settings as a sub-section (see userSubSections) alongside
+// its own direct items (dashboardDirectoryList) -- its own path points at the Caster
+// profile page (TCORE-107 follow-up), the default landing for "Caster". All of these
 // destinations are mirrored flat in `casterTabs` below, which CasterLayout renders as a tab
 // bar atop every /caster/* route.
 export const sidebarAccordionSections: SidebarAccordionSectionConfig[] = [
@@ -76,15 +83,15 @@ export const sidebarAccordionSections: SidebarAccordionSectionConfig[] = [
   { key: "caster", icon: faUser, path: "/caster/profile", items: dashboardDirectoryList, basePath: "/caster/", subSections: userSubSections },
 ];
 
-// Flat mirror of the sidebar's Caster section (Profile + Stats/Groups/Shared items +
-// Storage/Settings sub-sections, all flattened to one level) -- the tab bar CasterLayout
-// renders atop every /caster/* route. Labels are resolved from `t.nav[id]` at render time,
-// same lookup the sidebar itself uses, so the two can never show mismatched text.
+// Flat mirror of the sidebar's Caster section (Profile + Stats/Inventory/Groups/Shared items
+// + Settings sub-section, all flattened to one level) -- the tab bar CasterLayout renders
+// atop every /caster/* route. Labels are resolved from `t.nav[id]` at render time, same
+// lookup the sidebar itself uses, so the two can never show mismatched text.
 export const casterTabs = [
   { id: "profile", icon: faIdBadge, path: "/caster/profile" },
   { id: "stats", icon: faChartLine, path: "/caster/stats" },
+  { id: "inventory", icon: faBoxOpen, path: "/caster/inventory" },
   { id: "groups", icon: faUsers, path: "/caster/groups" },
   { id: "shared", icon: faShare, path: "/caster/shared" },
-  { id: "storage", icon: faBox, path: "/caster/storage" },
   { id: "settings", icon: faGear, path: "/caster/settings" },
 ];

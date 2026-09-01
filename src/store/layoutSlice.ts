@@ -2,12 +2,14 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 const STATE_VERSION = 1;
 
-export type SidebarSectionKey = 'editor' | 'caster' | 'storage' | 'settings';
+// TCORE-109: "storage" now lives inside "settings" as a flat item (like
+// Credentials/Permissions/Appearance), not its own collapsible accordion -- no separate key
+// needed for it. Same for "inventory": a flat item under "caster" again, not an accordion.
+export type SidebarSectionKey = 'editor' | 'caster' | 'settings';
 
 const DEFAULT_OPEN_SECTIONS: Record<SidebarSectionKey, boolean> = {
   editor: false,
   caster: false,
-  storage: false,
   settings: false,
 };
 
