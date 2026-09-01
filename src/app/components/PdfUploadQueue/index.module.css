@@ -74,7 +74,12 @@
 .headerActions {
   display: flex;
   align-items: center;
-  gap: 0.1rem;
+  gap: 0.55rem;
+}
+
+/* Smaller chevron/xmark than the IconButton default (--size-4 = 16px) for this compact header. */
+.headerActions button {
+  font-size: 12px;
 }
 
 .minimizeBtn {
