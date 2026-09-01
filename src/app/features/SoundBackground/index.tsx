@@ -3,9 +3,9 @@ import { useAppSelector } from '../../../store/hooks';
 import { soundBackgrounds } from '../../../config/assets';
 
 export const SoundBackground = () => {
-  const activeSoundBgId = useAppSelector(state => state.userLibrary.activeSoundBgId);
-  const soundBgVolume = useAppSelector(state => state.userLibrary.soundBgVolume);
-  const masterVolume = useAppSelector(state => state.userLibrary.masterVolume);
+  const activeSoundBgId = useAppSelector(state => state.casterInventory.activeSoundBgId);
+  const soundBgVolume = useAppSelector(state => state.casterInventory.soundBgVolume);
+  const masterVolume = useAppSelector(state => state.casterInventory.masterVolume);
   const browserPlaying = useAppSelector(state => state.browserPlayer.isPlaying);
   const audioPlaying = useAppSelector(state => state.audioPlayer.isPlaying);
   const isPlaying = browserPlaying || audioPlaying;

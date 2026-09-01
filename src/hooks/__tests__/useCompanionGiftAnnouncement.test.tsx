@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { configureStore, combineReducers, EnhancedStore } from '@reduxjs/toolkit';
-import userLibraryReducer, { unlockAsset } from '../../store/userLibrarySlice';
+import casterInventoryReducer, { unlockAsset } from '../../store/casterInventorySlice';
 
 // This hook has a module-level "shown this page load" flag that must not leak
 // between tests, and (see below) the FIRST render in a freshly-imported module
@@ -22,10 +22,10 @@ afterEach(() => {
 
 const importHook = () => import('../useCompanionGiftAnnouncement');
 
-type Store = EnhancedStore<{ userLibrary: ReturnType<typeof userLibraryReducer> }>;
+type Store = EnhancedStore<{ casterInventory: ReturnType<typeof casterInventoryReducer> }>;
 
 const makeStore = (unlockedIds: string[] = []): Store => {
-  const store = configureStore({ reducer: combineReducers({ userLibrary: userLibraryReducer }) });
+  const store = configureStore({ reducer: combineReducers({ casterInventory: casterInventoryReducer }) });
   for (const id of unlockedIds) store.dispatch(unlockAsset(id));
   return store;
 };
@@ -127,8 +127,8 @@ describe('useCompanionGiftAnnouncement', () => {
     const { result } = renderHook(() => useCompanionGiftAnnouncement(true), { wrapper: wrapperFor(store) });
     act(() => { result.current.handleActivate(); });
 
-    expect(store.getState().userLibrary.unlockedIds).toContain('cats');
-    expect(store.getState().userLibrary.activeCompanionId).toBe('cats');
+    expect(store.getState().casterInventory.unlockedIds).toContain('cats');
+    expect(store.getState().casterInventory.activeCompanionId).toBe('cats');
     expect(localStorage.getItem('companionGift:cats:activated')).toBe('true');
     expect(result.current.showModal).toBe(false);
   });
@@ -140,7 +140,7 @@ describe('useCompanionGiftAnnouncement', () => {
     const { result } = renderHook(() => useCompanionGiftAnnouncement(true), { wrapper: wrapperFor(store) });
     act(() => { result.current.handleDismiss(); });
 
-    expect(store.getState().userLibrary.unlockedIds).not.toContain('cats');
+    expect(store.getState().casterInventory.unlockedIds).not.toContain('cats');
     expect(localStorage.getItem('companionGift:cats:activated')).toBeNull();
     expect(result.current.showModal).toBe(false);
   });

@@ -10,7 +10,7 @@ import { faArrowLeft, faEdit, faScroll, faGear, faExpand, faCompress, faInfoCirc
 import { RootState } from '../../../store';
 import { goToPage, setCurrentSentenceIndex, setShowReaderSettings, recordReaderActivity } from '../../../store/spellReaderSlice';
 import { setPendingSeek } from '../../../store/audioPlayerSlice';
-import { moveCompanionModel, rotateCompanionModel, scaleCompanionModel, toggleCompanionDepth, type CompanionPlacement } from '../../../store/userLibrarySlice';
+import { moveCompanionModel, rotateCompanionModel, scaleCompanionModel, toggleCompanionDepth, type CompanionPlacement } from '../../../store/casterInventorySlice';
 import { pageBackgrounds, companions } from '../../../config/assets';
 import { Spinner } from '../../components/Spinner';
 import { IconButton } from '../../components/Buttons/IconButton';
@@ -54,7 +54,7 @@ export const SpellReader = () => {
   const { selectedVoice } = useSelector((state: RootState) => state.voice);
   const { timeline: aiTimeline, currentTime: aiCurrentTime, isPlaying: aiIsPlaying } = useSelector((state: RootState) => state.audioPlayer);
   const { isPlaying } = useSelector((state: RootState) => state.browserPlayer);
-  const { activePageBgId, activeCompanionId, unlockedIds, companionPlacements } = useSelector((state: RootState) => state.userLibrary);
+  const { activePageBgId, activeCompanionId, unlockedIds, companionPlacements } = useSelector((state: RootState) => state.casterInventory);
   const activeBg = pageBackgrounds.find(b => b.id === activePageBgId) ?? null;
   const activePageBgCss = activeBg?.cssValue ?? null;
   const activeCompanion = activeCompanionId && unlockedIds.includes(activeCompanionId)

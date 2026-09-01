@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAppDispatch, useAppSelector } from 'store/hooks';
-import { unlockAsset, setActiveCompanion } from 'store/userLibrarySlice';
+import { unlockAsset, setActiveCompanion } from 'store/casterInventorySlice';
 import { companions } from '../config/assets/companions';
 
 const GIFT_COMPANION_ID = 'cats';
@@ -22,7 +22,7 @@ let devBypassShownThisPageLoad = false;
 // right now (e.g. SpellReader's `isLoaded`) — not just whether the hook is mounted.
 export function useCompanionGiftAnnouncement(enabled: boolean) {
   const dispatch = useAppDispatch();
-  const unlockedIds = useAppSelector(s => s.userLibrary.unlockedIds);
+  const unlockedIds = useAppSelector(s => s.casterInventory.unlockedIds);
   // Tracks a user-initiated close (Activate/Dismiss) for THIS mount.
   const [closedLocally, setClosedLocally] = useState(false);
   // Latches to true the first time `eligible` below is met, then STAYS true regardless

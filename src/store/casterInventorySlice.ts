@@ -39,7 +39,7 @@ export interface CompanionPlacement {
   inFront: boolean;
 }
 
-interface UserLibraryState {
+interface CasterInventoryState {
   version: number;
   unlockedIds: string[];
   activeSoundBgId: string | null;
@@ -52,11 +52,20 @@ interface UserLibraryState {
   companionPlacements: Record<string, CompanionPlacement>;
 }
 
-const loadPersistedState = (): Partial<UserLibraryState> => {
+// TCORE-108: renamed from userLibrarySlice (its "Library" was never the spell grimoire --
+// that's the IndexedDB 'spells' store / backend Grimoire model, TCORE-104 -- it's always
+// been the Caster's own cosmetics/unlockables + volumes). The localStorage key is renamed
+// to match ('userLibrary' -> 'casterInventory'), but non-destructively: this reads the new
+// key first, and only falls back to the OLD key if the new one hasn't been written yet, so
+// an existing user's unlockedIds/companionPlacements load exactly as before on their first
+// visit after this change. The OLD key is deliberately never deleted here (store/index.tsx
+// simply stops writing to it) -- an orphaned, unread key is harmless; actively clearing it
+// right after a read is not, if the very next write somehow failed for any reason.
+const loadPersistedState = (): Partial<CasterInventoryState> => {
   try {
-    const raw = localStorage.getItem('userLibrary');
+    const raw = localStorage.getItem('casterInventory') ?? localStorage.getItem('userLibrary');
     if (raw) {
-      const parsed = JSON.parse(raw) as Partial<UserLibraryState>;
+      const parsed = JSON.parse(raw) as Partial<CasterInventoryState>;
       if (parsed.version !== STATE_VERSION) {
         // companionPlacements dropped too -- see the STATE_VERSION comment above.
         return { ...parsed, unlockedIds: FREE_IDS, companionPlacements: {}, version: STATE_VERSION };
@@ -80,7 +89,7 @@ const sanitizePlacements = (placements: Record<string, CompanionPlacement> | und
   );
 };
 
-const initialState: UserLibraryState = {
+const initialState: CasterInventoryState = {
   version: STATE_VERSION,
   unlockedIds: persisted.unlockedIds ?? FREE_IDS,
   activeSoundBgId: persisted.activeSoundBgId ?? null,
@@ -91,8 +100,8 @@ const initialState: UserLibraryState = {
   companionPlacements: sanitizePlacements(persisted.companionPlacements),
 };
 
-const userLibrarySlice = createSlice({
-  name: 'userLibrary',
+const casterInventorySlice = createSlice({
+  name: 'casterInventory',
   initialState,
   reducers: {
     unlockAsset(state, action: PayloadAction<string>) {
@@ -154,5 +163,5 @@ export const {
   rotateCompanionModel,
   scaleCompanionModel,
   toggleCompanionDepth,
-} = userLibrarySlice.actions;
-export default userLibrarySlice.reducer;
+} = casterInventorySlice.actions;
+export default casterInventorySlice.reducer;

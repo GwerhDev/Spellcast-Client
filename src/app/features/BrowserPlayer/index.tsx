@@ -11,7 +11,7 @@ import {
   pause,
   setAutoPlayOnLoad,
 } from '../../../store/browserPlayerSlice';
-import { setSoundBgVolume, setMasterVolume } from '../../../store/userLibrarySlice';
+import { setSoundBgVolume, setMasterVolume } from '../../../store/casterInventorySlice';
 import {
   goToNextPage,
   goToPreviousPage,
@@ -97,7 +97,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
   } = useSelector((state: RootState) => state.spellReader);
   const { selectedVoice } = useSelector((state: RootState) => state.voice);
   const { userData } = useAppSelector((state) => state.session);
-  const { activeSoundBgId, soundBgVolume, masterVolume } = useAppSelector((state) => state.userLibrary);
+  const { activeSoundBgId, soundBgVolume, masterVolume } = useAppSelector((state) => state.casterInventory);
 
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
   const [coverUrl, setCoverUrl] = useState<string | null>(null);

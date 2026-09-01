@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { faDesktop, faPalette, faShieldHalved, faCat } from '@fortawesome/free-solid-svg-icons';
 import { RootState } from '../../../store';
 import { setShowReaderSettings, setFitToWidth, setLightningMode, setAttentionGuardEnabled, setAttentionGuardInterval } from '../../../store/spellReaderSlice';
-import { setActivePageBg, setActiveCompanion, unlockAsset } from '../../../store/userLibrarySlice';
+import { setActivePageBg, setActiveCompanion, unlockAsset } from '../../../store/casterInventorySlice';
 import { pageBackgrounds, companions } from '../../../config/assets';
 import { TabModal } from '../../components/Modals/TabModal';
 import { CompanionCard } from '../../components/Cards/CompanionCard';
@@ -54,7 +54,7 @@ const AppearanceTab: React.FC = () => {
   const [invertColors, setInvertColors] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
   const { t } = useLanguage();
-  const { activePageBgId, unlockedIds } = useSelector((state: RootState) => state.userLibrary);
+  const { activePageBgId, unlockedIds } = useSelector((state: RootState) => state.casterInventory);
 
   const unlockedPageBgs = pageBackgrounds.filter(bg => unlockedIds.includes(bg.id));
 
@@ -96,7 +96,7 @@ const AppearanceTab: React.FC = () => {
 
 const CompanionsTab: React.FC = () => {
   const dispatch = useDispatch();
-  const { unlockedIds, activeCompanionId } = useSelector((state: RootState) => state.userLibrary);
+  const { unlockedIds, activeCompanionId } = useSelector((state: RootState) => state.casterInventory);
 
   const isUnlocked = (id: string) => unlockedIds.includes(id);
 

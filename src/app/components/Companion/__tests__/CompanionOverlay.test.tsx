@@ -3,7 +3,7 @@ import { screen, fireEvent } from '@testing-library/react';
 import { renderWithProviders as render } from '../../../../test/renderWithProviders';
 import { CompanionOverlay } from '../CompanionOverlay';
 import type { Companion } from '../../../../config/assets';
-import type { CompanionPlacement } from '../../../../store/userLibrarySlice';
+import type { CompanionPlacement } from '../../../../store/casterInventorySlice';
 
 // The DOM env has no WebGL context — r3f internals aren't under test here, only that
 // CompanionOverlay wires the resolved companion's models/placements into the render tree and
@@ -12,7 +12,7 @@ import type { CompanionPlacement } from '../../../../store/userLibrarySlice';
 // individually via real CSS z-index (see PAGE_Z_INDEX in CompanionOverlay.tsx), plus a
 // per-model HTML hit box on top; gestures are driven by pointer/wheel listeners on those hit
 // boxes and window pointermove/pointerup — the gesture math itself is covered by
-// userLibrarySlice's move/rotate/scale/toggleCompanionDepth reducer tests, so here we only
+// casterInventorySlice's move/rotate/scale/toggleCompanionDepth reducer tests, so here we only
 // assert prop wiring and the hover→highlight routing.
 vi.mock('@react-three/fiber', () => ({
   Canvas: ({ children, ...props }: { children: React.ReactNode; [key: string]: unknown }) => (

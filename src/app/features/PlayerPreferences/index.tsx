@@ -4,7 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheck, faMusic } from '@fortawesome/free-solid-svg-icons';
 import { useLanguage } from '../../../i18n';
 import { useAppSelector, useAppDispatch } from '../../../store/hooks';
-import { setActiveSoundBg } from '../../../store/userLibrarySlice';
+import { setActiveSoundBg } from '../../../store/casterInventorySlice';
 import { soundBackgrounds } from '../../../config/assets';
 
 interface ToggleRowProps {
@@ -93,7 +93,7 @@ export const PlayerPreferences: React.FC = () => {
   const [speed, setSpeed] = useState(1);
   const { t } = useLanguage();
   const dispatch = useAppDispatch();
-  const { activeSoundBgId, unlockedIds } = useAppSelector(state => state.userLibrary);
+  const { activeSoundBgId, unlockedIds } = useAppSelector(state => state.casterInventory);
 
   const unlockedSounds = soundBackgrounds.filter(bg => bg.available && unlockedIds.includes(bg.id));
 

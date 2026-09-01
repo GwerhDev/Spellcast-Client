@@ -10,7 +10,7 @@ import browserPlayerReducer from '../store/browserPlayerSlice';
 import audioPlayerReducer from '../store/audioPlayerSlice';
 import sessionReducer from '../store/sessionSlice';
 import voiceReducer from '../store/voiceSlice';
-import userLibraryReducer from '../store/userLibrarySlice';
+import casterInventoryReducer from '../store/casterInventorySlice';
 import editorReducer from '../store/editorSlice';
 import credentialsReducer from '../store/credentialsSlice';
 import groupsReducer from '../store/groupsSlice';
@@ -27,7 +27,7 @@ const rootReducer = combineReducers({
   audioPlayer: audioPlayerReducer,
   session: sessionReducer,
   voice: voiceReducer,
-  userLibrary: userLibraryReducer,
+  casterInventory: casterInventoryReducer,
   editor: editorReducer,
   credentials: credentialsReducer,
   groups: groupsReducer,

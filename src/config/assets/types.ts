@@ -45,7 +45,7 @@ export interface Companion extends BaseAsset {
   // Shown as visible-but-locked ("Soon") ahead of its public release (see companions.ts),
   // instead of following its normal unlockMethod — set per environment, not hand-authored.
   comingSoon?: boolean;
-  // Excludes this companion from FREE_IDS' auto-unlock (userLibrarySlice.ts), even though
+  // Excludes this companion from FREE_IDS' auto-unlock (casterInventorySlice.ts), even though
   // unlockMethod is 'free' — without this, the moment comingSoon flips false, EVERY fresh
   // session (no persisted unlockedIds yet) silently starts with it already unlocked via
   // FREE_IDS, which then blocks the gift-announcement modal's own `!isUnlocked` check

@@ -11,7 +11,7 @@ import reducer, {
   scaleCompanionModel,
   toggleCompanionDepth,
   type CompanionPlacement,
-} from '../userLibrarySlice';
+} from '../casterInventorySlice';
 
 beforeEach(() => {
   vi.stubGlobal('localStorage', {
@@ -33,7 +33,7 @@ const baseState = {
   version: 5,
 };
 
-describe('userLibrarySlice', () => {
+describe('casterInventorySlice', () => {
   it('returns initial state with free assets unlocked', () => {
     const state = reducer(undefined, { type: '@@INIT' });
     expect(state.activeSoundBgId).toBeNull();
@@ -114,5 +114,63 @@ describe('userLibrarySlice', () => {
     const withPlacement = { ...baseState, companionPlacements: { 'cats:orange': { ...basePlacement, inFront: false } } };
     const state = reducer(withPlacement, toggleCompanionDepth({ key: 'cats:orange', base: basePlacement }));
     expect(state.companionPlacements['cats:orange'].inFront).toBe(true);
+  });
+});
+
+// TCORE-108: loadPersistedState() runs once at module import time, so exercising different
+// localStorage contents means re-importing a fresh module instance per scenario (same
+// pattern useCompanionGiftAnnouncement.test.tsx uses for its own module-level state).
+describe('casterInventorySlice localStorage key migration (TCORE-108)', () => {
+  beforeEach(() => {
+    vi.resetModules();
+  });
+
+  it('reads from the new "casterInventory" key when it already exists, ignoring any old key', async () => {
+    const newState = { version: 5, unlockedIds: ['new-id'], activeCompanionId: 'new-id' };
+    const oldState = { version: 5, unlockedIds: ['old-id'], activeCompanionId: 'old-id' };
+    vi.stubGlobal('localStorage', {
+      getItem: vi.fn((key: string) => (key === 'casterInventory' ? JSON.stringify(newState) : key === 'userLibrary' ? JSON.stringify(oldState) : null)),
+      setItem: vi.fn(),
+    });
+
+    const { default: freshReducer } = await import('../casterInventorySlice');
+    const state = freshReducer(undefined, { type: '@@INIT' });
+    expect(state.unlockedIds).toEqual(['new-id']);
+    expect(state.activeCompanionId).toBe('new-id');
+  });
+
+  it('falls back to the old "userLibrary" key non-destructively when the new key does not exist yet', async () => {
+    // Simulates a real existing user's pre-rename data: unlocked cosmetics, an active
+    // companion, and a saved placement, sitting only under the old key.
+    const legacyState = {
+      version: 5,
+      unlockedIds: ['cats', 'rain-window'],
+      activeCompanionId: 'cats',
+      soundBgVolume: 0.7,
+      companionPlacements: { orange: { x: 10, y: 20, rotationX: 0, rotationY: 0, scale: 1, inFront: true } },
+    };
+    vi.stubGlobal('localStorage', {
+      getItem: vi.fn((key: string) => (key === 'userLibrary' ? JSON.stringify(legacyState) : null)),
+      setItem: vi.fn(),
+    });
+
+    const { default: freshReducer } = await import('../casterInventorySlice');
+    const state = freshReducer(undefined, { type: '@@INIT' });
+    expect(state.unlockedIds).toEqual(['cats', 'rain-window']);
+    expect(state.activeCompanionId).toBe('cats');
+    expect(state.soundBgVolume).toBe(0.7);
+    expect(state.companionPlacements.orange).toEqual(legacyState.companionPlacements.orange);
+  });
+
+  it('falls back to defaults when neither key exists', async () => {
+    vi.stubGlobal('localStorage', {
+      getItem: vi.fn().mockReturnValue(null),
+      setItem: vi.fn(),
+    });
+
+    const { default: freshReducer } = await import('../casterInventorySlice');
+    const state = freshReducer(undefined, { type: '@@INIT' });
+    expect(state.activeCompanionId).toBeNull();
+    expect(state.companionPlacements).toEqual({});
   });
 });

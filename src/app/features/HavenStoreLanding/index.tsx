@@ -4,7 +4,7 @@ import { faMusic, faLock, faTrophy, faCheck, faMagnifyingGlass, faStore } from '
 import { SectionHeader } from '../../components/SectionHeader';
 import { CompanionCard } from '../../components/Cards/CompanionCard';
 import { useAppSelector, useAppDispatch } from '../../../store/hooks';
-import { unlockAsset, setActiveSoundBg, setActivePageBg, setActiveCompanion } from '../../../store/userLibrarySlice';
+import { unlockAsset, setActiveSoundBg, setActivePageBg, setActiveCompanion } from '../../../store/casterInventorySlice';
 import { soundBackgrounds, pageBackgrounds, companions } from '../../../config/assets';
 import { useLanguage } from '../../../i18n';
 import s from '../../components/HavenStoreLanding/index.module.css';
@@ -25,7 +25,7 @@ export const HavenStoreLanding = () => {
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<Tab>('assets');
   const [query, setQuery] = useState('');
-  const { unlockedIds, activeSoundBgId, activePageBgId, activeCompanionId } = useAppSelector(state => state.userLibrary);
+  const { unlockedIds, activeSoundBgId, activePageBgId, activeCompanionId } = useAppSelector(state => state.casterInventory);
 
   const isUnlocked = (id: string) => unlockedIds.includes(id);
 

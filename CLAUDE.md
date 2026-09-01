@@ -94,7 +94,7 @@ Redux Toolkit with typed hooks (`useAppSelector`, `useAppDispatch` from `src/sto
 | `voiceSlice` | Selected voice |
 | `documentSlice` | Pending import state (pre-upload) |
 | `editorSlice` | Editor session state |
-| `userLibrarySlice` | Sound backgrounds, master volume |
+| `casterInventorySlice` | Caster's unlocked cosmetics (sound/page backgrounds, companions) + volumes |
 | `credentialsSlice` | API credentials |
 | `groupsSlice` | Groups |
 | `apiResponsesSlice` | Shared API response cache |

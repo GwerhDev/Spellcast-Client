@@ -1,7 +1,7 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
 import type { Companion, CompanionModel } from '../../../config/assets';
-import { MIN_COMPANION_SCALE, MAX_COMPANION_SCALE, type CompanionPlacement } from '../../../store/userLibrarySlice';
+import { MIN_COMPANION_SCALE, MAX_COMPANION_SCALE, type CompanionPlacement } from '../../../store/casterInventorySlice';
 import { CatModel } from './CatModel';
 import s from './CompanionOverlay.module.css';
 

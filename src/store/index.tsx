@@ -10,7 +10,7 @@ import voiceReducer from './voiceSlice';
 import credentialsReducer from './credentialsSlice';
 import groupsReducer from './groupsSlice';
 import editorReducer from './editorSlice';
-import userLibraryReducer from './userLibrarySlice';
+import casterInventoryReducer from './casterInventorySlice';
 import spellUploadReducer from './spellUploadSlice';
 import desktopReducer from './desktopSlice';
 import layoutReducer from './layoutSlice';
@@ -29,7 +29,7 @@ export const store = configureStore({
     browserPlayer: browserPlayerReducer,
     apiResponses: apiResponsesReducer,
     signal: signalReducer,
-    userLibrary: userLibraryReducer,
+    casterInventory: casterInventoryReducer,
     spellUpload: spellUploadReducer,
     layout: layoutReducer,
   },
@@ -45,9 +45,15 @@ export const store = configureStore({
     }),
 });
 
+// TCORE-108: writes to the renamed key 'casterInventory' -- the OLD 'userLibrary' key is
+// deliberately left untouched (never deleted, never written to again) rather than migrated
+// in place; casterInventorySlice.ts's own loadPersistedState() reads the old key as a
+// one-time, non-destructive fallback when the new one doesn't exist yet, so an existing
+// user's unlocked cosmetics/companion placements carry over on their first load after this
+// change, and every write from then on lands under the new key.
 store.subscribe(() => {
   try {
-    localStorage.setItem('userLibrary', JSON.stringify(store.getState().userLibrary));
+    localStorage.setItem('casterInventory', JSON.stringify(store.getState().casterInventory));
   } catch {}
 });
 

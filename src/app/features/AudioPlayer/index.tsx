@@ -15,7 +15,7 @@ import {
   setAiTimeline,
   clearPendingSeek,
 } from '../../../store/audioPlayerSlice';
-import { setSoundBgVolume, setMasterVolume } from '../../../store/userLibrarySlice';
+import { setSoundBgVolume, setMasterVolume } from '../../../store/casterInventorySlice';
 import { goToNextPage, goToPreviousPage, setShowSearcher } from '../../../store/spellReaderSlice';
 import { PlaybackControls } from '../../components/Players/AudioPlayer/PlaybackControls/PlaybackControls';
 import { VolumeControls } from '../../components/Players/AudioPlayer/VolumeControls/VolumeControls';
@@ -81,7 +81,7 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
   } = useSelector((state: RootState) => state.spellReader);
   const { selectedVoice } = useSelector((state: RootState) => state.voice);
   const { userData } = useAppSelector((state) => state.session);
-  const { activeSoundBgId, soundBgVolume, masterVolume } = useAppSelector((state) => state.userLibrary);
+  const { activeSoundBgId, soundBgVolume, masterVolume } = useAppSelector((state) => state.casterInventory);
 
   const [isFetching, setIsFetching] = useState(false);
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
