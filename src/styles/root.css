@@ -4,10 +4,17 @@
 @import '@fontsource/geist/700.css';
 @import '@fontsource/jetbrains-mono/400.css';
 @import '@fontsource/jetbrains-mono/500.css';
+@import '@fontsource/ubuntu/400.css';
+@import '@fontsource/ubuntu/500.css';
+@import '@fontsource/ubuntu/700.css';
 
 :root {
   --font-sans: 'Geist', -apple-system, system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+  /* Self-hosted so writing areas render the same Ubuntu look everywhere,
+     instead of falling back to whatever "system" font the OS provides
+     (e.g. Segoe UI on Windows). */
+  --font-editor: 'Ubuntu', -apple-system, system-ui, sans-serif;
   --app-white: #dcdcdc;
   --white: #dcdcdc;
 
@@ -229,7 +236,7 @@ html.light {
   display: flex;
   background-position: center;
   background-repeat: no-repeat;
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: var(--font-editor);
   margin: 0;
   padding: 0;
   flex-grow: 1;
