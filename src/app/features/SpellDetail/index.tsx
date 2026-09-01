@@ -13,10 +13,11 @@ import { PrimaryButton } from '../../components/Buttons/PrimaryButton';
 import { SecondaryButton } from '../../components/Buttons/SecondaryButton';
 import { IconButton } from '../../components/Buttons/IconButton';
 import { DeleteConfirmModal } from '../../components/Modals/DeleteConfirmModal';
+import { EmptyState } from '../../components/EmptyState';
 // import { SpellExportModal } from '../../components/Modals/SpellExportModal'; // .spell export: future
 import { Tag } from '../../components/Tag/Tag';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faScroll, faWandMagicSparkles, faArrowLeft, faTrash } from '@fortawesome/free-solid-svg-icons';
+import { faScroll, faWandMagicSparkles, faArrowLeft, faTrash, faTriangleExclamation } from '@fortawesome/free-solid-svg-icons';
 import { useLanguage } from '../../../i18n';
 // import { useSpellExport } from '../../../hooks/useSpellExport'; // .spell export: future
 
@@ -101,7 +102,12 @@ export const SpellDetail: React.FC = () => {
     </div>
   );
   if (error || !doc) return (
-    <div data-testid="spell-detail-error">{error || t.spell.notFound}</div>
+    <div className={s.container}>
+      <div className={s.pageInfoContainer}>
+        <IconButton data-testid="spell-detail-error-back-btn" className={s.backButton} icon={faArrowLeft} variant="transparent" onClick={() => navigate("/")} />
+      </div>
+      <EmptyState testId="spell-detail-error" icon={faTriangleExclamation} message={error || t.spell.notFound} />
+    </div>
   );
 
   const pagesCount = doc.pagesContent ? JSON.parse(doc.pagesContent).length : null;

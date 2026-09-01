@@ -25,6 +25,7 @@ const loggedStore = () => {
 const renderDetail = (store = loggedStore()) =>
   renderWithProviders(
     <Routes>
+      <Route path="/" element={<div data-testid="home-page" />} />
       <Route path="/spell/:id" element={<SpellDetail />} />
     </Routes>,
     { store, initialPath: '/spell/doc-1' }
@@ -65,6 +66,16 @@ describe('SpellDetail', () => {
     vi.spyOn(db, 'getSpellById').mockResolvedValue(undefined);
     renderDetail();
     expect(await screen.findByTestId('spell-detail-error')).toBeInTheDocument();
+  });
+
+  it('the error state\'s back button navigates home', async () => {
+    vi.spyOn(db, 'getSpellById').mockResolvedValue(undefined);
+    renderDetail();
+    await screen.findByTestId('spell-detail-error');
+
+    fireEvent.click(screen.getByTestId('spell-detail-error-back-btn'));
+
+    expect(await screen.findByTestId('home-page')).toBeInTheDocument();
   });
 
   it('shows document detail when loaded', async () => {

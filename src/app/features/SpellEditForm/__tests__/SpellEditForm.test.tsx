@@ -42,6 +42,7 @@ const renderForm = (initialPath = '/editor/doc-1') => {
   store.dispatch(setSession({ logged: true, userData: { id: 'user-1', username: 'Test', loader: false } }));
   return renderWithProviders(
     <Routes>
+      <Route path="/editor" element={<div data-testid="editor-landing-page" />} />
       <Route path="/editor/:id" element={<SpellEditForm />} />
       <Route path="/editor/:id/:page" element={<SpellEditForm />} />
     </Routes>,
@@ -66,6 +67,16 @@ describe('SpellEditForm', () => {
     vi.mocked(getSpellById).mockResolvedValueOnce(null as never);
     renderForm();
     expect(await screen.findByTestId('spell-edit-form-error')).toBeInTheDocument();
+  });
+
+  it('the error state\'s back button navigates to /editor, not the nonexistent spell', async () => {
+    vi.mocked(getSpellById).mockResolvedValueOnce(null as never);
+    renderForm();
+    await screen.findByTestId('spell-edit-form-error');
+
+    fireEvent.click(screen.getByTestId('spell-edit-form-error-back-btn'));
+
+    expect(await screen.findByTestId('editor-landing-page')).toBeInTheDocument();
   });
 
   it('renders form after document loads', async () => {

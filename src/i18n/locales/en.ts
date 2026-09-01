@@ -304,7 +304,6 @@ export const en = {
     unauthorizedDesc: 'You are not authenticated. Please, login with {name} to continue.',
     noAccount: "Don't have an account?",
     register: 'Register',
-    error: 'Error',
     loadingSpell: 'Loading spell…',
   },
   credentials: {

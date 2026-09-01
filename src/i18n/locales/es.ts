@@ -306,7 +306,6 @@ export const es: Translations = {
     unauthorizedDesc: 'No estás autenticado. Por favor, inicia sesión con {name} para continuar.',
     noAccount: '¿No tienes una cuenta?',
     register: 'Registrarse',
-    error: 'Error',
     loadingSpell: 'Cargando Spell…',
   },
   credentials: {

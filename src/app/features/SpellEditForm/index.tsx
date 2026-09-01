@@ -16,13 +16,14 @@ import { useRefreshSpellMetadataFromPdf } from '../../../hooks/useRefreshSpellMe
 import { Spinner } from '../../components/Spinner';
 import { PageList } from '../../components/SpellCreateForm/PageList';
 import { SpellEditor, PageMargins } from '../../components/Editors/SpellEditor';
-import { faArrowLeft, faCloudUpload, faPaperclip, faGear, faSave, faRotateLeft } from '@fortawesome/free-solid-svg-icons';
+import { faArrowLeft, faCloudUpload, faPaperclip, faGear, faSave, faRotateLeft, faTriangleExclamation } from '@fortawesome/free-solid-svg-icons';
 import { PdfProcessingStatus } from '../../components/PdfProcessingStatus';
 import { IconButton } from '../../components/Buttons/IconButton';
 import { CustomModal } from '../../components/Modals/CustomModal';
 import { PrimaryButton } from '../../components/Buttons/PrimaryButton';
 import { SecondaryButton } from '../../components/Buttons/SecondaryButton';
 import { SpellMetadataFields } from '../../components/SpellMetadataFields';
+import { EmptyState } from '../../components/EmptyState';
 import type { TTSPlayPayload } from '../../../magictext/types';
 import { useLanguage } from '../../../i18n';
 
@@ -344,7 +345,14 @@ export const SpellEditForm: React.FC = () => {
   };
 
   if (isLoading) return <div data-testid="spell-edit-form-loading" className={s.container}><Spinner isLoading /></div>;
-  if (error) return <div data-testid="spell-edit-form-error" className={s.container}><div className={s.error}>{error}</div></div>;
+  if (error) return (
+    <div data-testid="spell-edit-form-error" className={s.container}>
+      <div className={s.pageInfoContainer}>
+        <IconButton data-testid="spell-edit-form-error-back-btn" icon={faArrowLeft} className={s.backButton} variant='transparent' title={t.common.back} onClick={() => navigate('/editor')} />
+      </div>
+      <EmptyState icon={faTriangleExclamation} message={error} />
+    </div>
+  );
 
   return (
     <div data-testid="spell-edit-form" className={s.container}>
