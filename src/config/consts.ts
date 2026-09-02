@@ -19,10 +19,10 @@ import {
 export const SILENT_AUDIO_SRC = 'data:audio/wav;base64,UklGRkQDAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YSADAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA==';
 
 export const dashboardDirectoryList = [
-  { name: "Stats", icon: faChartLine, path: "stats" },
   // TCORE-109: possession + equip surface (unlockedIds + the same setActiveXxx actions
   // ReaderSettings/PlayerPreferences already dispatch) -- Havenstore stays acquisition-only.
   { name: "Inventory", icon: faBoxOpen, path: "inventory" },
+  { name: "Stats", icon: faChartLine, path: "stats" },
   { name: "Groups", icon: faUsers, path: "groups" },
 ];
 
@@ -85,14 +85,14 @@ export const sidebarAccordionSections: SidebarAccordionSectionConfig[] = [
   { key: "caster", icon: faUser, path: "/caster/profile", items: dashboardDirectoryList, basePath: "/caster/", subSections: userSubSections },
 ];
 
-// Flat mirror of the sidebar's Caster section (Profile + Stats/Inventory/Groups items +
+// Flat mirror of the sidebar's Caster section (Profile + Inventory/Stats/Groups items +
 // Settings sub-section, all flattened to one level) -- the tab bar CasterLayout renders atop
 // every /caster/* route. Labels are resolved from `t.nav[id]` at render time, same lookup
 // the sidebar itself uses, so the two can never show mismatched text.
 export const casterTabs = [
   { id: "profile", icon: faIdBadge, path: "/caster/profile" },
-  { id: "stats", icon: faChartLine, path: "/caster/stats" },
   { id: "inventory", icon: faBoxOpen, path: "/caster/inventory" },
+  { id: "stats", icon: faChartLine, path: "/caster/stats" },
   { id: "groups", icon: faUsers, path: "/caster/groups" },
   { id: "settings", icon: faGear, path: "/caster/settings" },
 ];
