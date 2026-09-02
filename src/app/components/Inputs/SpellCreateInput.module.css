@@ -34,7 +34,7 @@
   background: var(--component-background);
   color: var(--text-color);
   transition-duration: .4s;
-  font-family: Poppinse, Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: var(--font-editor);
   font-size: medium;
 }
 
