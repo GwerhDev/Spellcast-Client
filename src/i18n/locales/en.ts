@@ -56,6 +56,7 @@ export const en = {
     profile: 'Profile',
     stats: 'Stats',
     inventory: 'Inventory',
+    about: 'About',
   },
   spell: {
     untitled: 'Untitled',
@@ -364,6 +365,17 @@ export const en = {
     subtitle: 'Control access levels and what others can do with your content.',
     // Placeholder page, no backend concept for this yet.
     empty: 'Nothing to show here yet.',
+  },
+  // TCORE-82: AGPLv3 network-use notice, reachable from Settings.
+  about: {
+    subtitle: 'License and source code.',
+    licenseTitle: 'License',
+    licenseBody: 'Spellcast is licensed under the GNU Affero General Public License v3.0 (AGPL-3.0-only). Because it is offered as a hosted web application, anyone who runs a modified version of it and lets others interact with it over a network must also make that modified source available to those users.',
+    readLicense: 'Read the full license',
+    sourceTitle: 'Source code',
+    sourceBody: 'The complete source code for this application, including any modifications running on this instance, is available in the public repository.',
+    viewSource: 'View source code',
+    copyright: 'Copyright (C) 2026 TerminalCore Labs',
   },
   caster: {
     profileTitle: 'Caster Profile',

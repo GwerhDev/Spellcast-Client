@@ -15,6 +15,7 @@ export const DirectoryList = () => {
     'settings/appearance':  t.appearance.subtitle,
     // TCORE-109 (reverted): Storage is a flat Settings item again, same as the three above.
     'settings/storage':     t.storage.subtitle,
+    'settings/about':       t.about.subtitle,
   };
 
   const names: Record<string, string> = {
@@ -22,6 +23,7 @@ export const DirectoryList = () => {
     'settings/permissions': t.nav.permissions,
     'settings/appearance':  t.nav.appearance,
     'settings/storage':     t.nav.storage,
+    'settings/about':       t.nav.about,
   };
 
   return (

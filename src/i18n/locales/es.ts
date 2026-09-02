@@ -58,6 +58,7 @@ export const es: Translations = {
     profile: 'Perfil',
     stats: 'Estadísticas',
     inventory: 'Inventario',
+    about: 'Acerca de',
   },
   spell: {
     untitled: 'Sin título',
@@ -366,6 +367,17 @@ export const es: Translations = {
     subtitle: 'Controla los niveles de acceso y lo que otros pueden hacer con tu contenido.',
     // Página placeholder, aún no existe el concepto en el backend.
     empty: 'Todavía no hay nada que mostrar aquí.',
+  },
+  // TCORE-82: aviso de licencia AGPLv3 (cláusula de uso en red), accesible desde Ajustes.
+  about: {
+    subtitle: 'Licencia y código fuente.',
+    licenseTitle: 'Licencia',
+    licenseBody: 'Spellcast está licenciado bajo la GNU Affero General Public License v3.0 (AGPL-3.0-only). Como se ofrece como aplicación web hospedada, quien ejecute una versión modificada y permita que otros interactúen con ella por red debe también poner ese código modificado a disposición de esos usuarios.',
+    readLicense: 'Leer la licencia completa',
+    sourceTitle: 'Código fuente',
+    sourceBody: 'El código fuente completo de esta aplicación, incluyendo cualquier modificación que corra en esta instancia, está disponible en el repositorio público.',
+    viewSource: 'Ver código fuente',
+    copyright: 'Copyright (C) 2026 TerminalCore Labs',
   },
   caster: {
     profileTitle: 'Perfil de Caster',

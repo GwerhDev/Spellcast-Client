@@ -1,5 +1,7 @@
 # Spellcast Client
 
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPLv3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
+
 A document management and text-to-speech (TTS) web application. Spellcast lets users upload PDF documents, read them with sentence-level highlighting, and convert content to speech using browser-native or cloud AI voices (Azure, GCP, AWS).
 
 ---
@@ -197,3 +199,11 @@ The Redux store has 9 slices:
 ## Local Data Persistence
 
 Documents and reading progress are stored in **IndexedDB** (via the custom wrapper in [src/db/index.ts](src/db/index.ts)), so they persist across sessions without a backend. Voice preference and theme are stored in `localStorage`.
+
+---
+
+## License
+
+Copyright (C) 2026 TerminalCore Labs
+
+This program is licensed under the [GNU Affero General Public License v3.0](./LICENSE) (AGPL-3.0-only). Because Spellcast is offered as a hosted web application, the AGPL's network-use clause applies: anyone who runs a modified version of this app and lets others interact with it over a network must also make that modified source available to those users. See the in-app "Acerca de" screen (Settings) for the source code link.

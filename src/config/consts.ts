@@ -1,7 +1,7 @@
 import {
   faUsers, faFingerprint, faShield, faPalette, faHardDrive, faCloud,
   faHome, faBuildingColumns, faFeatherPointed, faStore, faUser, faBox, faGear,
-  faList, faPlus, faIdBadge, faChartLine, faBoxOpen,
+  faList, faPlus, faIdBadge, faChartLine, faBoxOpen, faCircleInfo,
 } from "@fortawesome/free-solid-svg-icons";
 
 // Silent, single-cycle WAV looped by both BrowserPlayer and AudioPlayer as a
@@ -40,6 +40,9 @@ export const settingsDirectoryList = [
   { name: "Permissions", icon: faShield, path: "settings/permissions" },
   { name: "Appearance", icon: faPalette, path: "settings/appearance" },
   { name: "Storage", icon: faBox, path: "settings/storage" },
+  // TCORE-82: AGPLv3 network-use clause -- an always-reachable in-app notice with the
+  // license + a link to the source code.
+  { name: "About", icon: faCircleInfo, path: "settings/about" },
 ];
 
 export const editorDirectoryList = [

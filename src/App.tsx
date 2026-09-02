@@ -27,6 +27,7 @@ import { SpellEdit } from './app/pages/SpellEdit';
 import { SpellCreate } from './app/pages/SpellCreate';
 import { UserCredentials } from './app/pages/UserCredentials';
 import { UserPermissions } from './app/pages/UserPermissions';
+import { About } from './app/pages/About';
 import { SpellDetailPage } from './app/pages/SpellDetail';
 import { LocalSpellReader } from './app/pages/LocalSpellReader';
 import { HavenStore } from './app/pages/HavenStore';
@@ -85,6 +86,7 @@ function App() {
             <Route path="/caster/settings/storage" element={<Storage />} />
             <Route path="/caster/settings/storage/local" element={<StorageLocal />} />
             <Route path="/caster/settings/storage/cloud" element={<StorageCloud />} />
+            <Route path="/caster/settings/about" element={<About />} />
           </Route>
 
           <Route path="/grimoire" element={<Grimoire />} />
