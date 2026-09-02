@@ -48,7 +48,9 @@ export const CasterLayout = () => {
     <div data-testid="caster-layout" className={`dashboard-sections ${s.page}`}>
       <div className={s.content}>
         <CasterHeader username={username} profilePic={profilePic} loader={loader} />
-        <SegmentedTabs tabs={tabs} active={active} onChange={handleTabChange} />
+        <div className={s.stickyTabs}>
+          <SegmentedTabs tabs={tabs} active={active} onChange={handleTabChange} />
+        </div>
         <div className={s.outlet}>
           <Outlet />
         </div>
