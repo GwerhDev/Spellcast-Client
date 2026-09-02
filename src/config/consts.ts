@@ -1,5 +1,5 @@
 import {
-  faUsers, faFingerprint, faShield, faShare, faPalette, faHardDrive, faCloud,
+  faUsers, faFingerprint, faShield, faPalette, faHardDrive, faCloud,
   faHome, faBuildingColumns, faFeatherPointed, faStore, faUser, faBox, faGear,
   faList, faPlus, faIdBadge, faChartLine, faBoxOpen,
 } from "@fortawesome/free-solid-svg-icons";
@@ -24,7 +24,6 @@ export const dashboardDirectoryList = [
   // ReaderSettings/PlayerPreferences already dispatch) -- Havenstore stays acquisition-only.
   { name: "Inventory", icon: faBoxOpen, path: "inventory" },
   { name: "Groups", icon: faUsers, path: "groups" },
-  { name: "Shared", icon: faShare, path: "shared" },
 ];
 
 export const storageDirectoryList = [
@@ -83,15 +82,14 @@ export const sidebarAccordionSections: SidebarAccordionSectionConfig[] = [
   { key: "caster", icon: faUser, path: "/caster/profile", items: dashboardDirectoryList, basePath: "/caster/", subSections: userSubSections },
 ];
 
-// Flat mirror of the sidebar's Caster section (Profile + Stats/Inventory/Groups/Shared items
-// + Settings sub-section, all flattened to one level) -- the tab bar CasterLayout renders
-// atop every /caster/* route. Labels are resolved from `t.nav[id]` at render time, same
-// lookup the sidebar itself uses, so the two can never show mismatched text.
+// Flat mirror of the sidebar's Caster section (Profile + Stats/Inventory/Groups items +
+// Settings sub-section, all flattened to one level) -- the tab bar CasterLayout renders atop
+// every /caster/* route. Labels are resolved from `t.nav[id]` at render time, same lookup
+// the sidebar itself uses, so the two can never show mismatched text.
 export const casterTabs = [
   { id: "profile", icon: faIdBadge, path: "/caster/profile" },
   { id: "stats", icon: faChartLine, path: "/caster/stats" },
   { id: "inventory", icon: faBoxOpen, path: "/caster/inventory" },
   { id: "groups", icon: faUsers, path: "/caster/groups" },
-  { id: "shared", icon: faShare, path: "/caster/shared" },
   { id: "settings", icon: faGear, path: "/caster/settings" },
 ];

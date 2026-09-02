@@ -36,7 +36,6 @@ export const en = {
     settings: 'Settings',
     overview: 'Overview',
     groups: 'Groups',
-    shared: 'Shared',
     grimoire: 'Grimoire',
     audios: 'Audios',
     credentials: 'Credentials',
@@ -329,13 +328,6 @@ export const en = {
     activity: 'Activity',
     subtitle: 'Collaborate and share spells with your groups.',
   },
-  shared: {
-    public: 'Public',
-    inGroups: 'In groups',
-    subtitle: 'Spells you\'ve shared publicly or with your groups.',
-    // TCORE-107 follow-up: placeholder page, no backend concept for this yet.
-    empty: 'Nothing shared yet.',
-  },
   archive: {
     title: 'Archive',
     subtitle: 'Spells and projects you have set aside.',
@@ -370,6 +362,8 @@ export const en = {
   },
   permissions: {
     subtitle: 'Control access levels and what others can do with your content.',
+    // Placeholder page, no backend concept for this yet.
+    empty: 'Nothing to show here yet.',
   },
   caster: {
     profileTitle: 'Caster Profile',

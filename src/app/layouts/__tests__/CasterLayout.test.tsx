@@ -48,7 +48,7 @@ describe('CasterLayout', () => {
 
   it('renders a tab for every caster section, mirroring the sidebar', () => {
     renderLayout('/caster/profile');
-    ['profile', 'stats', 'inventory', 'groups', 'shared', 'settings'].forEach(id => {
+    ['profile', 'stats', 'inventory', 'groups', 'settings'].forEach(id => {
       expect(screen.getByTestId(`segmented-tab-${id}`)).toBeInTheDocument();
     });
   });

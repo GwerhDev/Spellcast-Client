@@ -38,7 +38,6 @@ export const es: Translations = {
     settings: 'Ajustes',
     overview: 'Resumen',
     groups: 'Grupos',
-    shared: 'Compartido',
     grimoire: 'Grimorio',
     audios: 'Audios',
     credentials: 'Credenciales',
@@ -331,13 +330,6 @@ export const es: Translations = {
     activity: 'Actividad',
     subtitle: 'Colabora y comparte Spells con tus grupos.',
   },
-  shared: {
-    public: 'Público',
-    inGroups: 'En grupos',
-    subtitle: 'Spells que compartiste públicamente o con tus grupos.',
-    // TCORE-107 follow-up: página placeholder, aún no existe el concepto en el backend.
-    empty: 'Aún no hay nada compartido.',
-  },
   archive: {
     title: 'Archivo',
     subtitle: 'Spells y proyectos que has dejado a un lado.',
@@ -372,6 +364,8 @@ export const es: Translations = {
   },
   permissions: {
     subtitle: 'Controla los niveles de acceso y lo que otros pueden hacer con tu contenido.',
+    // Página placeholder, aún no existe el concepto en el backend.
+    empty: 'Todavía no hay nada que mostrar aquí.',
   },
   caster: {
     profileTitle: 'Perfil de Caster',

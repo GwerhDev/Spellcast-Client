@@ -46,7 +46,7 @@ const isActive = (activePathname: string, path: string): boolean =>
   activePathname === path || activePathname.startsWith(`${path}/`);
 
 // A top-level accordion section's own `path` is just its default landing route (e.g.
-// "caster"'s is /caster/profile) -- being on a SIBLING destination under it (/caster/shared,
+// "caster"'s is /caster/profile) -- being on a SIBLING destination under it (/caster/groups,
 // /caster/settings/storage, ...) would fail a plain isActive(section.path) check even though
 // the section itself should still read as "active" while you're anywhere inside it. Checks
 // the section's own path, every flat item, and recurses into subSections so any depth of

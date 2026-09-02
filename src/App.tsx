@@ -18,7 +18,6 @@ import { Storage } from './app/pages/Storage';
 import { NotFound } from './app/pages/NotFound';
 import { Settings } from './app/pages/Settings';
 import { UserGroups } from './app/pages/UserGroups';
-import { UserShared } from './app/pages/UserShared';
 import { CasterStats } from './app/pages/CasterStats';
 import { Appearance } from './app/pages/Appearance';
 import { UserArchive } from './app/pages/UserArchive';
@@ -27,6 +26,7 @@ import { EditorSelect } from './app/pages/EditorSelect';
 import { SpellEdit } from './app/pages/SpellEdit';
 import { SpellCreate } from './app/pages/SpellCreate';
 import { UserCredentials } from './app/pages/UserCredentials';
+import { UserPermissions } from './app/pages/UserPermissions';
 import { SpellDetailPage } from './app/pages/SpellDetail';
 import { LocalSpellReader } from './app/pages/LocalSpellReader';
 import { HavenStore } from './app/pages/HavenStore';
@@ -75,10 +75,10 @@ function App() {
             <Route path="/caster/stats" element={<CasterStats />} />
             <Route path="/caster/inventory" element={<CasterInventory />} />
             <Route path="/caster/groups" element={<UserGroups />} />
-            <Route path="/caster/shared" element={<UserShared />} />
 
             <Route path="/caster/settings" element={<Settings />} />
             <Route path="/caster/settings/credentials" element={<UserCredentials />} />
+            <Route path="/caster/settings/permissions" element={<UserPermissions />} />
             <Route path="/caster/settings/appearance" element={<Appearance />} />
             {/* TCORE-109 (reverted): Storage lives inside Settings now, a flat item like
                 Credentials/Permissions/Appearance -- not its own Inventory sub-tab. */}
