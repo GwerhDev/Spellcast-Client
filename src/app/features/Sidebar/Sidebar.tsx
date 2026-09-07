@@ -15,8 +15,8 @@ interface SidebarProps {
 // Collects the keys of every section that should auto-open for the current route: a
 // section matching the route directly, one of its own flat `items` matching (e.g. landing
 // on /caster/groups -- a sibling of "caster"'s own /caster/profile path, not a descendant
-// of it, since TCORE-107's follow-up flattened Groups/Shared/Stats out from under
-// /caster/dashboard), PLUS every ancestor of a matching descendant sub-section, at any
+// of it, since TCORE-107's follow-up flattened Groups/Stats to top-level /caster/* items
+// alongside profile), PLUS every ancestor of a matching descendant sub-section, at any
 // depth (e.g. landing on /caster/settings/storage matches "settings" directly, since
 // "storage" is one of its flat items, TCORE-109 -- the recursion itself supports deeper
 // sub-section nesting too, should a future section need it).

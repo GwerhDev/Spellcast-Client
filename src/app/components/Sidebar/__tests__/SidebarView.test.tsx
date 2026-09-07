@@ -12,9 +12,9 @@ const accordionSections: SidebarAccordionSection[] = [
   {
     key: 'caster',
     icon: faUser,
-    path: '/caster/dashboard',
+    path: '/caster/profile',
     label: 'Caster',
-    items: [{ path: '/caster/dashboard/groups', icon: faUsers, label: 'Groups' }],
+    items: [{ path: '/caster/groups', icon: faUsers, label: 'Groups' }],
     subSections: [
       {
         key: 'settings',
@@ -137,9 +137,9 @@ describe('SidebarView', () => {
   });
 
   it('marks the parent section active when activePathname matches one of its own flat items, not just its own path', () => {
-    // "caster"'s own path is /caster/dashboard -- being on one of its sibling items
-    // (/caster/dashboard/groups) should still highlight "caster" itself, not just the item.
-    render(<SidebarView {...baseProps} collapsed={false} activePathname="/caster/dashboard/groups" />);
+    // "caster"'s own path is /caster/profile -- being on one of its sibling items
+    // (/caster/groups) should still highlight "caster" itself, not just the item.
+    render(<SidebarView {...baseProps} collapsed={false} activePathname="/caster/groups" />);
     const headerLink = screen.getByTestId('sidebar-nav-item-caster');
     expect(headerLink.parentElement?.className).toMatch(/sectionHeaderActive/);
   });
