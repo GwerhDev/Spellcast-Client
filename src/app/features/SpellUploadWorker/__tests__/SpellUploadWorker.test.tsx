@@ -29,9 +29,15 @@ vi.mock('../../../../utils/pdfUtils', () => ({
 
 const saveSpellToDBMock = vi.fn<(payload: Record<string, unknown>) => Promise<string>>(() => Promise.resolve('new-spell-id'));
 const updateSpellFullMock = vi.fn<(id: string, userId: string, updates: Record<string, unknown>) => Promise<void>>(() => Promise.resolve());
+const getSpellByIdMock = vi.fn<(id: string, userId: string | undefined) => Promise<Record<string, unknown> | undefined>>(
+  () => Promise.resolve({ id: 'target-doc', title: 'Old title', pagesContent: '{}' })
+);
+const deleteSpellFromDBMock = vi.fn<(id: string, userId: string | undefined) => Promise<void>>(() => Promise.resolve());
 vi.mock('../../../../db', () => ({
   saveSpellToDB: (...args: [Record<string, unknown>]) => saveSpellToDBMock(...args),
   updateSpellFull: (...args: [string, string, Record<string, unknown>]) => updateSpellFullMock(...args),
+  getSpellById: (...args: [string, string | undefined]) => getSpellByIdMock(...args),
+  deleteSpellFromDB: (...args: [string, string | undefined]) => deleteSpellFromDBMock(...args),
 }));
 
 const setOriginalPdfMock = vi.fn<(spellId: string, blob: Blob) => Promise<void>>(() => Promise.resolve());
@@ -54,6 +60,8 @@ beforeEach(() => {
   vi.clearAllMocks();
   saveSpellToDBMock.mockResolvedValue('new-spell-id');
   updateSpellFullMock.mockResolvedValue(undefined);
+  getSpellByIdMock.mockResolvedValue({ id: 'target-doc', title: 'Old title', pagesContent: '{}' });
+  deleteSpellFromDBMock.mockResolvedValue(undefined);
   setOriginalPdfMock.mockResolvedValue(undefined);
   extractPdfMetadataMock.mockResolvedValue({});
 });
@@ -189,6 +197,67 @@ describe('SpellUploadWorker', () => {
       expect(payload).not.toHaveProperty('author');
       expect(payload).not.toHaveProperty('tags');
       expect(payload).not.toHaveProperty('language');
+    });
+  });
+
+  describe('storage quota handling (TCORE-117)', () => {
+    const quotaError = () => new DOMException('no space left', 'QuotaExceededError');
+
+    it('creation path: rolls back the just-created spell when saving its original PDF hits the quota', async () => {
+      setOriginalPdfMock.mockRejectedValue(quotaError());
+      const store = makeStore();
+      store.dispatch(enqueue({ saveOriginal: true } as never));
+      renderWithProviders(<SpellUploadWorker />, { store });
+
+      await waitFor(() => expect(deleteSpellFromDBMock).toHaveBeenCalledWith('new-spell-id', 'user-1'));
+      const job = store.getState().spellUpload.queue.find((j) => j.id === 'job-1');
+      expect(job?.status).toBe('error');
+      expect(job?.errorMessage).not.toMatch(/QuotaExceededError|DOMException/);
+    });
+
+    it('creation path: a non-quota failure does NOT delete the created spell, and keeps the raw error message', async () => {
+      setOriginalPdfMock.mockRejectedValue(new Error('network hiccup'));
+      const store = makeStore();
+      store.dispatch(enqueue({ saveOriginal: true } as never));
+      renderWithProviders(<SpellUploadWorker />, { store });
+
+      await waitFor(() => {
+        const job = store.getState().spellUpload.queue.find((j) => j.id === 'job-1');
+        expect(job?.status).toBe('error');
+      });
+      expect(deleteSpellFromDBMock).not.toHaveBeenCalled();
+    });
+
+    it('replace path: restores the previous content when saving the new original PDF hits the quota', async () => {
+      getSpellByIdMock.mockResolvedValue({
+        id: 'existing-spell', title: 'Old title', pagesContent: '{"old":true}',
+        cover: undefined, originalPagesContent: '{"old":true}',
+      });
+      setOriginalPdfMock.mockRejectedValue(quotaError());
+      const store = makeStore();
+      store.dispatch(enqueue({ saveOriginal: false, targetDocId: 'existing-spell' } as never));
+      renderWithProviders(<SpellUploadWorker />, { store });
+
+      // First call is the real replace (new content); the restore is the compensating 2nd call.
+      await waitFor(() => expect(updateSpellFullMock).toHaveBeenCalledTimes(2));
+      const restorePayload = updateSpellFullMock.mock.calls[1][2] as Record<string, unknown>;
+      expect(restorePayload).toMatchObject({ title: 'Old title', pagesContent: '{"old":true}' });
+      const job = store.getState().spellUpload.queue.find((j) => j.id === 'job-1');
+      expect(job?.status).toBe('error');
+      expect(job?.errorMessage).not.toMatch(/QuotaExceededError|DOMException/);
+    });
+
+    it('replace path: a non-quota failure does not attempt to restore the previous content', async () => {
+      setOriginalPdfMock.mockRejectedValue(new Error('network hiccup'));
+      const store = makeStore();
+      store.dispatch(enqueue({ saveOriginal: false, targetDocId: 'existing-spell' } as never));
+      renderWithProviders(<SpellUploadWorker />, { store });
+
+      await waitFor(() => {
+        const job = store.getState().spellUpload.queue.find((j) => j.id === 'job-1');
+        expect(job?.status).toBe('error');
+      });
+      expect(updateSpellFullMock).toHaveBeenCalledTimes(1);
     });
   });
 });

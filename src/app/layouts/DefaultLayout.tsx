@@ -25,6 +25,7 @@ import { setMinimized } from 'store/desktopSlice';
 import { setSidebarCollapsed } from 'store/layoutSlice';
 import { invalidateSpellList } from 'store/spellReaderSlice';
 import { useAttentionGuard } from '../../hooks/useAttentionGuard';
+import { useStorageQuotaWarning } from '../../hooks/useStorageQuotaWarning';
 import { AttentionGuardModal } from '../components/Modals/AttentionGuardModal';
 import { onSpellsMigrated } from '../../db';
 
@@ -34,6 +35,7 @@ export default function DefaultLayout() {
   const minimized = useSelector((state: RootState) => state.desktop.minimized);
   const dispatch = useAppDispatch();
   const { showModal: showAttentionGuard, handleContinue: handleAttentionGuardContinue } = useAttentionGuard();
+  useStorageQuotaWarning();
   const [isPlayerSettingsOpen, setIsPlayerSettingsOpen] = useState(false);
   const [isVoiceSelectorOpen, setIsVoiceSelectorOpen] = useState(false);
   const navRef = useRef<HTMLElement>(null);

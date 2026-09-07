@@ -102,6 +102,10 @@ export const es: Translations = {
     exportError: 'No se pudo exportar este Spell.',
     importSpell: 'Importar .spell',
     importError: 'No se pudo importar este archivo .spell.',
+    // TCORE-117: mensajes específicos y accionables para una escritura que falló por
+    // quedarse sin espacio, distintos del error genérico de importación/subida de arriba.
+    quotaExceededUpload: 'No hay espacio suficiente para guardar este spell. Libera espacio en Ajustes > Almacenamiento e intenta de nuevo.',
+    quotaExceededAudio: 'No hay espacio suficiente para guardar este audio en caché. Igual se reproducirá, pero no quedará guardado para la próxima vez.',
     importSuccess: '"{title}" importado.',
     metadataSectionTitle: 'Detalles adicionales',
     descriptionLabel: 'Descripción',
@@ -362,6 +366,9 @@ export const es: Translations = {
     subtitle: 'Vista general del uso de almacenamiento local y en la nube.',
     localSubtitle: 'Spells, caché de audio y ajustes guardados en tu navegador.',
     cloudSubtitle: 'Sincroniza tu grimorio y preferencias en todos tus dispositivos.',
+    // TCORE-117: aviso ambiental al superar el 85% de la cuota, y los mensajes específicos
+    // que se muestran cuando una escritura falla realmente por falta de espacio.
+    quotaWarning: 'Te estás quedando sin espacio de almacenamiento. Libera espacio en Ajustes > Almacenamiento para seguir importando spells y generando audio.',
   },
   permissions: {
     subtitle: 'Controla los niveles de acceso y lo que otros pueden hacer con tu contenido.',

@@ -27,6 +27,7 @@ import { addApiResponse } from '../../../store/apiResponsesSlice';
 import { addSignalNotice } from '../../../store/signalSlice';
 import type { CredentialError } from '../../components/Players/shared/VoiceSelectorButton/VoiceSelectorButton';
 import { getCachedAudio, setCachedAudio, AUDIO_CACHE_VERSION } from '../../../db/audioCache';
+import { isQuotaExceededError } from '../../../utils/storageQuota';
 import { getSpellById } from '../../../db';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '../../../store/hooks';
@@ -52,6 +53,11 @@ const isCachedAudioValid = <T extends { timeline: TimelineEntry[]; cacheVersion?
   cached: T | null,
 ): cached is T =>
   !!cached && cached.cacheVersion === AUDIO_CACHE_VERSION && cached.timeline.length > 0;
+
+// TCORE-117: module-level (not component state) so the warning survives page navigation
+// within the same session -- once the user has seen it, retrying the same failing cache
+// write on every prefetch/page turn shouldn't toast again until a reload.
+let hasWarnedAboutAudioCacheQuota = false;
 
 export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, showPlayerConfigModal }) => {
   const { t } = useLanguage();
@@ -281,6 +287,24 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
     }
   };
 
+  // TCORE-117: setCachedAudio() used to be called fire-and-forget (no await), so a
+  // QuotaExceededError on the put() became an unhandled promise rejection -- never caught,
+  // never shown to the user, and (for the rejection alone) not even logged. Awaiting it
+  // here, in its own try/catch separate from the surrounding playback flow, means a cache
+  // write failure can never block or fail actual playback (the blob was already fetched
+  // successfully) while still surfacing exactly once per session instead of vanishing.
+  const cacheAudioSafely = async (spellId_: string, page: number, voice: string, blob: Blob, timeline: TimelineEntry[]) => {
+    try {
+      await setCachedAudio(spellId_, page, voice, blob, timeline);
+    } catch (err) {
+      console.error('Failed to cache audio:', err);
+      if (isQuotaExceededError(err) && !hasWarnedAboutAudioCacheQuota) {
+        hasWarnedAboutAudioCacheQuota = true;
+        dispatch(addApiResponse({ message: t.spell.quotaExceededAudio, type: 'error' }));
+      }
+    }
+  };
+
   const loadAudio = (blob: Blob) => {
     if (currentBlobUrlRef.current) URL.revokeObjectURL(currentBlobUrlRef.current);
     const url = URL.createObjectURL(blob);
@@ -308,7 +332,7 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
         controller.signal,
       );
       if (!controller.signal.aborted) {
-        setCachedAudio(spellId, nextPage, selectedVoice.value, blob, timeline);
+        await cacheAudioSafely(spellId, nextPage, selectedVoice.value, blob, timeline);
       }
     } catch (e) {
       if (e instanceof Error && e.name === 'AbortError') return;
@@ -368,7 +392,7 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
         blob = result.blob;
         aiTimelineRef.current = result.timeline;
         dispatch(setAiTimeline(result.timeline));
-        if (spellId) setCachedAudio(spellId, currentPage, selectedVoice.value, blob, result.timeline);
+        if (spellId) await cacheAudioSafely(spellId, currentPage, selectedVoice.value, blob, result.timeline);
       }
       if (!controller.signal.aborted) {
         loadAudio(blob!);

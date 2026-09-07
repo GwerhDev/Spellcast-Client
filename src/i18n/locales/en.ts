@@ -101,6 +101,10 @@ export const en = {
     importSpell: 'Import .spell',
     importError: 'Failed to import this .spell file.',
     importSuccess: '"{title}" imported.',
+    // TCORE-117: specific, actionable messages for a write that failed because the
+    // storage quota was hit, distinct from the generic upload/import error above.
+    quotaExceededUpload: 'Not enough storage space to save this spell. Free up room in Settings > Storage and try again.',
+    quotaExceededAudio: "Not enough storage space to cache this audio. It will still play, but won't be saved for next time.",
     metadataSectionTitle: 'Additional details',
     descriptionLabel: 'Description',
     descriptionPlaceholder: 'What is this spell about?',
@@ -360,6 +364,9 @@ export const en = {
     subtitle: 'Overview of your local and cloud storage usage.',
     localSubtitle: 'Spells, audio cache, and settings stored in your browser.',
     cloudSubtitle: 'Sync your grimoire and preferences across all your devices.',
+    // TCORE-117: ambient warning once usage crosses 85% of quota, and the specific
+    // messages shown when a write actually fails because the quota was hit.
+    quotaWarning: "You're running low on storage space. Free up room in Settings > Storage to keep importing spells and generating audio.",
   },
   permissions: {
     subtitle: 'Control access levels and what others can do with your content.',
