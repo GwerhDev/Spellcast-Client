@@ -94,13 +94,15 @@ export const AudioCacheManager = () => {
             <p className={s.subtitle}>{t.storage.audioCacheSubtitle}</p>
           </div>
         </div>
-        <SecondaryButton
-          data-testid="audio-cache-clear-all-btn"
-          icon={faTrash}
-          text={t.storage.audioCacheClearAll}
-          onClick={() => setConfirmTarget('all')}
-          disabled={summary.totalBytes === 0}
-        />
+        <div className={s.headerActions}>
+          <SecondaryButton
+            data-testid="audio-cache-clear-all-btn"
+            icon={faTrash}
+            text={t.storage.audioCacheClearAll}
+            onClick={() => setConfirmTarget('all')}
+            disabled={summary.totalBytes === 0}
+          />
+        </div>
       </div>
 
       <ToggleRow
@@ -124,13 +126,15 @@ export const AudioCacheManager = () => {
                     {row.lastAccessed > 0 && ` · ${t.storage.audioCacheLastUsed.replace('{date}', new Date(row.lastAccessed).toLocaleDateString())}`}
                   </span>
                 </div>
-                <PrimaryButton
-                  data-testid={`audio-cache-clear-spell-${row.id}-btn`}
-                  variant="danger"
-                  icon={faTrash}
-                  text={t.storage.audioCacheClearSpell}
-                  onClick={() => setConfirmTarget({ id: row.id, title: row.title })}
-                />
+                <div className={s.spellActions}>
+                  <PrimaryButton
+                    data-testid={`audio-cache-clear-spell-${row.id}-btn`}
+                    variant="danger"
+                    icon={faTrash}
+                    text={t.storage.audioCacheClearSpell}
+                    onClick={() => setConfirmTarget({ id: row.id, title: row.title })}
+                  />
+                </div>
               </div>
               <ul className={s.voiceList}>
                 {Object.entries(row.byVoice).map(([voice, bytes]) => (

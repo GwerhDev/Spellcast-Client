@@ -9,12 +9,14 @@
   color: var(--color-light-400);
 }
 
+/* Stacked (text block, then a right-aligned action row) instead of a single side-by-side
+   row -- at this card's actual width the label + "Clear all audio cache" button rarely fit
+   on one line together, so a space-between row just wrapped unpredictably and left the
+   button hanging left-aligned on its own line, which read as broken rather than designed. */
 .header {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
   gap: 1rem;
-  flex-wrap: wrap;
   background: var(--component-background);
   border-radius: 10px;
   padding: 1.5rem;
@@ -24,6 +26,11 @@
   display: flex;
   align-items: center;
   gap: 1rem;
+}
+
+.headerActions {
+  display: flex;
+  justify-content: flex-end;
 }
 
 .headerIcon {
@@ -68,12 +75,17 @@
   gap: 0.75rem;
 }
 
+/* Same stacked reasoning as .header above -- title/size on top, the "Clear audio" button
+   on its own right-aligned row underneath, so it never wraps into an awkward half-state. */
 .spellHeader {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.spellActions {
+  display: flex;
+  justify-content: flex-end;
 }
 
 .spellInfo {
