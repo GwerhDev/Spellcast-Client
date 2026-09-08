@@ -378,11 +378,17 @@ export const es: Translations = {
     audioCacheClearSpell: 'Limpiar audio',
     audioCacheClearSpellConfirmTitle: '¿Limpiar el audio de "{title}"?',
     audioCacheClearSpellConfirmDesc: 'Esto elimina la narración en caché de este spell para todas las voces. El spell en sí no se toca -- su audio se regenera la próxima vez que lo leas.',
+    // Gateado con el mismo modal de confirmación que las limpiezas de spell/todo el caché,
+    // por consistencia -- ninguna acción destructiva de esta pantalla dispara directo desde
+    // el clic, todas preguntan primero.
+    audioCacheClearVoiceConfirmTitle: '¿Limpiar el audio de "{voice}" para "{title}"?',
+    audioCacheClearVoiceConfirmDesc: 'Esto elimina la narración en caché solo de esta voz. El spell en sí no se toca -- su audio se regenera la próxima vez que lo leas con esta voz.',
     audioCacheLastUsed: 'Usado por última vez {date}',
     audioCacheAutoCleanup: 'Limpiar automáticamente el audio menos usado',
     audioCacheAutoCleanupDesc: 'Cuando el almacenamiento se agota, libera espacio automáticamente limpiando el audio que escuchaste hace más tiempo.',
     audioCacheClearedToast: 'Caché de audio limpiado.',
     audioCacheSpellClearedToast: 'Se limpió el audio de "{title}".',
+    audioCacheVoiceClearedToast: 'Se limpió el audio de "{voice}" para "{title}".',
     audioCacheAutoEvictedToast: 'Se liberaron {size} de audio menos usado recientemente para hacer espacio.',
     // TCORE-119: desglose de almacenamiento por spell (Ajustes > Almacenamiento > Local >
     // Spells). Reutiliza el copy/toasts de audioCache* de arriba para la acción "limpiar

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { IDBFactory } from 'fake-indexeddb';
 // See index.test.ts for why: fake-indexeddb's structuredClone-based storage only
 // round-trips Node's own Blob class, not happy-dom's global `Blob`.
@@ -155,20 +155,47 @@ describe('db/audioCache.ts', () => {
     });
   });
 
-  describe('getCachedAudio touches lastAccessed on a real hit (TCORE-118)', () => {
-    it('bumps lastAccessed forward on read, so a re-read looks more recently used to the LRU sweep', async () => {
-      const { setCachedAudio, getCachedAudio, getAudioCacheSummary } = await importAudioCache();
-      await setCachedAudio('spell-1', 1, 'alice', new Blob(['a']) as unknown as globalThis.Blob, timeline());
-      const afterWrite = (await getAudioCacheSummary()).bySpell['spell-1'].lastAccessed;
+  describe('getCachedAudio touches lastAccessed on a hit, throttled (TCORE-118 nit fix)', () => {
+    // An unconditional touch re-put()s the whole record -- blob included, which can be MBs
+    // -- so a hot page re-reading the same cached page on every render/prefetch check would
+    // rewrite its full audio blob to disk every time just to bump a timestamp. Date.now() is
+    // mocked (not real/fake timers) so these don't depend on -- or risk destabilizing --
+    // fake-indexeddb's own real setTimeout-based scheduling.
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
 
+    it('does NOT rewrite lastAccessed for a hit inside the throttle window', async () => {
+      const { setCachedAudio, getCachedAudio, getAudioCacheSummary, TOUCH_THROTTLE_MS } = await importAudioCache();
+      const writeTime = 1_000_000;
+      vi.spyOn(Date, 'now').mockReturnValue(writeTime);
+      await setCachedAudio('spell-1', 1, 'alice', new Blob(['a']) as unknown as globalThis.Blob, timeline());
+
+      vi.spyOn(Date, 'now').mockReturnValue(writeTime + TOUCH_THROTTLE_MS - 1);
+      await getCachedAudio('spell-1', 1, 'alice');
+      // If a touch write were issued, give its fire-and-forget transaction a tick to land
+      // before asserting it didn't happen.
       await new Promise((r) => setTimeout(r, 5));
+
+      const lastAccessed = (await getAudioCacheSummary()).bySpell['spell-1'].lastAccessed;
+      expect(lastAccessed).toBe(writeTime);
+    });
+
+    it('DOES rewrite lastAccessed once the throttle window has elapsed', async () => {
+      const { setCachedAudio, getCachedAudio, getAudioCacheSummary, TOUCH_THROTTLE_MS } = await importAudioCache();
+      const writeTime = 1_000_000;
+      vi.spyOn(Date, 'now').mockReturnValue(writeTime);
+      await setCachedAudio('spell-1', 1, 'alice', new Blob(['a']) as unknown as globalThis.Blob, timeline());
+
+      const readTime = writeTime + TOUCH_THROTTLE_MS;
+      vi.spyOn(Date, 'now').mockReturnValue(readTime);
       await getCachedAudio('spell-1', 1, 'alice');
       // The touch write is fire-and-forget inside getCachedAudio -- give its own
       // transaction a tick to actually land before reading the summary back.
       await new Promise((r) => setTimeout(r, 5));
 
-      const afterRead = (await getAudioCacheSummary()).bySpell['spell-1'].lastAccessed;
-      expect(afterRead).toBeGreaterThan(afterWrite);
+      const lastAccessed = (await getAudioCacheSummary()).bySpell['spell-1'].lastAccessed;
+      expect(lastAccessed).toBe(readTime);
     });
 
     it('does not touch anything (and does not throw) on a cache miss', async () => {

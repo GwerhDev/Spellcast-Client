@@ -108,14 +108,31 @@ describe('AudioCacheManager', () => {
     expect(clearSpellAudioCacheMock).not.toHaveBeenCalledWith('spell-2');
   });
 
-  it('clears a single voice for a spell without needing the confirm modal', async () => {
+  // Nit fix follow-up: clearAudioCacheForVoice used to fire straight from the click, unlike
+  // every other destructive action on this screen -- gated behind the same DeleteConfirmModal
+  // now, for consistency.
+  it('clears a single voice for a spell after confirming, scoped to that voice only', async () => {
+    const { store } = renderManager();
+    await waitFor(() => screen.getByTestId('audio-cache-clear-voice-spell-1-alice-btn'));
+
+    fireEvent.click(screen.getByTestId('audio-cache-clear-voice-spell-1-alice-btn'));
+    expect(screen.getByText('Clear "alice" audio for "The Dragon Tale"?')).toBeInTheDocument();
+    expect(clearAudioCacheForVoiceMock).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByTestId('delete-confirm-confirm-btn'));
+
+    await waitFor(() => expect(clearAudioCacheForVoiceMock).toHaveBeenCalledWith('spell-1', 'alice'));
+    expect(clearAudioCacheForVoiceMock).not.toHaveBeenCalledWith('spell-1', 'bob');
+    expect(store.getState().apiResponses.responses[0]).toMatchObject({ type: 'success' });
+  });
+
+  it('does not clear a voice when its confirm modal is cancelled', async () => {
     renderManager();
     await waitFor(() => screen.getByTestId('audio-cache-clear-voice-spell-1-alice-btn'));
 
     fireEvent.click(screen.getByTestId('audio-cache-clear-voice-spell-1-alice-btn'));
+    fireEvent.click(screen.getByTestId('delete-confirm-cancel-btn'));
 
-    await waitFor(() => expect(clearAudioCacheForVoiceMock).toHaveBeenCalledWith('spell-1', 'alice'));
-    expect(clearAudioCacheForVoiceMock).not.toHaveBeenCalledWith('spell-1', 'bob');
+    expect(clearAudioCacheForVoiceMock).not.toHaveBeenCalled();
   });
 
   it('persists the auto-cleanup toggle to localStorage under the shared key', async () => {

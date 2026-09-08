@@ -68,6 +68,14 @@ const parseKey = (key: string): { spellId: string; page: number; voice: string }
   return { spellId, page, voice };
 };
 
+// TCORE-118 nit fix: getCachedAudio() used to touch lastAccessed on every single hit by
+// re-put()-ing the whole record -- blob included, which can be MBs. On a hot page (re-read
+// on every render/prefetch check) that's the full audio blob rewritten to disk over and
+// over for a timestamp update. lastAccessed only needs hour-level granularity for
+// evictLeastRecentlyUsedAudio's ordering to stay meaningful, so the touch is throttled to
+// at most once per this window instead of once per read.
+export const TOUCH_THROTTLE_MS = 60 * 60 * 1000; // 1 hour
+
 export const getCachedAudio = async (
   spellId: string,
   page: number,
@@ -75,21 +83,24 @@ export const getCachedAudio = async (
 ): Promise<{ blob: Blob; timeline: TimelineEntry[]; cacheVersion?: number } | null> => {
   const db = await openDB();
   const key = makeKey(spellId, page, voice);
-  const record = await new Promise<{ id: string; blob: Blob; timeline?: TimelineEntry[]; cacheVersion?: number } | undefined>((resolve, reject) => {
+  const record = await new Promise<{ id: string; blob: Blob; timeline?: TimelineEntry[]; cacheVersion?: number; lastAccessed?: number } | undefined>((resolve, reject) => {
     const request = db.transaction(STORE_NAME, 'readonly').objectStore(STORE_NAME).get(key);
     request.onsuccess = () => resolve(request.result);
     request.onerror = (e) => reject((e.target as IDBRequest).error);
   });
   if (!record) return null;
 
-  // TCORE-118: "touch" the record on every real cache hit so lastAccessed reflects actual
-  // usage, not just when it was synthesized -- evictLeastRecentlyUsedAudio relies on this
-  // to skip audio someone is still actively reading past whatever was cached longest ago.
-  // Best-effort/fire-and-forget: a failed touch would only make this one entry look
-  // slightly older than it is to the LRU sweep, never lose or corrupt anything.
-  const touchRequest = db.transaction(STORE_NAME, 'readwrite').objectStore(STORE_NAME)
-    .put({ ...record, lastAccessed: Date.now() });
-  touchRequest.onerror = () => console.error('[audioCache] Failed to touch lastAccessed for', key);
+  // TCORE-118: "touch" the record on a cache hit so lastAccessed reflects actual usage, not
+  // just when it was synthesized -- evictLeastRecentlyUsedAudio relies on this to skip audio
+  // someone is still actively reading past whatever was cached longest ago. Throttled (see
+  // TOUCH_THROTTLE_MS above) rather than unconditional, and best-effort/fire-and-forget: a
+  // skipped or failed touch only makes this one entry look slightly older than it is to the
+  // LRU sweep, never lose or corrupt anything.
+  if (Date.now() - (record.lastAccessed ?? 0) >= TOUCH_THROTTLE_MS) {
+    const touchRequest = db.transaction(STORE_NAME, 'readwrite').objectStore(STORE_NAME)
+      .put({ ...record, lastAccessed: Date.now() });
+    touchRequest.onerror = () => console.error('[audioCache] Failed to touch lastAccessed for', key);
+  }
 
   return { blob: record.blob, timeline: record.timeline ?? [], cacheVersion: record.cacheVersion };
 };

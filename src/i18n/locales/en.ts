@@ -376,11 +376,16 @@ export const en = {
     audioCacheClearSpell: 'Clear audio',
     audioCacheClearSpellConfirmTitle: 'Clear audio for "{title}"?',
     audioCacheClearSpellConfirmDesc: 'This deletes this spell\'s cached narration for every voice. The spell itself is untouched -- its audio is regenerated the next time you read it.',
+    // Gated behind the same confirm modal as the spell/all-cache clears, for consistency --
+    // every destructive action here asks first, none of them fire straight from the click.
+    audioCacheClearVoiceConfirmTitle: 'Clear "{voice}" audio for "{title}"?',
+    audioCacheClearVoiceConfirmDesc: 'This deletes the cached narration for this voice only. The spell itself is untouched -- its audio is regenerated the next time you read it with this voice.',
     audioCacheLastUsed: 'Last used {date}',
     audioCacheAutoCleanup: 'Auto-clean least recently used audio',
     audioCacheAutoCleanupDesc: 'When storage runs low, automatically free space by clearing the audio you\'ve listened to least recently.',
     audioCacheClearedToast: 'Audio cache cleared.',
     audioCacheSpellClearedToast: 'Cleared audio for "{title}".',
+    audioCacheVoiceClearedToast: 'Cleared "{voice}" audio for "{title}".',
     audioCacheAutoEvictedToast: 'Freed {size} of least-recently-used audio to make room.',
     // TCORE-119: per-spell storage breakdown (Settings > Storage > Local > Spells). Reuses
     // the audioCache* copy/toasts above for the "clear audio" action -- same admin surface,

@@ -26,6 +26,12 @@ interface SpellRow {
   lastAccessed: number;
 }
 
+type ConfirmTarget =
+  | 'all'
+  | { kind: 'spell'; id: string; title: string }
+  | { kind: 'voice'; id: string; title: string; voice: string }
+  | null;
+
 // TCORE-118: this needs direct IndexedDB access (audioCache.ts + the spells store, to
 // resolve titles), so it's a Layer 3 feature per CLAUDE.md, not a Layer 4 component.
 export const AudioCacheManager = () => {
@@ -36,7 +42,9 @@ export const AudioCacheManager = () => {
   const [summary, setSummary] = useState<AudioCacheSummary | null>(null);
   const [titlesById, setTitlesById] = useState<Record<string, string>>({});
   const [autoCleanup, setAutoCleanup] = useState(() => localStorage.getItem(AUDIO_CACHE_AUTO_CLEANUP_KEY) === 'true');
-  const [confirmTarget, setConfirmTarget] = useState<{ id: string; title: string } | 'all' | null>(null);
+  // Every destructive action here -- clear all, clear one spell, clear one voice within a
+  // spell -- goes through the same confirm modal below; only the copy/handler differ per kind.
+  const [confirmTarget, setConfirmTarget] = useState<ConfirmTarget>(null);
 
   const reload = useCallback(async () => {
     const [nextSummary, spells] = await Promise.all([
@@ -68,8 +76,13 @@ export const AudioCacheManager = () => {
     await reload();
   };
 
-  const handleClearVoice = async (id: string, voice: string) => {
+  const handleClearVoice = async (id: string, title: string, voice: string) => {
     await clearAudioCacheForVoice(id, voice);
+    setConfirmTarget(null);
+    dispatch(addApiResponse({
+      message: t.storage.audioCacheVoiceClearedToast.replace('{voice}', voice).replace('{title}', title),
+      type: 'success',
+    }));
     await reload();
   };
 
@@ -133,7 +146,7 @@ export const AudioCacheManager = () => {
                     variant="danger"
                     icon={faTrash}
                     text={t.storage.audioCacheClearSpell}
-                    onClick={() => setConfirmTarget({ id: row.id, title: row.title })}
+                    onClick={() => setConfirmTarget({ kind: 'spell', id: row.id, title: row.title })}
                   />
                 </div>
               </div>
@@ -145,7 +158,7 @@ export const AudioCacheManager = () => {
                     <button
                       className={s.voiceClearBtn}
                       data-testid={`audio-cache-clear-voice-${row.id}-${voice}-btn`}
-                      onClick={() => handleClearVoice(row.id, voice)}
+                      onClick={() => setConfirmTarget({ kind: 'voice', id: row.id, title: row.title, voice })}
                       title={t.storage.audioCacheClearSpell}
                     >
                       <FontAwesomeIcon icon={faTrash} />
@@ -163,12 +176,19 @@ export const AudioCacheManager = () => {
         onClose={() => setConfirmTarget(null)}
         onConfirm={() => {
           if (confirmTarget === 'all') handleClearAll();
-          else if (confirmTarget) handleClearSpell(confirmTarget.id, confirmTarget.title);
+          else if (confirmTarget?.kind === 'spell') handleClearSpell(confirmTarget.id, confirmTarget.title);
+          else if (confirmTarget?.kind === 'voice') handleClearVoice(confirmTarget.id, confirmTarget.title, confirmTarget.voice);
         }}
-        title={confirmTarget === 'all'
-          ? t.storage.audioCacheClearAllConfirmTitle
-          : t.storage.audioCacheClearSpellConfirmTitle.replace('{title}', confirmTarget?.title ?? '')}
-        message={confirmTarget === 'all' ? t.storage.audioCacheClearAllConfirmDesc : t.storage.audioCacheClearSpellConfirmDesc}
+        title={
+          confirmTarget === 'all' ? t.storage.audioCacheClearAllConfirmTitle
+          : confirmTarget?.kind === 'voice' ? t.storage.audioCacheClearVoiceConfirmTitle.replace('{voice}', confirmTarget.voice).replace('{title}', confirmTarget.title)
+          : t.storage.audioCacheClearSpellConfirmTitle.replace('{title}', confirmTarget?.title ?? '')
+        }
+        message={
+          confirmTarget === 'all' ? t.storage.audioCacheClearAllConfirmDesc
+          : confirmTarget?.kind === 'voice' ? t.storage.audioCacheClearVoiceConfirmDesc
+          : t.storage.audioCacheClearSpellConfirmDesc
+        }
       />
     </div>
   );
