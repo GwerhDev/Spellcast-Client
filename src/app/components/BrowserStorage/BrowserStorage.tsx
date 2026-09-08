@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import s from './BrowserStorage.module.css';
+import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../../../i18n';
 import { DB_NAME, SPELLS_STORE_NAME } from '../../../config/api';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faChevronRight } from '@fortawesome/free-solid-svg-icons';
 
 interface StorageBreakdown {
   indexedDB?: number;
@@ -76,6 +79,7 @@ const countIDBStore = async (dbName: string, storeName: string): Promise<number>
 
 export const BrowserStorage: React.FC = () => {
   const { t } = useLanguage();
+  const navigate = useNavigate();
   const [data, setData] = useState<StorageData | null>(null);
   const [supported, setSupported] = useState(true);
   const [counts, setCounts] = useState<ItemCounts | null>(null);
@@ -124,9 +128,12 @@ export const BrowserStorage: React.FC = () => {
     breakdownItems.push({ label: t.storage.other, value: otherUsage, color: 'var(--color-dark-300)' });
   }
 
-  const detailItems = [
+  // TCORE-118: audio cache is the one category here with its own management screen
+  // (breakdown by spell/voice, selective/full clear) -- everything else is read-only info,
+  // so only this one gets a `path` and renders as a clickable drill-down.
+  const detailItems: { label: string; value: string | number; path?: string }[] = [
     { label: t.storage.spells,  value: counts?.spells  ?? '—' },
-    { label: t.storage.audioCache, value: counts?.audioPages ?? '—' },
+    { label: t.storage.audioCache, value: counts?.audioPages ?? '—', path: 'settings/storage/local/audio-cache' },
     { label: t.storage.voiceProfile, value: counts?.voiceProfiles ?? '—' },
     { label: t.storage.appSettings, value: settings.length || '—' },
   ];
@@ -186,10 +193,23 @@ export const BrowserStorage: React.FC = () => {
 
       <div className={s.detailGrid}>
         {detailItems.map((item, i) => (
-          <div key={i} className={s.detailCard}>
-            <span className={s.detailValue}>{item.value}</span>
-            <span className={s.detailLabel}>{item.label}</span>
-          </div>
+          item.path ? (
+            <button
+              key={i}
+              className={`${s.detailCard} ${s.detailCardLink}`}
+              data-testid="storage-detail-audio-cache"
+              onClick={() => navigate(`/caster/${item.path}`)}
+            >
+              <span className={s.detailValue}>{item.value}</span>
+              <span className={s.detailLabel}>{item.label}</span>
+              <FontAwesomeIcon icon={faChevronRight} className={s.detailChevron} />
+            </button>
+          ) : (
+            <div key={i} className={s.detailCard}>
+              <span className={s.detailValue}>{item.value}</span>
+              <span className={s.detailLabel}>{item.label}</span>
+            </div>
+          )
         ))}
       </div>
 

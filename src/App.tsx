@@ -87,7 +87,7 @@ function App() {
             <Route path="/caster/settings/storage" element={<Storage />} />
             <Route path="/caster/settings/storage/local" element={<StorageLocal />} />
             <Route path="/caster/settings/storage/cloud" element={<StorageCloud />} />
-            <Route path="/caster/settings/storage/audio-cache" element={<AudioCacheSettings />} />
+            <Route path="/caster/settings/storage/local/audio-cache" element={<AudioCacheSettings />} />
             <Route path="/caster/settings/about" element={<About />} />
           </Route>
 
