@@ -367,6 +367,21 @@ export const en = {
     // TCORE-117: ambient warning once usage crosses 85% of quota, and the specific
     // messages shown when a write actually fails because the quota was hit.
     quotaWarning: "You're running low on storage space. Free up room in Settings > Storage to keep importing spells and generating audio.",
+    // TCORE-118: audio cache management (Settings > Storage > Local > Audio cache).
+    audioCacheSubtitle: 'Audio is regenerable, so clearing it never loses a spell -- it just gets synthesized again next time you read.',
+    audioCacheEmpty: 'No audio cached yet.',
+    audioCacheClearAll: 'Clear all audio cache',
+    audioCacheClearAllConfirmTitle: 'Clear all audio cache?',
+    audioCacheClearAllConfirmDesc: 'This deletes every cached narration for every spell and voice. Nothing is lost -- audio is regenerated automatically the next time you read.',
+    audioCacheClearSpell: 'Clear audio',
+    audioCacheClearSpellConfirmTitle: 'Clear audio for "{title}"?',
+    audioCacheClearSpellConfirmDesc: 'This deletes this spell\'s cached narration for every voice. The spell itself is untouched -- its audio is regenerated the next time you read it.',
+    audioCacheLastUsed: 'Last used {date}',
+    audioCacheAutoCleanup: 'Auto-clean least recently used audio',
+    audioCacheAutoCleanupDesc: 'When storage runs low, automatically free space by clearing the audio you\'ve listened to least recently.',
+    audioCacheClearedToast: 'Audio cache cleared.',
+    audioCacheSpellClearedToast: 'Cleared audio for "{title}".',
+    audioCacheAutoEvictedToast: 'Freed {size} of least-recently-used audio to make room.',
   },
   permissions: {
     subtitle: 'Control access levels and what others can do with your content.',

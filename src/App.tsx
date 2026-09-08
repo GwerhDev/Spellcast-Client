@@ -12,6 +12,7 @@ import { Loader } from './app/components/Loader';
 import { Home } from './app/pages/Home';
 import { StorageLocal } from './app/pages/StorageLocal';
 import { StorageCloud } from './app/pages/StorageCloud';
+import { AudioCacheSettings } from './app/pages/AudioCacheSettings';
 import { Editor } from './app/pages/Editor';
 import { Grimoire } from './app/pages/Grimoire';
 import { Storage } from './app/pages/Storage';
@@ -86,6 +87,7 @@ function App() {
             <Route path="/caster/settings/storage" element={<Storage />} />
             <Route path="/caster/settings/storage/local" element={<StorageLocal />} />
             <Route path="/caster/settings/storage/cloud" element={<StorageCloud />} />
+            <Route path="/caster/settings/storage/audio-cache" element={<AudioCacheSettings />} />
             <Route path="/caster/settings/about" element={<About />} />
           </Route>
 

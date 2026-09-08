@@ -1,0 +1,135 @@
+.container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.loading {
+  color: var(--color-light-400);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  background: var(--component-background);
+  border-radius: 10px;
+  padding: 1.5rem;
+}
+
+.headerText {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.headerIcon {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  color: var(--color-primary);
+  background: var(--background-color-dark);
+}
+
+.totalValue {
+  display: block;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-color-accent);
+}
+
+.subtitle {
+  margin: 0.25rem 0 0;
+  font-size: 0.85rem;
+  color: var(--color-light-400);
+  max-width: 480px;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.spellRow {
+  background: var(--component-background);
+  border-radius: 10px;
+  padding: 1rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.spellHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.spellInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.spellTitle {
+  font-weight: 600;
+  color: var(--text-color-accent);
+}
+
+.spellMeta {
+  font-size: 0.8rem;
+  color: var(--color-light-400);
+}
+
+.voiceList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding-left: 0.5rem;
+  border-left: 2px solid var(--surface-track);
+}
+
+.voiceRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+}
+
+.voiceLabel {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-color);
+}
+
+.voiceBytes {
+  color: var(--color-light-400);
+}
+
+.voiceClearBtn {
+  border: none;
+  background: transparent;
+  color: var(--color-light-400);
+  cursor: pointer;
+  padding: 0.25rem;
+  display: flex;
+  align-items: center;
+}
+
+.voiceClearBtn:hover {
+  color: var(--color-danger);
+}

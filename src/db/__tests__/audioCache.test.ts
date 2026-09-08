@@ -124,4 +124,128 @@ describe('db/audioCache.ts', () => {
       await expect(clearSpellAudioCache('nothing-cached')).resolves.toBeUndefined();
     });
   });
+
+  describe('clearAudioCacheForVoice (TCORE-118)', () => {
+    it('deletes only the given spell+voice, leaving that spell\'s other voices and other spells intact', async () => {
+      const { setCachedAudio, getCachedAudio, clearAudioCacheForVoice } = await importAudioCache();
+      await setCachedAudio('spell-1', 1, 'alice', new Blob(['a1']) as unknown as globalThis.Blob, timeline());
+      await setCachedAudio('spell-1', 2, 'alice', new Blob(['a2']) as unknown as globalThis.Blob, timeline());
+      await setCachedAudio('spell-1', 1, 'bob', new Blob(['b1']) as unknown as globalThis.Blob, timeline());
+      await setCachedAudio('spell-2', 1, 'alice', new Blob(['other']) as unknown as globalThis.Blob, timeline());
+
+      await clearAudioCacheForVoice('spell-1', 'alice');
+
+      expect(await getCachedAudio('spell-1', 1, 'alice')).toBeNull();
+      expect(await getCachedAudio('spell-1', 2, 'alice')).toBeNull();
+      expect(await getCachedAudio('spell-1', 1, 'bob')).not.toBeNull();
+      expect(await getCachedAudio('spell-2', 1, 'alice')).not.toBeNull();
+    });
+  });
+
+  describe('clearAllAudioCache (TCORE-118)', () => {
+    it('wipes every cached entry regardless of spell or voice', async () => {
+      const { setCachedAudio, getCachedAudio, clearAllAudioCache } = await importAudioCache();
+      await setCachedAudio('spell-1', 1, 'alice', new Blob(['a']) as unknown as globalThis.Blob, timeline());
+      await setCachedAudio('spell-2', 1, 'bob', new Blob(['b']) as unknown as globalThis.Blob, timeline());
+
+      await clearAllAudioCache();
+
+      expect(await getCachedAudio('spell-1', 1, 'alice')).toBeNull();
+      expect(await getCachedAudio('spell-2', 1, 'bob')).toBeNull();
+    });
+  });
+
+  describe('getCachedAudio touches lastAccessed on a real hit (TCORE-118)', () => {
+    it('bumps lastAccessed forward on read, so a re-read looks more recently used to the LRU sweep', async () => {
+      const { setCachedAudio, getCachedAudio, getAudioCacheSummary } = await importAudioCache();
+      await setCachedAudio('spell-1', 1, 'alice', new Blob(['a']) as unknown as globalThis.Blob, timeline());
+      const afterWrite = (await getAudioCacheSummary()).bySpell['spell-1'].lastAccessed;
+
+      await new Promise((r) => setTimeout(r, 5));
+      await getCachedAudio('spell-1', 1, 'alice');
+      // The touch write is fire-and-forget inside getCachedAudio -- give its own
+      // transaction a tick to actually land before reading the summary back.
+      await new Promise((r) => setTimeout(r, 5));
+
+      const afterRead = (await getAudioCacheSummary()).bySpell['spell-1'].lastAccessed;
+      expect(afterRead).toBeGreaterThan(afterWrite);
+    });
+
+    it('does not touch anything (and does not throw) on a cache miss', async () => {
+      const { getCachedAudio } = await importAudioCache();
+      await expect(getCachedAudio('nothing-cached', 1, 'alice')).resolves.toBeNull();
+    });
+  });
+
+  describe('getAudioCacheSummary (TCORE-118)', () => {
+    it('returns an empty summary when nothing is cached', async () => {
+      const { getAudioCacheSummary } = await importAudioCache();
+      expect(await getAudioCacheSummary()).toEqual({ totalBytes: 0, bySpell: {} });
+    });
+
+    it('sums bytes per voice, per spell, and overall', async () => {
+      const { setCachedAudio, getAudioCacheSummary } = await importAudioCache();
+      await setCachedAudio('spell-1', 1, 'alice', new Blob(['aaaaa']) as unknown as globalThis.Blob, timeline()); // 5 bytes
+      await setCachedAudio('spell-1', 2, 'alice', new Blob(['aaa']) as unknown as globalThis.Blob, timeline());   // 3 bytes
+      await setCachedAudio('spell-1', 1, 'bob', new Blob(['bb']) as unknown as globalThis.Blob, timeline());      // 2 bytes
+      await setCachedAudio('spell-2', 1, 'alice', new Blob(['c']) as unknown as globalThis.Blob, timeline());     // 1 byte
+
+      const summary = await getAudioCacheSummary();
+
+      expect(summary.totalBytes).toBe(11);
+      expect(summary.bySpell['spell-1'].totalBytes).toBe(10);
+      expect(summary.bySpell['spell-1'].byVoice).toEqual({ alice: 8, bob: 2 });
+      expect(summary.bySpell['spell-2'].totalBytes).toBe(1);
+    });
+  });
+
+  describe('evictLeastRecentlyUsedAudio (TCORE-118)', () => {
+    it('deletes the oldest-accessed entries first until targetBytes is freed', async () => {
+      const { setCachedAudio, getCachedAudio, evictLeastRecentlyUsedAudio } = await importAudioCache();
+      // Written in order, so 'oldest' below (spell-1) has the smallest lastAccessed.
+      await setCachedAudio('spell-1', 1, 'alice', new Blob(['aaaaa']) as unknown as globalThis.Blob, timeline()); // 5 bytes, oldest
+      await new Promise((r) => setTimeout(r, 5));
+      await setCachedAudio('spell-2', 1, 'alice', new Blob(['bbbbb']) as unknown as globalThis.Blob, timeline()); // 5 bytes, newest
+
+      const freed = await evictLeastRecentlyUsedAudio(5);
+
+      expect(freed).toBe(5);
+      expect(await getCachedAudio('spell-1', 1, 'alice')).toBeNull();
+      expect(await getCachedAudio('spell-2', 1, 'alice')).not.toBeNull();
+    });
+
+    it('stops once targetBytes is covered, leaving newer entries untouched', async () => {
+      const { setCachedAudio, getCachedAudio, evictLeastRecentlyUsedAudio } = await importAudioCache();
+      await setCachedAudio('spell-1', 1, 'alice', new Blob(['aaaaa']) as unknown as globalThis.Blob, timeline()); // 5 bytes
+      await new Promise((r) => setTimeout(r, 5));
+      await setCachedAudio('spell-2', 1, 'alice', new Blob(['bbbbb']) as unknown as globalThis.Blob, timeline()); // 5 bytes
+
+      await evictLeastRecentlyUsedAudio(3); // less than any single entry's size
+
+      expect(await getCachedAudio('spell-1', 1, 'alice')).toBeNull();
+      expect(await getCachedAudio('spell-2', 1, 'alice')).not.toBeNull();
+    });
+
+    it('returns the actual bytes freed, capped by what the cache holds, when targetBytes exceeds it', async () => {
+      const { setCachedAudio, evictLeastRecentlyUsedAudio } = await importAudioCache();
+      await setCachedAudio('spell-1', 1, 'alice', new Blob(['aaaaa']) as unknown as globalThis.Blob, timeline()); // 5 bytes
+
+      const freed = await evictLeastRecentlyUsedAudio(1_000_000);
+
+      expect(freed).toBe(5);
+    });
+
+    it('does nothing and returns 0 for a non-positive target', async () => {
+      const { setCachedAudio, getCachedAudio, evictLeastRecentlyUsedAudio } = await importAudioCache();
+      await setCachedAudio('spell-1', 1, 'alice', new Blob(['a']) as unknown as globalThis.Blob, timeline());
+
+      expect(await evictLeastRecentlyUsedAudio(0)).toBe(0);
+      expect(await getCachedAudio('spell-1', 1, 'alice')).not.toBeNull();
+    });
+
+    it('returns 0 without throwing when the cache is empty', async () => {
+      const { evictLeastRecentlyUsedAudio } = await importAudioCache();
+      expect(await evictLeastRecentlyUsedAudio(100)).toBe(0);
+    });
+  });
 });

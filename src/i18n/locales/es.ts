@@ -369,6 +369,21 @@ export const es: Translations = {
     // TCORE-117: aviso ambiental al superar el 85% de la cuota, y los mensajes específicos
     // que se muestran cuando una escritura falla realmente por falta de espacio.
     quotaWarning: 'Te estás quedando sin espacio de almacenamiento. Libera espacio en Ajustes > Almacenamiento para seguir importando spells y generando audio.',
+    // TCORE-118: administración del caché de audio (Ajustes > Almacenamiento > Local > Caché de audio).
+    audioCacheSubtitle: 'El audio es regenerable, así que limpiarlo nunca pierde un spell -- simplemente se vuelve a sintetizar la próxima vez que lo leas.',
+    audioCacheEmpty: 'Todavía no hay audio en caché.',
+    audioCacheClearAll: 'Limpiar todo el caché de audio',
+    audioCacheClearAllConfirmTitle: '¿Limpiar todo el caché de audio?',
+    audioCacheClearAllConfirmDesc: 'Esto elimina toda la narración en caché de todos los spells y voces. No se pierde nada -- el audio se regenera automáticamente la próxima vez que leas.',
+    audioCacheClearSpell: 'Limpiar audio',
+    audioCacheClearSpellConfirmTitle: '¿Limpiar el audio de "{title}"?',
+    audioCacheClearSpellConfirmDesc: 'Esto elimina la narración en caché de este spell para todas las voces. El spell en sí no se toca -- su audio se regenera la próxima vez que lo leas.',
+    audioCacheLastUsed: 'Usado por última vez {date}',
+    audioCacheAutoCleanup: 'Limpiar automáticamente el audio menos usado',
+    audioCacheAutoCleanupDesc: 'Cuando el almacenamiento se agota, libera espacio automáticamente limpiando el audio que escuchaste hace más tiempo.',
+    audioCacheClearedToast: 'Caché de audio limpiado.',
+    audioCacheSpellClearedToast: 'Se limpió el audio de "{title}".',
+    audioCacheAutoEvictedToast: 'Se liberaron {size} de audio menos usado recientemente para hacer espacio.',
   },
   permissions: {
     subtitle: 'Controla los niveles de acceso y lo que otros pueden hacer con tu contenido.',

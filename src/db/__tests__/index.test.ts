@@ -310,6 +310,17 @@ describe('db/index.ts CRUD', () => {
 
     expect(await getOriginalPdf(id)).toBeNull();
   });
+
+  it('deleteSpellFromDB also clears the spell\'s cached audio, instead of leaving it orphaned forever (TCORE-118)', async () => {
+    const { saveSpellToDB, deleteSpellFromDB } = await importDb();
+    const { setCachedAudio, getCachedAudio } = await import('../audioCache');
+    const id = await saveSpellToDB(seedSpell({ userId: 'user-1' }));
+    await setCachedAudio(id, 1, 'some-voice', new Blob(['audio']) as unknown as globalThis.Blob, []);
+
+    await deleteSpellFromDB(id, 'user-1');
+
+    expect(await getCachedAudio(id, 1, 'some-voice')).toBeNull();
+  });
 });
 
 describe('db/index.ts schema setup and legacy migration', () => {

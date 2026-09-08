@@ -1,6 +1,7 @@
 import { DB_NAME, DB_VERSION, SPELLS_STORE_NAME } from "../config/api";
 import { Spell, SpellProgress } from "../interfaces";
 import { setOriginalPdf, deleteOriginalPdf } from "./originalPdfs";
+import { clearSpellAudioCache } from "./audioCache";
 
 // The pre-rename (TCORE-78) store name, frozen on purpose: it names whatever a
 // browser already has on disk from before this migration shipped, so it must never
@@ -440,6 +441,14 @@ export const deleteSpellFromDB = async (id: string, userId: string | undefined):
   // delete the user actually asked for.
   await deleteOriginalPdf(id).catch((err) => {
     console.error(`[IndexedDB] Failed to delete original PDF for removed spell "${id}":`, err);
+  });
+
+  // TCORE-118: same reasoning -- without this, every deleted spell left its cached audio
+  // behind forever with nothing in the app able to reach or reclaim it (audioCache is keyed
+  // by spellId, not looked up from the spells store), quietly wasting the "biggest consumer
+  // of local space" this whole epic is about freeing up.
+  await clearSpellAudioCache(id).catch((err) => {
+    console.error(`[IndexedDB] Failed to clear audio cache for removed spell "${id}":`, err);
   });
 };
 
