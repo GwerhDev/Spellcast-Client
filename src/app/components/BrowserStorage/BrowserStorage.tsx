@@ -128,12 +128,13 @@ export const BrowserStorage: React.FC = () => {
     breakdownItems.push({ label: t.storage.other, value: otherUsage, color: 'var(--color-dark-300)' });
   }
 
-  // TCORE-118: audio cache is the one category here with its own management screen
-  // (breakdown by spell/voice, selective/full clear) -- everything else is read-only info,
-  // so only this one gets a `path` and renders as a clickable drill-down.
-  const detailItems: { label: string; value: string | number; path?: string }[] = [
-    { label: t.storage.spells,  value: counts?.spells  ?? '—' },
-    { label: t.storage.audioCache, value: counts?.audioPages ?? '—', path: 'settings/storage/local/audio-cache' },
+  // TCORE-118/119: spells and audio cache each have their own management screen
+  // (per-spell breakdown + granular delete; audio breakdown by spell/voice + selective/full
+  // clear) -- everything else here is read-only info, so only these two get a `path` and
+  // render as clickable drill-downs.
+  const detailItems: { label: string; value: string | number; path?: string; testId?: string }[] = [
+    { label: t.storage.spells,  value: counts?.spells  ?? '—', path: 'settings/storage/local/spells', testId: 'storage-detail-spells' },
+    { label: t.storage.audioCache, value: counts?.audioPages ?? '—', path: 'settings/storage/local/audio-cache', testId: 'storage-detail-audio-cache' },
     { label: t.storage.voiceProfile, value: counts?.voiceProfiles ?? '—' },
     { label: t.storage.appSettings, value: settings.length || '—' },
   ];
@@ -197,7 +198,7 @@ export const BrowserStorage: React.FC = () => {
             <button
               key={i}
               className={`${s.detailCard} ${s.detailCardLink}`}
-              data-testid="storage-detail-audio-cache"
+              data-testid={item.testId}
               onClick={() => navigate(`/caster/${item.path}`)}
             >
               <span className={s.detailValue}>{item.value}</span>

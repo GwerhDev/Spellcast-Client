@@ -384,6 +384,20 @@ export const es: Translations = {
     audioCacheClearedToast: 'Caché de audio limpiado.',
     audioCacheSpellClearedToast: 'Se limpió el audio de "{title}".',
     audioCacheAutoEvictedToast: 'Se liberaron {size} de audio menos usado recientemente para hacer espacio.',
+    // TCORE-119: desglose de almacenamiento por spell (Ajustes > Almacenamiento > Local >
+    // Spells). Reutiliza el copy/toasts de audioCache* de arriba para la acción "limpiar
+    // audio" -- misma superficie de administración, misma acción, mismo texto, no un flujo
+    // paralelo duplicado.
+    spellStorageSubtitle: 'Lo que ocupa cada spell, desglosado en contenido, PDF original y audio en caché.',
+    spellStorageEmpty: 'Todavía no hay spells.',
+    spellStorageContent: 'Contenido',
+    spellStoragePdf: 'PDF original',
+    spellStorageAudio: 'Caché de audio',
+    spellStorageDropPdf: 'Soltar PDF',
+    spellStorageDropPdfConfirmTitle: '¿Soltar el PDF original de "{title}"?',
+    spellStorageDropPdfConfirmDesc: 'Esto elimina permanentemente el archivo PDF original de este spell -- a diferencia del audio, no se puede regenerar. El spell en sí y su contenido extraído (páginas, texto) no se ven afectados y siguen siendo completamente legibles.',
+    spellStoragePdfDroppedToast: 'Se soltó el PDF original de "{title}".',
+    spellStorageManageAudioLink: 'Administrar todo el caché de audio',
   },
   permissions: {
     subtitle: 'Controla los niveles de acceso y lo que otros pueden hacer con tu contenido.',

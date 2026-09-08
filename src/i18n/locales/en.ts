@@ -382,6 +382,19 @@ export const en = {
     audioCacheClearedToast: 'Audio cache cleared.',
     audioCacheSpellClearedToast: 'Cleared audio for "{title}".',
     audioCacheAutoEvictedToast: 'Freed {size} of least-recently-used audio to make room.',
+    // TCORE-119: per-spell storage breakdown (Settings > Storage > Local > Spells). Reuses
+    // the audioCache* copy/toasts above for the "clear audio" action -- same admin surface,
+    // same action, same wording, not a parallel duplicate flow.
+    spellStorageSubtitle: 'What each spell is using, broken down by content, original PDF, and cached audio.',
+    spellStorageEmpty: 'No spells yet.',
+    spellStorageContent: 'Content',
+    spellStoragePdf: 'Original PDF',
+    spellStorageAudio: 'Audio cache',
+    spellStorageDropPdf: 'Drop PDF',
+    spellStorageDropPdfConfirmTitle: 'Drop the original PDF for "{title}"?',
+    spellStorageDropPdfConfirmDesc: 'This permanently deletes the original PDF file backing this spell -- unlike audio, it cannot be regenerated. The spell itself and its extracted content (pages, text) are not affected and stay fully readable.',
+    spellStoragePdfDroppedToast: 'Dropped the original PDF for "{title}".',
+    spellStorageManageAudioLink: 'Manage all audio cache',
   },
   permissions: {
     subtitle: 'Control access levels and what others can do with your content.',

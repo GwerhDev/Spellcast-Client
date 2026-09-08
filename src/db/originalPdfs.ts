@@ -79,3 +79,22 @@ export const getAllOriginalPdfIds = async (): Promise<Set<string>> => {
     request.onerror = (e) => reject((e.target as IDBRequest).error);
   });
 };
+
+// TCORE-119: spellId -> stored PDF's byte size, for the per-spell storage breakdown. One
+// cursor pass, reads blob.size (metadata the Blob already carries) rather than pulling
+// every PDF's actual bytes into memory just to report on them.
+export const getAllOriginalPdfSizes = async (): Promise<Record<string, number>> => {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const sizes: Record<string, number> = {};
+    const req = db.transaction(STORE_NAME, 'readonly').objectStore(STORE_NAME).openCursor();
+    req.onsuccess = (e) => {
+      const cursor = (e.target as IDBRequest<IDBCursorWithValue | null>).result;
+      if (!cursor) { resolve(sizes); return; }
+      const record = cursor.value as { spellId: string; blob: Blob };
+      sizes[record.spellId] = record.blob?.size ?? 0;
+      cursor.continue();
+    };
+    req.onerror = (e) => reject((e.target as IDBRequest).error);
+  });
+};

@@ -16,6 +16,7 @@ import { SecondaryButton } from '../../components/Buttons/SecondaryButton';
 import { DeleteConfirmModal } from '../../components/Modals/DeleteConfirmModal';
 import { ToggleRow } from '../../components/Inputs/ToggleRow';
 import { EmptyState } from '../../components/EmptyState';
+import { Spinner } from '../../components/Spinner';
 
 interface SpellRow {
   id: string;
@@ -72,7 +73,7 @@ export const AudioCacheManager = () => {
     await reload();
   };
 
-  if (!summary) return <p className={s.loading}>{t.storage.calculating}</p>;
+  if (!summary) return <Spinner isLoading message={t.storage.calculating} />;
 
   const rows: SpellRow[] = Object.entries(summary.bySpell)
     .map(([id, entry]) => ({

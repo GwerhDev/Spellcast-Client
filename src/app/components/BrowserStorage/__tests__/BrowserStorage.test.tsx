@@ -21,10 +21,10 @@ beforeEach(() => {
 
 const renderBrowserStorage = () => render(<LanguageProvider><BrowserStorage /></LanguageProvider>);
 
-// TCORE-118: audio cache lives under Local (it's IndexedDB, part of local storage), not as
-// its own top-level Storage category -- reachable here as a drill-down from the "audio
-// cache" count this component already showed, not from StorageOverview.
-describe('BrowserStorage audio cache drill-down', () => {
+// TCORE-118/119: audio cache and spells both live under Local (they're IndexedDB, part of
+// local storage), not their own top-level Storage categories -- reachable here as
+// drill-downs from the counts this component already showed, not from StorageOverview.
+describe('BrowserStorage drill-downs', () => {
   it('renders the audio cache detail as a clickable card that navigates to its nested settings route', async () => {
     renderBrowserStorage();
 
@@ -34,13 +34,22 @@ describe('BrowserStorage audio cache drill-down', () => {
     expect(navigateMock).toHaveBeenCalledWith('/caster/settings/storage/local/audio-cache');
   });
 
+  it('renders the spells detail as a clickable card that navigates to its nested settings route', async () => {
+    renderBrowserStorage();
+
+    const link = await screen.findByTestId('storage-detail-spells');
+    link.click();
+
+    expect(navigateMock).toHaveBeenCalledWith('/caster/settings/storage/local/spells');
+  });
+
   it('keeps the other storage-detail counts as plain, non-navigable info', async () => {
     renderBrowserStorage();
     await screen.findByTestId('storage-detail-audio-cache');
 
-    // Only the audio cache tile is a button; spells/voiceProfile/appSettings stay divs.
+    // Only spells/audio cache are buttons; voiceProfile/appSettings stay plain divs.
     const allDetailValues = screen.getAllByText(/^(—|\d+)$/);
     const buttons = allDetailValues.filter((el) => el.closest('button'));
-    expect(buttons).toHaveLength(1);
+    expect(buttons).toHaveLength(2);
   });
 });

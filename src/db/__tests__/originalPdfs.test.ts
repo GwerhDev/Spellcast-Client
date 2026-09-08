@@ -105,4 +105,27 @@ describe('db/originalPdfs.ts', () => {
       expect(await getAllOriginalPdfIds()).toEqual(new Set(['spell-2']));
     });
   });
+
+  describe('getAllOriginalPdfSizes (TCORE-119)', () => {
+    it('returns an empty object when nothing has been stored', async () => {
+      const { getAllOriginalPdfSizes } = await importOriginalPdfs();
+      expect(await getAllOriginalPdfSizes()).toEqual({});
+    });
+
+    it('maps each spellId to its stored PDF\'s byte size, in one read', async () => {
+      const { setOriginalPdf, getAllOriginalPdfSizes } = await importOriginalPdfs();
+      await setOriginalPdf('spell-1', new Blob(['aaaaa']) as unknown as globalThis.Blob); // 5 bytes
+      await setOriginalPdf('spell-2', new Blob(['bb']) as unknown as globalThis.Blob);    // 2 bytes
+
+      expect(await getAllOriginalPdfSizes()).toEqual({ 'spell-1': 5, 'spell-2': 2 });
+    });
+
+    it('no longer includes a spellId after its entry is deleted', async () => {
+      const { setOriginalPdf, deleteOriginalPdf, getAllOriginalPdfSizes } = await importOriginalPdfs();
+      await setOriginalPdf('spell-1', new Blob(['a']) as unknown as globalThis.Blob);
+      await deleteOriginalPdf('spell-1');
+
+      expect(await getAllOriginalPdfSizes()).toEqual({});
+    });
+  });
 });
