@@ -312,7 +312,8 @@
     transition: opacity 0.2s ease, transform 0.24s cubic-bezier(0.22, 1, 0.36, 1);
   }
 
-  .card:hover .footer {
+  .card:hover .footer,
+  .card:focus-within .footer {
     opacity: 1;
     transform: translateY(0);
   }
@@ -338,7 +339,8 @@
     transition: opacity 0.2s ease;
   }
 
-  .card:hover .coverTags {
+  .card:hover .coverTags,
+  .card:focus-within .coverTags {
     opacity: 0;
   }
 }
