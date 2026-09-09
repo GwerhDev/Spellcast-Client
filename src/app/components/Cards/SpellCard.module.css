@@ -1,6 +1,6 @@
 .card {
   position: relative;
-  width: 160px;
+  width: var(--spell-card-width);
   flex-shrink: 0;
   border-radius: 8px;
   border: 0.5px solid var(--line);
@@ -162,7 +162,7 @@
 .coverWrapper {
   position: relative;
   flex-shrink: 0;
-  height: 180px;
+  height: var(--spell-cover-height);
 }
 
 .uploadOverlay {
@@ -219,7 +219,7 @@
 
 .cover {
   width: 100%;
-  height: 180px;
+  height: var(--spell-cover-height);
   object-fit: cover;
   object-position: top;
   display: block;
@@ -227,7 +227,7 @@
 }
 
 .iconWrapper {
-  height: 180px;
+  height: var(--spell-cover-height);
   display: flex;
   align-items: center;
   justify-content: center;

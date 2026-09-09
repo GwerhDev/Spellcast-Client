@@ -111,6 +111,22 @@
   --paper-bg: #252830;
   --paper-shadow: 0 4px 28px rgba(0, 0, 0, 0.55);
 
+  /* One standard cover height for every spell card and its loading skeleton (SpellCard,
+     EditorPickerCard, SpellGrid/LastSpells skeletons) -- covers are arbitrary PDF first
+     pages, so they're cropped to this box (object-fit: cover, anchored top) rather than
+     letterboxed, and a single token keeps all four from drifting apart. The pointer-device
+     value below is the taller one because there the info footer is a hover overlay instead
+     of sitting under the cover, so the cover has to absorb the footer's old height for the
+     card to keep the total height it has always had. */
+  --spell-cover-height: 180px;
+
+  /* The matching fixed card/column width. Spell grids lay out fixed-width tracks
+     (repeat(auto-fill, this)) instead of stretchy 1fr ones, so a card is the same size and
+     the same cover aspect ratio on every screen -- the leftover space goes into the gaps
+     between columns, never into the cards. Card components hardcode nothing: they read this,
+     so the cards and the tracks they sit in can't disagree. */
+  --spell-card-width: 160px;
+
   --size-1: 4px;
   --size-2: 8px;
   --size-3: 12px;
@@ -240,4 +256,13 @@ html.light {
   margin: 0;
   padding: 0;
   flex-grow: 1;
+}
+
+/* See --spell-cover-height above: on pointer devices the card's info footer is a hover
+   overlay rather than a row under the cover, so the cover takes over the height the footer
+   used to occupy and the card ends up the same size it was before the overlay existed. */
+@media (hover: hover) {
+  :root {
+    --spell-cover-height: 240px;
+  }
 }

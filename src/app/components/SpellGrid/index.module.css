@@ -4,20 +4,14 @@
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  /* Fixed tracks, not minmax(..., 1fr): covers are arbitrary PDF pages cropped to a fixed
+     box, so a card that stretched with the viewport would change its aspect ratio (and crop
+     a different part of the page) at every width. `space-between` hands the leftover space
+     to the gaps instead of to the cards -- columns are shared by every row, so rows stay
+     aligned and a short last row just fills the first tracks. */
+  grid-template-columns: repeat(auto-fill, var(--spell-card-width));
+  justify-content: space-between;
   gap: 1rem;
-}
-
-/* Card components (SpellCard, EditorPickerCard) set a fixed 160px width for
-   flex/standalone contexts (e.g. the Home carousel, which must NOT be touched by
-   this override). Inside this grid, cards should stretch to fill their column
-   instead of sitting fixed-width inside a wider cell — otherwise rows with
-   fewer/wider columns show dead space around each card. `.grid > *` alone ties
-   with `.card`'s own width rule on specificity (both 0,1,0), which can lose the
-   cascade depending on CSS module bundling order — repeating the class (`.grid.grid`)
-   raises specificity to (0,2,0) so this wins on its own merits, no !important needed. */
-.grid.grid > * {
-  width: 100%;
 }
 
 .sentinel {
@@ -40,7 +34,7 @@
 
 .skeletonCover {
   width: 100%;
-  height: 180px;
+  height: var(--spell-cover-height);
 }
 
 .skeletonFooter {
