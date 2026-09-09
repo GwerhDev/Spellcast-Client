@@ -65,3 +65,10 @@
 .skeletonTitle      { height: 0.75rem; width: 85%; }
 .skeletonTitleShort { height: 0.75rem; width: 60%; }
 .skeletonDate       { height: 0.6rem;  width: 45%; }
+
+/* The real cards take their footer out of layout on pointer devices (it becomes a
+   hover-reveal overlay -- see SpellCard/EditorPickerCard), so the skeleton has to lose it
+   too on exactly the same condition, or every grid visibly reflows once data lands. */
+@media (hover: hover) {
+  .skeletonFooter { display: none; }
+}

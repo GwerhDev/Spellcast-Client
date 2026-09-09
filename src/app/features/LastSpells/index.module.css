@@ -180,6 +180,12 @@
   width: 45%;
 }
 
+/* Matches SpellCard's hover-reveal footer: on pointer devices the real card is just its
+   cover, so the skeleton drops its footer too and the carousel doesn't reflow on load. */
+@media (hover: hover) {
+  .skeletonFooter { display: none; }
+}
+
 @media (max-width: 1024px) {
   .container {
     padding-inline: 0;

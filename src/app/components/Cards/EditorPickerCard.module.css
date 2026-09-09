@@ -61,3 +61,41 @@
   font-size: 0.68rem;
   color: var(--color-light-400);
 }
+
+/* ── Hover-reveal footer ──
+   Same treatment as SpellCard (see its module for the full reasoning): on pointer devices
+   the card is only its cover and the footer slides up over it on hover; touch devices keep
+   the original in-flow footer, since there's no hover there to reveal it with. */
+@media (hover: hover) {
+  .footer {
+    position: absolute;
+    inset: auto 0 0 0;
+    padding-top: 1.75rem;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.92) 30%, rgba(0, 0, 0, 0.55) 72%, transparent);
+    opacity: 0;
+    transform: translateY(100%);
+    transition: opacity 0.2s ease, transform 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .card:hover .footer {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Fixed light values rather than the themed text tokens -- this text always sits on the
+     dark scrim above, in both themes. */
+  .footer .title {
+    color: var(--app-white);
+  }
+
+  .footer .meta {
+    color: rgba(255, 255, 255, 0.72);
+  }
+}
+
+@media (hover: hover) and (prefers-reduced-motion: reduce) {
+  .footer {
+    transform: none;
+    transition: opacity 0.2s ease;
+  }
+}

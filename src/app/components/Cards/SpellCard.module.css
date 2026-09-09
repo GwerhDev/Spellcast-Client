@@ -290,3 +290,62 @@
   font-size: 0.65rem;
   color: var(--color-light-400);
 }
+
+/* ── Hover-reveal footer ──
+   On pointer devices the info footer isn't part of the card's layout at all: the card is
+   only its cover, and the footer slides up over the bottom of it on hover, so a grid of
+   spells reads as artwork first. Scoped to `hover: hover` on purpose -- a touch device has
+   no hover to reveal it with, so it keeps the original always-visible, in-flow footer
+   rather than being left with untitled covers. */
+@media (hover: hover) {
+  .footer {
+    position: absolute;
+    inset: auto 0 0 0;
+    z-index: 4;
+    /* Extra top padding gives the gradient room to fade out before the text starts. */
+    padding-top: 1.75rem;
+    /* Its own scrim, on top of .coverWrapper::after's flat hover dim -- cover art is
+       arbitrary, so the text needs a guaranteed dark backdrop of its own. */
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.92) 30%, rgba(0, 0, 0, 0.55) 72%, transparent);
+    opacity: 0;
+    transform: translateY(100%);
+    transition: opacity 0.2s ease, transform 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .card:hover .footer {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* Fixed light values rather than the themed text tokens: this text always sits on the
+     dark scrim above, in both the light and dark themes. */
+  .footer .title {
+    color: var(--app-white);
+  }
+
+  .footer .date,
+  .footer .progress {
+    color: rgba(255, 255, 255, 0.72);
+  }
+
+  .footer .progressBar {
+    background: rgba(255, 255, 255, 0.25);
+  }
+
+  /* The status tag and the footer share the bottom of the cover -- the footer takes that
+     space over on hover, and already carries the same signal (waveform + progress). */
+  .coverTags {
+    transition: opacity 0.2s ease;
+  }
+
+  .card:hover .coverTags {
+    opacity: 0;
+  }
+}
+
+@media (hover: hover) and (prefers-reduced-motion: reduce) {
+  .footer {
+    transform: none;
+    transition: opacity 0.2s ease;
+  }
+}
