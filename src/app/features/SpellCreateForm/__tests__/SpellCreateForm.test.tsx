@@ -25,6 +25,25 @@ vi.mock('../../../../utils/pdfUtils', () => ({
   injectCoverIntoPages: vi.fn((pages: unknown) => Promise.resolve(pages)),
   blobToDataUrl: vi.fn((blob: Blob) => Promise.resolve(`data:image/png;base64,${(blob as unknown as { name?: string })?.name ?? ''}`)),
   extractPdfMetadata: (...args: unknown[]) => extractPdfMetadataMock(...(args as [])),
+  // Real (pure) implementation -- exercising the actual replace-or-prepend logic is the
+  // point of the cover tests below, not something worth mocking away.
+  applyCoverToPage1: (pages: { content?: { type: string; attrs?: Record<string, unknown> }[] }[], coverDataUrl: string) => {
+    if (pages.length === 0) return pages;
+    const page1 = pages[0];
+    const coverNode = { type: 'image', attrs: { src: coverDataUrl, alt: null, title: null } };
+    const firstNode = page1?.content?.[0];
+    const hasCoverNode = firstNode?.type === 'image' && firstNode?.attrs?.title !== 'pdf-graphic';
+    const content = hasCoverNode
+      ? [coverNode, ...(page1.content ?? []).slice(1)]
+      : [coverNode, ...(page1.content ?? [])];
+    const updated = [...pages];
+    updated[0] = { ...page1, content };
+    return updated;
+  },
+  // Identity -- createImageBitmap/canvas downscaling isn't meaningfully testable in jsdom,
+  // and isn't what these tests are about; they only assert the (already-downscaled) blob
+  // reaches applyCover/saveSpellToDB.
+  downscaleImageBlob: vi.fn((blob: Blob) => Promise.resolve(blob)),
 }));
 
 const saveSpellToDBMock = vi.fn<(payload: Record<string, unknown>) => Promise<string>>(() => Promise.resolve('new-spell-id'));

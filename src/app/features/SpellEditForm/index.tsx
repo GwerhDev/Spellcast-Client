@@ -9,7 +9,7 @@ import { getSpellById, updateSpellContent, updateSpellFull } from '../../../db';
 import { hasOriginalPdf, getOriginalPdf } from '../../../db/originalPdfs';
 import * as pdfjsLib from 'pdfjs-dist';
 import workerSrc from 'pdfjs-dist/build/pdf.worker?url';
-import { renderPageToCover, blobToDataUrl } from '../../../utils/pdfUtils';
+import { renderPageToCover, blobToDataUrl, applyCoverToPage1, downscaleImageBlob } from '../../../utils/pdfUtils';
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 import { setShowEditorSettings } from '../../../store/editorSlice';
 import { invalidateContent, invalidateSpellList } from '../../../store/spellReaderSlice';
@@ -323,29 +323,44 @@ export const SpellEditForm: React.FC = () => {
   };
 
   // TCORE-122: cover changes save immediately (like the "replace content"/"reset" actions
-  // below) instead of going through the title/pagesContent autosave/hasChanges flow --
-  // there's no draft state worth previewing before committing a new cover, and
-  // updateSpellFull writes it independently of pagesContent so it can't race the
-  // autosave timer into clobbering either field.
+  // below) instead of going through the autosave timer -- there's no draft state worth
+  // previewing before committing a new cover.
+  //
+  // updateSpellFull is a full-record write, so it necessarily also writes whatever title/
+  // pagesContent are currently in memory -- including a title edit or page edit the user
+  // hasn't explicitly saved yet. That was already true before this fix; what wasn't handled
+  // is that it leaves `hasChanges` stale afterwards (review follow-up): the in-memory state
+  // (now with the new cover node applied to page 1 too, see applyCoverToPage1) IS what just
+  // got persisted, so resetting hasChanges/saveStatus here is what keeps the Save button and
+  // "Saved" indicator honest about there being nothing left to save, the same way handleSave
+  // does for its own write.
   const applyCover = async (blob: Blob) => {
     if (!id || !userData.id) return;
     const dataUrl = await blobToDataUrl(blob);
     setCoverUrl(dataUrl);
+    const updatedPages = applyCoverToPage1(pagesContent, dataUrl);
+    setPagesContent(updatedPages);
     try {
       await updateSpellFull(id, userData.id, {
         title: spellTitle,
-        pagesContent: JSON.stringify(pagesContent),
+        pagesContent: JSON.stringify(updatedPages),
         cover: blob,
         originalPagesContent: originalPages ? JSON.stringify(originalPages) : undefined,
       });
+      setHasChanges(false);
+      setSaveStatus('saved');
       dispatch(invalidateContent());
       dispatch(invalidateSpellList());
+      setTimeout(() => setSaveStatus('idle'), 2000);
     } catch (err) {
       console.error('Failed to save new cover:', err);
     }
   };
 
-  const handleCoverUpload = (file: File) => { void applyCover(file); };
+  // Downscaled before it ever reaches applyCover -- an unprocessed upload can be several MB,
+  // which would otherwise count fully against the spell's IndexedDB storage quota (TCORE-117)
+  // for an image only ever shown at thumbnail size (review follow-up).
+  const handleCoverUpload = (file: File) => { void downscaleImageBlob(file).then(applyCover); };
 
   const handleUseFirstPageCover = async () => {
     if (!id) return;

@@ -88,6 +88,56 @@ export const renderPageToCover = async (pdf: pdfjsLib.PDFDocumentProxy): Promise
   }
 };
 
+// TCORE-122 (review follow-up): applies a newly picked cover to whatever is shown as the
+// first thing on page 1 -- shared by SpellCreateForm and SpellEditForm's applyCover, so a
+// cover picked while editing an already-saved spell updates the reader's page 1 the exact
+// same way it does at creation time, not just the cover Blob/thumbnail. Replaces an
+// existing cover image node in place, or prepends a new one when page 1 has none yet.
+export const applyCoverToPage1 = (pages: JSONContent[], coverDataUrl: string): JSONContent[] => {
+  if (pages.length === 0) return pages;
+  const page1 = pages[0];
+  const coverNode = { type: 'image', attrs: { src: coverDataUrl, alt: null, title: null } };
+  const firstNode = page1?.content?.[0];
+  const hasCoverNode = firstNode?.type === 'image' && (firstNode?.attrs as Record<string, unknown>)?.title !== 'pdf-graphic';
+  const content = hasCoverNode
+    ? [coverNode, ...(page1.content ?? []).slice(1)]
+    : [coverNode, ...(page1.content ?? [])];
+  const updated = [...pages];
+  updated[0] = { ...page1, content };
+  return updated;
+};
+
+// TCORE-122 (review follow-up): caps an uploaded cover image before it's persisted as a
+// Blob in IndexedDB -- an unprocessed photo straight from a phone/camera can be several MB,
+// counting fully against the same per-spell storage quota TCORE-117 already tracks for
+// audio/PDFs, for a cover that's only ever displayed at thumbnail size. Downscales to at
+// most `maxDimension` on the longer side (never upscales a smaller image) and re-encodes as
+// JPEG, matching renderPageToCover's own format/quality so covers are consistently sized
+// regardless of source. Falls back to the original file if decoding/encoding fails for any
+// reason (corrupt image, unsupported format) -- a not-yet-downscaled cover beats none.
+export const downscaleImageBlob = async (
+  blob: Blob,
+  maxDimension = 400,
+  quality = 0.75,
+): Promise<Blob> => {
+  try {
+    const bitmap = await createImageBitmap(blob);
+    const scale = Math.min(1, maxDimension / Math.max(bitmap.width, bitmap.height));
+    const width = Math.round(bitmap.width * scale);
+    const height = Math.round(bitmap.height * scale);
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d')!;
+    ctx.drawImage(bitmap, 0, 0, width, height);
+    bitmap.close();
+    const downscaled = await new Promise<Blob | null>((resolve) => canvas.toBlob((b) => resolve(b), 'image/jpeg', quality));
+    return downscaled ?? blob;
+  } catch {
+    return blob;
+  }
+};
+
 export const extractPageImages = async (page: pdfjsLib.PDFPageProxy): Promise<string[]> => {
   const dataUrls: string[] = [];
   try {

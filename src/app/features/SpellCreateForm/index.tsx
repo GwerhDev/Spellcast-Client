@@ -21,7 +21,7 @@ import { IconButton } from '../../components/Buttons/IconButton';
 import { resetSpellState, setSpellDetails, setSpellTitle as setSpellTitleAction } from '../../../store/spellSlice';
 import { resetSpellReader } from '../../../store/spellReaderSlice';
 import { textToSpeechService } from '../../../services/tts';
-import { renderPageToCover, extractPdfPages, injectCoverIntoPages, emptyPageContent, blobToDataUrl, extractPdfMetadata } from '../../../utils/pdfUtils';
+import { renderPageToCover, extractPdfPages, injectCoverIntoPages, emptyPageContent, blobToDataUrl, extractPdfMetadata, applyCoverToPage1, downscaleImageBlob } from '../../../utils/pdfUtils';
 import { useLanguage } from '../../../i18n';
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
@@ -256,28 +256,20 @@ export const SpellCreateForm: React.FC = () => {
 
   // TCORE-122: applies a new cover Blob to both the state the save flow persists (`cover`)
   // and the cover image node shown as the first thing on page 1 -- same dual-write shape
-  // the PDF-import path above already does when it finds a coverBlob. Replaces an existing
-  // cover node if page 1 already starts with one, otherwise prepends a new one.
+  // the PDF-import path above already does when it finds a coverBlob. The page 1 update
+  // itself is shared with SpellEditForm's applyCover via applyCoverToPage1 (review
+  // follow-up), so both forms keep the reader in sync with the cover the same way.
   const applyCover = async (blob: Blob) => {
     const dataUrl = await blobToDataUrl(blob);
     setCover(blob);
     setCoverUrl(dataUrl);
-    setPagesContent((prev) => {
-      if (prev.length === 0) return prev;
-      const page1 = prev[0];
-      const coverNode = { type: 'image', attrs: { src: dataUrl, alt: null, title: null } };
-      const firstNode = page1?.content?.[0];
-      const hasCoverNode = firstNode?.type === 'image' && (firstNode?.attrs as Record<string, unknown>)?.title !== 'pdf-graphic';
-      const content = hasCoverNode
-        ? [coverNode, ...(page1.content ?? []).slice(1)]
-        : [coverNode, ...(page1.content ?? [])];
-      const updated = [...prev];
-      updated[0] = { ...page1, content };
-      return updated;
-    });
+    setPagesContent((prev) => applyCoverToPage1(prev, dataUrl));
   };
 
-  const handleCoverUpload = (file: File) => { void applyCover(file); };
+  // Downscaled before it ever reaches applyCover -- an unprocessed upload can be several MB,
+  // which would otherwise count fully against the spell's IndexedDB storage quota (TCORE-117)
+  // for an image only ever shown at thumbnail size (review follow-up).
+  const handleCoverUpload = (file: File) => { void downscaleImageBlob(file).then(applyCover); };
 
   const handleUseFirstPageCover = async () => {
     if (!pdfDocRef.current) return;
