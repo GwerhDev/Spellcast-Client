@@ -6,11 +6,11 @@ import type { CoverFrameCornersConfig } from '../../../utils/coverFrame';
 // replaced a single frame image stretched to the cover's own box). Each corner image is
 // rendered at a FIXED pixel size, mirrored via CSS transform for the other 3 -- never
 // scaled to the cover's aspect ratio, so a corner plate's rivets and curves stay round
-// regardless of whether the cover box is a 160x180 SpellCard, an 80x110 SpellDetail image,
-// or a 36x36 square player thumbnail. The straight edge banding between corners is a plain
-// CSS border (see getCoverFrameStyle) applied directly to the cover <img> itself -- borders
-// are the one part of this design that scales to any aspect ratio without distortion, so it
-// isn't reproduced here.
+// regardless of whether the cover box is a 160x180 SpellCard or an 80x110 SpellDetail
+// image. The straight edge banding between corners is a plain CSS border (see
+// getCoverFrameStyle) applied directly to the cover <img> itself -- borders are the one
+// part of this design that scales to any aspect ratio without distortion, so it isn't
+// reproduced here.
 //
 // Each piece is centered ON the cover's own edge/corner (via a translate, like a picture
 // frame's own physical lip) rather than flush inside it -- half of it overhangs past the

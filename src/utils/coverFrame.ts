@@ -3,9 +3,9 @@ import type { CSSProperties } from 'react';
 
 // TCORE-123: the one place Spell.coverFrameId's three-state fallback (see that field's
 // own comment in interfaces/index.ts) gets resolved, so every render site (SpellCard,
-// SpellDetail, the audio/browser players, SpellDetailModal, EditorPickerCard) agrees on
-// the same rule instead of re-deriving it -- undefined defers to the global default,
-// null/a set id both win outright over it.
+// SpellDetail, SpellDetailModal, EditorPickerCard) agrees on the same rule instead of
+// re-deriving it -- undefined defers to the global default, null/a set id both win outright
+// over it.
 export const resolveCoverFrameId = (
   spellCoverFrameId: string | null | undefined,
   activeCoverFrameId: string | null,

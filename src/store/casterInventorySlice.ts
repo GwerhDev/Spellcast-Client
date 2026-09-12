@@ -15,8 +15,9 @@ import { coverFrames } from '../config/assets/coverFrames';
 // user's already-persisted unlockedIds predates it entirely, and (per this module's own
 // "no runtime FREE_IDS merge" design, see every isUnlocked check across the app) would
 // otherwise never include it until they explicitly unlock something else that resets it.
-// Re-deriving unlockedIds from FREE_IDS on this bump is what makes a free cosmetic
-// actually unlocked for everyone, not just fresh sessions.
+// Merging FREE_IDS into unlockedIds on this bump (see loadPersistedState) is what makes a
+// free cosmetic actually unlocked for everyone, not just fresh sessions, without discarding
+// any non-free unlock (a purchase, an achievement) a user already had.
 const STATE_VERSION = 6;
 
 // Exported so CompanionOverlay can predict a scale change's clamped result itself (to
@@ -82,7 +83,12 @@ const loadPersistedState = (): Partial<CasterInventoryState> => {
       const parsed = JSON.parse(raw) as Partial<CasterInventoryState>;
       if (parsed.version !== STATE_VERSION) {
         // companionPlacements dropped too -- see the STATE_VERSION comment above.
-        return { ...parsed, unlockedIds: FREE_IDS, companionPlacements: {}, version: STATE_VERSION };
+        // Merged with whatever was already persisted (union, no duplicates) rather than
+        // replaced outright -- a plain FREE_IDS reset here would silently discard any
+        // NON-free unlock (a purchase, an achievement) a user already had, which this bump
+        // has no reason to touch at all.
+        const mergedUnlockedIds = Array.from(new Set([...(parsed.unlockedIds ?? []), ...FREE_IDS]));
+        return { ...parsed, unlockedIds: mergedUnlockedIds, companionPlacements: {}, version: STATE_VERSION };
       }
       return parsed;
     }

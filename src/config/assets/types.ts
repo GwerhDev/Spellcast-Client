@@ -36,8 +36,10 @@ export interface CompanionModel {
   modelUrl?: string;
 }
 
-// TCORE-123: frames the spell cover wherever it's shown (SpellCard, SpellDetail, the
-// audio/browser players). Three rendering mechanisms -- see getCoverFrameStyle/
+// TCORE-123: frames the spell cover wherever it's shown (SpellCard, SpellDetail,
+// SpellDetailModal, EditorPickerCard) -- deliberately NOT on the audio/browser players'
+// own small cover thumbnail, where it doesn't fit that compact a UI element. Three
+// rendering mechanisms -- see getCoverFrameStyle/
 // getCoverFrameCorners in utils/coverFrame.ts for how each is applied, and
 // CoverFrameCorners.tsx for the 'cornered' mechanism's own component:
 //   - cssValue (+ optional boxShadow): a plain `border` shorthand around the cover image
@@ -51,9 +53,9 @@ export interface CompanionModel {
 //     a small clasp/gem on the top and bottom edges. This exists because a single frame
 //     image sized to the cover's own box (the mechanism this replaced) gets stretched by
 //     object-fit to whatever aspect ratio each render site's cover box actually is --
-//     SpellCard's is ~0.89:1, SpellDetail's ~0.73:1, the audio/browser players are a
-//     square 1:1 -- and 'cover' crops the corner plates while 'contain' shrinks the whole
-//     frame into a smaller box with empty margins, neither of which is right. Corner
+//     SpellCard's is ~0.89:1, SpellDetail's ~0.73:1 -- and 'cover' crops the corner plates
+//     while 'contain' shrinks the whole frame into a smaller box with empty margins,
+//     neither of which is right. Corner
 //     images at a fixed pixel size in each real corner are the only mechanism that stays
 //     crisp and uncropped regardless of the box's own aspect ratio.
 //   - 3D frames (a real WebGL model wrapping the cover) were evaluated and are NOT

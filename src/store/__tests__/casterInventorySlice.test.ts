@@ -189,3 +189,39 @@ describe('casterInventorySlice localStorage key migration (TCORE-108)', () => {
     expect(state.companionPlacements).toEqual({});
   });
 });
+
+// TCORE-123 follow-up: STATE_VERSION's version-mismatch branch merges FREE_IDS into
+// unlockedIds (union, no duplicates) rather than replacing it outright -- a plain
+// FREE_IDS reset would silently discard any non-free unlock (a purchase, an achievement)
+// an existing user already had, even though this bump has no reason to touch those at all.
+describe('casterInventorySlice version-bump unlockedIds merge (TCORE-123)', () => {
+  beforeEach(() => {
+    vi.resetModules();
+  });
+
+  it('merges FREE_IDS into an existing non-free unlock on a version mismatch, instead of discarding it', async () => {
+    const staleState = { version: 5, unlockedIds: ['some-purchased-item'] };
+    vi.stubGlobal('localStorage', {
+      getItem: vi.fn((key: string) => (key === 'casterInventory' ? JSON.stringify(staleState) : null)),
+      setItem: vi.fn(),
+    });
+
+    const { default: freshReducer } = await import('../casterInventorySlice');
+    const state = freshReducer(undefined, { type: '@@INIT' });
+    expect(state.unlockedIds).toContain('some-purchased-item');
+    expect(state.unlockedIds).toContain('grimoire'); // a real free id, still merged in
+    expect(state.version).toBe(6);
+  });
+
+  it('does not duplicate an id already present in both the persisted state and FREE_IDS', async () => {
+    const staleState = { version: 5, unlockedIds: ['grimoire', 'some-purchased-item'] };
+    vi.stubGlobal('localStorage', {
+      getItem: vi.fn((key: string) => (key === 'casterInventory' ? JSON.stringify(staleState) : null)),
+      setItem: vi.fn(),
+    });
+
+    const { default: freshReducer } = await import('../casterInventorySlice');
+    const state = freshReducer(undefined, { type: '@@INIT' });
+    expect(state.unlockedIds.filter(id => id === 'grimoire')).toHaveLength(1);
+  });
+});
