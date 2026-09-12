@@ -14,11 +14,7 @@ import { moveCompanionModel, rotateCompanionModel, scaleCompanionModel, toggleCo
 import { pageBackgrounds, companions } from '../../../config/assets';
 import { Spinner } from '../../components/Spinner';
 import { IconButton } from '../../components/Buttons/IconButton';
-import { CompanionGiftModal } from '../../components/Modals/CompanionGiftModal';
-import { CoverFrameGiftModal } from '../../components/Modals/CoverFrameGiftModal';
 import { SpellDetailModal } from '../../components/Modals/SpellDetailModal';
-import { useCompanionGiftAnnouncement } from '../../../hooks/useCompanionGiftAnnouncement';
-import { useCoverFrameGiftAnnouncement } from '../../../hooks/useCoverFrameGiftAnnouncement';
 import { SearcherButton } from '../../components/SpellReader/Searcher/SearcherButton';
 import { PageList } from '../../components/SpellCreateForm/PageList';
 import { TTSSpellReader, ShareQuoteMenu, type JSONContent, type SpellQuoteSelection } from '../../../magictext';
@@ -119,8 +115,6 @@ export const SpellReader = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [sheetHeight, setSheetHeight] = useState(0);
-  const { showModal: showCompanionGift, handleActivate: handleCompanionGiftActivate, handleDismiss: handleCompanionGiftDismiss } = useCompanionGiftAnnouncement(isLoaded);
-  const { showModal: showCoverFrameGift, handleSetDefault: handleCoverFrameGiftSetDefault, handleDismiss: handleCoverFrameGiftDismiss } = useCoverFrameGiftAnnouncement(isLoaded);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const paperBgRef = useRef<HTMLDivElement>(null);
   const paperSheetRef = useRef<HTMLDivElement>(null);
@@ -310,16 +304,6 @@ export const SpellReader = () => {
 
   return (
     <div data-testid="spell-reader" className={s.pdfReaderContainer}>
-      <CompanionGiftModal
-        show={showCompanionGift}
-        onActivate={handleCompanionGiftActivate}
-        onDismiss={handleCompanionGiftDismiss}
-      />
-      <CoverFrameGiftModal
-        show={showCoverFrameGift}
-        onSetDefault={handleCoverFrameGiftSetDefault}
-        onDismiss={handleCoverFrameGiftDismiss}
-      />
       <SpellDetailModal
         spellId={spellId}
         show={showInfoModal}

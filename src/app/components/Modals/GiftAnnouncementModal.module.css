@@ -69,7 +69,7 @@
 }
 
 /* Confetti burst — pieces animate outward from dead center via framer-motion (see
-   CompanionGiftModal.tsx); this layer just anchors them to that center point without
+   GiftAnnouncementModal.tsx); this layer just anchors them to that center point without
    clipping or affecting layout of anything else in the cluster. */
 .confettiLayer {
   position: absolute;

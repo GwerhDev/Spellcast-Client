@@ -8,6 +8,8 @@ import { useInitSession } from './hooks/useInitSession';
 
 import { Toast } from './app/components/Toast';
 import { Loader } from './app/components/Loader';
+import { CoverFrameGiftModal } from './app/components/Modals/CoverFrameGiftModal';
+import { useCoverFrameGiftAnnouncement } from './hooks/useCoverFrameGiftAnnouncement';
 
 import { Home } from './app/pages/Home';
 import { StorageLocal } from './app/pages/StorageLocal';
@@ -46,6 +48,9 @@ function App() {
   const [loaderMessage, setLoaderMessage] = useState('');
   const [loaderProgress, setLoaderProgress] = useState(0);
   useInitSession(setLoaderProgress, setLoaderMessage);
+  // TCORE-123: app-level now (not just inside the reader) -- `enabled` only needs the
+  // initial session loader to be done, since this can show over any route.
+  const { showModal: showCoverFrameGift, handleSetDefault: handleCoverFrameGiftSetDefault, handleDismiss: handleCoverFrameGiftDismiss } = useCoverFrameGiftAnnouncement(!loader);
 
   useEffect(() => {
     if (!loader && showLoader && !loaderExiting) {
@@ -104,6 +109,11 @@ function App() {
       </Routes>
       {showLoader && <Loader progress={loaderProgress} message={loaderMessage} exiting={loaderExiting} />}
       <Toast />
+      <CoverFrameGiftModal
+        show={showCoverFrameGift}
+        onSetDefault={handleCoverFrameGiftSetDefault}
+        onDismiss={handleCoverFrameGiftDismiss}
+      />
     </ThemeProvider>
   );
 }

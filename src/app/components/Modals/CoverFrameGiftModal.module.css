@@ -1,0 +1,13 @@
+/* TCORE-123: a real sample cover wearing the actual Grimoire frame, standing in for
+   GiftAnnouncementModal's generic icon circle -- sized to fill that same iconCluster slot
+   (7rem/112px square) but rectangular (like an actual book cover) rather than circular, and
+   NOT clipping its own overflow so CoverFrameCorners' corner plates can overhang its edge
+   exactly like they do on a real SpellCard. */
+.sampleCover {
+  position: relative;
+  width: 5.5rem;
+  height: 7rem;
+  border-radius: 4px;
+  background: linear-gradient(160deg, var(--color-dark-200), var(--color-dark-400));
+  box-sizing: border-box;
+}
