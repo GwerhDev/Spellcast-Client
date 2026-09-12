@@ -523,4 +523,12 @@ export const es: Translations = {
     cta: 'Activar',
     dismiss: 'Más tarde',
   },
+  // TCORE-123: reutiliza el patrón de anuncio de companionGift (ver
+  // useCoverFrameGiftAnnouncement) para el nuevo cover frame gratuito Grimoire.
+  coverFrameGift: {
+    title: 'Un nuevo look para tus portadas',
+    body: 'Llegó el marco de portada Grimoire — cantoneras de bronce y medallones a broche, como un viejo libro de hechizos. Fíjalo como tu predeterminado ahora, o elígelo más tarde por spell desde su propio menú, o como predeterminado desde tu inventario del Caster.',
+    cta: 'Fijar como predeterminado',
+    dismiss: 'Más tarde',
+  },
 };

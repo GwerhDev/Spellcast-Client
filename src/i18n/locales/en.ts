@@ -521,4 +521,12 @@ export const en = {
     cta: 'Activate',
     dismiss: 'Maybe later',
   },
+  // TCORE-123: reuses companionGift's own announcement pattern (see
+  // useCoverFrameGiftAnnouncement) for the new free Grimoire cover frame.
+  coverFrameGift: {
+    title: 'A new look for your covers',
+    body: 'The Grimoire cover frame has arrived — bronze corner plates and clasp medallions, like an old spellbook. Set it as your default now, or pick it later per spell from its own menu, or as your default from your Caster inventory.',
+    cta: 'Set as default',
+    dismiss: 'Maybe later',
+  },
 } as const;
