@@ -96,6 +96,7 @@ const AppearanceTab: React.FC = () => {
 
 const CompanionsTab: React.FC = () => {
   const dispatch = useDispatch();
+  const { t } = useLanguage();
   const { unlockedIds, activeCompanionId } = useSelector((state: RootState) => state.casterInventory);
 
   const isUnlocked = (id: string) => unlockedIds.includes(id);
@@ -127,6 +128,9 @@ const CompanionsTab: React.FC = () => {
                 unlocked={unlocked}
                 isActive={isActive}
                 onAction={handleCompanionAction}
+                activeLabel={t.reader.companionInUse}
+                setActiveLabel={t.reader.companionUse}
+                deactivateLabel={t.reader.companionStopUsing}
               />
             );
           })}

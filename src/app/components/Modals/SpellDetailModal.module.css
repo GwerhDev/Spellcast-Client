@@ -19,6 +19,7 @@
 }
 
 .coverWrap {
+  position: relative;
   flex-shrink: 0;
 }
 

@@ -29,8 +29,6 @@ import type { CredentialError } from '../../components/Players/shared/VoiceSelec
 import { getCachedAudio, setCachedAudio, AUDIO_CACHE_VERSION } from '../../../db/audioCache';
 import { isQuotaExceededError } from '../../../utils/storageQuota';
 import { getSpellById } from '../../../db';
-import { resolveCoverFrameId, getCoverFrameStyle, getCoverFrameCorners } from '../../../utils/coverFrame';
-import { CoverFrameCorners } from '../../components/CoverFrameCorners';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '../../../store/hooks';
 import { faScroll } from '@fortawesome/free-solid-svg-icons';
@@ -89,13 +87,11 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
   } = useSelector((state: RootState) => state.spellReader);
   const { selectedVoice } = useSelector((state: RootState) => state.voice);
   const { userData } = useAppSelector((state) => state.session);
-  const { activeSoundBgId, soundBgVolume, masterVolume, activeCoverFrameId } = useAppSelector((state) => state.casterInventory);
+  const { activeSoundBgId, soundBgVolume, masterVolume } = useAppSelector((state) => state.casterInventory);
 
   const [isFetching, setIsFetching] = useState(false);
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
-  // TCORE-123: this spell's own cover frame pick, resolved against the global default below.
-  const [coverFrameId, setCoverFrameId] = useState<string | null | undefined>(undefined);
   const [credentialError, setCredentialError] = useState<CredentialError | null>(null);
   const [showDocDetail, setShowDocDetail] = useState(false);
   // The page whose audio is actually loaded and audible right now -- distinct
@@ -191,7 +187,6 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
     // Session metadata effect below, so the OS widget can show the new
     // spell's title next to the old spell's artwork.
     setCoverUrl(null);
-    setCoverFrameId(undefined);
     setCoverSettled(false);
     if (spellId && userData?.id) {
       getSpellById(spellId, userData.id).then(doc => {
@@ -200,7 +195,6 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
           url = URL.createObjectURL(doc.cover);
           setCoverUrl(url);
         }
-        setCoverFrameId(doc?.coverFrameId);
         setCoverSettled(true);
       });
     } else {
@@ -605,9 +599,6 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
     });
   }, [currentTime, duration]);
 
-  const resolvedCoverFrameId = resolveCoverFrameId(coverFrameId, activeCoverFrameId);
-  const coverFrameCorners = getCoverFrameCorners(resolvedCoverFrameId);
-
   return (
     <>
       <SpellDetailModal
@@ -632,10 +623,9 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
               style={spellId ? { cursor: 'pointer' } : undefined}
             >
               {coverUrl
-                ? <img data-testid="audio-player-cover" src={coverUrl} alt="" className={s.cover} style={getCoverFrameStyle(resolvedCoverFrameId)} />
+                ? <img data-testid="audio-player-cover" src={coverUrl} alt="" className={s.cover} />
                 : <div data-testid="audio-player-cover-placeholder" className={s.coverIcon}><FontAwesomeIcon icon={faScroll} /></div>
               }
-              {coverUrl && coverFrameCorners && <CoverFrameCorners config={coverFrameCorners} />}
               {isPlaying && (
                 <div className={s.coverWaveOverlay}>
                   <Waveform active bars={4} height={14} color="white" />
