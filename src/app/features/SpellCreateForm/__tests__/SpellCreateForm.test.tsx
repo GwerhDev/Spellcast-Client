@@ -17,12 +17,13 @@ vi.mock('../../../../app/components/Editors/SpellEditor', () => ({
 }));
 
 const extractPdfMetadataMock = vi.fn<() => Promise<PdfMetadata>>(() => Promise.resolve({}));
+const renderPageToCoverMock = vi.fn<() => Promise<Blob | null>>(() => Promise.resolve(null));
 vi.mock('../../../../utils/pdfUtils', () => ({
   emptyPageContent: { type: 'doc', content: [{ type: 'paragraph' }] },
-  renderPageToCover: vi.fn(() => Promise.resolve(null)),
+  renderPageToCover: (...args: unknown[]) => renderPageToCoverMock(...(args as [])),
   extractPdfPages: vi.fn(() => Promise.resolve([{ type: 'doc', content: [] }])),
   injectCoverIntoPages: vi.fn((pages: unknown) => Promise.resolve(pages)),
-  blobToDataUrl: vi.fn(() => Promise.resolve('data:image/png;base64,')),
+  blobToDataUrl: vi.fn((blob: Blob) => Promise.resolve(`data:image/png;base64,${(blob as unknown as { name?: string })?.name ?? ''}`)),
   extractPdfMetadata: (...args: unknown[]) => extractPdfMetadataMock(...(args as [])),
 }));
 
@@ -50,6 +51,7 @@ beforeEach(() => {
   saveSpellToDBMock.mockResolvedValue('new-spell-id');
   setOriginalPdfMock.mockResolvedValue(undefined);
   extractPdfMetadataMock.mockResolvedValue({});
+  renderPageToCoverMock.mockResolvedValue(null);
   getDocumentMock.mockReturnValue({ promise: Promise.resolve(fakePdf()) });
 });
 
@@ -185,6 +187,56 @@ describe('SpellCreateForm', () => {
       resolveMetadata!({ title: 'PDF Title' });
       // Let any pending state updates from the metadata resolution flush.
       await waitFor(() => expect(screen.getByTestId('spell-title-input')).toHaveValue('User Typed Title'));
+    });
+  });
+
+  describe('cover editing (TCORE-122 -- lives inside "Additional details", as one more metadata field)', () => {
+    it('does not offer "use PDF page 1" when no PDF was imported', () => {
+      renderWithProviders(<SpellCreateForm />, { preloadedState: loggedInState });
+      fireEvent.click(screen.getByTestId('spell-metadata-toggle'));
+      expect(screen.queryByTestId('cover-picker-use-first-page-btn')).not.toBeInTheDocument();
+    });
+
+    it('auto-generates a cover from PDF page 1 on import, and auto-expands Additional details to show it', async () => {
+      renderPageToCoverMock.mockResolvedValue(new Blob(['cover-bytes'], { type: 'image/jpeg' }));
+
+      renderWithProviders(<SpellCreateForm />, { preloadedState: withFileContentState });
+      await waitFor(() => expect(screen.getByTestId('spell-metadata-section')).toBeInTheDocument());
+      expect(screen.getByTestId('cover-picker-use-first-page-btn')).toBeInTheDocument();
+      expect(document.querySelector('[class*="coverImage"]')).toBeInTheDocument();
+    });
+
+    it('renders a cover uploaded via the picker and saves it with the spell', async () => {
+      renderWithProviders(<SpellCreateForm />, { preloadedState: loggedInState });
+      fireEvent.click(screen.getByTestId('spell-metadata-toggle'));
+      const file = new File(['x'], 'cover.png', { type: 'image/png' });
+      const input = document.querySelector('input[accept="image/*"]') as HTMLInputElement;
+      fireEvent.change(input, { target: { files: [file] } });
+
+      await waitFor(() => expect(document.querySelector('[class*="coverImage"]')).toBeInTheDocument());
+
+      fireEvent.change(screen.getByTestId('spell-title-input'), { target: { value: 'My Spell' } });
+      fireEvent.click(screen.getByTestId('spell-create-save-btn'));
+
+      await waitFor(() => expect(saveSpellToDBMock).toHaveBeenCalled());
+      const payload = saveSpellToDBMock.mock.calls[0][0] as Record<string, unknown>;
+      expect(payload.cover).toBe(file);
+    });
+
+    it('re-renders the cover from PDF page 1 on demand and saves the resulting blob', async () => {
+      const forcedCover = new Blob(['cover-bytes'], { type: 'image/jpeg' });
+      renderPageToCoverMock.mockResolvedValue(forcedCover);
+
+      renderWithProviders(<SpellCreateForm />, { preloadedState: withFileContentState });
+      await waitFor(() => expect(screen.getByTestId('cover-picker-use-first-page-btn')).toBeInTheDocument());
+      fireEvent.click(screen.getByTestId('cover-picker-use-first-page-btn'));
+
+      await waitFor(() => expect(document.querySelector('[class*="coverImage"]')).toBeInTheDocument());
+
+      fireEvent.click(screen.getByTestId('spell-create-save-btn'));
+      await waitFor(() => expect(saveSpellToDBMock).toHaveBeenCalled());
+      const payload = saveSpellToDBMock.mock.calls[0][0] as Record<string, unknown>;
+      expect(payload.cover).toBe(forcedCover);
     });
   });
 });

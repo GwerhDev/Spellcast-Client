@@ -9,6 +9,8 @@ const renderField = (overrides: Partial<React.ComponentProps<typeof SpellMetadat
       <SpellMetadataFields
         expanded={false}
         onToggleExpanded={vi.fn()}
+        coverUrl={null}
+        onCoverUploadImage={vi.fn()}
         description=""
         onDescriptionChange={vi.fn()}
         author=""
@@ -90,6 +92,44 @@ describe('SpellMetadataFields', () => {
     it('is disabled while isRefreshing is true', () => {
       renderField({ expanded: true, onRefreshFromPdf: vi.fn(), isRefreshing: true });
       expect(screen.getByTestId('spell-metadata-refresh-btn')).toBeDisabled();
+    });
+  });
+
+  describe('cover field (TCORE-122 -- the cover is treated as one more metadata field)', () => {
+    it('renders the cover picker when expanded', () => {
+      renderField({ expanded: true });
+      expect(screen.getByTestId('cover-picker')).toBeInTheDocument();
+    });
+
+    it('is not rendered at all when collapsed, same as the other fields', () => {
+      renderField({ expanded: false });
+      expect(screen.queryByTestId('cover-picker')).not.toBeInTheDocument();
+    });
+
+    it('passes coverUrl through to the picker', () => {
+      const { container } = renderField({ expanded: true, coverUrl: 'data:image/png;base64,AAAA' });
+      expect(container.querySelector('img')).toHaveAttribute('src', 'data:image/png;base64,AAAA');
+    });
+
+    it('calls onCoverUploadImage with the selected file', () => {
+      const onCoverUploadImage = vi.fn();
+      const { container } = renderField({ expanded: true, onCoverUploadImage });
+      const file = new File(['x'], 'cover.png', { type: 'image/png' });
+      const input = container.querySelector('input[type="file"]') as HTMLInputElement;
+      fireEvent.change(input, { target: { files: [file] } });
+      expect(onCoverUploadImage).toHaveBeenCalledWith(file);
+    });
+
+    it('does not offer "use PDF page 1" when onCoverUseFirstPage is not provided', () => {
+      renderField({ expanded: true });
+      expect(screen.queryByTestId('cover-picker-use-first-page-btn')).not.toBeInTheDocument();
+    });
+
+    it('offers "use PDF page 1" when onCoverUseFirstPage is provided', () => {
+      const onCoverUseFirstPage = vi.fn();
+      renderField({ expanded: true, onCoverUseFirstPage });
+      fireEvent.click(screen.getByTestId('cover-picker-use-first-page-btn'));
+      expect(onCoverUseFirstPage).toHaveBeenCalledTimes(1);
     });
   });
 });

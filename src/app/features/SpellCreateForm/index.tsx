@@ -37,6 +37,9 @@ export const SpellCreateForm: React.FC = () => {
   const [pagesContent, setPagesContent] = useState<JSONContent[]>([]);
   const [cover, setCover] = useState<Blob | null>(null);
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
+  // TCORE-122: mirrors whether pdfDocRef.current is set -- a ref alone wouldn't
+  // trigger a re-render to show/hide the "use PDF page 1" cover action.
+  const [hasImportedPdf, setHasImportedPdf] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [pdfProgress, setPdfProgress] = useState<{ current: number; total: number } | null>(null);
@@ -45,6 +48,9 @@ export const SpellCreateForm: React.FC = () => {
   const pdfInputRef = useRef<HTMLInputElement>(null);
   const originalPdfRef = useRef<File | null>(null);
   const originalPagesRef = useRef<JSONContent[] | null>(null);
+  // TCORE-122: kept only so the cover can be (re-)rendered from page 1 on demand (the
+  // "use PDF page 1" cover action) without re-reading/re-parsing the imported PDF.
+  const pdfDocRef = useRef<pdfjsLib.PDFDocumentProxy | null>(null);
   // TCORE-97: optional social/feed metadata, prefilled from the PDF's own Info/XMP
   // dictionary (see extractPdfMetadata) but always user-editable.
   const [description, setDescription] = useState('');
@@ -144,6 +150,8 @@ export const SpellCreateForm: React.FC = () => {
   useEffect(() => {
     const extractTextFromPdf = async () => {
       if (!spell.fileContent) {
+        pdfDocRef.current = null;
+        setHasImportedPdf(false);
         setPagesContent([emptyContent]);
         setIsLoading(false);
         return;
@@ -158,6 +166,8 @@ export const SpellCreateForm: React.FC = () => {
         setDescription(''); setAuthor(''); setTagsInput(''); setLanguage(''); setMetadataExpanded(false);
         const pdfData = atob(spell.fileContent.substring(spell.fileContent.indexOf(',') + 1));
         const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
+        pdfDocRef.current = pdf;
+        setHasImportedPdf(true);
 
         // Prefill (TCORE-97), right after obtaining `pdf` and before the heavier page
         // extraction below -- minimizes the window in which a user could type a custom
@@ -177,11 +187,16 @@ export const SpellCreateForm: React.FC = () => {
           setMetadataExpanded(true);
         }
 
-        const page1TextContent = await (await pdf.getPage(1)).getTextContent();
-        const page1HasText = page1TextContent.items.some((item) => (item as { str: string }).str.trim().length > 0);
-        const coverBlob = page1HasText ? null : await renderPageToCover(pdf);
+        // TCORE-122: page 1 is always rendered as the default cover (previously only when
+        // that page had no extractable text) -- the user can immediately see and replace it
+        // via the Cover field in Additional details, so a "wrong" default costs one click
+        // instead of leaving spells with a text-heavy first page coverless forever.
+        const coverBlob = await renderPageToCover(pdf);
         const coverDataUrl = coverBlob ? await blobToDataUrl(coverBlob) : null;
-        if (coverDataUrl) setCoverUrl(coverDataUrl);
+        if (coverDataUrl) {
+          setCoverUrl(coverDataUrl);
+          setMetadataExpanded(true);
+        }
         setCover(coverBlob);
 
         const coverNode: JSONContent = coverDataUrl
@@ -237,6 +252,37 @@ export const SpellCreateForm: React.FC = () => {
     const updatedPagesContent = [...pagesContent];
     updatedPagesContent[editingPageIndex] = newContent;
     setPagesContent(updatedPagesContent);
+  };
+
+  // TCORE-122: applies a new cover Blob to both the state the save flow persists (`cover`)
+  // and the cover image node shown as the first thing on page 1 -- same dual-write shape
+  // the PDF-import path above already does when it finds a coverBlob. Replaces an existing
+  // cover node if page 1 already starts with one, otherwise prepends a new one.
+  const applyCover = async (blob: Blob) => {
+    const dataUrl = await blobToDataUrl(blob);
+    setCover(blob);
+    setCoverUrl(dataUrl);
+    setPagesContent((prev) => {
+      if (prev.length === 0) return prev;
+      const page1 = prev[0];
+      const coverNode = { type: 'image', attrs: { src: dataUrl, alt: null, title: null } };
+      const firstNode = page1?.content?.[0];
+      const hasCoverNode = firstNode?.type === 'image' && (firstNode?.attrs as Record<string, unknown>)?.title !== 'pdf-graphic';
+      const content = hasCoverNode
+        ? [coverNode, ...(page1.content ?? []).slice(1)]
+        : [coverNode, ...(page1.content ?? [])];
+      const updated = [...prev];
+      updated[0] = { ...page1, content };
+      return updated;
+    });
+  };
+
+  const handleCoverUpload = (file: File) => { void applyCover(file); };
+
+  const handleUseFirstPageCover = async () => {
+    if (!pdfDocRef.current) return;
+    const blob = await renderPageToCover(pdfDocRef.current);
+    if (blob) void applyCover(blob);
   };
 
   const handleSaveLocal = async () => {
@@ -322,6 +368,9 @@ export const SpellCreateForm: React.FC = () => {
       <SpellMetadataFields
         expanded={metadataExpanded}
         onToggleExpanded={() => setMetadataExpanded((v) => !v)}
+        coverUrl={coverUrl}
+        onCoverUploadImage={handleCoverUpload}
+        onCoverUseFirstPage={hasImportedPdf ? handleUseFirstPageCover : undefined}
         description={description}
         onDescriptionChange={setDescription}
         author={author}

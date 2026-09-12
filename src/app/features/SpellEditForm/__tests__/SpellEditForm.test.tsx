@@ -8,10 +8,12 @@ import { setSession } from '../../../../store/sessionSlice';
 vi.mock('../../../../db', () => ({
   getSpellById: vi.fn(),
   updateSpellContent: vi.fn(),
+  updateSpellFull: vi.fn(),
 }));
 
 vi.mock('../../../../db/originalPdfs', () => ({
   hasOriginalPdf: vi.fn(),
+  getOriginalPdf: vi.fn(),
 }));
 
 const refreshOneMock = vi.fn();
@@ -23,8 +25,21 @@ vi.mock('../../../../app/components/Editors/SpellEditor', () => ({
   SpellEditor: () => null,
 }));
 
-import { getSpellById, updateSpellContent } from '../../../../db';
-import { hasOriginalPdf } from '../../../../db/originalPdfs';
+const getDocumentMock = vi.fn();
+vi.mock('pdfjs-dist', () => ({
+  getDocument: (...args: unknown[]) => getDocumentMock(...args),
+  GlobalWorkerOptions: { workerSrc: '' },
+}));
+vi.mock('pdfjs-dist/build/pdf.worker?url', () => ({ default: '' }));
+
+const renderPageToCoverMock = vi.fn<() => Promise<Blob | null>>(() => Promise.resolve(null));
+vi.mock('../../../../utils/pdfUtils', () => ({
+  renderPageToCover: (...args: unknown[]) => renderPageToCoverMock(...(args as [])),
+  blobToDataUrl: vi.fn((blob: Blob | null) => Promise.resolve(blob ? `data:image/png;base64,${(blob as unknown as { name?: string })?.name ?? 'x'}` : null)),
+}));
+
+import { getSpellById, updateSpellContent, updateSpellFull } from '../../../../db';
+import { hasOriginalPdf, getOriginalPdf } from '../../../../db/originalPdfs';
 
 beforeAll(() => {
   Element.prototype.scrollTo = vi.fn();
@@ -54,7 +69,11 @@ beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(getSpellById).mockResolvedValue(mockDoc as never);
   vi.mocked(updateSpellContent).mockResolvedValue(undefined as never);
+  vi.mocked(updateSpellFull).mockResolvedValue(undefined as never);
   vi.mocked(hasOriginalPdf).mockResolvedValue(false);
+  vi.mocked(getOriginalPdf).mockResolvedValue(null);
+  renderPageToCoverMock.mockResolvedValue(null);
+  getDocumentMock.mockReturnValue({ promise: Promise.resolve({ numPages: 1, getPage: () => Promise.resolve({ getTextContent: () => Promise.resolve({ items: [] }) }) }) });
 });
 
 describe('SpellEditForm', () => {
@@ -242,6 +261,71 @@ describe('SpellEditForm', () => {
       expect(screen.getByTestId('spell-metadata-author')).toHaveValue('Original Author');
       expect(store.getState().apiResponses.responses[0].type).not.toBe('success');
       expect(store.getState().spellReader.listVersion).toBe(0);
+    });
+  });
+
+  describe('cover editing (TCORE-122 -- lives inside "Additional details", as one more metadata field)', () => {
+    it('does not offer "use PDF page 1" when the spell has no stored original PDF', async () => {
+      vi.mocked(hasOriginalPdf).mockResolvedValue(false);
+      renderForm();
+      await screen.findByTestId('spell-edit-form');
+      await waitFor(() => expect(hasOriginalPdf).toHaveBeenCalledWith('doc-1'));
+      fireEvent.click(screen.getByTestId('spell-metadata-toggle'));
+      expect(screen.queryByTestId('cover-picker-use-first-page-btn')).not.toBeInTheDocument();
+    });
+
+    it('offers "use PDF page 1" when the spell has a stored original PDF', async () => {
+      vi.mocked(hasOriginalPdf).mockResolvedValue(true);
+      renderForm();
+      await screen.findByTestId('spell-edit-form');
+      fireEvent.click(screen.getByTestId('spell-metadata-toggle'));
+      await waitFor(() => expect(screen.getByTestId('cover-picker-use-first-page-btn')).toBeInTheDocument());
+    });
+
+    it('uploading an image saves it as the cover via updateSpellFull', async () => {
+      renderForm();
+      await screen.findByTestId('spell-edit-form');
+      fireEvent.click(screen.getByTestId('spell-metadata-toggle'));
+      const file = new File(['x'], 'cover.png', { type: 'image/png' });
+      const input = document.querySelector('input[accept="image/*"]') as HTMLInputElement;
+      fireEvent.change(input, { target: { files: [file] } });
+
+      await waitFor(() => expect(updateSpellFull).toHaveBeenCalled());
+      const call = vi.mocked(updateSpellFull).mock.calls[0][2];
+      expect(call.cover).toBe(file);
+    });
+
+    it('"use PDF page 1" reads the stored original PDF, renders page 1, and saves it as the cover', async () => {
+      vi.mocked(hasOriginalPdf).mockResolvedValue(true);
+      const storedPdfBlob = new Blob(['pdf-bytes'], { type: 'application/pdf' });
+      vi.mocked(getOriginalPdf).mockResolvedValue(storedPdfBlob);
+      const forcedCover = new Blob(['cover-bytes'], { type: 'image/jpeg' });
+      renderPageToCoverMock.mockResolvedValue(forcedCover);
+
+      renderForm();
+      await screen.findByTestId('spell-edit-form');
+      fireEvent.click(screen.getByTestId('spell-metadata-toggle'));
+      await waitFor(() => expect(screen.getByTestId('cover-picker-use-first-page-btn')).toBeInTheDocument());
+      fireEvent.click(screen.getByTestId('cover-picker-use-first-page-btn'));
+
+      await waitFor(() => expect(getOriginalPdf).toHaveBeenCalledWith('doc-1'));
+      await waitFor(() => expect(updateSpellFull).toHaveBeenCalled());
+      const call = vi.mocked(updateSpellFull).mock.calls[0][2];
+      expect(call.cover).toBe(forcedCover);
+    });
+
+    it('does not save (or crash) when "use PDF page 1" finds no stored original PDF', async () => {
+      vi.mocked(hasOriginalPdf).mockResolvedValue(true);
+      vi.mocked(getOriginalPdf).mockResolvedValue(null);
+
+      renderForm();
+      await screen.findByTestId('spell-edit-form');
+      fireEvent.click(screen.getByTestId('spell-metadata-toggle'));
+      await waitFor(() => expect(screen.getByTestId('cover-picker-use-first-page-btn')).toBeInTheDocument());
+      fireEvent.click(screen.getByTestId('cover-picker-use-first-page-btn'));
+
+      await waitFor(() => expect(getOriginalPdf).toHaveBeenCalledWith('doc-1'));
+      expect(updateSpellFull).not.toHaveBeenCalled();
     });
   });
 });

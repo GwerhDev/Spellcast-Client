@@ -2,15 +2,24 @@ import s from './index.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChevronDown, faChevronUp, faArrowsRotate } from '@fortawesome/free-solid-svg-icons';
 import { useLanguage } from '../../../i18n';
+import { CoverPicker } from '../CoverPicker';
 
 // Presentational (Layer 4): social/feed metadata fields (TCORE-97), shared by
 // SpellCreateForm (creation) and SpellEditForm (editing, TCORE-103). The optional
 // onRefreshFromPdf/refreshDisabled/isRefreshing props render an extra "re-extract from
 // the stored original PDF" action -- only SpellEditForm passes them, since a spell being
 // created has no original PDF stored yet.
+//
+// TCORE-122: the cover is treated as one more piece of metadata (product decision --
+// it lives in this same collapsed-by-default section, not as a separate always-visible
+// block) -- onCoverUploadImage is the only required cover prop; onCoverUseFirstPage stays
+// optional the same way onRefreshFromPdf does, for whenever there's no PDF to render from.
 interface SpellMetadataFieldsProps {
   expanded: boolean;
   onToggleExpanded: () => void;
+  coverUrl: string | null;
+  onCoverUploadImage: (file: File) => void;
+  onCoverUseFirstPage?: () => void;
   description: string;
   onDescriptionChange: (value: string) => void;
   author: string;
@@ -27,6 +36,9 @@ interface SpellMetadataFieldsProps {
 export const SpellMetadataFields = ({
   expanded,
   onToggleExpanded,
+  coverUrl,
+  onCoverUploadImage,
+  onCoverUseFirstPage,
   description,
   onDescriptionChange,
   author,
@@ -69,6 +81,14 @@ export const SpellMetadataFields = ({
               </button>
             </div>
           )}
+          <div className={`${s.metadataField} ${s.metadataFieldWide}`}>
+            <label>{t.spell.coverLabel}</label>
+            <CoverPicker
+              coverUrl={coverUrl}
+              onUploadImage={onCoverUploadImage}
+              onUseFirstPage={onCoverUseFirstPage}
+            />
+          </div>
           <div className={`${s.metadataField} ${s.metadataFieldWide}`}>
             <label htmlFor="spell-metadata-description">{t.spell.descriptionLabel}</label>
             <textarea

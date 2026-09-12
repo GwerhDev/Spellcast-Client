@@ -45,11 +45,10 @@ export const SpellUploadWorker: React.FC = () => {
         const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
         const meta = await extractPdfMetadata(pdf);
 
-        const page1TextContent = await (await pdf.getPage(1)).getTextContent();
-        const page1HasText = page1TextContent.items.some(
-          (item) => (item as { str: string }).str.trim().length > 0
-        );
-        const coverBlob = page1HasText ? null : await renderPageToCover(pdf);
+        // TCORE-122: page 1 is always rendered as the default cover (previously only when
+        // that page had no extractable text) -- see SpellCreateForm for the same change and
+        // rationale. The user can replace it via the Cover field in Additional details.
+        const coverBlob = await renderPageToCover(pdf);
 
         if (coverBlob) {
           const coverUrl = await blobToDataUrl(coverBlob);

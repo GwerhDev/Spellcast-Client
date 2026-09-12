@@ -121,6 +121,11 @@ export const es: Translations = {
     refreshMetadataConfirmTitle: '¿Actualizar metadata desde el PDF?',
     refreshMetadataConfirmDesc: 'Esto sobrescribirá la descripción, autor, etiquetas e idioma de abajo con lo que tenga el PDF original, y también actualizará el título si el PDF tiene uno. Cualquier edición manual de estos campos se perderá.',
     refreshMetadataSuccess: 'Metadata actualizada desde el PDF.',
+    // TCORE-122: edición de portada (CoverPicker), compartido por SpellCreateForm y SpellEditForm.
+    // Se trata como un campo de metadata más, dentro de la misma sección "Additional details".
+    coverLabel: 'Portada',
+    coverUploadImage: 'Subir imagen',
+    coverUseFirstPage: 'Usar portada del PDF',
   },
   grimoire: {
     subtitle: 'Tus Spells, siempre a mano',

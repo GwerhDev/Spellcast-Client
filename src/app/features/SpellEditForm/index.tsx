@@ -5,8 +5,12 @@ import type { JSONContent } from '../../../magictext';
 import { useDispatch } from 'react-redux';
 import { useAppSelector } from '../../../store/hooks';
 import { selectCurrentCredential } from '../../../store/credentialsSlice';
-import { getSpellById, updateSpellContent } from '../../../db';
-import { hasOriginalPdf } from '../../../db/originalPdfs';
+import { getSpellById, updateSpellContent, updateSpellFull } from '../../../db';
+import { hasOriginalPdf, getOriginalPdf } from '../../../db/originalPdfs';
+import * as pdfjsLib from 'pdfjs-dist';
+import workerSrc from 'pdfjs-dist/build/pdf.worker?url';
+import { renderPageToCover, blobToDataUrl } from '../../../utils/pdfUtils';
+pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 import { setShowEditorSettings } from '../../../store/editorSlice';
 import { invalidateContent, invalidateSpellList } from '../../../store/spellReaderSlice';
 import { enqueueUpload } from '../../../store/spellUploadSlice';
@@ -67,6 +71,10 @@ export const SpellEditForm: React.FC = () => {
   const [showRefreshMetadataModal, setShowRefreshMetadataModal] = useState(false);
   const { refreshOne, isRefreshing } = useRefreshSpellMetadataFromPdf();
 
+  // TCORE-122: cover preview, loaded from the existing Blob (see `load` below) and
+  // replaced whenever the user picks a new one (upload or "use PDF page 1").
+  const [coverUrl, setCoverUrl] = useState<string | null>(null);
+
   const isCoverPage = (p: JSONContent): boolean => {
     const first = p?.content?.[0];
     return first?.type === 'image' && (first?.attrs as Record<string, unknown>)?.title !== 'pdf-graphic';
@@ -119,6 +127,9 @@ export const SpellEditForm: React.FC = () => {
       setPagesContent(finalPages);
       if (doc.originalPagesContent) setOriginalPages(JSON.parse(doc.originalPagesContent));
       applyMetadataFromDoc(doc);
+      // "Replace content" (TCORE-90's import flow) regenerates the cover from the new
+      // PDF's page 1 same as SpellCreateForm's import, so re-sync the preview here too.
+      Promise.resolve(doc.cover ? blobToDataUrl(doc.cover) : null).then(setCoverUrl);
       setHasChanges(false);
     });
     //eslint-disable-next-line
@@ -183,6 +194,7 @@ export const SpellEditForm: React.FC = () => {
           setOriginalPages(JSON.parse(doc.originalPagesContent));
         }
         applyMetadataFromDoc(doc);
+        setCoverUrl(doc.cover ? await blobToDataUrl(doc.cover) : null);
         const initIndex = Number(page) - 1 || 0;
         setCurrentMargins(getMarginsFromPage(finalPages[initIndex] ?? finalPages[0]));
         hasLoaded.current = true;
@@ -310,6 +322,40 @@ export const SpellEditForm: React.FC = () => {
     }
   };
 
+  // TCORE-122: cover changes save immediately (like the "replace content"/"reset" actions
+  // below) instead of going through the title/pagesContent autosave/hasChanges flow --
+  // there's no draft state worth previewing before committing a new cover, and
+  // updateSpellFull writes it independently of pagesContent so it can't race the
+  // autosave timer into clobbering either field.
+  const applyCover = async (blob: Blob) => {
+    if (!id || !userData.id) return;
+    const dataUrl = await blobToDataUrl(blob);
+    setCoverUrl(dataUrl);
+    try {
+      await updateSpellFull(id, userData.id, {
+        title: spellTitle,
+        pagesContent: JSON.stringify(pagesContent),
+        cover: blob,
+        originalPagesContent: originalPages ? JSON.stringify(originalPages) : undefined,
+      });
+      dispatch(invalidateContent());
+      dispatch(invalidateSpellList());
+    } catch (err) {
+      console.error('Failed to save new cover:', err);
+    }
+  };
+
+  const handleCoverUpload = (file: File) => { void applyCover(file); };
+
+  const handleUseFirstPageCover = async () => {
+    if (!id) return;
+    const pdfBlob = await getOriginalPdf(id);
+    if (!pdfBlob) return;
+    const pdf = await pdfjsLib.getDocument({ data: await pdfBlob.arrayBuffer() }).promise;
+    const coverBlob = await renderPageToCover(pdf);
+    if (coverBlob) void applyCover(coverBlob);
+  };
+
   const handleRefreshMetadataConfirm = async () => {
     setShowRefreshMetadataModal(false);
     if (!id) return;
@@ -392,6 +438,9 @@ export const SpellEditForm: React.FC = () => {
       <SpellMetadataFields
         expanded={metadataExpanded}
         onToggleExpanded={() => setMetadataExpanded((v) => !v)}
+        coverUrl={coverUrl}
+        onCoverUploadImage={handleCoverUpload}
+        onCoverUseFirstPage={spellHasOriginalPdf ? handleUseFirstPageCover : undefined}
         description={description}
         onDescriptionChange={(v) => { setDescription(v); setHasChanges(true); }}
         author={author}

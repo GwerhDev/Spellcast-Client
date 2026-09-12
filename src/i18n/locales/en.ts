@@ -119,6 +119,11 @@ export const en = {
     refreshMetadataConfirmTitle: 'Update metadata from the PDF?',
     refreshMetadataConfirmDesc: 'This will overwrite the description, author, tags, and language below with whatever is in the original PDF, and update the title too if the PDF has one. Any manual edits to these fields will be lost.',
     refreshMetadataSuccess: 'Metadata updated from the PDF.',
+    // TCORE-122: cover editing (CoverPicker), shared by SpellCreateForm and SpellEditForm.
+    // Treated as one more metadata field, inside the same "Additional details" section.
+    coverLabel: 'Cover',
+    coverUploadImage: 'Upload image',
+    coverUseFirstPage: 'Use PDF cover',
   },
   grimoire: {
     subtitle: 'Your spells, always at hand',
