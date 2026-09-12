@@ -19,7 +19,7 @@ import type { CoverFrameCornersConfig } from '../../../utils/coverFrame';
 // SpellCard's own .coverFrameSlot) must NOT clip overflow, or that overhanging half gets cut
 // off -- this is exactly what broke it before .coverFrameSlot existed.
 const CORNER_SIZE = 28;
-const CORNER_OVERHANG = 8;
+const CORNER_OVERHANG = 2;
 const MEDALLION_WIDTH = 22;
 const MEDALLION_HEIGHT = 18;
 
