@@ -124,6 +124,12 @@ export const en = {
     coverLabel: 'Cover',
     coverUploadImage: 'Upload image',
     coverUseFirstPage: 'Use PDF cover',
+    // TCORE-123: per-spell cover frame, picked from SpellCard's context menu (Last Spells /
+    // Grimoire grid) -- separate from the Cover field above, which only lives in the
+    // create/edit forms.
+    coverFrameLabel: 'Cover frame',
+    coverFrameNone: 'No frame',
+    coverFrameDefault: 'Default',
   },
   grimoire: {
     subtitle: 'Your spells, always at hand',
@@ -214,6 +220,14 @@ export const en = {
     enterFullscreen: 'Enter fullscreen',
     exitFullscreen: 'Exit fullscreen',
     companions: 'Companions',
+    // TCORE-123 follow-up: distinct from havenStore.active/setActive/deactivate on
+    // purpose -- this is "use this companion for this reading session", not "set as the
+    // global default" (CompanionCard is shared with CasterInventoryLanding, which does mean
+    // the global default; ReaderSettings passes these as overrides so the same button never
+    // claims to change a global default it doesn't touch).
+    companionInUse: 'In use',
+    companionUse: 'Use',
+    companionStopUsing: 'Stop using',
     selectPage: 'Select a Page',
     displayTab: 'Display',
     appearanceTab: 'Appearance',
@@ -442,6 +456,9 @@ export const en = {
     inventoryEmptySounds: 'No sound backgrounds unlocked yet — find some in the Havenstore.',
     inventoryEmptyPages: 'No page backgrounds unlocked yet — find some in the Havenstore.',
     inventoryEmptyCompanions: 'No companions unlocked yet — find some in the Havenstore.',
+    // TCORE-123: cover frames are all free, so this is realistically never shown, but kept
+    // for the same reason the other categories have one -- consistency if that ever changes.
+    inventoryEmptyCoverFrames: 'No cover frames unlocked yet — find some in the Havenstore.',
   },
   gamification: {
     level: 'Level',
@@ -473,11 +490,16 @@ export const en = {
     subtitle: 'Enhance your reading and writing experience',
     soundBackgrounds: 'Sound Backgrounds',
     pageBackgrounds: 'Page Backgrounds',
+    coverFrames: 'Cover Frames',
     free: 'Free',
     unlock: 'Unlock',
-    active: 'Active',
-    setActive: 'Set active',
-    deactivate: 'Deactivate',
+    // TCORE-123 follow-up: "default" (not "active") -- these buttons set the GLOBAL
+    // fallback used when a spell hasn't made its own explicit pick, not a session-only
+    // "currently on" toggle -- see resolveCoverFrameId and the per-spell overrides it's the
+    // fallback for.
+    active: 'Default',
+    setActive: 'Set default',
+    deactivate: 'Unset default',
     locked: 'Locked',
     purchase: 'Purchase',
     coins: 'coins',

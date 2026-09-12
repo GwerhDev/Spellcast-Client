@@ -5,16 +5,34 @@
   border-radius: 8px;
   border: 0.5px solid var(--line);
   background: var(--component-background);
-  display: flex;
-  flex-direction: column;
   cursor: pointer;
-  overflow: hidden;
+  /* No overflow/border-radius clipping here anymore -- .cardClip (the one child that's
+     actually part of layout) carries both, so .coverFrameSlot (a sibling, absolutely
+     positioned, not part of the flex flow at all) can overhang this box's edge instead of
+     being cut off by it. See .coverFrameSlot's own comment. */
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .card:hover {
   border-color: color-mix(in srgb, var(--color-primary) 45%, transparent);
   box-shadow: 0 0 16px rgba(115, 165, 204, 0.12);
+}
+
+.cardClip {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* A cover frame's corner plates are square, book-hardware shapes -- rounding the card's
+   own corners underneath them would fight that geometry (the frame's straight edges
+   would sit inside a curved silhouette). Applied only to spells that actually have a
+   frame, so plain covers keep the rounded corners everywhere else in the grid. */
+.cardSquared,
+.cardClipSquared {
+  border-radius: 0;
 }
 
 .cardActive {
@@ -165,6 +183,20 @@
   height: var(--spell-cover-height);
 }
 
+/* Sits directly on .card (outside .cardClip, see .card's own comment), positioned to cover
+   the exact same box as .coverWrapper (top of the card, full width, --spell-cover-height
+   tall) so CoverFrameCorners' own corner/edge anchoring lines up with the cover
+   underneath -- but since neither .card nor this slot clip their overflow, the corner
+   plates and medallions are free to overhang past that box's edge. */
+.coverFrameSlot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--spell-cover-height);
+  pointer-events: none;
+}
+
 .uploadOverlay {
   position: absolute;
   inset: 0;
@@ -217,6 +249,19 @@
   opacity: 1;
 }
 
+/* TCORE-123 follow-up: each CoverFrameCorners piece (a corner plate or medallion) is a
+   fixed-size image anchored to its own corner/edge of .coverFrameSlot -- a box positioned
+   to match .coverWrapper exactly (see .coverFrameSlot's own comment) but living outside
+   .cardClip so these pieces can overhang the card's edge instead of being clipped by it.
+   They never need to stretch or crop to the cover's aspect ratio (that's the whole point,
+   see CoverFrame's own comment in config/assets/types.ts). Deliberately NOT dimmed by
+   .card's hover scrim (.coverWrapper::after, below) -- the frame is bolted-on hardware, not
+   part of the cover art the scrim is meant to darken, so it stays crisp above it at all
+   times instead of fading down together with the cover. */
+.coverFrameOverlay {
+  z-index: 5;
+}
+
 .cover {
   width: 100%;
   height: var(--spell-cover-height);
@@ -244,6 +289,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
+  overflow: hidden;
 }
 
 .titleRow {

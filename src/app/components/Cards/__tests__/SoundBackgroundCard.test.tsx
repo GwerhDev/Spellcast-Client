@@ -39,9 +39,9 @@ describe('SoundBackgroundCard', () => {
   });
 
   describe('equip mode (default) -- ReaderSettings-equivalent/Inventory usage', () => {
-    it('shows the active pill when unlocked and isActive', () => {
+    it('shows the default pill when unlocked and isActive', () => {
       renderCard({ unlocked: true, isActive: true });
-      expect(screen.getByText(/active/i)).toBeInTheDocument();
+      expect(screen.getByText('Default')).toBeInTheDocument();
     });
 
     it('shows an activate/deactivate toggle button when unlocked', () => {
@@ -51,9 +51,9 @@ describe('SoundBackgroundCard', () => {
   });
 
   describe('acquisition-only mode (showEquipControls=false) -- Havenstore usage, TCORE-109', () => {
-    it('never shows the active pill', () => {
+    it('never shows the default pill', () => {
       renderCard({ unlocked: true, isActive: true, showEquipControls: false });
-      expect(screen.queryByText(/active/i)).not.toBeInTheDocument();
+      expect(screen.queryByText('Default')).not.toBeInTheDocument();
     });
 
     it('shows a static "owned" status instead of a toggle button when unlocked', () => {

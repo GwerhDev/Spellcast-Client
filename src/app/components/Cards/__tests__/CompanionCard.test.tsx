@@ -48,9 +48,9 @@ describe('CompanionCard', () => {
   });
 
   describe('equip mode (showEquipControls default true) -- ReaderSettings/Inventory usage', () => {
-    it('shows the active pill when unlocked and isActive', () => {
+    it('shows the default pill when unlocked and isActive', () => {
       renderCard({ unlocked: true, isActive: true });
-      expect(screen.getByText(/active/i)).toBeInTheDocument();
+      expect(screen.getByText('Default')).toBeInTheDocument();
     });
 
     it('shows an activate/deactivate toggle button when unlocked', () => {
@@ -67,9 +67,9 @@ describe('CompanionCard', () => {
   });
 
   describe('acquisition-only mode (showEquipControls=false) -- Havenstore usage, TCORE-109', () => {
-    it('never shows the active pill, even if isActive is somehow true', () => {
+    it('never shows the default pill, even if isActive is somehow true', () => {
       renderCard({ unlocked: true, isActive: true, showEquipControls: false });
-      expect(screen.queryByText(/active/i)).not.toBeInTheDocument();
+      expect(screen.queryByText('Default')).not.toBeInTheDocument();
     });
 
     it('does not show an activate/deactivate toggle button when unlocked', () => {

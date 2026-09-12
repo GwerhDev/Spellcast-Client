@@ -43,6 +43,13 @@
   flex-shrink: 0;
 }
 
+.coverWrap {
+  position: relative;
+  width: 80px;
+  height: 110px;
+  flex-shrink: 0;
+}
+
 .cover {
   width: 80px;
   height: 110px;

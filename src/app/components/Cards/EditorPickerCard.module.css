@@ -5,16 +5,41 @@
   border-radius: 8px;
   border: 0.5px solid transparent;
   background: var(--component-background);
-  display: flex;
-  flex-direction: column;
   cursor: pointer;
-  overflow: hidden;
+  /* No overflow/border-radius clipping here -- .cardClip carries both (see its own
+     comment), so .coverFrameSlot's corner plates can overhang this box's edge. */
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .card:hover {
   border-color: var(--color-primary);
   box-shadow: 0 0 16px rgba(115, 165, 204, 0.15);
+}
+
+.cardClip {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.coverWrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+/* Mirrors SpellCard's own .coverFrameSlot: positioned over the same box as .coverWrap
+   (top of the card, full width, --spell-cover-height tall via .cover/.iconWrapper) but
+   living outside .cardClip so CoverFrameCorners' pieces can overhang past that box's edge
+   instead of being clipped by it. */
+.coverFrameSlot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--spell-cover-height);
+  pointer-events: none;
 }
 
 .cover {

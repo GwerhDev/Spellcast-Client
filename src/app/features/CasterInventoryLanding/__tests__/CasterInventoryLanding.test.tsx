@@ -4,11 +4,12 @@ import { renderWithProviders, makeStore } from '../../../../test/renderWithProvi
 import { CasterInventoryLanding } from '../index';
 
 const baseInventory = {
-  version: 5,
+  version: 6,
   unlockedIds: [] as string[],
   activeSoundBgId: null as string | null,
   activePageBgId: null as string | null,
   activeCompanionId: null as string | null,
+  activeCoverFrameId: null as string | null,
   soundBgVolume: 0.35,
   masterVolume: 1,
   companionPlacements: {},
@@ -63,10 +64,40 @@ describe('CasterInventoryLanding', () => {
     expect(store.getState().casterInventory.activeCompanionId).toBe('cats');
   });
 
-  it('marks the currently active companion with the active pill', () => {
+  it('marks the currently default companion with the default pill', () => {
     renderWithProviders(<CasterInventoryLanding />, {
       store: storeWith({ unlockedIds: ['cats'], activeCompanionId: 'cats' }),
     });
-    expect(screen.getByText(/active/i)).toBeInTheDocument();
+    expect(screen.getByText('Default')).toBeInTheDocument();
+  });
+
+  // TCORE-123: unlike the other categories, equipping a cover frame here only ever sets/
+  // clears the GLOBAL default -- a spell's own explicit pick (SpellDetail) still overrides it.
+  describe('cover frames', () => {
+    it('only shows owned cover frames, not the full catalog', () => {
+      renderWithProviders(<CasterInventoryLanding />, { store: storeWith({}) });
+      expect(screen.queryByTestId('cover-frame-card-grimoire')).not.toBeInTheDocument();
+    });
+
+    it('shows the equip toggle on an owned cover frame', () => {
+      renderWithProviders(<CasterInventoryLanding />, {
+        store: storeWith({ unlockedIds: ['grimoire'] }),
+      });
+      expect(screen.getByTestId('cover-frame-toggle-grimoire')).toBeInTheDocument();
+    });
+
+    it('dispatches setActiveCoverFrame (the global default) when equipping an owned border', () => {
+      const store = storeWith({ unlockedIds: ['grimoire'] });
+      renderWithProviders(<CasterInventoryLanding />, { store });
+      fireEvent.click(screen.getByTestId('cover-frame-toggle-grimoire'));
+      expect(store.getState().casterInventory.activeCoverFrameId).toBe('grimoire');
+    });
+
+    it('clicking the toggle again clears the global default', () => {
+      const store = storeWith({ unlockedIds: ['grimoire'], activeCoverFrameId: 'grimoire' });
+      renderWithProviders(<CasterInventoryLanding />, { store });
+      fireEvent.click(screen.getByTestId('cover-frame-toggle-grimoire'));
+      expect(store.getState().casterInventory.activeCoverFrameId).toBeNull();
+    });
   });
 });

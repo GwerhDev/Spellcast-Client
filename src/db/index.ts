@@ -589,3 +589,37 @@ export const updateSpellMetadata = async (
     getRequest.onerror = (e) => reject((e.target as IDBRequest).error);
   });
 };
+
+// TCORE-123: dedicated, single-field update -- same shape as updateSpellProgress, kept
+// separate from updateSpellContent/updateSpellFull's full-record writes so picking a cover
+// frame (from SpellCard's context menu) can never race the autosave timer into clobbering
+// an in-flight title/pagesContent edit. Accepts all three of Spell.coverFrameId's states: a
+// frame id (this spell's own explicit pick), null (explicitly "no frame", overriding the
+// global default), or undefined (clears any override, going back to following the global
+// default) -- IndexedDB preserves an explicit `undefined` property value via structured
+// clone (unlike JSON.stringify, which would drop it), so this reads back exactly as "never
+// chosen" would.
+export const updateSpellCoverFrame = async (
+  id: string,
+  userId: string,
+  coverFrameId: string | null | undefined
+): Promise<void> => {
+  const db = await openDB();
+  const transaction = db.transaction(SPELLS_STORE_NAME, 'readwrite');
+  const store = transaction.objectStore(SPELLS_STORE_NAME);
+
+  return new Promise((resolve, reject) => {
+    const getRequest = store.get(id);
+    getRequest.onsuccess = () => {
+      const spell = getRequest.result as Spell | undefined;
+      if (spell && sameUser(spell.userId, userId)) {
+        const putRequest = store.put({ ...spell, coverFrameId });
+        putRequest.onsuccess = () => resolve();
+        putRequest.onerror = (e) => reject((e.target as IDBRequest).error);
+      } else {
+        reject(new Error('Spell not found or user mismatch.'));
+      }
+    };
+    getRequest.onerror = (e) => reject((e.target as IDBRequest).error);
+  });
+};

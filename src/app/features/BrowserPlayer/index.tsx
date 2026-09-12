@@ -25,6 +25,8 @@ import { PlayerConfigButton } from '../../components/Players/shared/PlayerConfig
 import { useNavigate } from 'react-router-dom';
 import { setSelectedVoice } from '../../../store/voiceSlice';
 import { getSpellById } from '../../../db';
+import { resolveCoverFrameId, getCoverFrameStyle, getCoverFrameCorners } from '../../../utils/coverFrame';
+import { CoverFrameCorners } from '../../components/CoverFrameCorners';
 import { useAppSelector } from '../../../store/hooks';
 import { faScroll } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -97,10 +99,12 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
   } = useSelector((state: RootState) => state.spellReader);
   const { selectedVoice } = useSelector((state: RootState) => state.voice);
   const { userData } = useAppSelector((state) => state.session);
-  const { activeSoundBgId, soundBgVolume, masterVolume } = useAppSelector((state) => state.casterInventory);
+  const { activeSoundBgId, soundBgVolume, masterVolume, activeCoverFrameId } = useAppSelector((state) => state.casterInventory);
 
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
+  // TCORE-123: this spell's own cover frame pick, resolved against the global default below.
+  const [coverFrameId, setCoverFrameId] = useState<string | null | undefined>(undefined);
   const [showDocDetail, setShowDocDetail] = useState(false);
 
   const volumeSliderRef = useRef<HTMLDivElement>(null);
@@ -149,6 +153,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
     // OS widget can show the new spell's title next to the old spell's
     // artwork.
     setCoverUrl(null);
+    setCoverFrameId(undefined);
     setCoverSettled(false);
     if (spellId && userData?.id) {
       getSpellById(spellId, userData.id).then(doc => {
@@ -157,6 +162,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
           url = URL.createObjectURL(doc.cover);
           setCoverUrl(url);
         }
+        setCoverFrameId(doc?.coverFrameId);
         setCoverSettled(true);
       });
     } else {
@@ -659,6 +665,8 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
   }, [dispatch, voice, selectedVoice]);
 
   const volumePercentage = volume * 100;
+  const resolvedCoverFrameId = resolveCoverFrameId(coverFrameId, activeCoverFrameId);
+  const coverFrameCorners = getCoverFrameCorners(resolvedCoverFrameId);
 
   return (
     <>
@@ -677,9 +685,10 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
               style={spellId ? { cursor: 'pointer' } : undefined}
             >
               {coverUrl
-                ? <img data-testid="browser-player-cover" src={coverUrl} alt="" className={s.cover} />
+                ? <img data-testid="browser-player-cover" src={coverUrl} alt="" className={s.cover} style={getCoverFrameStyle(resolvedCoverFrameId)} />
                 : <div data-testid="browser-player-cover-placeholder" className={s.coverIcon}><FontAwesomeIcon icon={faScroll} /></div>
               }
+              {coverUrl && coverFrameCorners && <CoverFrameCorners config={coverFrameCorners} />}
               {isPlaying && (
                 <div className={s.coverWaveOverlay}>
                   <Waveform active bars={4} height={14} color="white" />

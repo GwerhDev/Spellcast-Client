@@ -134,4 +134,24 @@ describe('SpellDetail', () => {
 
     await waitFor(() => expect(store.getState().spellReader.listVersion).toBe(1));
   });
+
+  // TCORE-123: cover frame selection moved to SpellCard's own context menu (Last Spells/
+  // Grimoire grid) -- SpellDetail only ever displays the resolved frame now, it doesn't
+  // edit it. See SpellCard.test.tsx for the picker's own coverage.
+  it('shows the resolved cover frame (this spell\'s own pick, or the global default) on the cover image', async () => {
+    vi.spyOn(db, 'getSpellById').mockResolvedValue({
+      ...mockDoc,
+      cover: new Blob(['x']),
+      coverFrameId: 'grimoire',
+    } as never);
+    const originalCreateObjectURL = URL.createObjectURL;
+    URL.createObjectURL = vi.fn(() => 'blob:mock');
+    try {
+      renderDetail();
+      await screen.findByAltText('My Book');
+      expect(screen.getAllByTestId('cover-frame-corner')[0]).toHaveAttribute('src', '/frames/grimoire-corner.svg');
+    } finally {
+      URL.createObjectURL = originalCreateObjectURL;
+    }
+  });
 });

@@ -7,6 +7,7 @@ import { DeleteConfirmModal } from '../../components/Modals/DeleteConfirmModal';
 import { useAppSelector } from '../../../store/hooks';
 import { Spell } from '../../../interfaces';
 import { SpellCard } from '../../components/Cards/SpellCard';
+import { resolveCoverFrameId, getCoverFrameCorners } from '../../../utils/coverFrame';
 // import { useSpellExport } from '../../../hooks/useSpellExport'; // .spell export: future
 import { useDispatch } from 'react-redux';
 import { setAutoPlayOnLoad, resetBrowserPlayer, requestTogglePlay } from '../../../store/browserPlayerSlice';
@@ -24,6 +25,7 @@ export const LastSpells: React.FC = () => {
   const audioPlaying = useAppSelector((state) => state.audioPlayer.isPlaying);
   const browserPlaying = useAppSelector((state) => state.browserPlayer.isPlaying);
   const selectedVoiceType = useAppSelector((state) => state.voice.selectedVoice.type);
+  const { activeCoverFrameId } = useAppSelector((state) => state.casterInventory);
   const { t } = useLanguage();
   const [documents, setDocuments] = useState<Spell[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -156,6 +158,11 @@ export const LastSpells: React.FC = () => {
   const MAX = 10;
   const visible = documents.slice(0, MAX);
   const hasMore = documents.length > MAX;
+  // TCORE-123 follow-up: the carousel's own padding (see .slider's own comment) exists
+  // only to keep a cover frame's overhanging corners from being clipped by this scroller's
+  // overflow -- when nothing visible actually has a frame, that padding is just dead space
+  // above/around the cards, so it's applied conditionally rather than unconditionally.
+  const hasVisibleCoverFrame = visible.some(doc => !!getCoverFrameCorners(resolveCoverFrameId(doc.coverFrameId, activeCoverFrameId)));
 
   return (
     <>
@@ -172,7 +179,7 @@ export const LastSpells: React.FC = () => {
           {canPrev && (
             <IconButton icon={faChevronLeft} variant="transparent" className={`${s.navBtn} ${s.navBtnPrev}`} onClick={() => scroll('prev')} />
           )}
-          <div className={s.slider} ref={sliderRef}>
+          <div className={`${s.slider} ${hasVisibleCoverFrame ? s.sliderFramed : ''}`} ref={sliderRef}>
             {visible.map((doc) => {
               const uploadJob = uploadQueue.find(j => j.targetDocId === doc.id && (j.status === 'queued' || j.status === 'processing')) ?? null;
               return (

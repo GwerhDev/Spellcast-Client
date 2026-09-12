@@ -4,6 +4,7 @@ import reducer, {
   setActiveSoundBg,
   setActivePageBg,
   setActiveCompanion,
+  setActiveCoverFrame,
   setSoundBgVolume,
   setMasterVolume,
   moveCompanionModel,
@@ -27,10 +28,11 @@ const baseState = {
   activeSoundBgId: null as string | null,
   activePageBgId: null as string | null,
   activeCompanionId: null as string | null,
+  activeCoverFrameId: null as string | null,
   soundBgVolume: 0.35,
   masterVolume: 1,
   companionPlacements: {} as Record<string, CompanionPlacement>,
-  version: 5,
+  version: 6,
 };
 
 describe('casterInventorySlice', () => {
@@ -39,9 +41,17 @@ describe('casterInventorySlice', () => {
     expect(state.activeSoundBgId).toBeNull();
     expect(state.activePageBgId).toBe('default');
     expect(state.activeCompanionId).toBeNull();
+    expect(state.activeCoverFrameId).toBeNull();
     expect(state.soundBgVolume).toBe(0.35);
     expect(state.masterVolume).toBe(1);
     expect(Array.isArray(state.unlockedIds)).toBe(true);
+  });
+
+  // TCORE-123: free cover frames must be auto-unlocked for every fresh session, same as
+  // free sound/page backgrounds already are.
+  it('includes free cover frames in the initial unlockedIds', () => {
+    const state = reducer(undefined, { type: '@@INIT' });
+    expect(state.unlockedIds).toContain('grimoire');
   });
 
   it('unlockAsset adds a new id', () => {
@@ -67,6 +77,11 @@ describe('casterInventorySlice', () => {
   it('setActiveCompanion sets and clears', () => {
     expect(reducer(baseState, setActiveCompanion('cats')).activeCompanionId).toBe('cats');
     expect(reducer({ ...baseState, activeCompanionId: 'cats' }, setActiveCompanion(null)).activeCompanionId).toBeNull();
+  });
+
+  it('setActiveCoverFrame sets and clears the global default border', () => {
+    expect(reducer(baseState, setActiveCoverFrame('gilded')).activeCoverFrameId).toBe('gilded');
+    expect(reducer({ ...baseState, activeCoverFrameId: 'gilded' }, setActiveCoverFrame(null)).activeCoverFrameId).toBeNull();
   });
 
   it('setSoundBgVolume clamps to [0, 1]', () => {
@@ -126,8 +141,8 @@ describe('casterInventorySlice localStorage key migration (TCORE-108)', () => {
   });
 
   it('reads from the new "casterInventory" key when it already exists, ignoring any old key', async () => {
-    const newState = { version: 5, unlockedIds: ['new-id'], activeCompanionId: 'new-id' };
-    const oldState = { version: 5, unlockedIds: ['old-id'], activeCompanionId: 'old-id' };
+    const newState = { version: 6, unlockedIds: ['new-id'], activeCompanionId: 'new-id' };
+    const oldState = { version: 6, unlockedIds: ['old-id'], activeCompanionId: 'old-id' };
     vi.stubGlobal('localStorage', {
       getItem: vi.fn((key: string) => (key === 'casterInventory' ? JSON.stringify(newState) : key === 'userLibrary' ? JSON.stringify(oldState) : null)),
       setItem: vi.fn(),
@@ -143,7 +158,7 @@ describe('casterInventorySlice localStorage key migration (TCORE-108)', () => {
     // Simulates a real existing user's pre-rename data: unlocked cosmetics, an active
     // companion, and a saved placement, sitting only under the old key.
     const legacyState = {
-      version: 5,
+      version: 6,
       unlockedIds: ['cats', 'rain-window'],
       activeCompanionId: 'cats',
       soundBgVolume: 0.7,

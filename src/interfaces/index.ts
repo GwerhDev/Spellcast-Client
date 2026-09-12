@@ -98,6 +98,14 @@ export interface Spell {
   author?: string;
   tags?: string[];
   language?: string;
+  // TCORE-123: per-spell cover frame (config/assets/coverFrames.ts), free cosmetic, picked
+  // from SpellCard's context menu (Last Spells/Grimoire grid). Three distinct states, not
+  // just set/unset: undefined (never chosen -- falls back to casterInventorySlice's
+  // activeCoverFrameId, the global default), null (explicitly "no frame" for this spell,
+  // overriding that default), or a frame id (this spell's own explicit pick, also
+  // overriding the default). See resolveCoverFrameId in utils/coverFrame.ts, the one place
+  // this fallback is resolved.
+  coverFrameId?: string | null;
 }
 
 export interface SpellState {

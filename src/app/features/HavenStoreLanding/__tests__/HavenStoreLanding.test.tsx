@@ -68,4 +68,17 @@ describe('HavenStoreLanding', () => {
     expect(screen.queryByTestId('page-card-default')).not.toBeInTheDocument();
     expect(screen.queryByTestId('companion-card-cats')).not.toBeInTheDocument();
   });
+
+  // TCORE-123
+  it('a cover frame already owned by default (free) shows as owned, never equippable', () => {
+    renderWithProviders(<HavenStoreLanding />);
+    expect(screen.getByTestId('cover-frame-owned-grimoire')).toBeInTheDocument();
+    expect(screen.queryByTestId('cover-frame-toggle-grimoire')).not.toBeInTheDocument();
+  });
+
+  it('search also filters cover frames by name', () => {
+    renderWithProviders(<HavenStoreLanding />);
+    fireEvent.change(screen.getByTestId('haven-search'), { target: { value: 'zzz-no-match-zzz' } });
+    expect(screen.queryByTestId('cover-frame-card-grimoire')).not.toBeInTheDocument();
+  });
 });

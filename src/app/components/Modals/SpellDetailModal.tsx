@@ -5,6 +5,8 @@ import { useDispatch } from 'react-redux';
 import { useAppSelector } from '../../../store/hooks';
 import { getSpellById, deleteSpellFromDB } from '../../../db';
 import { hasOriginalPdf } from '../../../db/originalPdfs';
+import { resolveCoverFrameId, getCoverFrameStyle, getCoverFrameCorners } from '../../../utils/coverFrame';
+import { CoverFrameCorners } from '../CoverFrameCorners';
 import { setAutoPlayOnLoad, resetBrowserPlayer } from '../../../store/browserPlayerSlice';
 import { setAutoPlayOnLoad as setAudioAutoPlayOnLoad } from '../../../store/audioPlayerSlice';
 import { invalidateSpellList, resetSpellReader } from '../../../store/spellReaderSlice';
@@ -30,6 +32,7 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
   const { t } = useLanguage();
   const { userData } = useAppSelector(state => state.session);
   const { spellId: currentPlayingId, currentPage: readerCurrentPage } = useAppSelector(state => state.spellReader);
+  const { activeCoverFrameId } = useAppSelector(state => state.casterInventory);
 
   const [doc, setDoc] = useState<Awaited<ReturnType<typeof getSpellById>> | null>(null);
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
@@ -57,6 +60,8 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
 
   if (!show || !spellId) return null;
 
+  const resolvedCoverFrameId = doc ? resolveCoverFrameId(doc.coverFrameId, activeCoverFrameId) : null;
+  const coverFrameCorners = getCoverFrameCorners(resolvedCoverFrameId);
   const pagesCount = doc?.pagesContent ? (() => { try { return JSON.parse(doc.pagesContent!).length; } catch { return null; } })() : null;
   const currentPage = (currentPlayingId === spellId && readerCurrentPage > 0)
     ? readerCurrentPage
@@ -99,9 +104,10 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
             <div className={s.header}>
               <div className={s.coverWrap}>
                 {coverUrl
-                  ? <img src={coverUrl} alt={doc.title} className={s.cover} />
+                  ? <img src={coverUrl} alt={doc.title} className={s.cover} style={getCoverFrameStyle(resolvedCoverFrameId)} />
                   : <div className={s.coverPlaceholder}><FontAwesomeIcon icon={faScroll} /></div>
                 }
+                {coverUrl && coverFrameCorners && <CoverFrameCorners config={coverFrameCorners} />}
               </div>
               <div className={s.info}>
                 <h2 className={s.title}>{doc.title}</h2>

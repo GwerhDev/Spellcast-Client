@@ -47,10 +47,26 @@
   flex-direction: row;
   gap: 1rem;
   overflow-x: auto;
+  /* Explicit, not left to default: overflow-x: auto alone computes overflow-y as auto too
+     (there's no such thing as a scroller clipping only one axis per the CSS spec) -- without
+     this, .sliderFramed's own extra padding below is just enough extra height to trigger a
+     visible vertical scrollbar on the carousel itself, which is not wanted here at all. */
+  overflow-y: hidden;
   min-width: 0;
   padding-bottom: 0.5rem;
   scroll-behavior: smooth;
   scrollbar-width: none;
+}
+
+/* TCORE-123 follow-up: a cover frame's corner plates overhang each SpellCard's own edge by
+   CORNER_OVERHANG (see CoverFrameCorners.tsx) -- without this padding those corners get cut
+   off top/bottom by this scroller's own box, and the first/last card's corners get cut off
+   left/right by it too. Applied only when a visible card actually resolves to a frame (see
+   hasVisibleCoverFrame in index.tsx) -- otherwise it's dead space above the cards for
+   nothing. GrimoireLanding's grid doesn't need this at all -- it doesn't scroll, so it
+   never sets overflow in the first place. */
+.sliderFramed {
+  padding: 8px 8px 0.5rem;
 }
 
 .slider::-webkit-scrollbar {

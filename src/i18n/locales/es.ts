@@ -126,6 +126,12 @@ export const es: Translations = {
     coverLabel: 'Portada',
     coverUploadImage: 'Subir imagen',
     coverUseFirstPage: 'Usar portada del PDF',
+    // TCORE-123: marco de portada por-spell, elegido desde el menú contextual de SpellCard
+    // (grid de Last Spells / Grimoire) -- separado del campo Portada de arriba, que solo
+    // vive en los forms de creación/edición.
+    coverFrameLabel: 'Marco de portada',
+    coverFrameNone: 'Sin marco',
+    coverFrameDefault: 'Predeterminado',
   },
   grimoire: {
     subtitle: 'Tus Spells, siempre a mano',
@@ -216,6 +222,14 @@ export const es: Translations = {
     enterFullscreen: 'Pantalla completa',
     exitFullscreen: 'Salir de pantalla completa',
     companions: 'Compañeros',
+    // TCORE-123 follow-up: distinto de havenStore.active/setActive/deactivate a propósito
+    // -- esto significa "usar este compañero durante esta sesión de lectura", no "fijar
+    // como predeterminado global" (CompanionCard se comparte con CasterInventoryLanding,
+    // donde sí significa el default global; ReaderSettings pasa estos como overrides para
+    // que el mismo botón nunca diga que cambia un default global que en realidad no toca).
+    companionInUse: 'En uso',
+    companionUse: 'Usar',
+    companionStopUsing: 'Dejar de usar',
     selectPage: 'Seleccionar página',
     displayTab: 'Pantalla',
     appearanceTab: 'Apariencia',
@@ -447,6 +461,7 @@ export const es: Translations = {
     inventoryEmptySounds: 'Aún no desbloqueaste fondos de sonido — busca algunos en la Havenstore.',
     inventoryEmptyPages: 'Aún no desbloqueaste fondos de hoja — busca algunos en la Havenstore.',
     inventoryEmptyCompanions: 'Aún no desbloqueaste compañeros — busca algunos en la Havenstore.',
+    inventoryEmptyCoverFrames: 'Aún no desbloqueaste marcos de portada — busca algunos en la Havenstore.',
   },
   gamification: {
     level: 'Nivel',
@@ -478,11 +493,15 @@ export const es: Translations = {
     subtitle: 'Mejora tu experiencia de lectura y escritura',
     soundBackgrounds: 'Fondos de sonido',
     pageBackgrounds: 'Fondos de hoja',
+    coverFrames: 'Marcos de portada',
     free: 'Gratis',
     unlock: 'Desbloquear',
-    active: 'Activo',
-    setActive: 'Activar',
-    deactivate: 'Desactivar',
+    // TCORE-123 follow-up: "predeterminado" (no "activo") -- estos botones fijan el
+    // DEFAULT global que se usa cuando un spell no eligió su propia opción, no un toggle
+    // de sesión tipo "encendido ahora".
+    active: 'Predeterminado',
+    setActive: 'Fijar como predeterminado',
+    deactivate: 'Quitar predeterminado',
     locked: 'Bloqueado',
     purchase: 'Comprar',
     coins: 'monedas',

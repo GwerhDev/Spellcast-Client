@@ -5,6 +5,8 @@ import { useDispatch } from 'react-redux';
 import { useAppSelector } from '../../../store/hooks';
 import { getSpellById, deleteSpellFromDB } from '../../../db';
 import { hasOriginalPdf } from '../../../db/originalPdfs';
+import { resolveCoverFrameId, getCoverFrameStyle, getCoverFrameCorners } from '../../../utils/coverFrame';
+import { CoverFrameCorners } from '../../components/CoverFrameCorners';
 import { setAutoPlayOnLoad, resetBrowserPlayer } from '../../../store/browserPlayerSlice';
 import { setAutoPlayOnLoad as setAudioAutoPlayOnLoad } from '../../../store/audioPlayerSlice';
 import { invalidateSpellList, resetSpellReader } from '../../../store/spellReaderSlice';
@@ -37,6 +39,10 @@ export const SpellDetail: React.FC = () => {
   // TCORE-90: the original PDF no longer lives on the Spell record -- its existence is
   // looked up in the dedicated store instead of reading a `pdf` field.
   const [hasPdf, setHasPdf] = useState(false);
+  // TCORE-123: the frame itself is edited from SpellCard's context menu (Last Spells/
+  // Grimoire grid), not here -- this only resolves and displays whatever is already
+  // chosen. See resolveCoverFrameId (utils/coverFrame.ts) for the fallback rule.
+  const { activeCoverFrameId } = useAppSelector((state) => state.casterInventory);
   // .spell export UI is hidden for now (not ready to ship this phase) — kept wired but
   // commented out so it's a one-line re-enable later. See the export button below and
   // the SpellExportModal render near the end of this file.
@@ -117,6 +123,8 @@ export const SpellDetail: React.FC = () => {
   const progressPct = (pagesCount && currentPage > 0)
     ? Math.min(Math.round(currentPage / pagesCount * 100), 100)
     : null;
+  const resolvedCoverFrameId = resolveCoverFrameId(doc.coverFrameId, activeCoverFrameId);
+  const coverFrameCorners = getCoverFrameCorners(resolvedCoverFrameId);
 
   return (
     <div data-testid="spell-detail" className={s.container}>
@@ -126,7 +134,12 @@ export const SpellDetail: React.FC = () => {
       <div className={s.detailsContainer}>
         <div className={s.header}>
           {coverUrl
-            ? <img src={coverUrl} alt={doc.title} className={s.cover} />
+            ? (
+              <div className={s.coverWrap}>
+                <img src={coverUrl} alt={doc.title} className={s.cover} style={getCoverFrameStyle(resolvedCoverFrameId)} />
+                {coverFrameCorners && <CoverFrameCorners config={coverFrameCorners} />}
+              </div>
+            )
             : <FontAwesomeIcon icon={faScroll} size="4x" className={s.icon} />
           }
           <div className={s.info}>

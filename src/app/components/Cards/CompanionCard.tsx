@@ -15,13 +15,21 @@ interface CompanionCardProps {
   // static "owned" status instead of a button. Defaults to true so ReaderSettings' existing
   // equip usage, and the new Caster inventory view, are unaffected.
   showEquipControls?: boolean;
+  // TCORE-123 follow-up: the "active"/"set active"/"deactivate" copy defaults to
+  // havenStore.* (CasterInventoryLanding's "global default" framing), but ReaderSettings
+  // uses this same card to mean "use this companion during THIS reading session" -- a
+  // different, narrower action that isn't a global default at all. Pass this to override
+  // just the strings without forking the card itself.
+  activeLabel?: string;
+  setActiveLabel?: string;
+  deactivateLabel?: string;
 }
 
 // Same card used for the Havenstore acquisition grid and the Reader Settings/Caster
 // inventory "Companions" surfaces, so a companion looks identical everywhere -- only
 // showEquipControls differs between "can I get this" (Havenstore) and "can I equip this"
 // (everywhere else).
-export const CompanionCard: React.FC<CompanionCardProps> = ({ companion, unlocked, isActive, onAction, showEquipControls = true }) => {
+export const CompanionCard: React.FC<CompanionCardProps> = ({ companion, unlocked, isActive, onAction, showEquipControls = true, activeLabel, setActiveLabel, deactivateLabel }) => {
   const { t } = useLanguage();
   const comingSoon = !!companion.comingSoon;
   const locked = !unlocked;
@@ -41,7 +49,7 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({ companion, unlocke
         )}
         {showActive && (
           <span className={s.activePill}>
-            <FontAwesomeIcon icon={faCheck} /> {t.havenStore.active}
+            <FontAwesomeIcon icon={faCheck} /> {activeLabel ?? t.havenStore.active}
           </span>
         )}
       </div>
@@ -81,7 +89,7 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({ companion, unlocke
                   className={isActive ? s.btnActive : s.btnSet}
                   onClick={() => onAction(companion.id)}
                 >
-                  {isActive ? t.havenStore.deactivate : t.havenStore.setActive}
+                  {isActive ? (deactivateLabel ?? t.havenStore.deactivate) : (setActiveLabel ?? t.havenStore.setActive)}
                 </button>
               )}
               {unlocked && !showEquipControls && (

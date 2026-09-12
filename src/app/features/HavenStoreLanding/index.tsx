@@ -5,9 +5,10 @@ import { SectionHeader } from '../../components/SectionHeader';
 import { CompanionCard } from '../../components/Cards/CompanionCard';
 import { SoundBackgroundCard } from '../../components/Cards/SoundBackgroundCard';
 import { PageBackgroundCard } from '../../components/Cards/PageBackgroundCard';
+import { CoverFrameCard } from '../../components/Cards/CoverFrameCard';
 import { useAppSelector, useAppDispatch } from '../../../store/hooks';
 import { unlockAsset } from '../../../store/casterInventorySlice';
-import { soundBackgrounds, pageBackgrounds, companions } from '../../../config/assets';
+import { soundBackgrounds, pageBackgrounds, companions, coverFrames } from '../../../config/assets';
 import { useLanguage } from '../../../i18n';
 import s from '../../components/HavenStoreLanding/index.module.css';
 
@@ -33,6 +34,7 @@ export const HavenStoreLanding = () => {
   const filteredSounds = soundBackgrounds.filter(matches);
   const filteredPages = pageBackgrounds.filter(matches);
   const filteredCompanions = companions.filter(matches);
+  const filteredCoverFrames = coverFrames.filter(matches);
 
   const handleUnlock = (id: string) => {
     if (!isUnlocked(id)) dispatch(unlockAsset(id));
@@ -109,6 +111,22 @@ export const HavenStoreLanding = () => {
                     />
                   );
                 })}
+              </div>
+            </div>
+
+            <div className={s.section}>
+              <p className={s.sectionLabel}>{t.havenStore.coverFrames}</p>
+              <div className={s.pageGrid}>
+                {filteredCoverFrames.map(border => (
+                  <CoverFrameCard
+                    key={border.id}
+                    asset={border}
+                    unlocked={isUnlocked(border.id)}
+                    isActive={false}
+                    onAction={handleUnlock}
+                    showEquipControls={false}
+                  />
+                ))}
               </div>
             </div>
           </div>

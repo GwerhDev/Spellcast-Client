@@ -2,6 +2,7 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { soundBackgrounds } from '../config/assets/soundBackgrounds';
 import { pageBackgrounds } from '../config/assets/pageBackgrounds';
 import { companions } from '../config/assets/companions';
+import { coverFrames } from '../config/assets/coverFrames';
 
 // Bumped to 5: companionPlacements' coordinate system changed shape across this session's
 // CompanionOverlay redesigns (shared-canvas world units -> per-model canvas pixels), so a
@@ -9,7 +10,14 @@ import { companions } from '../config/assets/companions';
 // at two different spots, or off in a stale direction entirely -- not safely correctable
 // field-by-field like the inFront default below, so a version bump drops old placements
 // outright instead of trying to migrate coordinates that no longer mean the same thing.
-const STATE_VERSION = 5;
+//
+// Bumped to 6 (TCORE-123): coverFrames are a brand-new free category -- an existing
+// user's already-persisted unlockedIds predates it entirely, and (per this module's own
+// "no runtime FREE_IDS merge" design, see every isUnlocked check across the app) would
+// otherwise never include it until they explicitly unlock something else that resets it.
+// Re-deriving unlockedIds from FREE_IDS on this bump is what makes a free cosmetic
+// actually unlocked for everyone, not just fresh sessions.
+const STATE_VERSION = 6;
 
 // Exported so CompanionOverlay can predict a scale change's clamped result itself (to
 // re-clamp the model's on-screen position immediately, before this reducer's own update
@@ -23,6 +31,7 @@ const FREE_IDS = [
   // requiresExplicitUnlock companions (e.g. the gift-announcement cats) are deliberately
   // excluded here even once !comingSoon — see that field's comment in config/assets/types.
   ...companions.filter(a => a.unlockMethod === 'free' && !a.comingSoon && !a.requiresExplicitUnlock).map(a => a.id),
+  ...coverFrames.filter(a => a.unlockMethod === 'free').map(a => a.id),
 ];
 
 export interface CompanionPlacement {
@@ -45,6 +54,11 @@ interface CasterInventoryState {
   activeSoundBgId: string | null;
   activePageBgId: string | null;
   activeCompanionId: string | null;
+  // TCORE-123: the DEFAULT cover frame, used for any spell that hasn't explicitly picked
+  // its own (Spell.coverFrameId left undefined) or explicitly opted out (null) -- see
+  // SpellDetail's per-spell picker. Unlike activePageBgId/activeCompanionId, nothing reads
+  // this as "the" active border on its own; it's always resolved as a fallback.
+  activeCoverFrameId: string | null;
   soundBgVolume: number;
   masterVolume: number;
   // Keyed by companion model id (e.g. 'orange', 'black'), not companion id — each model
@@ -95,6 +109,7 @@ const initialState: CasterInventoryState = {
   activeSoundBgId: persisted.activeSoundBgId ?? null,
   activePageBgId: persisted.activePageBgId ?? 'default',
   activeCompanionId: persisted.activeCompanionId ?? null,
+  activeCoverFrameId: persisted.activeCoverFrameId ?? null,
   soundBgVolume: persisted.soundBgVolume ?? 0.35,
   masterVolume: persisted.masterVolume ?? 1,
   companionPlacements: sanitizePlacements(persisted.companionPlacements),
@@ -117,6 +132,9 @@ const casterInventorySlice = createSlice({
     },
     setActiveCompanion(state, action: PayloadAction<string | null>) {
       state.activeCompanionId = action.payload;
+    },
+    setActiveCoverFrame(state, action: PayloadAction<string | null>) {
+      state.activeCoverFrameId = action.payload;
     },
     setSoundBgVolume(state, action: PayloadAction<number>) {
       state.soundBgVolume = Math.min(1, Math.max(0, action.payload));
@@ -157,6 +175,7 @@ export const {
   setActiveSoundBg,
   setActivePageBg,
   setActiveCompanion,
+  setActiveCoverFrame,
   setSoundBgVolume,
   setMasterVolume,
   moveCompanionModel,
