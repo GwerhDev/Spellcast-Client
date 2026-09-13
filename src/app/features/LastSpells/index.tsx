@@ -7,7 +7,17 @@ import { DeleteConfirmModal } from '../../components/Modals/DeleteConfirmModal';
 import { useAppSelector } from '../../../store/hooks';
 import { Spell } from '../../../interfaces';
 import { SpellCard } from '../../components/Cards/SpellCard';
-import { resolveCoverFrameId, getCoverFrameCorners } from '../../../utils/coverFrame';
+import { resolveCoverFrameId, getCoverFrameCorners, getCoverFrame3D } from '../../../utils/coverFrame';
+import { useCoverFrame3DGate } from '../../../hooks/useCoverFrame3DGate';
+import type { CardFrameAnchor } from '../../components/Cover3D/CoverFrame3DOverlay';
+
+// three/@react-three/fiber are only downloaded once the 3D gate actually passes (Mode3D
+// user setting on, desktop, motion ok, section in view) -- lazy so everyone else's Last
+// Spells bundle stays free of the 3D stack, same reasoning as SpellReader's own lazy
+// CompanionOverlay import.
+const CoverFrame3DOverlay = React.lazy(() =>
+  import('../../components/Cover3D/CoverFrame3DOverlay').then(m => ({ default: m.CoverFrame3DOverlay }))
+);
 // import { useSpellExport } from '../../../hooks/useSpellExport'; // .spell export: future
 import { useDispatch } from 'react-redux';
 import { setAutoPlayOnLoad, resetBrowserPlayer, requestTogglePlay } from '../../../store/browserPlayerSlice';
@@ -38,9 +48,18 @@ export const LastSpells: React.FC = () => {
   const [canPrev, setCanPrev] = useState(false);
   const [canNext, setCanNext] = useState(false);
   const sliderRef = useRef<HTMLDivElement>(null);
+  const carouselWrapperRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
+
+  // TCORE-124: gates the single shared 3D overlay for the whole section (see
+  // useCoverFrame3DGate for what each condition guards against, including the user's own
+  // Mode3D toggle in Appearance settings). Measured against .carouselWrapper (not .slider)
+  // so the IntersectionObserver isn't confused by the slider's own horizontal scroll -- the
+  // wrapper's visibility is purely a vertical-scroll question, which is what "is this
+  // section on screen" actually means here.
+  const show3DFrames = useCoverFrame3DGate(carouselWrapperRef);
 
   const updateButtons = useCallback(() => {
     const el = sliderRef.current;
@@ -164,6 +183,31 @@ export const LastSpells: React.FC = () => {
   // above/around the cards, so it's applied conditionally rather than unconditionally.
   const hasVisibleCoverFrame = visible.some(doc => !!getCoverFrameCorners(resolveCoverFrameId(doc.coverFrameId, activeCoverFrameId)));
 
+  // TCORE-124: which visible cards resolve to a frame that also has 3D geometry
+  // (getCoverFrame3D) -- only those get an anchor, everything else keeps the plain 2D
+  // CoverFrameCorners SpellCard already renders. getRect is a closure (not a stored value)
+  // so CoverFrame3DOverlay always reads the CURRENT position, including mid-scroll -- doc.id
+  // matches SpellCard's own data-testid, so no ref/prop needs to be threaded into SpellCard
+  // for this to find it, keeping SpellCard itself untouched.
+  const frame3DAnchors: CardFrameAnchor[] = show3DFrames
+    ? visible.reduce<CardFrameAnchor[]>((acc, doc) => {
+        const config = getCoverFrame3D(resolveCoverFrameId(doc.coverFrameId, activeCoverFrameId));
+        if (!config) return acc;
+        acc.push({
+          id: doc.id,
+          config,
+          getRect: () => {
+            const card = sliderRef.current?.querySelector(`[data-testid="spell-card-${doc.id}"]`);
+            // Matches the 2D CoverFrameCorners' own anchor box exactly (see its comment in
+            // CoverFrameCorners.tsx) -- the cover art itself, not the whole card (which also
+            // includes the title/date footer below it).
+            return card ? card.querySelector('[class*="coverWrapper"]')?.getBoundingClientRect() ?? null : null;
+          },
+        });
+        return acc;
+      }, [])
+    : [];
+
   return (
     <>
       <div className={s.container}>
@@ -175,7 +219,7 @@ export const LastSpells: React.FC = () => {
             <FontAwesomeIcon icon={faArrowRight} />
           </span>
         </div>
-        <div className={s.carouselWrapper}>
+        <div className={s.carouselWrapper} ref={carouselWrapperRef}>
           {canPrev && (
             <IconButton icon={faChevronLeft} variant="transparent" className={`${s.navBtn} ${s.navBtnPrev}`} onClick={() => scroll('prev')} />
           )}
@@ -206,6 +250,17 @@ export const LastSpells: React.FC = () => {
           </div>
           {canNext && (
             <IconButton icon={faChevronRight} variant="transparent" className={`${s.navBtn} ${s.navBtnNext}`} onClick={() => scroll('next')} />
+          )}
+          {/* TCORE-124: mounted only once useCoverFrame3DGate passes -- frame3DAnchors is
+              empty otherwise, but the component itself (and its lazy three.js chunk) isn't
+              even requested unless show3DFrames is true, so a users-with-3D-off session
+              never pays for the import. Absolutely positioned over the whole wrapper (not
+              just .slider) so its canvas covers nav buttons too -- pointer-events: none on
+              the canvas itself (see CoverFrame3DOverlay) keeps them clickable regardless. */}
+          {show3DFrames && (
+            <React.Suspense fallback={null}>
+              <CoverFrame3DOverlay containerRef={carouselWrapperRef} anchors={frame3DAnchors} />
+            </React.Suspense>
           )}
         </div>
       </div>

@@ -56,3 +56,21 @@ export const getCoverFrameCorners = (id: string | null): CoverFrameCornersConfig
     medallionImageUrl: asset.medallionImageUrl,
   };
 };
+
+export interface CoverFrame3DConfig {
+  corner3dUrl: string;
+  medallion3dUrl?: string;
+}
+
+// TCORE-124: the 3D-extrusion mechanism's own config for a resolved frame id, or null when
+// this frame has no corner3dUrl (no 3D geometry source at all, or a frame that only defines
+// the 2D mechanisms above). CoverFrame3DOverlay uses this per visible card to decide
+// whether that card gets a 3D mesh instead of just leaving the 2D CoverFrameCorners in place.
+export const getCoverFrame3D = (id: string | null): CoverFrame3DConfig | null => {
+  const asset = getCoverFrameAsset(id);
+  if (!asset?.corner3dUrl) return null;
+  return {
+    corner3dUrl: asset.corner3dUrl,
+    medallion3dUrl: asset.medallion3dUrl,
+  };
+};

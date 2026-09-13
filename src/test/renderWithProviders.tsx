@@ -4,6 +4,7 @@ import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
 import { configureStore, combineReducers, EnhancedStore } from '@reduxjs/toolkit';
 import { LanguageProvider } from '../i18n';
+import { Mode3DProvider } from '../context/Mode3DContext';
 import spellReaderReducer from '../store/spellReaderSlice';
 import spellUploadReducer from '../store/spellUploadSlice';
 import browserPlayerReducer from '../store/browserPlayerSlice';
@@ -59,7 +60,12 @@ export const renderWithProviders = (ui: React.ReactElement, options: Options = {
     <Provider store={store}>
       <MemoryRouter initialEntries={[initialPath]}>
         <LanguageProvider>
-          {children}
+          {/* TCORE-124: useCoverFrame3DGate (used by LastSpells) reads useMode3D(), which
+              throws outside a Mode3DProvider -- every test render needs one available, same
+              as LanguageProvider above, even for tests that never touch the 3D toggle. */}
+          <Mode3DProvider>
+            {children}
+          </Mode3DProvider>
         </LanguageProvider>
       </MemoryRouter>
     </Provider>

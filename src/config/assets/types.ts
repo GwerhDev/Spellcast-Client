@@ -58,14 +58,18 @@ export interface CompanionModel {
 //     neither of which is right. Corner
 //     images at a fixed pixel size in each real corner are the only mechanism that stays
 //     crisp and uncropped regardless of the box's own aspect ratio.
-//   - 3D frames (a real WebGL model wrapping the cover) were evaluated and are NOT
-//     supported here: CompanionOverlay's per-model <canvas> approach requires one live
-//     WebGL context per instance, bounded there to ~2 concurrent (companion.models.length)
-//     specifically because browsers cap simultaneous WebGL contexts (commonly 8-16) --
-//     Last Spells/Grimoire routinely render 20-50+ SpellCards at once, so a 3D frame per
-//     card would exceed that limit immediately. A 3D frame mechanism could still make
-//     sense somewhere only ever showing ONE cover at a time (e.g. the reader itself,
-//     analogous to how Companion is reader-only) -- not as a per-card cosmetic in a grid.
+//   - 3D frames (a real WebGL model wrapping the cover): CompanionOverlay's per-model
+//     <canvas> approach (one live WebGL context per instance) was evaluated and rejected
+//     for THIS use as the rendering mechanism, since browsers cap simultaneous WebGL
+//     contexts (commonly 8-16) and Last Spells/Grimoire routinely render 20-50+ SpellCards
+//     at once -- one context per card would exceed that limit immediately. TCORE-124
+//     instead renders 3D corners in a single shared <Canvas> overlaid on the section,
+//     positioned per-card from each card's own DOM rect (see CoverFrame3DOverlay) -- so
+//     corner3dUrl/medallion3dUrl below are optional geometry sources for THAT single
+//     canvas, not a per-card context. SpellCard itself stays 2D/untouched; cssValue/
+//     cornerImageUrl above remain the fallback whenever the 3D overlay isn't mounted
+//     (mobile, reduced-motion, low-end, or the user's own Mode3D setting off -- see
+//     useCoverFrame3DGate).
 export interface CoverFrame extends BaseAsset {
   category: 'cover-frame';
   cssValue?: string;
@@ -74,6 +78,14 @@ export interface CoverFrame extends BaseAsset {
   edgeColor?: string;
   medallionImageUrl?: string;
   thumbnail: string;
+  // TCORE-124: SVG source extruded into a 3D corner-plate mesh by CoverFrameMesh, reusing
+  // cornerImageUrl's own artwork rather than authoring a separate model. Optional -- a
+  // frame with cornerImageUrl but no corner3dUrl still gets the 2D corners, just never the
+  // 3D ones.
+  corner3dUrl?: string;
+  // Same idea for the medallion piece; independent of corner3dUrl so a frame could in
+  // principle 3D-extrude one but not the other.
+  medallion3dUrl?: string;
 }
 
 export interface Companion extends BaseAsset {
