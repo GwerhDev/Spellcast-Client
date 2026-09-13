@@ -73,6 +73,14 @@ interface CoverFrameMeshProps {
   color?: string;
   metalness?: number;
   roughness?: number;
+  // TCORE-124 polish pass: the medallion's own gem circle (grimoire-medallion.svg's `r="4"`
+  // circle, centered at the SVG's own origin) reads as flat bronze once extruded with the
+  // rest of the plate -- a gem needs a different material entirely (glassy, not metallic).
+  // Rather than split the SVG into two separately-extruded shape groups (fragile: depends on
+  // knowing which path index is "the gem" per asset), a small sphere is layered on top at
+  // the same spot, in scene units derived from the same `size`/gemRadius the 2D SVG uses.
+  // Undefined (the corner plates) skips this entirely.
+  gem?: { radiusRatio: number; color: string };
 }
 
 // Bronze-plate look via three's own built-in meshStandardMaterial (metalness/roughness) --
@@ -82,7 +90,7 @@ interface CoverFrameMeshProps {
 // from a remote CDN that a slow/offline session would silently never resolve. This stays
 // moderate enough to read as bronze off CoverFrame3DOverlay's own plain directional/
 // ambient lights alone.
-export const CoverFrameMesh: React.FC<CoverFrameMeshProps> = ({ url, size, color = '#c9903f', metalness = 0.4, roughness = 0.45 }) => {
+export const CoverFrameMesh: React.FC<CoverFrameMeshProps> = ({ url, size, color = '#c9903f', metalness = 0.4, roughness = 0.45, gem }) => {
   const { shapes, width, height } = useSvgShapes(url);
   const geometry = useMemo(() => {
     const geo = new THREE.ExtrudeGeometry(shapes, {
@@ -102,10 +110,48 @@ export const CoverFrameMesh: React.FC<CoverFrameMeshProps> = ({ url, size, color
   // medallion is wider than tall, the corner is square) instead of stretching either one.
   // Y is flipped (SVG's own Y-down space vs. three's Y-up) and Z is left as-is.
   const scale = size / Math.max(width, height);
+  const gemRadius = gem ? size * gem.radiusRatio : 0;
 
   return (
-    <mesh geometry={geometry} scale={[scale, -scale, scale]}>
-      <meshStandardMaterial color={color} metalness={metalness} roughness={roughness} />
-    </mesh>
+    <>
+      <mesh geometry={geometry} scale={[scale, -scale, scale]}>
+        {/* side: DoubleSide -- CoverFrame3DOverlay mirrors this mesh into corners via a
+            negated scale axis on the parent group. An odd number of negated axes flips the
+            triangle winding, which flips which face THREE.FrontSide (the default) considers
+            "front" -- so with FrontSide, some mirrored corners would render face-culled
+            (looking hollow/inside-out) while others looked fine. DoubleSide renders both
+            faces regardless of winding, so every corner reads correctly. */}
+        <meshStandardMaterial color={color} metalness={metalness} roughness={roughness} side={THREE.DoubleSide} />
+      </mesh>
+      {gem && (
+        // Sits just in front of the plate (a few Z units toward the camera, in the plate's
+        // OWN local space before the parent group's mirroring/scale is applied) so it never
+        // z-fights with the flat bronze disc already extruded from the SVG's gem circle --
+        // that disc stays as the gem's bronze bezel/socket, this sphere is the stone sitting
+        // in it. A low-poly icosahedron (not a UV sphere) facets the surface slightly, which
+        // reads as a cut/polished gem rather than a perfectly smooth glass marble at this
+        // small a size.
+        <mesh position={[0, 0, EXTRUDE_DEPTH / 2 + gemRadius * 0.5]}>
+          <icosahedronGeometry args={[gemRadius, 1]} />
+          {/* No transmission/refraction material (MeshTransmissionMaterial) -- that samples
+              a render-to-texture buffer per instance, expensive for a ~5px gem repeated per
+              card, and there's nothing meaningful behind a transparent canvas to refract
+              anyway. meshPhysicalMaterial with metalness 0 + low roughness + a clearcoat
+              layer + a touch of emissive reads as a polished, glassy stone off plain local
+              lights alone -- no envMap/HDRI dependency, same reasoning as the bronze above. */}
+          <meshPhysicalMaterial
+            color={gem.color}
+            metalness={0}
+            roughness={0.15}
+            clearcoat={1}
+            clearcoatRoughness={0.1}
+            emissive={gem.color}
+            emissiveIntensity={0.35}
+            transparent
+            opacity={0.92}
+          />
+        </mesh>
+      )}
+    </>
   );
 };

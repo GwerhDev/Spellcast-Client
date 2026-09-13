@@ -43,9 +43,15 @@ export const useCoverFrame3DGate = (sectionRef: React.RefObject<HTMLElement | nu
       const el = sectionRef.current;
       if (!el) return;
       window.clearInterval(poll);
-      // rootMargin gives a buffer so the section mounting/unmounting the 3D canvas right at
-      // this threshold can't itself cause a layout tremor that flips isIntersecting back
-      // and forth every render.
+      // A cold hard-reload has layout, fonts and cover images all still settling at the
+      // exact moment this mounts -- IntersectionObserver's own first callback can be
+      // delayed or briefly report false in that window (observed in practice: a hard
+      // reload showed the 2D fallback, only a client-side SPA navigation -- everything
+      // already warm -- showed the 3D overlay). A synchronous getBoundingClientRect() read
+      // right here isn't subject to that same async delay, so it seeds the real state
+      // immediately; the observer then takes over for every scroll/resize after.
+      const rect = el.getBoundingClientRect();
+      setInViewport(rect.top < window.innerHeight && rect.bottom > 0);
       io = new IntersectionObserver(
         ([entry]) => setInViewport(entry.isIntersecting),
         { threshold: 0.1, rootMargin: '200px 0px' }

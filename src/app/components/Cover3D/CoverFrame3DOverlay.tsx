@@ -18,6 +18,12 @@ const CORNER_OVERHANG = 2;
 // dimension is needed here since CoverFrameMesh's own `size` prop scales by the source
 // SVG's larger dimension and preserves its aspect ratio automatically.
 const MEDALLION_WIDTH = 22;
+// grimoire-medallion.svg's own gem circle (r="4") as a fraction of the SVG's larger
+// dimension (viewBox 32x26, so 32) -- CoverFrameMesh's gem prop scales by this ratio so the
+// glass gem sphere lands at the same relative size/position the flat SVG circle occupies,
+// without hand-picking a pixel radius per render size.
+const GEM_RADIUS_RATIO = 4 / 32;
+const GEM_COLOR = '#4fc3d9'; // matches grimoire-medallion.svg's own #gem gradient midtone
 
 export interface CardFrameAnchor {
   id: string;
@@ -131,10 +137,10 @@ const CornerSet: React.FC<{ corner3dUrl: string; medallion3dUrl?: string; getRec
       {medallion3dUrl && (
         <>
           <group position={[0, halfSize.h, 0]}>
-            <CoverFrameMesh url={medallion3dUrl} size={MEDALLION_WIDTH} />
+            <CoverFrameMesh url={medallion3dUrl} size={MEDALLION_WIDTH} gem={{ radiusRatio: GEM_RADIUS_RATIO, color: GEM_COLOR }} />
           </group>
           <group position={[0, -halfSize.h, 0]} scale={[1, -1, 1]}>
-            <CoverFrameMesh url={medallion3dUrl} size={MEDALLION_WIDTH} />
+            <CoverFrameMesh url={medallion3dUrl} size={MEDALLION_WIDTH} gem={{ radiusRatio: GEM_RADIUS_RATIO, color: GEM_COLOR }} />
           </group>
         </>
       )}
@@ -144,12 +150,15 @@ const CornerSet: React.FC<{ corner3dUrl: string; medallion3dUrl?: string; getRec
 
 // No <Environment> (drei's HDRI presets fetch from a remote CDN, and a metallic material
 // with no envMap renders close to black -- see CoverFrameMesh's own comment). Plain local
-// lights only.
+// lights only -- a third rim light (low intensity, from behind/above) gives the bevel edges
+// and the gem's clearcoat a sharper specular highlight than two lights alone, without
+// needing any environment reflection source.
 const Scene: React.FC<SceneProps> = ({ anchors, viewportSize }) => (
   <>
     <ambientLight intensity={1.1} />
     <directionalLight position={[40, 60, 80]} intensity={1.6} />
     <directionalLight position={[-30, -20, 60]} intensity={0.5} />
+    <directionalLight position={[0, -40, 30]} intensity={0.4} color="#dff2ff" />
     <Suspense fallback={null}>
       {anchors.map(anchor => (
         <CardFrameMeshes key={anchor.id} anchor={anchor} viewportSize={viewportSize} />
@@ -174,21 +183,32 @@ export const CoverFrame3DOverlay: React.FC<CoverFrame3DOverlayProps> = ({ contai
     const el = containerRef.current;
     if (!el) return;
     let raf = 0;
+    let last = { width: 0, height: 0, left: 0, top: 0 };
+    // A continuous rAF re-measure (not just ResizeObserver + a scroll listener) -- the
+    // container's SIZE staying the same doesn't mean its POSITION did: opening/closing the
+    // app's sidebar shifts everything to its right without resizing it, which ResizeObserver
+    // never fires for and there's no single DOM event to listen for either (it's a CSS
+    // transition on an unrelated ancestor element). Every card's own group already re-syncs
+    // its position every frame via anchor.getRect() in CardFrameMeshes -- but those positions
+    // are computed relative to THIS container's rect, so if this rect goes stale the whole
+    // overlay silently drifts away from the real cards, exactly what re-measuring here fixes.
     const measure = () => {
       const rect = el.getBoundingClientRect();
       // A rect of 0x0 here means "not laid out yet this instant" (e.g. a reflow mid-flight
       // right as this mounts), not "the section is actually zero-sized" -- setting
-      // viewportSize to 0x0 would permanently hide the canvas below with no ResizeObserver
-      // guaranteed to ever fire again if the real size doesn't change afterwards. Retry on
-      // the next frame instead of committing a bogus empty measurement.
-      if (rect.width === 0 || rect.height === 0) { raf = requestAnimationFrame(measure); return; }
-      setViewportSize({ width: rect.width, height: rect.height, left: rect.left, top: rect.top });
+      // viewportSize to 0x0 would permanently hide the canvas below. Skip the update (keep
+      // retrying) instead of committing a bogus empty measurement.
+      if (rect.width > 0 && rect.height > 0) {
+        const next = { width: rect.width, height: rect.height, left: rect.left, top: rect.top };
+        if (next.width !== last.width || next.height !== last.height || next.left !== last.left || next.top !== last.top) {
+          last = next;
+          setViewportSize(next);
+        }
+      }
+      raf = requestAnimationFrame(measure);
     };
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    window.addEventListener('scroll', measure, true);
-    return () => { cancelAnimationFrame(raf); ro.disconnect(); window.removeEventListener('scroll', measure, true); };
+    raf = requestAnimationFrame(measure);
+    return () => cancelAnimationFrame(raf);
   }, [containerRef]);
 
   if (viewportSize.width === 0 || viewportSize.height === 0) return null;
