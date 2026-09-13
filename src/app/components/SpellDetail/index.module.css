@@ -28,6 +28,13 @@
 }
 
 .header {
+  position: relative;
+  /* TCORE-124: isolates this box's own stacking context -- see SpellCard.module.css' own
+     .card comment for why (the shared 3D canvas, CoverFrame3DRoot, is mounted far up in
+     DefaultLayout with its own z-index; without an explicit z-index here, .coverFrameSlot's
+     descendants would compete against it directly rather than only against this header's
+     own other children). */
+  z-index: 0;
   display: flex;
   align-items: flex-start;
   gap: 1.5rem;
@@ -43,20 +50,41 @@
   flex-shrink: 0;
 }
 
+/* TCORE-124: matches SpellCard's own cover box exactly (--spell-card-width/
+   --spell-cover-height), not a size hardcoded just for this page -- the cover frame
+   corners/medallion are fixed-pixel-size hardware (CORNER_SIZE/MEDALLION_WIDTH in
+   CoverFrameCorners and CoverFrame3DView), so showing them at a different cover size than
+   the card grid they were designed against reads as mismatched (either too large relative
+   to a shrunk cover, or clipped oddly against a stretched one). overflow: visible (no
+   .cardClip-style clipping wrapper here, unlike SpellCard) since this cover isn't clipped
+   to rounded corners the way a card is. */
 .coverWrap {
   position: relative;
-  width: 80px;
-  height: 110px;
+  width: var(--spell-card-width);
+  height: var(--spell-cover-height);
   flex-shrink: 0;
 }
 
 .cover {
-  width: 80px;
-  height: 110px;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
   object-position: top;
   border-radius: 6px;
   flex-shrink: 0;
+  display: block;
+}
+
+/* Mirrors SpellCard's own .coverFrameSlot exactly (see that rule's comment): a sibling of
+   .cover, not a clipped ancestor, so the 3D corner/medallion overhang has room outside
+   .cover's own box. --cover-frame-3d-margin-x/-y only set for the 3D case. */
+.coverFrameSlot {
+  position: absolute;
+  top: calc(-1 * var(--cover-frame-3d-margin-y, 0px));
+  left: calc(-1 * var(--cover-frame-3d-margin-x, 0px));
+  right: calc(-1 * var(--cover-frame-3d-margin-x, 0px));
+  height: calc(100% + 2 * var(--cover-frame-3d-margin-y, 0px));
+  pointer-events: none;
 }
 
 .info {

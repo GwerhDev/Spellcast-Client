@@ -1,5 +1,17 @@
 .card {
   position: relative;
+  /* TCORE-124: an explicit z-index (any value) on a position: relative element creates its
+     own stacking context -- without this, .card's interactive overlays (.playAction,
+     .actions, .uploadOverlay, all z-index 2-4) were only competing with each other WITHIN
+     an implicit context that itself sat at the SAME level as .app-viewer's other direct
+     children -- including CoverFrame3DRoot's shared canvas (z-index: 1, mounted way up in
+     DefaultLayout, see that component's own comment). Their z-index numbers being higher
+     than 1 didn't help: comparing z-index only makes sense between siblings of the SAME
+     stacking context, and .card had none of its own, so the canvas (later in the DOM within
+     its own context) could still paint over a card's hover controls. Isolating .card here
+     means everything inside it now stacks purely against its OTHER children, never against
+     anything outside the card -- the shared 3D canvas included. */
+  z-index: 0;
   width: var(--spell-card-width);
   flex-shrink: 0;
   border-radius: 8px;
@@ -187,13 +199,37 @@
    the exact same box as .coverWrapper (top of the card, full width, --spell-cover-height
    tall) so CoverFrameCorners' own corner/edge anchoring lines up with the cover
    underneath -- but since neither .card nor this slot clip their overflow, the corner
-   plates and medallions are free to overhang past that box's edge. */
+   plates and medallions are free to overhang past that box's edge. z-index: 1, deliberately
+   LOWER than .cardClip's own interactive overlays (.playAction/.actions at 2, .uploadOverlay
+   at 3) -- without this, being a later DOM sibling of .cardClip (inside .card's own
+   stacking context, see that rule's comment) would let it paint over the hover play
+   button/upload spinner despite those having a "higher" z-index number of their own, since
+   an element with no z-index of its own otherwise wins ties by DOM order alone. Only
+   matters for the 3D case (CoverFrame3DView) -- the 2D CoverFrameCorners never overlapped
+   those controls in the first place, being just small corner images. */
 .coverFrameSlot {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: var(--spell-cover-height);
+  /* TCORE-124: an explicit margin (not top/left/right:0 flush with .coverWrapper) so the 3D
+     mechanism's <View> (CoverFrame3DView, a sibling of .cardClip just like this slot, so
+     .cardClip's own overflow:hidden never touches it) has room around every edge for its
+     corner plates to overhang past the cover, the same "bolted-on plate" look the 2D
+     CoverFrameCorners already gets for free by being individually-positioned <img> tags
+     with no single bounding box of their own. <View>'s tracked element IS three.js' WebGL
+     scissor rect (see CoverFrame3DView's own comment) -- unlike a flat <img>, there's no
+     concept of letting content escape ITS OWN box, so that box has to already be sized with
+     the overhang built in, matching CoverFrame3DView's VIEW_MARGIN constant exactly.
+     Symmetric top/bottom AND left/right, unlike the old top/left/right-only box, since the
+     3D mechanism's single rect needs margin on every side (the 2D corners could each hang
+     off their own single edge independently; the 3D ones all share one rect). */
+  /* Separate X/Y margins, not one shared number -- top/bottom need room for the medallion's
+     overhang (far bigger than the corners'), left/right only ever hold corner plates. See
+     constants.ts' own VIEW_MARGIN_X/VIEW_MARGIN_Y comment for why a single shared margin
+     was wrong (it over-inset the corners to fix the medallion). */
+  top: calc(-1 * var(--cover-frame-3d-margin-y, 0px));
+  left: calc(-1 * var(--cover-frame-3d-margin-x, 0px));
+  right: calc(-1 * var(--cover-frame-3d-margin-x, 0px));
+  height: calc(var(--spell-cover-height) + 2 * var(--cover-frame-3d-margin-y, 0px));
+  z-index: 1;
   pointer-events: none;
 }
 

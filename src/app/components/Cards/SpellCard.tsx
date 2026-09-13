@@ -1,5 +1,5 @@
 import s from './SpellCard.module.css';
-import { useMemo, useEffect, useState, useRef } from 'react';
+import React, { useMemo, useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faScroll, faTrash, faPen, faEllipsisVertical, faHourglassHalf, faCheck, faFileExport, faImage } from '@fortawesome/free-solid-svg-icons';
@@ -11,10 +11,20 @@ import { PlayButton } from '../PlayButton/PlayButton';
 import { useAppSelector } from '../../../store/hooks';
 import { resolveCoverFrameId, getCoverFrameStyle, getCoverFrameCorners, getCoverFrame3D } from '../../../utils/coverFrame';
 import { CoverFrameCorners } from '../CoverFrameCorners';
-import { CoverFrameSlot3D } from '../Cover3D/CoverFrameSlot3D';
+import { VIEW_MARGIN_X, VIEW_MARGIN_Y } from '../Cover3D/constants';
 import { coverFrames } from '../../../config/assets';
 import { CoverFramePickerModal } from '../Modals/CoverFramePickerModal';
 import { updateSpellCoverFrame } from '../../../db';
+
+// TCORE-124: three/@react-three/fiber/@react-three/drei are only downloaded once a card
+// actually renders this (i.e. show3D is true for it) -- lazy so SpellCard, used on nearly
+// every route, doesn't statically pull the whole 3D stack into the main bundle regardless
+// of whether Mode3D is even on. Confirmed the hard way: a non-lazy import here inflated the
+// main chunk by ~900kB even with CoverFrame3DRoot itself already lazy elsewhere -- SpellCard
+// is what actually touches nearly every route, so IT has to be the lazy boundary.
+const CoverFrame3DView = React.lazy(() =>
+  import('../Cover3D/CoverFrame3DView').then(m => ({ default: m.CoverFrame3DView }))
+);
 
 interface UploadJob {
   status: 'queued' | 'processing' | 'done' | 'error';
@@ -245,15 +255,24 @@ export const SpellCard = ({ doc, isActive, isPlaying, onClick, onDelete, onEdit,
       {/* Positioned relative to .coverWrapper's own box (see CoverFrameCorners' own
           comment) but living outside .cardClip so its pieces can overhang the cover's edge
           instead of being clipped by the card's rounded-corner overflow. TCORE-124:
-          CoverFrameSlot3D replaces CoverFrameCorners entirely when 3D is active for this
-          card (not layered on top of it) -- the tracked <div> it renders sits in this exact
-          same slot, so its 3D corners occupy the identical position/overhang the 2D ones
-          would have, just via a <View> into the app's one shared 3D canvas instead of flat
-          <img> tags. */}
+          CoverFrame3DView replaces CoverFrameCorners entirely when 3D is active for this
+          card (not layered on top of it) -- it IS the tracked element (drei's <View>, see
+          its own comment for why it can't be wrapped in a separate externally-measured
+          div), sized/positioned exactly like .coverFrameOverlay via the same className, so
+          its 3D corners occupy the identical slot the 2D ones would have. --cover-frame-3d-
+          margin only set for the 3D case: it grows .coverFrameSlot's own box on every side
+          (see that CSS rule's own comment) so the <View>'s WebGL scissor rect has room for
+          its corners' overhang without .cardClip's overflow:hidden cutting it off -- the 2D
+          CoverFrameCorners mechanism doesn't need this margin (each of its <img> tags
+          overhangs its own single edge independently, with no shared bounding box). */}
       {hasCoverFrame && (
-        <div className={s.coverFrameSlot}>
+        <div className={s.coverFrameSlot} style={coverFrame3D ? ({ '--cover-frame-3d-margin-x': `${VIEW_MARGIN_X}px`, '--cover-frame-3d-margin-y': `${VIEW_MARGIN_Y}px` } as React.CSSProperties) : undefined}>
           {coverFrame3D
-            ? <CoverFrameSlot3D config={coverFrame3D} className={s.coverFrameOverlay} />
+            ? (
+              <React.Suspense fallback={null}>
+                <CoverFrame3DView config={coverFrame3D} className={s.coverFrameOverlay} />
+              </React.Suspense>
+            )
             : <CoverFrameCorners config={coverFrameCorners} className={s.coverFrameOverlay} />}
         </div>
       )}

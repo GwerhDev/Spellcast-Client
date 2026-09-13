@@ -1,18 +1,28 @@
 import s from './EditorPickerCard.module.css';
-import { useMemo, useEffect, useState } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faScroll } from '@fortawesome/free-solid-svg-icons';
 import { Spell } from 'src/interfaces';
 import { useAppSelector } from '../../../store/hooks';
-import { resolveCoverFrameId, getCoverFrameStyle, getCoverFrameCorners } from '../../../utils/coverFrame';
+import { resolveCoverFrameId, getCoverFrameStyle, getCoverFrameCorners, getCoverFrame3D } from '../../../utils/coverFrame';
 import { CoverFrameCorners } from '../CoverFrameCorners';
+import { VIEW_MARGIN_X, VIEW_MARGIN_Y } from '../Cover3D/constants';
+
+// TCORE-124: same lazy boundary as SpellCard's own (see that file's comment) -- this card
+// renders on /editor/select, a route of its own, but three/@react-three/fiber/@react-three/
+// drei still shouldn't load there unless show3D is actually true for at least one card.
+const CoverFrame3DView = React.lazy(() =>
+  import('../Cover3D/CoverFrame3DView').then(m => ({ default: m.CoverFrame3DView }))
+);
 
 interface EditorPickerCardProps {
   doc: Spell;
   onClick: () => void;
+  // TCORE-124: mirrors SpellCard's own show3D prop exactly -- see that prop's comment.
+  show3D?: boolean;
 }
 
-export const EditorPickerCard = ({ doc, onClick }: EditorPickerCardProps) => {
+export const EditorPickerCard = ({ doc, onClick, show3D }: EditorPickerCardProps) => {
   const totalPages = useMemo(() => {
     if (!doc.pagesContent) return null;
     try { return JSON.parse(doc.pagesContent).length; } catch { return null; }
@@ -22,6 +32,7 @@ export const EditorPickerCard = ({ doc, onClick }: EditorPickerCardProps) => {
   const resolvedCoverFrameId = resolveCoverFrameId(doc.coverFrameId, activeCoverFrameId);
   const coverFrameStyle = getCoverFrameStyle(resolvedCoverFrameId);
   const coverFrameCorners = getCoverFrameCorners(resolvedCoverFrameId);
+  const coverFrame3D = show3D ? getCoverFrame3D(resolvedCoverFrameId) : null;
 
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
   useEffect(() => {
@@ -55,8 +66,14 @@ export const EditorPickerCard = ({ doc, onClick }: EditorPickerCardProps) => {
         </div>
       </div>
       {hasCoverFrame && (
-        <div className={s.coverFrameSlot}>
-          <CoverFrameCorners config={coverFrameCorners} />
+        <div className={s.coverFrameSlot} style={coverFrame3D ? ({ '--cover-frame-3d-margin-x': `${VIEW_MARGIN_X}px`, '--cover-frame-3d-margin-y': `${VIEW_MARGIN_Y}px` } as React.CSSProperties) : undefined}>
+          {coverFrame3D
+            ? (
+              <React.Suspense fallback={null}>
+                <CoverFrame3DView config={coverFrame3D} />
+              </React.Suspense>
+            )
+            : <CoverFrameCorners config={coverFrameCorners} />}
         </div>
       )}
     </div>

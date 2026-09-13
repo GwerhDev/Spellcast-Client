@@ -1,12 +1,14 @@
 import s from '../../components/SpellDetail/index.module.css';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { useAppSelector } from '../../../store/hooks';
 import { getSpellById, deleteSpellFromDB } from '../../../db';
 import { hasOriginalPdf } from '../../../db/originalPdfs';
-import { resolveCoverFrameId, getCoverFrameStyle, getCoverFrameCorners } from '../../../utils/coverFrame';
+import { resolveCoverFrameId, getCoverFrameStyle, getCoverFrameCorners, getCoverFrame3D } from '../../../utils/coverFrame';
 import { CoverFrameCorners } from '../../components/CoverFrameCorners';
+import { VIEW_MARGIN_X, VIEW_MARGIN_Y } from '../../components/Cover3D/constants';
+import { useCoverFrame3DSection } from '../../../hooks/useCoverFrame3DSection';
 import { setAutoPlayOnLoad, resetBrowserPlayer } from '../../../store/browserPlayerSlice';
 import { setAutoPlayOnLoad as setAudioAutoPlayOnLoad } from '../../../store/audioPlayerSlice';
 import { invalidateSpellList, resetSpellReader } from '../../../store/spellReaderSlice';
@@ -22,6 +24,12 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faScroll, faWandMagicSparkles, faArrowLeft, faTrash, faTriangleExclamation } from '@fortawesome/free-solid-svg-icons';
 import { useLanguage } from '../../../i18n';
 // import { useSpellExport } from '../../../hooks/useSpellExport'; // .spell export: future
+
+// TCORE-124: same lazy boundary as SpellCard/EditorPickerCard's own -- see SpellCard's own
+// comment on why this stays lazy rather than a static import.
+const CoverFrame3DView = React.lazy(() =>
+  import('../../components/Cover3D/CoverFrame3DView').then(m => ({ default: m.CoverFrame3DView }))
+);
 
 export const SpellDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -47,6 +55,10 @@ export const SpellDetail: React.FC = () => {
   // commented out so it's a one-line re-enable later. See the export button below and
   // the SpellExportModal render near the end of this file.
   // const { exportTarget, openExportModal, closeExportModal, handleExport, isExporting } = useSpellExport();
+  const headerRef = useRef<HTMLDivElement>(null);
+  // TCORE-124: same gate LastSpells/SpellList/EditorSelectLanding use -- see
+  // useCoverFrame3DSection/useCoverFrame3DGate for the actual conditions.
+  const show3D = useCoverFrame3DSection(headerRef);
 
   useEffect(() => {
     const load = async () => {
@@ -125,6 +137,7 @@ export const SpellDetail: React.FC = () => {
     : null;
   const resolvedCoverFrameId = resolveCoverFrameId(doc.coverFrameId, activeCoverFrameId);
   const coverFrameCorners = getCoverFrameCorners(resolvedCoverFrameId);
+  const coverFrame3D = show3D ? getCoverFrame3D(resolvedCoverFrameId) : null;
 
   return (
     <div data-testid="spell-detail" className={s.container}>
@@ -132,12 +145,22 @@ export const SpellDetail: React.FC = () => {
         <IconButton className={s.backButton} icon={faArrowLeft} variant="transparent" onClick={() => navigate("/")} />
       </div>
       <div className={s.detailsContainer}>
-        <div className={s.header}>
+        <div className={s.header} ref={headerRef}>
           {coverUrl
             ? (
               <div className={s.coverWrap}>
                 <img src={coverUrl} alt={doc.title} className={s.cover} style={getCoverFrameStyle(resolvedCoverFrameId)} />
-                {coverFrameCorners && <CoverFrameCorners config={coverFrameCorners} />}
+                {coverFrameCorners && (
+                  <div className={s.coverFrameSlot} style={coverFrame3D ? ({ '--cover-frame-3d-margin-x': `${VIEW_MARGIN_X}px`, '--cover-frame-3d-margin-y': `${VIEW_MARGIN_Y}px` } as React.CSSProperties) : undefined}>
+                    {coverFrame3D
+                      ? (
+                        <React.Suspense fallback={null}>
+                          <CoverFrame3DView config={coverFrame3D} />
+                        </React.Suspense>
+                      )
+                      : <CoverFrameCorners config={coverFrameCorners} />}
+                  </div>
+                )}
               </div>
             )
             : <FontAwesomeIcon icon={faScroll} size="4x" className={s.icon} />

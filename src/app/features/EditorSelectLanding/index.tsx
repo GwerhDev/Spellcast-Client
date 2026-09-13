@@ -1,6 +1,6 @@
 import s from '../../components/EditorSelectLanding/index.module.css';
 import grid from '../../components/SpellGrid/index.module.css';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { faArrowLeft, faScroll, faCloud, faFeatherPointed, faHardDrive, faLayerGroup, faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -14,6 +14,7 @@ import { IconButton } from '../../components/Buttons/IconButton';
 import { EmptyState } from '../../components/EmptyState';
 import { useLanguage } from '../../../i18n';
 import { useInfiniteList } from '../../../hooks/useInfiniteList';
+import { useCoverFrame3DSection } from '../../../hooks/useCoverFrame3DSection';
 
 type EditorFilter = 'all' | 'local' | 'cloud';
 
@@ -28,6 +29,10 @@ export const EditorSelectLanding = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<EditorFilter>('all');
   const [query, setQuery] = useState('');
+  const panelBodyRef = useRef<HTMLDivElement>(null);
+  // TCORE-124: same gate LastSpells/SpellList use, scoped to this panel's own body -- see
+  // useCoverFrame3DSection/useCoverFrame3DGate for the actual conditions.
+  const show3D = useCoverFrame3DSection(panelBodyRef);
 
   useEffect(() => {
     getSpellsFromDB(userData.id)
@@ -86,6 +91,7 @@ export const EditorSelectLanding = () => {
             key={doc.id}
             doc={doc}
             onClick={() => navigate(`/editor/${doc.id}`, { state: { from: location.pathname } })}
+            show3D={show3D}
           />
         ))}
         {hasMore && <div ref={sentinelRef} data-testid="editor-select-sentinel" className={grid.sentinel} />}
@@ -118,7 +124,7 @@ export const EditorSelectLanding = () => {
         </div>
       </div>
 
-      <div className={s.panelBody}>
+      <div className={s.panelBody} ref={panelBodyRef}>
         {renderBody()}
       </div>
     </div>

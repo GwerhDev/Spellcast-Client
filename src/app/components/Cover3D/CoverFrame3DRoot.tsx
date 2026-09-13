@@ -57,10 +57,10 @@ export const CoverFrame3DRoot: React.FC = () => (
     gl={{ alpha: true, antialias: true, powerPreference: 'low-power' }}
     eventSource={typeof document !== 'undefined' ? document.body : undefined}
   >
-    <ambientLight intensity={1.1} />
-    <directionalLight position={[40, 60, 80]} intensity={1.6} />
-    <directionalLight position={[-30, -20, 60]} intensity={0.5} />
-    <directionalLight position={[0, -40, 30]} intensity={0.4} color="#dff2ff" />
+    {/* No lights here -- each <View> (CoverFrame3DView) portals its own children into ITS
+        OWN separate virtual scene (confirmed by reading drei's View.js), not this root
+        canvas' top-level scene, so lights declared here would never reach anything a View
+        renders. Each CoverFrame3DView brings its own lights instead. */}
     <View.Port />
   </Canvas>
 );
