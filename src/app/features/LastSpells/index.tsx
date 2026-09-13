@@ -39,9 +39,16 @@ export const LastSpells: React.FC = () => {
   const [canPrev, setCanPrev] = useState(false);
   const [canNext, setCanNext] = useState(false);
   const sliderRef = useRef<HTMLDivElement>(null);
+  const carouselWrapperRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
+
+  // TCORE-124: gates 3D corners for this whole section -- passed straight to each SpellCard
+  // below as show3D. See useCoverFrame3DSection/useCoverFrame3DGate for the actual
+  // conditions (Mode3D user setting, desktop, !reduced-motion, low-end check, section in
+  // viewport).
+  const show3D = useCoverFrame3DSection(carouselWrapperRef);
 
   const updateButtons = useCallback(() => {
     const el = sliderRef.current;
@@ -144,19 +151,6 @@ export const LastSpells: React.FC = () => {
   // above/around the cards, so it's applied conditionally rather than unconditionally.
   const hasVisibleCoverFrame = visible.some(doc => !!getCoverFrameCorners(resolveCoverFrameId(doc.coverFrameId, activeCoverFrameId)));
 
-  // TCORE-124: the shared-canvas 3D corners mechanism -- see useCoverFrame3DSection for what
-  // each returned value does. sectionRef replaces what used to be a locally-owned
-  // carouselWrapperRef; cardsContainerRef is sliderRef since that's what actually holds the
-  // spell-card-* elements the anchors' getRect() looks up. Called unconditionally, before
-  // either early return below, per React's rules of hooks -- `visible` is already computed
-  // above so this sees the real doc list even on the very first (loading) render, it's just
-  // that show3DFrames/anchors are meaningless until isLoading flips false anyway.
-  const { sectionRef, hide2DFrameCSS, overlay } = useCoverFrame3DSection({
-    docs: visible,
-    activeCoverFrameId,
-    cardsContainerRef: sliderRef,
-  });
-
   if (isLoading) return (
     <div className={s.container}>
       <div className={s.header}>
@@ -180,7 +174,6 @@ export const LastSpells: React.FC = () => {
 
   return (
     <>
-      {hide2DFrameCSS && <style>{hide2DFrameCSS}</style>}
       <div className={s.container}>
         <div className={s.header}>
           <h2 className={s.title}>{t.nav.lastSpells}</h2>
@@ -190,7 +183,7 @@ export const LastSpells: React.FC = () => {
             <FontAwesomeIcon icon={faArrowRight} />
           </span>
         </div>
-        <div className={s.carouselWrapper} ref={sectionRef}>
+        <div className={s.carouselWrapper} ref={carouselWrapperRef}>
           {canPrev && (
             <IconButton icon={faChevronLeft} variant="transparent" className={`${s.navBtn} ${s.navBtnPrev}`} onClick={() => scroll('prev')} />
           )}
@@ -209,6 +202,7 @@ export const LastSpells: React.FC = () => {
                   // onExport={(e) => { e.stopPropagation(); openExportModal({ id: doc.id, title: doc.title }); }} // .spell export: future
                   onPlay={() => handlePlay(doc)}
                   uploadJob={uploadJob}
+                  show3D={show3D}
                 />
               );
             })}
@@ -222,12 +216,6 @@ export const LastSpells: React.FC = () => {
           {canNext && (
             <IconButton icon={faChevronRight} variant="transparent" className={`${s.navBtn} ${s.navBtnNext}`} onClick={() => scroll('next')} />
           )}
-          {/* TCORE-124: null until useCoverFrame3DSection's own gate passes -- the lazy
-              three.js chunk isn't even requested until then, so a 3D-off session never
-              pays for the import. Absolutely positioned over the whole wrapper (not just
-              .slider) so its canvas covers nav buttons too -- pointer-events: none on the
-              canvas itself (see CoverFrame3DOverlay) keeps them clickable regardless. */}
-          {overlay}
         </div>
       </div>
       {selectedDoc && (

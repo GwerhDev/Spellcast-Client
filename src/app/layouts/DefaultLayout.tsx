@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, lazy, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { Outlet } from 'react-router-dom';
 import { Sidebar } from '../features/Sidebar/Sidebar';
@@ -28,6 +28,18 @@ import { useAttentionGuard } from '../../hooks/useAttentionGuard';
 import { useStorageQuotaWarning } from '../../hooks/useStorageQuotaWarning';
 import { AttentionGuardModal } from '../components/Modals/AttentionGuardModal';
 import { onSpellsMigrated } from '../../db';
+import { useMode3D } from '../../context/Mode3DContext';
+
+// TCORE-124: the app's ONE shared 3D canvas for cover-frame corners -- mounted once here
+// (not per-route) so every card everywhere that opts into 3D corners (via SpellCard's own
+// show3D prop) shares the same WebGL context via drei's <View>, instead of each route
+// mounting/tearing down its own canvas on every navigation. Lazy because
+// three/@react-three/fiber/drei are a real bundle cost that a session with the Mode3D
+// setting off (the default) should never pay for -- see CoverFrame3DRoot's own comment for
+// why <View> replaced an earlier "one canvas per section" design.
+const CoverFrame3DRoot = lazy(() =>
+  import('../components/Cover3D/CoverFrame3DRoot').then(m => ({ default: m.CoverFrame3DRoot }))
+);
 
 export default function DefaultLayout() {
   const { selectedVoice } = useSelector((state: RootState) => state.voice);
@@ -36,6 +48,11 @@ export default function DefaultLayout() {
   const dispatch = useAppDispatch();
   const { showModal: showAttentionGuard, handleContinue: handleAttentionGuardContinue } = useAttentionGuard();
   useStorageQuotaWarning();
+  // TCORE-124: the shared 3D canvas only mounts (and its lazy chunk only downloads) once
+  // the user's own toggle is on -- see CoverFrame3DRoot's own comment. The remaining
+  // desktop/motion/low-end/per-card-visibility conditions are each individual card's own
+  // concern (SpellCard's show3D prop, from useCoverFrame3DGate), not this root's.
+  const { enabled: mode3dEnabled } = useMode3D();
   const [isPlayerSettingsOpen, setIsPlayerSettingsOpen] = useState(false);
   const [isVoiceSelectorOpen, setIsVoiceSelectorOpen] = useState(false);
   const navRef = useRef<HTMLElement>(null);
@@ -107,6 +124,16 @@ export default function DefaultLayout() {
               <ReaderSettings />
               <EditorSettings />
               <PdfUploadQueue />
+              {/* TCORE-124: absolutely positioned to fill .app-viewer (already
+                  position: relative) -- a sibling of <Outlet />, not a descendant of the
+                  sidebar, so it never overlaps it (see CoverFrame3DRoot's own comment on
+                  why the earlier position: fixed-to-viewport design did). pointer-events:
+                  none on the canvas itself keeps every card's own interactions working. */}
+              {mode3dEnabled && (
+                <Suspense fallback={null}>
+                  <CoverFrame3DRoot />
+                </Suspense>
+              )}
             </div>
           </div>
           {documentLoaded && (

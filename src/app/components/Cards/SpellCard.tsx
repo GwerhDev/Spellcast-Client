@@ -9,8 +9,9 @@ import { Tag } from '../Tag/Tag';
 import { Waveform } from '../Waveform/Waveform';
 import { PlayButton } from '../PlayButton/PlayButton';
 import { useAppSelector } from '../../../store/hooks';
-import { resolveCoverFrameId, getCoverFrameStyle, getCoverFrameCorners } from '../../../utils/coverFrame';
+import { resolveCoverFrameId, getCoverFrameStyle, getCoverFrameCorners, getCoverFrame3D } from '../../../utils/coverFrame';
 import { CoverFrameCorners } from '../CoverFrameCorners';
+import { CoverFrameSlot3D } from '../Cover3D/CoverFrameSlot3D';
 import { coverFrames } from '../../../config/assets';
 import { CoverFramePickerModal } from '../Modals/CoverFramePickerModal';
 import { updateSpellCoverFrame } from '../../../db';
@@ -33,9 +34,16 @@ interface SpellCardProps {
   selectionMode?: boolean;
   selected?: boolean;
   onToggleSelect?: () => void;
+  // TCORE-124: true once the caller's own gate (Mode3D user setting + desktop +
+  // !reduced-motion + this card in viewport, see useCoverFrame3DGate) says this specific
+  // card should get 3D corners instead of the flat 2D CoverFrameCorners. Undefined/false
+  // keeps today's plain 2D behavior -- a caller that never passes this literally cannot
+  // change (LastSpells/SpellList opt in explicitly, everything else keeps working exactly
+  // as before untouched).
+  show3D?: boolean;
 }
 
-export const SpellCard = ({ doc, isActive, isPlaying, onClick, onDelete, onEdit, onExport, onPlay, uploadJob, selectionMode, selected, onToggleSelect }: SpellCardProps) => {
+export const SpellCard = ({ doc, isActive, isPlaying, onClick, onDelete, onEdit, onExport, onPlay, uploadJob, selectionMode, selected, onToggleSelect, show3D }: SpellCardProps) => {
   const { t } = useLanguage();
   const totalPages = useMemo(() => {
     if (!doc.pagesContent) return null;
@@ -52,6 +60,11 @@ export const SpellCard = ({ doc, isActive, isPlaying, onClick, onDelete, onEdit,
   const resolvedCoverFrameId = resolveCoverFrameId(coverFrameId, activeCoverFrameId);
   const coverFrameStyle = getCoverFrameStyle(resolvedCoverFrameId);
   const coverFrameCorners = getCoverFrameCorners(resolvedCoverFrameId);
+  // TCORE-124: only looked up (and only rendered below) when the caller's own gate says
+  // this card should render its corners in 3D -- getCoverFrame3D returns null both when
+  // show3D is false AND when this resolved frame has no 3D geometry at all, so a frame
+  // without a 3D asset yet still falls back to the plain 2D corners even with 3D enabled.
+  const coverFrame3D = show3D ? getCoverFrame3D(resolvedCoverFrameId) : null;
   const ownedCoverFrames = useMemo(() => coverFrames.filter(b => unlockedIds.includes(b.id)), [unlockedIds]);
   const [showCoverFrameModal, setShowCoverFrameModal] = useState(false);
 
@@ -231,10 +244,17 @@ export const SpellCard = ({ doc, isActive, isPlaying, onClick, onDelete, onEdit,
       </div>
       {/* Positioned relative to .coverWrapper's own box (see CoverFrameCorners' own
           comment) but living outside .cardClip so its pieces can overhang the cover's edge
-          instead of being clipped by the card's rounded-corner overflow. */}
+          instead of being clipped by the card's rounded-corner overflow. TCORE-124:
+          CoverFrameSlot3D replaces CoverFrameCorners entirely when 3D is active for this
+          card (not layered on top of it) -- the tracked <div> it renders sits in this exact
+          same slot, so its 3D corners occupy the identical position/overhang the 2D ones
+          would have, just via a <View> into the app's one shared 3D canvas instead of flat
+          <img> tags. */}
       {hasCoverFrame && (
         <div className={s.coverFrameSlot}>
-          <CoverFrameCorners config={coverFrameCorners} className={s.coverFrameOverlay} />
+          {coverFrame3D
+            ? <CoverFrameSlot3D config={coverFrame3D} className={s.coverFrameOverlay} />
+            : <CoverFrameCorners config={coverFrameCorners} className={s.coverFrameOverlay} />}
         </div>
       )}
     </div>

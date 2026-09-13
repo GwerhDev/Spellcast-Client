@@ -44,7 +44,6 @@ export const SpellList: React.FC<SpellListProps> = ({ query = '', filter = 'loca
   const audioPlaying = useAppSelector(state => state.audioPlayer.isPlaying);
   const browserPlaying = useAppSelector(state => state.browserPlayer.isPlaying);
   const selectedVoiceType = useAppSelector(state => state.voice.selectedVoice.type);
-  const { activeCoverFrameId } = useAppSelector(state => state.casterInventory);
   const [documents, setDocuments] = useState<Spell[]>([]);
   // TCORE-90: which spells have an original PDF stored, fetched once per list load (a
   // single batch read) instead of reading a `pdf` field off each Spell record.
@@ -52,6 +51,7 @@ export const SpellList: React.FC<SpellListProps> = ({ query = '', filter = 'loca
   const [isLoading, setIsLoading] = useState(true);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState<{ id: string, title: string } | null>(null);
+  const sectionRef = useRef<HTMLDivElement>(null);
   // .spell export UI is hidden for now (not ready to ship this phase) — kept wired but
   // commented out so it's a one-line re-enable later. See openExportModal below and the
   // SpellExportModal render at the bottom of this file.
@@ -131,14 +131,10 @@ export const SpellList: React.FC<SpellListProps> = ({ query = '', filter = 'loca
   });
   const { visible, hasMore, sentinelRef } = useInfiniteList(filtered);
 
-  // TCORE-124: same shared-canvas 3D corners mechanism LastSpells uses (see
-  // useCoverFrame3DSection). No cardsContainerRef passed -- this grid's own spell-card-*
-  // elements are unique on the page (unlike, say, two carousels stacked on one screen), so
-  // the hook's own document-wide fallback lookup is fine here.
-  const { sectionRef, hide2DFrameCSS, overlay } = useCoverFrame3DSection({
-    docs: visible,
-    activeCoverFrameId,
-  });
+  // TCORE-124: gates 3D corners for this whole grid -- passed straight to each SpellCard
+  // below as show3D. See useCoverFrame3DSection/useCoverFrame3DGate for the actual
+  // conditions.
+  const show3D = useCoverFrame3DSection(sectionRef);
 
   // "Select all" (GrimoireLanding) needs every id matching the current search/tab, not
   // just the paginated `visible` subset -- kept in a ref so this doesn't re-run just
@@ -179,12 +175,7 @@ export const SpellList: React.FC<SpellListProps> = ({ query = '', filter = 'loca
 
   return (
     <>
-      {hide2DFrameCSS && <style>{hide2DFrameCSS}</style>}
       <div className={s.container}>
-        {/* TCORE-124: null until useCoverFrame3DSection's own gate passes -- position: fixed
-            to the viewport internally (see CoverFrame3DOverlay), so it doesn't need to sit
-            inside grid.grid itself even though that's what sectionRef below is measuring. */}
-        {overlay}
         <div className={grid.grid} ref={sectionRef}>
           {visible.map((doc) => {
             const uploadJob = uploadQueue.find(j => j.targetDocId === doc.id && (j.status === 'queued' || j.status === 'processing')) ?? null;
@@ -203,6 +194,7 @@ export const SpellList: React.FC<SpellListProps> = ({ query = '', filter = 'loca
                 selectionMode={selectionMode}
                 selected={selectedIds.includes(doc.id)}
                 onToggleSelect={() => onToggleSelect?.(doc.id)}
+                show3D={show3D}
               />
             );
           })}
