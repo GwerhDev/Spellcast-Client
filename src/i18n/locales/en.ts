@@ -285,6 +285,9 @@ export const en = {
     system: 'System',
     english: 'English',
     spanish: 'Spanish',
+    mode3dTitle: '3D Mode',
+    mode3dLabel: 'Enable 3D mode',
+    mode3dDescription: 'Experimental — reimagines parts of the interface as a navigable 3D scene. Off by default.',
   },
   editorSettings: {
     title: 'Editor Settings',

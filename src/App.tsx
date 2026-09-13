@@ -4,6 +4,7 @@ import { useSelector } from 'react-redux';
 import { Routes, Route, Navigate } from 'react-router-dom';
 
 import { ThemeProvider } from './context/ThemeContext';
+import { Mode3DProvider } from './context/Mode3DContext';
 import { useInitSession } from './hooks/useInitSession';
 
 import { Toast } from './app/components/Toast';
@@ -61,8 +62,12 @@ function App() {
     //eslint-disable-next-line
   }, [loader]);
 
+  // Mode3DProvider (and ThemeProvider below it) is deliberately not re-indented one level
+  // deeper into the JSX below -- keeps this diff to just the two new provider lines instead
+  // of touching every route in the tree.
   return (
     <ThemeProvider>
+    <Mode3DProvider>
       <Routes>
         <Route path="/unauthorized" element={<Unauthorized />} />
         <Route element={<DefaultLayout />}>
@@ -114,6 +119,7 @@ function App() {
         onSetDefault={handleCoverFrameGiftSetDefault}
         onDismiss={handleCoverFrameGiftDismiss}
       />
+    </Mode3DProvider>
     </ThemeProvider>
   );
 }

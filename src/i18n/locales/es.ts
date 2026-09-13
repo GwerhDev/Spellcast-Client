@@ -287,6 +287,9 @@ export const es: Translations = {
     system: 'Sistema',
     english: 'Inglés',
     spanish: 'Español',
+    mode3dTitle: 'Modo 3D',
+    mode3dLabel: 'Activar modo 3D',
+    mode3dDescription: 'Experimental — reimagina partes de la interfaz como una escena 3D navegable. Desactivado por defecto.',
   },
   editorSettings: {
     title: 'Configuración del editor',
