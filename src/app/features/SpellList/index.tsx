@@ -10,6 +10,7 @@ import { useAppSelector } from '../../../store/hooks';
 import { Spell } from '../../../interfaces';
 import { SpellCard } from '../../components/Cards/SpellCard';
 import { EmptyState } from '../../components/EmptyState';
+import { useCoverFrame3DSection } from '../../../hooks/useCoverFrame3DSection';
 // import { useSpellExport } from '../../../hooks/useSpellExport'; // .spell export: future
 import { faScroll, faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
 import { useDispatch } from 'react-redux';
@@ -43,6 +44,7 @@ export const SpellList: React.FC<SpellListProps> = ({ query = '', filter = 'loca
   const audioPlaying = useAppSelector(state => state.audioPlayer.isPlaying);
   const browserPlaying = useAppSelector(state => state.browserPlayer.isPlaying);
   const selectedVoiceType = useAppSelector(state => state.voice.selectedVoice.type);
+  const { activeCoverFrameId } = useAppSelector(state => state.casterInventory);
   const [documents, setDocuments] = useState<Spell[]>([]);
   // TCORE-90: which spells have an original PDF stored, fetched once per list load (a
   // single batch read) instead of reading a `pdf` field off each Spell record.
@@ -129,6 +131,15 @@ export const SpellList: React.FC<SpellListProps> = ({ query = '', filter = 'loca
   });
   const { visible, hasMore, sentinelRef } = useInfiniteList(filtered);
 
+  // TCORE-124: same shared-canvas 3D corners mechanism LastSpells uses (see
+  // useCoverFrame3DSection). No cardsContainerRef passed -- this grid's own spell-card-*
+  // elements are unique on the page (unlike, say, two carousels stacked on one screen), so
+  // the hook's own document-wide fallback lookup is fine here.
+  const { sectionRef, hide2DFrameCSS, overlay } = useCoverFrame3DSection({
+    docs: visible,
+    activeCoverFrameId,
+  });
+
   // "Select all" (GrimoireLanding) needs every id matching the current search/tab, not
   // just the paginated `visible` subset -- kept in a ref so this doesn't re-run just
   // because the parent passed a new inline callback identity.
@@ -168,8 +179,13 @@ export const SpellList: React.FC<SpellListProps> = ({ query = '', filter = 'loca
 
   return (
     <>
+      {hide2DFrameCSS && <style>{hide2DFrameCSS}</style>}
       <div className={s.container}>
-        <div className={grid.grid}>
+        {/* TCORE-124: null until useCoverFrame3DSection's own gate passes -- position: fixed
+            to the viewport internally (see CoverFrame3DOverlay), so it doesn't need to sit
+            inside grid.grid itself even though that's what sectionRef below is measuring. */}
+        {overlay}
+        <div className={grid.grid} ref={sectionRef}>
           {visible.map((doc) => {
             const uploadJob = uploadQueue.find(j => j.targetDocId === doc.id && (j.status === 'queued' || j.status === 'processing')) ?? null;
             return (

@@ -3,14 +3,24 @@ import { Canvas, useThree } from '@react-three/fiber';
 import { CoverFrameMesh } from './CoverFrameMesh';
 import type { CoverFrame3DConfig } from '../../../utils/coverFrame';
 
-// TCORE-124: ONE shared <Canvas>/WebGL context for the whole Last Spells section -- browsers
-// cap concurrent WebGL contexts (~8-16), and this section can render 20-50+ cards, so one
-// context per card was ruled out (see CoverFrame's own comment in config/assets/types.ts).
-// Each card contributes a DOM anchor (its own .coverWrapper, already rendered by SpellCard --
-// untouched by this work) whose on-screen rect this overlay reads every frame-ish and
-// mirrors into 3D-space mesh positions, via an orthographic camera calibrated 1 scene unit
-// == 1 CSS px so "rect in px" maps directly to "position in the scene" with no separate
-// projection math.
+// TCORE-124: ONE shared <Canvas>/WebGL context for a whole section (Last Spells, Grimoire, ...)
+// -- browsers cap concurrent WebGL contexts (~8-16), and these sections can render 20-50+
+// cards, so one context per card was ruled out (see CoverFrame's own comment in
+// config/assets/types.ts). Each card contributes a DOM anchor (its own .coverWrapper,
+// already rendered by SpellCard -- untouched by this work) whose on-screen rect this overlay
+// reads every frame-ish and mirrors into 3D-space mesh positions.
+//
+// The canvas itself is sized to the browser VIEWPORT (window.innerWidth/innerHeight),
+// position: fixed, not to the section's own container -- a long infinite-scroll grid
+// (Grimoire) can be many times taller than the screen as more pages load, and a canvas sized
+// to that full scrollable height would mean an enormous WebGL backbuffer (and everything
+// three.js draws into it) for content that's mostly off-screen at any given moment. Anchors
+// whose card has scrolled outside the viewport are skipped entirely (see CardFrameMeshes),
+// so only what's actually visible ever gets positioned/rendered -- the same reasoning
+// virtualized lists use for their rendered DOM nodes, applied here to the 3D layer instead.
+// The camera is orthographic, calibrated 1 scene unit == 1 CSS px in VIEWPORT space, so "rect
+// in px" (from getBoundingClientRect(), already viewport-relative) maps directly to
+// "position in the scene" with no separate projection math or container-offset subtraction.
 
 const CORNER_SIZE = 28; // matches CoverFrameCorners' own CORNER_SIZE
 const CORNER_OVERHANG = 2;
@@ -35,15 +45,9 @@ export interface CardFrameAnchor {
   getRect: () => DOMRect | null;
 }
 
-// left/top are the container's OWN on-screen position (getBoundingClientRect(), viewport-
-// relative px) -- needed because anchor.getRect() also returns viewport-relative rects, and
-// the two must be in the same coordinate space before subtracting one from the other to get
-// a position relative to the canvas itself. Without this, a card is positioned as if the
-// canvas started at the browser viewport's own (0,0) instead of wherever the section
-// actually sits on the page.
 interface SceneProps {
   anchors: CardFrameAnchor[];
-  viewportSize: { width: number; height: number; left: number; top: number };
+  viewportSize: { width: number; height: number };
 }
 
 // One mesh group per corner/medallion slot of one card, repositioned every sync tick by
@@ -60,11 +64,16 @@ const CardFrameMeshes: React.FC<{ anchor: CardFrameAnchor; viewportSize: ScenePr
     const sync = () => {
       const rect = anchor.getRect();
       const group = groupRef.current;
-      if (rect && group) {
-        const localLeft = rect.left - viewportSize.left;
-        const localTop = rect.top - viewportSize.top;
-        const x = localLeft + rect.width / 2 - viewportSize.width / 2;
-        const y = viewportSize.height / 2 - (localTop + rect.height / 2);
+      // rect is already viewport-relative (getBoundingClientRect()) and the canvas/camera
+      // now cover exactly the viewport too -- no container-offset subtraction needed, unlike
+      // when this was sized to an arbitrary scrollable section. A card scrolled fully outside
+      // the viewport (long Grimoire grid, most cards off-screen at any time) is treated the
+      // same as "no rect": hidden and skipped, so only what's actually on screen ever gets a
+      // positioned mesh, keeping the per-frame cost bounded by visible cards, not total ones.
+      const onScreen = rect && rect.bottom > 0 && rect.top < viewportSize.height && rect.right > 0 && rect.left < viewportSize.width;
+      if (rect && group && onScreen) {
+        const x = rect.left + rect.width / 2 - viewportSize.width / 2;
+        const y = viewportSize.height / 2 - (rect.top + rect.height / 2);
         const key = `${x.toFixed(1)}:${y.toFixed(1)}:${rect.width.toFixed(1)}`;
         group.position.set(x, y, 0);
         group.visible = true;
@@ -168,56 +177,33 @@ const Scene: React.FC<SceneProps> = ({ anchors, viewportSize }) => (
 );
 
 interface CoverFrame3DOverlayProps {
-  containerRef: React.RefObject<HTMLElement | null>;
   anchors: CardFrameAnchor[];
 }
 
-// Mounted by LastSpells only once its own gating (Mode3D user setting + desktop +
-// !reduced-motion + section-in-viewport, see useCoverFrame3DGate) passes -- this component
-// itself stays gate-agnostic, it just owns the shared canvas and DOM<->3D sync once asked to
-// exist at all.
-export const CoverFrame3DOverlay: React.FC<CoverFrame3DOverlayProps> = ({ containerRef, anchors }) => {
-  const [viewportSize, setViewportSize] = useState({ width: 0, height: 0, left: 0, top: 0 });
+// Mounted by whichever section's own gating (Mode3D user setting + desktop + !reduced-motion
+// + section-in-viewport, see useCoverFrame3DGate/useCoverFrame3DSection) passes -- this
+// component itself stays gate-agnostic, it just owns ONE shared canvas fixed to the browser
+// viewport (see the module comment above for why not the section's own container) and syncs
+// mesh positions to whichever anchors are actually on screen right now. Safe for more than
+// one section to mount this at once (Last Spells' carousel AND the Grimoire grid both
+// visible in principle) since each instance owns its own WebGL context -- callers are
+// expected to gate this so realistically at most one is mounted at a time in normal
+// navigation, but nothing here assumes global uniqueness.
+export const CoverFrame3DOverlay: React.FC<CoverFrame3DOverlayProps> = ({ anchors }) => {
+  const [viewportSize, setViewportSize] = useState({ width: window.innerWidth, height: window.innerHeight });
 
   useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    let raf = 0;
-    let last = { width: 0, height: 0, left: 0, top: 0 };
-    // A continuous rAF re-measure (not just ResizeObserver + a scroll listener) -- the
-    // container's SIZE staying the same doesn't mean its POSITION did: opening/closing the
-    // app's sidebar shifts everything to its right without resizing it, which ResizeObserver
-    // never fires for and there's no single DOM event to listen for either (it's a CSS
-    // transition on an unrelated ancestor element). Every card's own group already re-syncs
-    // its position every frame via anchor.getRect() in CardFrameMeshes -- but those positions
-    // are computed relative to THIS container's rect, so if this rect goes stale the whole
-    // overlay silently drifts away from the real cards, exactly what re-measuring here fixes.
-    const measure = () => {
-      const rect = el.getBoundingClientRect();
-      // A rect of 0x0 here means "not laid out yet this instant" (e.g. a reflow mid-flight
-      // right as this mounts), not "the section is actually zero-sized" -- setting
-      // viewportSize to 0x0 would permanently hide the canvas below. Skip the update (keep
-      // retrying) instead of committing a bogus empty measurement.
-      if (rect.width > 0 && rect.height > 0) {
-        const next = { width: rect.width, height: rect.height, left: rect.left, top: rect.top };
-        if (next.width !== last.width || next.height !== last.height || next.left !== last.left || next.top !== last.top) {
-          last = next;
-          setViewportSize(next);
-        }
-      }
-      raf = requestAnimationFrame(measure);
-    };
-    raf = requestAnimationFrame(measure);
-    return () => cancelAnimationFrame(raf);
-  }, [containerRef]);
-
-  if (viewportSize.width === 0 || viewportSize.height === 0) return null;
+    const measure = () => setViewportSize({ width: window.innerWidth, height: window.innerHeight });
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, []);
 
   return (
     <Canvas
       data-testid="cover-frame-3d-overlay"
       style={{
-        position: 'absolute',
+        position: 'fixed',
         inset: 0,
         pointerEvents: 'none',
         zIndex: 5,
