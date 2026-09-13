@@ -208,8 +208,19 @@ export const LastSpells: React.FC = () => {
       }, [])
     : [];
 
+  // TCORE-124: hides each 3D-anchored card's own 2D CoverFrameCorners overlay (its
+  // .coverFrameSlot, a SpellCard-internal element -- SpellCard itself stays untouched) so
+  // the flat SVG frame doesn't show through/behind the 3D mesh sitting on top of it. Scoped
+  // per-card by data-testid rather than a blanket "hide all coverFrameSlots" rule, since a
+  // card without 3D geometry for its resolved frame (getCoverFrame3D returned null) must
+  // keep its 2D corners visible as the fallback.
+  const hide2DFrameCSS = frame3DAnchors
+    .map(a => `[data-testid="spell-card-${a.id}"] [class*="coverFrameSlot"] { visibility: hidden; }`)
+    .join('\n');
+
   return (
     <>
+      {hide2DFrameCSS && <style>{hide2DFrameCSS}</style>}
       <div className={s.container}>
         <div className={s.header}>
           <h2 className={s.title}>{t.nav.lastSpells}</h2>

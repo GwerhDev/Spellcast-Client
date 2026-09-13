@@ -116,16 +116,16 @@ const CornerSet: React.FC<{ corner3dUrl: string; medallion3dUrl?: string; getRec
 
   return (
     <>
-      <group position={[halfSize.w - CORNER_SIZE / 2 + CORNER_OVERHANG, halfSize.h - CORNER_SIZE / 2 + CORNER_OVERHANG, 0]}>
+      <group position={[halfSize.w - CORNER_SIZE / 2 + CORNER_OVERHANG, halfSize.h - CORNER_SIZE / 2 + CORNER_OVERHANG, 0]} rotation={[0, Math.PI, 0]}>
         <CoverFrameMesh url={corner3dUrl} size={CORNER_SIZE} />
       </group>
-      <group position={[-(halfSize.w - CORNER_SIZE / 2 + CORNER_OVERHANG), halfSize.h - CORNER_SIZE / 2 + CORNER_OVERHANG, 0]} scale={[-1, 1, 1]}>
+      <group position={[-(halfSize.w - CORNER_SIZE / 2 + CORNER_OVERHANG), halfSize.h - CORNER_SIZE / 2 + CORNER_OVERHANG, 0]} scale={[-1, 1, 1]} rotation={[0, Math.PI, 0]}>
         <CoverFrameMesh url={corner3dUrl} size={CORNER_SIZE} />
       </group>
-      <group position={[halfSize.w - CORNER_SIZE / 2 + CORNER_OVERHANG, -(halfSize.h - CORNER_SIZE / 2 + CORNER_OVERHANG), 0]} scale={[1, -1, 1]}>
+      <group position={[halfSize.w - CORNER_SIZE / 2 + CORNER_OVERHANG, -(halfSize.h - CORNER_SIZE / 2 + CORNER_OVERHANG), 0]} scale={[1, -1, 1]} rotation={[0, Math.PI, 0]}>
         <CoverFrameMesh url={corner3dUrl} size={CORNER_SIZE} />
       </group>
-      <group position={[-(halfSize.w - CORNER_SIZE / 2 + CORNER_OVERHANG), -(halfSize.h - CORNER_SIZE / 2 + CORNER_OVERHANG), 0]} scale={[-1, -1, 1]}>
+      <group position={[-(halfSize.w - CORNER_SIZE / 2 + CORNER_OVERHANG), -(halfSize.h - CORNER_SIZE / 2 + CORNER_OVERHANG), 0]} scale={[-1, -1, 1]} rotation={[0, Math.PI, 0]}>
         <CoverFrameMesh url={corner3dUrl} size={CORNER_SIZE} />
       </group>
       {medallion3dUrl && (
