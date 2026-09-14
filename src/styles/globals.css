@@ -183,6 +183,15 @@
   overflow-y: auto;
   border-radius: 10px;
   background: var(--viewer-background);
+  /* TCORE-124: positioning context for the shared 3D cover-frame Canvas (mounted here in
+     DefaultLayout.tsx, see its own comment) -- this box is width:100% of .app-container,
+     provably unaffected by the sidebar's rail<->panel width transition (unlike .app-viewer,
+     a flex child that DOES reflow as that transition redistributes space), so a Canvas
+     anchored to it never sees its own measured size go stale mid-transition. Doesn't change
+     which element actually scrolls long page content -- that's .dashboard-sections, deeper
+     inside .app-viewer; neither this element nor .app-viewer ever grow past the visible
+     viewport height themselves. */
+  position: relative;
 }
 
 .dashboard-sections {
@@ -197,6 +206,14 @@
 .nav-container {
   display: flex;
   width: auto;
+  /* TCORE-124: the shared 3D cover-frame Canvas is now a later sibling of this element
+     inside .dashboard-container (see DefaultLayout.tsx's own comment), and geometrically
+     spans the whole container including the sidebar's own screen area. `isolation: isolate`
+     gives this element its own stacking context, so it keeps painting on top of that canvas
+     regardless of DOM/z-index order, no matter what z-index the canvas or anything inside it
+     ever uses -- same technique this branch already applies to SpellCard's own .card
+     (z-index: 0, for the identical "isolate from the shared canvas" reason). */
+  isolation: isolate;
 }
 
 .aside-container {

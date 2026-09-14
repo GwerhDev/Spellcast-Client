@@ -124,17 +124,25 @@ export default function DefaultLayout() {
               <ReaderSettings />
               <EditorSettings />
               <PdfUploadQueue />
-              {/* TCORE-124: absolutely positioned to fill .app-viewer (already
-                  position: relative) -- a sibling of <Outlet />, not a descendant of the
-                  sidebar, so it never overlaps it (see CoverFrame3DRoot's own comment on
-                  why the earlier position: fixed-to-viewport design did). pointer-events:
-                  none on the canvas itself keeps every card's own interactions working. */}
-              {mode3dEnabled && (
-                <Suspense fallback={null}>
-                  <CoverFrame3DRoot />
-                </Suspense>
-              )}
             </div>
+            {/* TCORE-124: mounted on .dashboard-container (position: relative, see
+                globals.css), NOT .app-viewer -- .app-viewer's own width reflows for ~220ms
+                every time the sidebar's rail<->panel toggle animates (SidebarView.module.css's
+                own `transition: width`), and that reflow left the shared root <Canvas>'s
+                measured size (what drei's <View> uses to convert each card's live DOM rect
+                into a WebGL scissor rect) a frame or more stale relative to the DOM -- the
+                ornaments visibly detached from the cover during that window. .dashboard-
+                container's own box is width:100% of .app-container, provably independent of
+                how the sidebar/viewer split that width between them (see globals.css), so it
+                never reflows from this. It now geometrically spans the sidebar's screen area
+                too, so .nav-container gets `isolation: isolate` (globals.css) to guarantee the
+                sidebar keeps painting on top regardless -- same technique this branch already
+                uses on SpellCard's own .card (z-index: 0, for the identical reason). */}
+            {mode3dEnabled && (
+              <Suspense fallback={null}>
+                <CoverFrame3DRoot />
+              </Suspense>
+            )}
           </div>
           {documentLoaded && (
             <div className="audioplayer-container">

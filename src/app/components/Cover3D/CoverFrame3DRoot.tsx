@@ -3,12 +3,25 @@ import { Canvas } from '@react-three/fiber';
 import { View } from '@react-three/drei';
 
 // TCORE-124: the ONE shared <Canvas>/WebGL context for the whole app's 3D cover-frame
-// corners -- mounted once here (inside .app-viewer, DefaultLayout's own real-content area,
-// sibling to the sidebar rather than a descendant of it) and reused by every section via
-// drei's <View>. Browsers cap concurrent WebGL contexts (~8-16), and any grid of SpellCards
-// can render 20-50+ at once, so one context per card (or even one context per SECTION, the
-// previous design here) was ruled out -- see CoverFrame's own comment in
-// config/assets/types.ts.
+// objects -- mounted once here (in DefaultLayout.tsx, on .dashboard-container, a sibling of
+// the sidebar rather than a descendant of it) and reused by every section via drei's <View>.
+// Browsers cap concurrent WebGL contexts (~8-16), and any grid of SpellCards can render
+// 20-50+ at once, so one context per card (or even one context per SECTION, an earlier
+// design here) was ruled out -- see CoverFrame's own comment in config/assets/types.ts.
+//
+// Mounted on .dashboard-container specifically, NOT .app-viewer (where this used to live):
+// .app-viewer's own width reflows for ~220ms every time the sidebar's rail<->panel toggle
+// animates (a plain CSS `transition: width`), and drei's <View> converts each card's live
+// DOM rect into a WebGL scissor rect using THIS canvas' own measured size (react-three-
+// fiber's ResizeObserver-driven `useThree().size`) -- during that reflow the card's rect was
+// always fresh (read live every frame) but the canvas' own size lagged a frame or more
+// behind, so the 3D content visibly detached from the card underneath it. .dashboard-
+// container's own box is width:100% of .app-container, provably unaffected by how the
+// sidebar and viewer split that width between them (see globals.css), so it never reflows
+// from this. See DefaultLayout.tsx's own comment on the mount point, and .nav-container's
+// own `isolation: isolate` (globals.css) -- this canvas now geometrically spans the
+// sidebar's screen area too, so the sidebar needs its own stacking context to guarantee it
+// keeps painting on top regardless of DOM/z-index order.
 //
 // Why <View> replaces the earlier "one full-viewport canvas + manually sync mesh positions
 // to each card's DOM rect every rAF tick" design: that mesh-position-mirroring approach had
@@ -36,15 +49,15 @@ export const CoverFrame3DRoot: React.FC = () => (
       // Every real card position is captured by its own tracked <View>'s <div> (a normal,
       // in-flow DOM element) -- this root canvas is purely the shared WebGL surface those
       // views scissor-draw into, so it must never itself intercept pointer events or it
-      // would sit as an invisible click-blocking layer over the whole .app-viewer.
+      // would sit as an invisible click-blocking layer over the whole .dashboard-container.
       pointerEvents: 'none',
       // A LOW z-index, not a high one -- this only ever needs to paint ABOVE plain page
       // content (SpellCard covers, which carry no z-index of their own), never above real
       // UI chrome like modals/menus/the audio player (all much higher, see globals.css).
-      // Scoped to .app-viewer (this canvas' own positioned ancestor, sibling to the
-      // sidebar), so it can never reach the sidebar's stacking context at all regardless of
-      // this value -- unlike the earlier viewport-fixed design, no number here can
-      // accidentally paint over page chrome outside this container.
+      // This canvas now geometrically spans .dashboard-container's full box, sidebar
+      // included -- .nav-container's own `isolation: isolate` (globals.css) is what actually
+      // keeps the sidebar on top, not this number; no z-index here can defeat that isolation
+      // regardless of value, which is the point (see this file's own header comment).
       zIndex: 1,
     }}
     // "always" (not "demand"): <View>'s own per-tracked-element scissor render happens
