@@ -199,14 +199,21 @@
    the exact same box as .coverWrapper (top of the card, full width, --spell-cover-height
    tall) so CoverFrameCorners' own corner/edge anchoring lines up with the cover
    underneath -- but since neither .card nor this slot clip their overflow, the corner
-   plates and medallions are free to overhang past that box's edge. z-index: 1, deliberately
-   LOWER than .cardClip's own interactive overlays (.playAction/.actions at 2, .uploadOverlay
-   at 3) -- without this, being a later DOM sibling of .cardClip (inside .card's own
-   stacking context, see that rule's comment) would let it paint over the hover play
-   button/upload spinner despite those having a "higher" z-index number of their own, since
-   an element with no z-index of its own otherwise wins ties by DOM order alone. Only
-   matters for the 3D case (CoverFrame3DView) -- the 2D CoverFrameCorners never overlapped
-   those controls in the first place, being just small corner images. */
+   plates and medallions are free to overhang past that box's edge.
+
+   No z-index in the base rule -- follow-up fix: an earlier pass here gave this an
+   unconditional z-index: 1 (to keep .cardClip's interactive overlays -- .playAction/
+   .actions at 2, .uploadOverlay at 3, .footer's hover-reveal at 4 -- on top of the 3D case,
+   CoverFrame3DView), but that also applies to plain 2D CoverFrameCorners, which regressed
+   production's actual look: with NO z-index of its own, this slot (a later DOM sibling of
+   .cardClip, inside .card's own isolated stacking context, see that rule's comment) wins
+   ties against those overlays' explicit z-index values by DOM order alone, regardless of
+   their numbers -- confirmed by literally comparing this branch's render against
+   origin/main's. That's the correct, production-matching behavior for 2D corner IMAGES
+   (small pieces meant to always read as "on top of the book"), so it has to stay the
+   default here; SpellCard.tsx sets z-index: 1 back via inline style, ONLY on the 3D
+   branch, where CoverFrame3DView's ornaments are large enough to actually need to yield to
+   those controls. */
 .coverFrameSlot {
   position: absolute;
   /* TCORE-124: an explicit margin (not top/left/right:0 flush with .coverWrapper) so the 3D
@@ -229,7 +236,6 @@
   left: calc(-1 * var(--cover-frame-3d-margin-x, 0px));
   right: calc(-1 * var(--cover-frame-3d-margin-x, 0px));
   height: calc(var(--spell-cover-height) + 2 * var(--cover-frame-3d-margin-y, 0px));
-  z-index: 1;
   pointer-events: none;
 }
 

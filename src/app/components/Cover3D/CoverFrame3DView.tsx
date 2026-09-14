@@ -2,6 +2,7 @@ import React, { Suspense, useEffect, useState } from 'react';
 import { View, OrthographicCamera } from '@react-three/drei';
 import { useThree } from '@react-three/fiber';
 import { CoverFrameMesh } from './CoverFrameMesh';
+import { CoverTexturePlane } from './CoverTexturePlane';
 import { CORNER_SIZE, CORNER_OVERHANG, VIEW_MARGIN_X, VIEW_MARGIN_Y } from './constants';
 import type { CoverFrame3DConfig } from '../../../utils/coverFrame';
 
@@ -35,16 +36,26 @@ const GEM_COLOR = '#4fc3d9'; // matches grimoire-medallion.svg's own #gem gradie
 
 interface CoverFrame3DViewProps {
   config: CoverFrame3DConfig;
+  // The cover photo's own blob URL -- rendered as a textured plane in the SAME local
+  // space as the corners/medallion below (see CoverTexturePlane), so there's exactly one
+  // tracked box and one object for the caller to reason about instead of a separate 2D
+  // `<img>` laid out independently alongside these ornaments.
+  coverUrl: string;
+  // Matches the card's own `.card`/`.cardClip` border-radius in the caller's own CSS
+  // module -- see each call site's own comment for the exact value. The cover plane lives
+  // in this unclipped View (see this file's own comment on VIEW_MARGIN_X/Y), so it has to
+  // round its own corners in geometry; a CSS overflow:hidden ancestor can't reach it.
+  radius: number;
   className?: string;
 }
 
-// The 4 corners + medallion, positioned relative to the COVER's own box (not this view's
-// own, larger, tracked element -- see CoverFrame3DView's own comment on the inset margin).
-// coverHalfW/H are the .coverFrameSlot box's own half-size, derived by subtracting the
-// margin back out of the view's real tracked size (read via drei's useThree(({ size }) =>
-// size), which View keeps in sync with its internal div's real getBoundingClientRect()
-// every frame). Pure geometry/layout, no DOM sync of its own.
-const CornerLayout: React.FC<{ config: CoverFrame3DConfig; marginX: number; marginY: number }> = ({ config, marginX, marginY }) => {
+// The cover photo + 4 corners + medallion, positioned relative to the COVER's own box
+// (not this view's own, larger, tracked element -- see CoverFrame3DView's own comment on
+// the inset margin). coverHalfW/H are the .coverFrameSlot box's own half-size, derived by
+// subtracting the margin back out of the view's real tracked size (read via drei's
+// useThree(({ size }) => size), which View keeps in sync with its internal div's real
+// getBoundingClientRect() every frame). Pure geometry/layout, no DOM sync of its own.
+const CoverObjectLayout: React.FC<{ config: CoverFrame3DConfig; coverUrl: string; radius: number; marginX: number; marginY: number }> = ({ config, coverUrl, radius, marginX, marginY }) => {
   const { corner3dUrl, medallion3dUrl } = config;
   const [size, setSize] = useState<{ width: number; height: number } | null>(null);
 
@@ -66,6 +77,14 @@ const CornerLayout: React.FC<{ config: CoverFrame3DConfig; marginX: number; marg
 
   return (
     <>
+      {/* The backdrop -- pushed back in Z (away from the camera) so it can never z-fight
+          with the corner/medallion plates' own extruded volume, which spans roughly
+          +/-EXTRUDE_DEPTH/2 around each of their own group's local origin (see
+          CoverFrameMesh). Sized to the ORIGINAL unmargined cover box (2*halfW x 2*halfH),
+          matching exactly what the plain 2D `<img>` this replaces used to fill. */}
+      <group position={[0, 0, -4]}>
+        <CoverTexturePlane url={coverUrl} width={halfW * 2} height={halfH * 2} radius={radius} />
+      </group>
       {/* Mirroring via a negated scale axis, matching CoverFrameCorners' own CSS transform:
           scaleX(-1)/scaleY(-1)/scale(-1,-1) exactly (see that component's comment) --
           CoverFrameMesh's own material uses side: THREE.DoubleSide specifically so this is
@@ -98,18 +117,21 @@ const CornerLayout: React.FC<{ config: CoverFrame3DConfig; marginX: number; marg
   );
 };
 
-// Small indirection so CornerLayout's own read doesn't repeat the useThree(s => s.size)
-// destructure inline -- this only ever works inside a View's own render tree, since that's
-// what scopes useThree's returned `size` to the tracked element's own rect rather than the
-// shared root canvas' size.
+// Small indirection so CoverObjectLayout's own read doesn't repeat the
+// useThree(s => s.size) destructure inline -- this only ever works inside a View's own
+// render tree, since that's what scopes useThree's returned `size` to the tracked
+// element's own rect rather than the shared root canvas' size.
 function useThreeSize(setSize: (s: { width: number; height: number }) => void) {
   const size = useThree(s => s.size);
   useEffect(() => { setSize({ width: size.width, height: size.height }); }, [size.width, size.height, setSize]);
 }
 
-// Rendered by SpellCard in place of CoverFrameCorners when 3D is active for this card (see
-// SpellCard's own `show3D` prop) -- same position in the DOM tree as the old .coverFrameSlot
-// (a sibling of .cardClip, so it can overhang the card's own rounded corners).
+// Rendered by SpellCard/EditorPickerCard/SpellDetail in place of BOTH the plain `<img>`
+// cover AND CoverFrameCorners when 3D is active for this card (see each call site's own
+// `show3D` prop) -- same position in the DOM tree the old .coverFrameSlot (corners-only)
+// used, a sibling of .cardClip so it can overhang the card's own rounded corners. The
+// cover photo and ornaments are one object now (CoverObjectLayout, below) instead of two
+// independently-laid-out things a caller had to keep lined up itself.
 //
 // VIEW_MARGIN_X/VIEW_MARGIN_Y (see constants.ts): <View>'s tracked element IS the WebGL
 // scissor rect (see this file's top comment): three.js clips everything to that element's
@@ -139,7 +161,7 @@ function useThreeSize(setSize: (s: { width: number; height: number }) => void) {
 // the shared root canvas (CoverFrame3DRoot) illuminate only ITS OWN top-level scene, never
 // the per-view virtual scenes -- every corner rendered pitch black until this was added
 // here instead.
-export const CoverFrame3DView: React.FC<CoverFrame3DViewProps> = ({ config, className }) => (
+export const CoverFrame3DView: React.FC<CoverFrame3DViewProps> = ({ config, coverUrl, radius, className }) => (
   <View className={className} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
     <OrthographicCamera makeDefault position={[0, 0, 100]} near={0.1} far={1000} zoom={1} />
     <ambientLight intensity={1.1} />
@@ -147,7 +169,7 @@ export const CoverFrame3DView: React.FC<CoverFrame3DViewProps> = ({ config, clas
     <directionalLight position={[-30, -20, 60]} intensity={0.5} />
     <directionalLight position={[0, -40, 30]} intensity={0.4} color="#dff2ff" />
     <Suspense fallback={null}>
-      <CornerLayout config={config} marginX={VIEW_MARGIN_X} marginY={VIEW_MARGIN_Y} />
+      <CoverObjectLayout config={config} coverUrl={coverUrl} radius={radius} marginX={VIEW_MARGIN_X} marginY={VIEW_MARGIN_Y} />
     </Suspense>
   </View>
 );

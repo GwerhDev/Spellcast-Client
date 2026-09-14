@@ -43,16 +43,18 @@
    Y need separate amounts (the medallion overhangs far more vertically than any piece ever
    does horizontally) and why this margin has to grow THIS box rather than just <View>'s own
    inset (three.js' scissor rect can't let content overflow its own tracked element the way
-   a plain <img> can). z-index: 1, deliberately lower than nothing here since this card has
-   no other absolutely-positioned interactive overlay competing for the same stacking
-   context -- kept for parity with SpellCard's own slot regardless. */
+   a plain <img> can).
+
+   No z-index in the base rule, same fix as SpellCard's own slot -- 2D CoverFrameCorners has
+   to win against .footer's hover-reveal by DOM order alone (matching production) rather
+   than being forced below it; EditorPickerCard.tsx sets z-index: 1 back inline, only on the
+   3D branch, where it does need to yield to .footer. */
 .coverFrameSlot {
   position: absolute;
   top: calc(-1 * var(--cover-frame-3d-margin-y, 0px));
   left: calc(-1 * var(--cover-frame-3d-margin-x, 0px));
   right: calc(-1 * var(--cover-frame-3d-margin-x, 0px));
   height: calc(var(--spell-cover-height) + 2 * var(--cover-frame-3d-margin-y, 0px));
-  z-index: 1;
   pointer-events: none;
 }
 
@@ -109,12 +111,12 @@
   .footer {
     position: absolute;
     inset: auto 0 0 0;
-    /* TCORE-124: an explicit z-index above .coverFrameSlot's own (1) -- without this,
-       .coverFrameSlot being a LATER sibling in .card's stacking context (see that rule's
-       comment) let its corner plates/medallion paint over this footer once it slides up on
-       hover, despite .coverFrameSlot itself being pointer-events: none. This footer needs to
-       win that paint order regardless of DOM order. */
-    z-index: 2;
+    /* No z-index here (follow-up fix, reverting an earlier pass that set z-index: 2 to
+       beat .coverFrameSlot) -- see .coverFrameSlot's own CSS comment: 2D CoverFrameCorners
+       is meant to win that paint order by DOM order alone, matching production, so this
+       must stay at z-index:auto for the 2D case rather than force itself above it. The 3D
+       case (CoverFrame3DView) yields to this footer instead, via .coverFrameSlot's own
+       inline z-index: 1, set only when 3D is active. */
     padding-top: 1.75rem;
     background: linear-gradient(to top, rgba(0, 0, 0, 0.92) 30%, rgba(0, 0, 0, 0.55) 72%, transparent);
     opacity: 0;

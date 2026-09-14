@@ -15,6 +15,11 @@ const CoverFrame3DView = React.lazy(() =>
   import('../Cover3D/CoverFrame3DView').then(m => ({ default: m.CoverFrame3DView }))
 );
 
+// Matches .card's own `border-radius: .3rem` in EditorPickerCard.module.css (16px root ->
+// 4.8px) -- see SpellCard's own COVER_RADIUS comment for why this can't be a shared CSS
+// clip once 3D is active.
+const COVER_RADIUS = 4.8;
+
 interface EditorPickerCardProps {
   doc: Spell;
   onClick: () => void;
@@ -53,7 +58,11 @@ export const EditorPickerCard = ({ doc, onClick, show3D }: EditorPickerCardProps
       <div className={s.cardClip}>
         <div className={s.coverWrap}>
           {coverUrl
-            ? <img src={coverUrl} alt={doc.title} className={s.cover} style={coverFrameStyle} />
+            ? (coverFrame3D
+              // See SpellCard's own comment on this same fork -- the actual cover pixels
+              // render inside CoverFrame3DView's textured plane below when 3D is active.
+              ? <div className={s.cover} style={coverFrameStyle} role="img" aria-label={doc.title} />
+              : <img src={coverUrl} alt={doc.title} className={s.cover} style={coverFrameStyle} />)
             : <div className={s.iconWrapper}><FontAwesomeIcon icon={faScroll} className={s.icon} /></div>
           }
         </div>
@@ -66,11 +75,13 @@ export const EditorPickerCard = ({ doc, onClick, show3D }: EditorPickerCardProps
         </div>
       </div>
       {hasCoverFrame && (
-        <div className={s.coverFrameSlot} style={coverFrame3D ? ({ '--cover-frame-3d-margin-x': `${VIEW_MARGIN_X}px`, '--cover-frame-3d-margin-y': `${VIEW_MARGIN_Y}px` } as React.CSSProperties) : undefined}>
+        // z-index only set here, inline, for the 3D branch -- see .coverFrameSlot's own
+        // CSS comment (and SpellCard's, which this mirrors).
+        <div className={s.coverFrameSlot} style={coverFrame3D ? ({ '--cover-frame-3d-margin-x': `${VIEW_MARGIN_X}px`, '--cover-frame-3d-margin-y': `${VIEW_MARGIN_Y}px`, zIndex: 1 } as React.CSSProperties) : undefined}>
           {coverFrame3D
             ? (
               <React.Suspense fallback={null}>
-                <CoverFrame3DView config={coverFrame3D} />
+                <CoverFrame3DView config={coverFrame3D} coverUrl={coverUrl!} radius={COVER_RADIUS} />
               </React.Suspense>
             )
             : <CoverFrameCorners config={coverFrameCorners} />}

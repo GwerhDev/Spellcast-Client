@@ -31,6 +31,11 @@ const CoverFrame3DView = React.lazy(() =>
   import('../../components/Cover3D/CoverFrame3DView').then(m => ({ default: m.CoverFrame3DView }))
 );
 
+// Matches .cover's own `border-radius: 6px` in SpellDetail/index.module.css -- see
+// SpellCard's own COVER_RADIUS comment for why this can't be a shared CSS clip once 3D is
+// active.
+const COVER_RADIUS = 6;
+
 export const SpellDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -149,13 +154,17 @@ export const SpellDetail: React.FC = () => {
           {coverUrl
             ? (
               <div className={s.coverWrap}>
-                <img src={coverUrl} alt={doc.title} className={s.cover} style={getCoverFrameStyle(resolvedCoverFrameId)} />
+                {coverFrame3D
+                  // See SpellCard's own comment on this same fork -- the actual cover
+                  // pixels render inside CoverFrame3DView's textured plane below.
+                  ? <div className={s.cover} style={getCoverFrameStyle(resolvedCoverFrameId)} role="img" aria-label={doc.title} />
+                  : <img src={coverUrl} alt={doc.title} className={s.cover} style={getCoverFrameStyle(resolvedCoverFrameId)} />}
                 {coverFrameCorners && (
                   <div className={s.coverFrameSlot} style={coverFrame3D ? ({ '--cover-frame-3d-margin-x': `${VIEW_MARGIN_X}px`, '--cover-frame-3d-margin-y': `${VIEW_MARGIN_Y}px` } as React.CSSProperties) : undefined}>
                     {coverFrame3D
                       ? (
                         <React.Suspense fallback={null}>
-                          <CoverFrame3DView config={coverFrame3D} />
+                          <CoverFrame3DView config={coverFrame3D} coverUrl={coverUrl!} radius={COVER_RADIUS} />
                         </React.Suspense>
                       )
                       : <CoverFrameCorners config={coverFrameCorners} />}

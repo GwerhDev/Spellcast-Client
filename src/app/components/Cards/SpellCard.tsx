@@ -26,6 +26,11 @@ const CoverFrame3DView = React.lazy(() =>
   import('../Cover3D/CoverFrame3DView').then(m => ({ default: m.CoverFrame3DView }))
 );
 
+// Matches .card/.cardClip's own `border-radius: .2rem` in SpellCard.module.css (16px root
+// -> 3.2px) -- the 3D cover plane rounds its own corners in geometry (see
+// CoverTexturePlane), since it lives in an unclipped View a CSS radius can't reach.
+const COVER_RADIUS = 3.2;
+
 interface UploadJob {
   status: 'queued' | 'processing' | 'done' | 'error';
   progress: { current: number; total: number } | null;
@@ -209,7 +214,16 @@ export const SpellCard = ({ doc, isActive, isPlaying, onClick, onDelete, onEdit,
         )}
         <div className={s.coverWrapper}>
           {coverUrl
-            ? <img src={coverUrl} alt={doc.title} className={s.cover} style={coverFrameStyle} />
+            ? (coverFrame3D
+              // TCORE-124 follow-up: when 3D is active, the actual cover pixels are drawn
+              // by CoverFrame3DView's own textured plane (in the unclipped .coverFrameSlot
+              // below, alongside the ornaments -- one object, see that file's own
+              // comment) instead of this `<img>`. This stays a real, clipped/rounded DOM
+              // placeholder in .coverWrapper's exact box -- .coverTags/.uploadOverlay
+              // below still anchor to it, and it keeps the accessible name the `<img
+              // alt=...>` used to carry (the WebGL canvas itself has none).
+              ? <div className={s.cover} style={coverFrameStyle} role="img" aria-label={doc.title} />
+              : <img src={coverUrl} alt={doc.title} className={s.cover} style={coverFrameStyle} />)
             : <div className={s.iconWrapper}><FontAwesomeIcon icon={faScroll} className={s.icon} /></div>
           }
           <div className={s.coverTags}>
@@ -266,11 +280,15 @@ export const SpellCard = ({ doc, isActive, isPlaying, onClick, onDelete, onEdit,
           CoverFrameCorners mechanism doesn't need this margin (each of its <img> tags
           overhangs its own single edge independently, with no shared bounding box). */}
       {hasCoverFrame && (
-        <div className={s.coverFrameSlot} style={coverFrame3D ? ({ '--cover-frame-3d-margin-x': `${VIEW_MARGIN_X}px`, '--cover-frame-3d-margin-y': `${VIEW_MARGIN_Y}px` } as React.CSSProperties) : undefined}>
+        // z-index only set here, inline, for the 3D branch -- see .coverFrameSlot's own
+        // CSS comment for why 2D CoverFrameCorners needs to stay at z-index:auto (matches
+        // production) while CoverFrame3DView's own larger ornaments need to yield to
+        // .actions/.playAction/.uploadOverlay/.footer.
+        <div className={s.coverFrameSlot} style={coverFrame3D ? ({ '--cover-frame-3d-margin-x': `${VIEW_MARGIN_X}px`, '--cover-frame-3d-margin-y': `${VIEW_MARGIN_Y}px`, zIndex: 1 } as React.CSSProperties) : undefined}>
           {coverFrame3D
             ? (
               <React.Suspense fallback={null}>
-                <CoverFrame3DView config={coverFrame3D} className={s.coverFrameOverlay} />
+                <CoverFrame3DView config={coverFrame3D} coverUrl={coverUrl!} radius={COVER_RADIUS} className={s.coverFrameOverlay} />
               </React.Suspense>
             )
             : <CoverFrameCorners config={coverFrameCorners} className={s.coverFrameOverlay} />}
