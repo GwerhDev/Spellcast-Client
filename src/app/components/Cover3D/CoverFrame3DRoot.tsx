@@ -1,6 +1,7 @@
 import React from 'react';
 import { Canvas } from '@react-three/fiber';
 import { View } from '@react-three/drei';
+import { useCoverFrame3DInvalidate } from '../../../hooks/useCoverFrame3DInvalidate';
 
 // TCORE-124: the ONE shared <Canvas>/WebGL context for the whole app's 3D cover-frame
 // objects -- mounted once here (in DefaultLayout.tsx, on .dashboard-container, a sibling of
@@ -40,40 +41,51 @@ import { View } from '@react-three/drei';
 // r3f's own useFrame render loop (same pass that paints, not a parallel rAF), using
 // gl.setScissor to draw only that screen rectangle from ONE shared scene/context. See
 // CoverFrame3DView.tsx for the per-card wrapper.
-export const CoverFrame3DRoot: React.FC = () => (
-  <Canvas
-    data-testid="cover-frame-3d-root"
-    style={{
-      position: 'absolute',
-      inset: 0,
-      // Every real card position is captured by its own tracked <View>'s <div> (a normal,
-      // in-flow DOM element) -- this root canvas is purely the shared WebGL surface those
-      // views scissor-draw into, so it must never itself intercept pointer events or it
-      // would sit as an invisible click-blocking layer over the whole .dashboard-container.
-      pointerEvents: 'none',
-      // A LOW z-index, not a high one -- this only ever needs to paint ABOVE plain page
-      // content (SpellCard covers, which carry no z-index of their own), never above real
-      // UI chrome like modals/menus/the audio player (all much higher, see globals.css).
-      // This canvas now geometrically spans .dashboard-container's full box, sidebar
-      // included -- .nav-container's own `isolation: isolate` (globals.css) is what actually
-      // keeps the sidebar on top, not this number; no z-index here can defeat that isolation
-      // regardless of value, which is the point (see this file's own header comment).
-      zIndex: 1,
-    }}
-    // "always" (not "demand"): <View>'s own per-tracked-element scissor render happens
-    // inside useFrame, which only runs while the loop is active -- an on-demand loop would
-    // need every single tracked view to separately call invalidate() on every scroll/resize
-    // of every card, which is exactly the kind of manual per-element sync this rewrite
-    // exists to remove. The whole canvas is 0-sized (no visible content) unless at least one
-    // View is actively tracking something on screen, so an idle route still costs nothing.
-    frameloop="always"
-    gl={{ alpha: true, antialias: true, powerPreference: 'low-power' }}
-    eventSource={typeof document !== 'undefined' ? document.body : undefined}
-  >
-    {/* No lights here -- each <View> (CoverFrame3DView) portals its own children into ITS
-        OWN separate virtual scene (confirmed by reading drei's View.js), not this root
-        canvas' top-level scene, so lights declared here would never reach anything a View
-        renders. Each CoverFrame3DView brings its own lights instead. */}
-    <View.Port />
-  </Canvas>
-);
+export const CoverFrame3DRoot: React.FC = () => {
+  // TCORE-127: everything that has to call invalidate() for demand mode below to actually
+  // stay in sync (scroll/resize/layout-affecting CSS transitions) -- see that hook's own
+  // comment. Scoped to live here (not e.g. DefaultLayout) so it only ever runs while this
+  // Canvas itself is mounted, matching frameloop="demand"'s own lifetime exactly.
+  useCoverFrame3DInvalidate();
+
+  return (
+    <Canvas
+      data-testid="cover-frame-3d-root"
+      style={{
+        position: 'absolute',
+        inset: 0,
+        // Every real card position is captured by its own tracked <View>'s <div> (a normal,
+        // in-flow DOM element) -- this root canvas is purely the shared WebGL surface those
+        // views scissor-draw into, so it must never itself intercept pointer events or it
+        // would sit as an invisible click-blocking layer over the whole .dashboard-container.
+        pointerEvents: 'none',
+        // A LOW z-index, not a high one -- this only ever needs to paint ABOVE plain page
+        // content (SpellCard covers, which carry no z-index of their own), never above real
+        // UI chrome like modals/menus/the audio player (all much higher, see globals.css).
+        // This canvas now geometrically spans .dashboard-container's full box, sidebar
+        // included -- .nav-container's own `isolation: isolate` (globals.css) is what actually
+        // keeps the sidebar on top, not this number; no z-index here can defeat that isolation
+        // regardless of value, which is the point (see this file's own header comment).
+        zIndex: 1,
+      }}
+      // TCORE-127: "demand", not "always" -- a continuous rAF loop used to tick every
+      // browser frame regardless of whether any tracked card was actually visible or
+      // moving, which is real, avoidable cost while Mode3D is on but nothing on screen is
+      // changing. useCoverFrame3DInvalidate() (above) covers every case that moves a
+      // tracked card WITHOUT r3f noticing on its own (scroll, resize, layout-affecting CSS
+      // transitions); r3f's own reconciler already auto-invalidates on scene-graph changes
+      // (a <View> mounting/unmounting -- a card list changing -- or its `visible` prop
+      // toggling -- a View entering/leaving the viewport gate), so neither of those needs
+      // separate wiring here.
+      frameloop="demand"
+      gl={{ alpha: true, antialias: true, powerPreference: 'low-power' }}
+      eventSource={typeof document !== 'undefined' ? document.body : undefined}
+    >
+      {/* No lights here -- each <View> (CoverFrame3DView) portals its own children into ITS
+          OWN separate virtual scene (confirmed by reading drei's View.js), not this root
+          canvas' top-level scene, so lights declared here would never reach anything a View
+          renders. Each CoverFrame3DView brings its own lights instead. */}
+      <View.Port />
+    </Canvas>
+  );
+};
