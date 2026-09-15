@@ -71,7 +71,8 @@ type EngineEvent =
   | { type: 'VOLUME_DRAG_END' }
   | { type: 'CONTENT_CHANGED' } // sentence/page/spell changed under us
   | { type: 'SENTENCE_ENDED'; utterance: SpeechSynthesisUtterance } // the engine's own onend fired
-  | { type: 'FREEZE_NUDGE' };
+  | { type: 'FREEZE_NUDGE' }
+  | { type: 'VISIBILITY_CHECK' }; // tab came back to the foreground
 
 export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, showPlayerConfigModal }) => {
   const { t } = useLanguage();
@@ -366,27 +367,34 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
     });
   };
 
-  const engineAwaitResume = (): Promise<void> => {
+  // Returns whether the engine's OWN onresume actually fired (true) or this
+  // only settled via the safety timeout with no real confirmation (false).
+  // That distinction is what lets the RESUME_REQUESTED/CLICK_PLAY/
+  // HEADSET_PLAY handler below tell an engine that genuinely resumed apart
+  // from one that silently died (Chrome's documented tab-backgrounding/OS-
+  // suspend freeze) and needs a harder recovery than resume() on the same
+  // stale utterance -- see that handler for what it does with this.
+  const engineAwaitResume = (): Promise<boolean> => {
     const utterance = activeUtteranceRef.current;
     if (!utterance || !window.speechSynthesis.paused) {
       window.speechSynthesis.resume();
-      return Promise.resolve();
+      return Promise.resolve(true);
     }
     return new Promise((resolve) => {
       let settled = false;
-      const settle = () => {
+      const settle = (confirmed: boolean) => {
         if (settled) return;
         settled = true;
         utterance.onresume = prevOnResume;
-        resolve();
+        resolve(confirmed);
       };
       const prevOnResume = utterance.onresume;
       utterance.onresume = (ev) => {
         prevOnResume?.call(utterance, ev);
-        settle();
+        settle(true);
       };
       window.speechSynthesis.resume();
-      setTimeout(settle, ENGINE_EVENT_SAFETY_TIMEOUT_MS);
+      setTimeout(() => settle(false), ENGINE_EVENT_SAFETY_TIMEOUT_MS);
     });
   };
 
@@ -444,7 +452,20 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
           dispatch(play());
           if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
           silentAudioRef.current?.play().catch(() => {});
-          await engineAwaitResume();
+          const resumed = await engineAwaitResume();
+          if (!resumed) {
+            // The engine never confirmed with its own onresume -- the
+            // signature of a browser TTS engine that went unresponsive
+            // (tab backgrounded a long time, OS process suspended/resumed).
+            // resume() on this same, possibly-wedged utterance already
+            // failed to produce a confirmation once; retrying it wouldn't
+            // do anything new. cancel() + a BRAND NEW utterance for the
+            // current sentence is the recovery real Chrome responds to.
+            activeUtteranceRef.current = null;
+            window.speechSynthesis.cancel();
+            startSpeakingCurrentSentence();
+            return;
+          }
           armFreezeNudgeTimer(); // clock starts over from the resume point
           return;
         }
@@ -546,6 +567,21 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
         armFreezeNudgeTimer(); // still the same utterance -- protect again in case it runs even longer
         return;
       }
+
+      case 'VISIBILITY_CHECK': {
+        // The tab was backgrounded and just came back. A genuinely alive
+        // engine reports .speaking === true whenever it's mid-utterance,
+        // playing OR paused -- so this can't false-positive on a real
+        // paused state. If Redux thinks we're playing but the engine says
+        // it isn't speaking at all, it silently died while we were away
+        // (same recovery as the resume-confirmation check above: don't
+        // wait for the user to notice and click something first).
+        if (!playing || window.speechSynthesis.speaking) return;
+        activeUtteranceRef.current = null;
+        window.speechSynthesis.cancel();
+        startSpeakingCurrentSentence();
+        return;
+      }
     }
   };
   handleEventRef.current = handleEvent;
@@ -635,6 +671,19 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
   // utterance start/pause/resume (see armFreezeNudgeTimer above) -- this
   // effect only guarantees cleanup on unmount, not a recurring poll.
   useEffect(() => () => clearFreezeNudgeTimer(), []);
+
+  // Routed through the queue like everything else (VISIBILITY_CHECK case in
+  // handleEvent above) rather than checking the engine here directly -- this
+  // listener only ever decides WHEN to check, never touches speechSynthesis
+  // or isPlaying itself.
+  useEffect(() => {
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') enqueue({ type: 'VISIBILITY_CHECK' });
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', onVisibilityChange);
+    //eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleVolumePointerDown = () => enqueue({ type: 'VOLUME_DRAG_START' });
   const handleVolumePointerUp = () => enqueue({ type: 'VOLUME_DRAG_END' });
