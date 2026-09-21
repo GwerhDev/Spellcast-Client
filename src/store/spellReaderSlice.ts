@@ -36,7 +36,10 @@ const initialState: SpellReaderState = {
   hasInitialPageSet: false, // Initialize new flag
   showSearcher: false,
   showReaderSettings: false,
-  fitToWidth: localStorage.getItem('reader:fitToWidth') !== 'false',
+  // TCORE-128: off unless the user explicitly opted in -- stretching pages to the viewer width
+  // alters the PDF's original layout, so it shouldn't happen without being chosen. Only a saved
+  // 'true' turns it on; a saved preference of either value is otherwise respected untouched.
+  fitToWidth: localStorage.getItem('reader:fitToWidth') === 'true',
   lightningMode: localStorage.getItem('reader:lightningMode') !== 'false',
   attentionGuardEnabled: localStorage.getItem('reader:attentionGuard') !== 'false',
   attentionGuardInterval: Number(localStorage.getItem('reader:attentionGuardInterval') ?? '15') || 15,

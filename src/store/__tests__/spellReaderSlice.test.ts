@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import reducer, {
   setSpellFile,
   setSpellInfo,
@@ -101,6 +101,33 @@ describe('spellReaderSlice', () => {
     it('setFitToWidth updates flag', () => {
       const state = reducer(initial, setFitToWidth(false));
       expect(state.fitToWidth).toBe(false);
+    });
+
+    // TCORE-128: initial state is computed once at module load from localStorage, so each case
+    // re-imports the slice fresh after seeding (or clearing) the saved preference.
+    describe('fitToWidth default', () => {
+      const freshInitialFitToWidth = async () => {
+        vi.resetModules();
+        const mod = await import('../spellReaderSlice');
+        return mod.default(undefined, { type: '@@INIT' }).fitToWidth;
+      };
+
+      beforeEach(() => { localStorage.clear(); });
+      afterEach(() => { localStorage.clear(); vi.resetModules(); });
+
+      it('is off for a user with no saved preference', async () => {
+        expect(await freshInitialFitToWidth()).toBe(false);
+      });
+
+      it('stays on for a user who saved it on', async () => {
+        localStorage.setItem('reader:fitToWidth', 'true');
+        expect(await freshInitialFitToWidth()).toBe(true);
+      });
+
+      it('stays off for a user who saved it off', async () => {
+        localStorage.setItem('reader:fitToWidth', 'false');
+        expect(await freshInitialFitToWidth()).toBe(false);
+      });
     });
 
     it('setLightningMode updates flag', () => {
