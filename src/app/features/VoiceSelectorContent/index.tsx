@@ -1,7 +1,7 @@
 import s from '../../components/Modals/VoiceSelectorModal.module.css';
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { faBrain, faCircle, faDesktop, faVolumeHigh, faStop, faSpinner } from '@fortawesome/free-solid-svg-icons';
+import { faPlug, faCircle, faDesktop, faHardDrive, faCloud, faVolumeHigh, faStop, faSpinner } from '@fortawesome/free-solid-svg-icons';
 import { faCircle as faRegCircle } from '@fortawesome/free-regular-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useDispatch, useSelector } from 'react-redux';
@@ -47,9 +47,8 @@ export const VoiceSelectorContent: React.FC<VoiceSelectorContentProps> = ({ onCl
 
   const voices = window.speechSynthesis.getVoices();
   const aiVoices = activeCredential?.voices?.map(v => ({ value: v.value, name: v.name, gender: v.gender })) || [];
-  const browserVoices = voices.map(v => ({ value: v.name, name: v.name, gender: 'Unknown', isBrowser: true }));
+  const browserVoices = voices.map(v => ({ value: v.name, name: v.name, gender: 'Unknown', isBrowser: true, isLocal: v.localService }));
   const voicesToShow = activeTab === 'browser' ? browserVoices : aiVoices;
-  const icon = activeTab === 'browser' ? faDesktop : faBrain;
 
   const handlePreview = (e: React.MouseEvent, voiceName: string) => {
     e.stopPropagation();
@@ -92,8 +91,8 @@ export const VoiceSelectorContent: React.FC<VoiceSelectorContentProps> = ({ onCl
           className={`${s.tabButton} ${s.right} ${activeTab === 'ai' ? s.activeTab : ''}`}
           onClick={() => setActiveTab('ai')}
         >
-          <FontAwesomeIcon icon={faBrain} />
-          <span className={s.title}>{t.player.aiVoices}</span>
+          <FontAwesomeIcon icon={faPlug} />
+          <span className={s.title}>{t.player.providerVoices}</span>
         </button>
       </div>
 
@@ -107,7 +106,7 @@ export const VoiceSelectorContent: React.FC<VoiceSelectorContentProps> = ({ onCl
           </p>
         ) : (
           <p className={s.description}>
-            {t.player.aiVoicesDesc}{' '}
+            {t.player.providerVoicesDesc}{' '}
             <Link onClick={onClose} to="/caster/settings/credentials">{t.player.credentialsSettings}</Link>
           </p>
         )}
@@ -138,7 +137,15 @@ export const VoiceSelectorContent: React.FC<VoiceSelectorContentProps> = ({ onCl
               }
             />
             <span>{voiceOption.name}</span>
-            <FontAwesomeIcon icon={icon} className={s.genderIcon} />
+            {'isLocal' in voiceOption ? (
+              <FontAwesomeIcon
+                icon={voiceOption.isLocal ? faHardDrive : faCloud}
+                className={s.genderIcon}
+                title={voiceOption.isLocal ? t.player.localVoice : t.player.networkVoice}
+              />
+            ) : (
+              <FontAwesomeIcon icon={faPlug} className={s.genderIcon} />
+            )}
             {activeTab === 'browser' && (
               <button
                 className={s.previewButton}

@@ -9,7 +9,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faPlay, faPause, faSpinner,
   faVolumeUp, faVolumeMute, faVolumeHigh, faStop,
-  faBrain, faDesktop, faCircle as faFilledCircle,
+  faPlug, faDesktop, faHardDrive, faCloud, faCircle as faFilledCircle,
 } from '@fortawesome/free-solid-svg-icons';
 import { faCircle as faRegCircle } from '@fortawesome/free-regular-svg-icons';
 import { CustomModal } from '../../../components/Modals/CustomModal';
@@ -246,7 +246,7 @@ export const TextOption: React.FC = () => {
           <div className={s.toolbar}>
             <div className={s.voiceInfo}>
               <span className={s.voiceInfoTrigger} onClick={() => setShowVoiceModal(true)} role="button" tabIndex={0}>
-                <FontAwesomeIcon icon={voiceType === 'browser' ? faDesktop : faBrain} className={s.voiceInfoIcon} />
+                <FontAwesomeIcon icon={voiceType === 'browser' ? faDesktop : faPlug} className={s.voiceInfoIcon} />
                 <span className={s.voiceInfoName}>
                   {voiceType === 'browser'
                     ? (browserVoices.find(v => v.name === selectedVoiceValue)?.name ?? selectedVoiceValue)
@@ -315,8 +315,8 @@ export const TextOption: React.FC = () => {
             className={`${modal.tabButton} ${modal.right} ${modalTab === 'ai' ? modal.activeTab : ''}`}
             onClick={() => setModalTab('ai')}
           >
-            <FontAwesomeIcon icon={faBrain} />
-            <span className={modal.title}>{t.player.aiVoices}</span>
+            <FontAwesomeIcon icon={faPlug} />
+            <span className={modal.title}>{t.player.providerVoices}</span>
           </button>
         </div>
         <ul className={modal.voiceList}>
@@ -329,7 +329,11 @@ export const TextOption: React.FC = () => {
               >
                 <FontAwesomeIcon icon={voiceType === 'browser' && selectedVoiceValue === v.name ? faFilledCircle : faRegCircle} />
                 <span>{v.name}</span>
-                <FontAwesomeIcon icon={faDesktop} className={modal.genderIcon} />
+                <FontAwesomeIcon
+                  icon={v.localService ? faHardDrive : faCloud}
+                  className={modal.genderIcon}
+                  title={v.localService ? t.player.localVoice : t.player.networkVoice}
+                />
                 <button
                   className={modal.previewButton}
                   onClick={(e) => handleModalPreview(e, v.name)}
@@ -348,7 +352,7 @@ export const TextOption: React.FC = () => {
               >
                 <FontAwesomeIcon icon={voiceType === 'ai' && selectedVoiceValue === v.value ? faFilledCircle : faRegCircle} />
                 <span>{v.name}</span>
-                <FontAwesomeIcon icon={faBrain} className={modal.genderIcon} />
+                <FontAwesomeIcon icon={faPlug} className={modal.genderIcon} />
               </li>
             ))
           )}
