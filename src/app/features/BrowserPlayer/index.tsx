@@ -121,6 +121,13 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
   // Network voices only: a play was requested and its utterance hasn't confirmed it's
   // actually sounding yet (see UTTERANCE_STARTED). isPlaying stays false until it does.
   const awaitingStartRef = useRef(false);
+  // Mirrors awaitingStartRef for rendering: the play button already shows pause (disabled)
+  // instead of looking like the press was ignored while a network voice synthesizes.
+  const [isStarting, setIsStarting] = useState(false);
+  const setAwaitingStart = (value: boolean) => {
+    awaitingStartRef.current = value;
+    setIsStarting(value);
+  };
   const volumeWasPlayingRef = useRef(false);
 
   // Chrome's network voices ("Google ...", localService: false) play through an internal
@@ -307,6 +314,15 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
     a.play().catch(() => {});
   };
 
+  const retakeSuspendedSession = async (): Promise<void> => {
+    const a = silentAudioRef.current;
+    if (!a) return;
+    // Runs inside the pause handler, so the queue guarantees no play is processed until
+    // it finishes -- always leave the anchor paused.
+    try { await a.play(); } catch { return; }
+    a.pause();
+  };
+
   const engineSpeakSentence = (text: string): void => {
     // Deliberately NOT calling applyMediaSessionMetadata() here: title/
     // artist/cover never change between sentences on the same page, and the
@@ -440,7 +456,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
     const { sentences: sents, currentSentenceIndex: idx, currentPage: page, totalPages: total } = latestRef.current;
     if (sents.length === 0 || idx < 0 || idx >= sents.length) {
       if (page < total) { dispatch(goToNextPage()); return; }
-      awaitingStartRef.current = false;
+      setAwaitingStart(false);
       dispatch(stop());
       dispatch(setCurrentSentenceIndex(0));
       return;
@@ -451,7 +467,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
   const startPlayingFromCurrentSentence = (): void => {
     if (isNetworkVoice()) {
       // Not "playing" yet -- UTTERANCE_STARTED flips the state once the voice confirms.
-      awaitingStartRef.current = true;
+      setAwaitingStart(true);
       startSpeakingCurrentSentence();
       return;
     }
@@ -468,9 +484,14 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
     if (isNetworkVoice()) {
       // cancel() is the one command a network voice always obeys, including audio that
       // hasn't started yet. Playing again re-speaks the current sentence.
-      awaitingStartRef.current = false;
+      setAwaitingStart(false);
       activeUtteranceRef.current = null;
       window.speechSynthesis.cancel();
+      // cancel() tears down the extension's audio, which touches its media session after
+      // ours was paused above -- leaving it, not this tab, as the headset's target, so the
+      // next press never reached us. Briefly playing and re-pausing the anchor makes this
+      // tab the most recent session again (same as the first-gesture prime below).
+      await retakeSuspendedSession();
       return;
     }
     await engineAwaitPause();
@@ -588,7 +609,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
         if (activeUtteranceRef.current !== event.utterance) return;
         activeUtteranceRef.current = null;
         // Ended (or errored) without ever confirming a start -- nothing is playing.
-        if (awaitingStartRef.current) awaitingStartRef.current = false;
+        setAwaitingStart(false);
 
         if (pendingSplitRef.current) {
           const { remainder } = pendingSplitRef.current;
@@ -613,7 +634,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
         if (!isNetworkVoice()) return; // local voices: state was already set when play was requested
         if (awaitingStartRef.current) {
           // The voice confirmed it's sounding: now, and only now, the player is playing.
-          awaitingStartRef.current = false;
+          setAwaitingStart(false);
           if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
           if (!playing) dispatch(play());
           silentAudioRef.current?.play().catch(() => {});
@@ -856,6 +877,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
             isPrevDisabled={isPrevDisabled}
             isNextDisabled={isNextDisabled}
             handleTogglePlayPause={handleTogglePlayPause}
+            isStarting={isStarting}
           />
 
           <div className={s.rightSection}>

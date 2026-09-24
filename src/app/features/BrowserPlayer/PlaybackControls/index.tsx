@@ -13,6 +13,8 @@ interface PlaybackControlsProps {
   isPrevDisabled: boolean;
   isNextDisabled: boolean;
   handleTogglePlayPause: () => void;
+  // Playback was requested but the voice hasn't actually started sounding yet.
+  isStarting?: boolean;
 }
 
 export const PlaybackControls: React.FC<PlaybackControlsProps> = ({
@@ -22,6 +24,7 @@ export const PlaybackControls: React.FC<PlaybackControlsProps> = ({
   isPrevDisabled,
   isNextDisabled,
   handleTogglePlayPause,
+  isStarting,
 }) => {
   const { isPlaying } = useSelector((state: RootState) => state.browserPlayer);
 
@@ -35,7 +38,8 @@ export const PlaybackControls: React.FC<PlaybackControlsProps> = ({
           disabled={disabled || isPrevDisabled}
           className={s.controlButton}
         />
-        <PlayButton isPlaying={isPlaying} onClick={handleTogglePlayPause} disabled={disabled} />
+        {/* While the voice is starting, show where it's headed (pause) but don't take clicks yet. */}
+        <PlayButton isPlaying={isPlaying || !!isStarting} onClick={handleTogglePlayPause} disabled={disabled || !!isStarting} />
         <IconButton
           data-testid="playback-next-btn"
           icon={faStepForward}
