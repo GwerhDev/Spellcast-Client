@@ -121,8 +121,8 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
   // Network voices only: a play was requested and its utterance hasn't confirmed it's
   // actually sounding yet (see UTTERANCE_STARTED). isPlaying stays false until it does.
   const awaitingStartRef = useRef(false);
-  // Mirrors awaitingStartRef for rendering: the play button already shows pause (disabled)
-  // instead of looking like the press was ignored while a network voice synthesizes.
+  // Mirrors awaitingStartRef for rendering: the play button already shows pause instead of
+  // looking like the press was ignored while a network voice synthesizes.
   const [isStarting, setIsStarting] = useState(false);
   const setAwaitingStart = (value: boolean) => {
     awaitingStartRef.current = value;

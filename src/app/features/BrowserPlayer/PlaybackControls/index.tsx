@@ -38,8 +38,8 @@ export const PlaybackControls: React.FC<PlaybackControlsProps> = ({
           disabled={disabled || isPrevDisabled}
           className={s.controlButton}
         />
-        {/* While the voice is starting, show where it's headed (pause) but don't take clicks yet. */}
-        <PlayButton isPlaying={isPlaying || !!isStarting} onClick={handleTogglePlayPause} disabled={disabled || !!isStarting} />
+        {/* While the voice is starting, show where it's headed (pause); a click then cancels the start. */}
+        <PlayButton isPlaying={isPlaying || !!isStarting} onClick={handleTogglePlayPause} disabled={disabled} />
         <IconButton
           data-testid="playback-next-btn"
           icon={faStepForward}
