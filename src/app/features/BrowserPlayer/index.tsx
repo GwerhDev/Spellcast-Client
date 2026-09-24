@@ -32,6 +32,15 @@ import { Waveform } from '../../components/Waveform/Waveform';
 import { SpellDetailModal } from '../../components/Modals/SpellDetailModal';
 import { addSignalNotice } from '../../../store/signalSlice';
 import { SILENT_AUDIO_SRC } from '../../../config/consts';
+import { makeSilentWav } from '../../../utils/silentAudio';
+
+// SILENT_AUDIO_SRC is 0.1s long, which Chromium treats as a one-shot sound rather than a
+// player, so the tab never got a controllable media session and headset presses went to
+// whatever else held one (e.g. the network-voice extension). A 30s looping clip counts
+// as a real player. Falls back to the short clip where Blob URLs aren't available.
+const ANCHOR_SRC = typeof URL.createObjectURL === 'function'
+  ? URL.createObjectURL(makeSilentWav(30))
+  : SILENT_AUDIO_SRC;
 
 interface PlayerProps {
   showVoiceSelectorModal: React.Dispatch<SetStateAction<boolean>>;
@@ -71,6 +80,7 @@ type EngineEvent =
   | { type: 'VOLUME_DRAG_END' }
   | { type: 'CONTENT_CHANGED' } // sentence/page/spell changed under us
   | { type: 'SENTENCE_ENDED'; utterance: SpeechSynthesisUtterance } // the engine's own onend fired
+  | { type: 'UTTERANCE_STARTED'; utterance: SpeechSynthesisUtterance } // the engine's own onstart fired
   | { type: 'FREEZE_NUDGE' }
   | { type: 'VISIBILITY_CHECK' }; // tab came back to the foreground
 
@@ -108,7 +118,17 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
   const volumeButtonRef = useRef<HTMLButtonElement>(null);
   const silentAudioRef = useRef<HTMLAudioElement>(null);
   const activeUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  // Network voices only: a play was requested and its utterance hasn't confirmed it's
+  // actually sounding yet (see UTTERANCE_STARTED). isPlaying stays false until it does.
+  const awaitingStartRef = useRef(false);
   const volumeWasPlayingRef = useRef(false);
+
+  // Chrome's network voices ("Google ...", localService: false) play through an internal
+  // extension: speechSynthesis.paused never becomes true for them, pause() can't stop audio
+  // that hasn't started yet, and resume() gives no confirmation (and after a long pause may
+  // not resume at all). The only truthful signals they give are onstart and onend -- so for
+  // them, the player's state is driven by those. Local voices keep pause()/resume().
+  const isNetworkVoice = () => latestRef.current.voice?.localService === false;
 
   const handleTitle = () => navigate(`/spell/${spellId}/reader`);
   const handleSearcher = () => dispatch(setShowSearcher(true));
@@ -275,6 +295,18 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
   // await settles exactly when the engine says so, however long that takes
   // -- but only ever for a short pause/resume/start confirmation, never for
   // how long a sentence takes to finish being spoken (see above).
+  //
+  // Chrome sends the headset/OS media keys to whichever media session most recently took
+  // audio focus. A network voice's extension takes it every time its own audio starts or
+  // resumes, so this tab re-requests it right after (pause + play of the anchor), keeping
+  // our session -- and our action handlers -- as the headset's target.
+  const reassertFocus = () => {
+    const a = silentAudioRef.current;
+    if (!a || !latestRef.current.isPlaying) return;
+    a.pause();
+    a.play().catch(() => {});
+  };
+
   const engineSpeakSentence = (text: string): void => {
     // Deliberately NOT calling applyMediaSessionMetadata() here: title/
     // artist/cover never change between sentences on the same page, and the
@@ -317,6 +349,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
       enqueue({ type: 'SENTENCE_ENDED', utterance }); // treat unknown engine errors as "done with this sentence"
     };
 
+    utterance.onstart = () => enqueue({ type: 'UTTERANCE_STARTED', utterance });
     window.speechSynthesis.speak(utterance);
     armFreezeNudgeTimer(); // clock starts over for THIS utterance
   };
@@ -407,6 +440,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
     const { sentences: sents, currentSentenceIndex: idx, currentPage: page, totalPages: total } = latestRef.current;
     if (sents.length === 0 || idx < 0 || idx >= sents.length) {
       if (page < total) { dispatch(goToNextPage()); return; }
+      awaitingStartRef.current = false;
       dispatch(stop());
       dispatch(setCurrentSentenceIndex(0));
       return;
@@ -415,6 +449,12 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
   };
 
   const startPlayingFromCurrentSentence = (): void => {
+    if (isNetworkVoice()) {
+      // Not "playing" yet -- UTTERANCE_STARTED flips the state once the voice confirms.
+      awaitingStartRef.current = true;
+      startSpeakingCurrentSentence();
+      return;
+    }
     if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
     silentAudioRef.current?.play().catch(() => {});
     dispatch(play());
@@ -425,6 +465,14 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
     clearFreezeNudgeTimer(); // genuinely paused -- nothing to nudge until resumed
     silentAudioRef.current?.pause();
     if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
+    if (isNetworkVoice()) {
+      // cancel() is the one command a network voice always obeys, including audio that
+      // hasn't started yet. Playing again re-speaks the current sentence.
+      awaitingStartRef.current = false;
+      activeUtteranceRef.current = null;
+      window.speechSynthesis.cancel();
+      return;
+    }
     await engineAwaitPause();
   };
 
@@ -435,9 +483,16 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
       case 'CLICK_PLAY':
       case 'HEADSET_PLAY':
       case 'RESUME_REQUESTED': {
-        if (playing) return;
+        if (playing || awaitingStartRef.current) return;
         if (event.type === 'HEADSET_PLAY') dispatch(addSignalNotice({ message: t.player.playedFromHeadset }));
         if (sents.length === 0 || idx < 0 || idx >= sents.length) { dispatch(play()); return; }
+        if (isNetworkVoice()) {
+          // Nothing to resume() reliably -- speak the current sentence and let the voice's
+          // own onstart confirm (see UTTERANCE_STARTED).
+          activeUtteranceRef.current = null;
+          startPlayingFromCurrentSentence();
+          return;
+        }
         // A pause (CLICK_PAUSE/HEADSET_PAUSE/ATTENTION_PAUSE) never clears
         // activeUtteranceRef -- the utterance is still loaded in the engine,
         // just paused. If a plain CLICK_PLAY/HEADSET_PLAY called speak() on
@@ -475,7 +530,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
 
       case 'CLICK_PAUSE':
       case 'HEADSET_PAUSE': {
-        if (!playing) return;
+        if (!playing && !awaitingStartRef.current) return;
         if (event.type === 'HEADSET_PAUSE') dispatch(addSignalNotice({ message: t.player.pausedFromHeadset }));
         dispatch(pause());
         await stopEngineAndConfirmPaused();
@@ -494,7 +549,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
       }
 
       case 'TOGGLE_REQUESTED': {
-        await handleEvent(playing ? { type: 'CLICK_PAUSE' } : { type: 'CLICK_PLAY' });
+        await handleEvent(playing || awaitingStartRef.current ? { type: 'CLICK_PAUSE' } : { type: 'CLICK_PLAY' });
         return;
       }
 
@@ -518,7 +573,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
         // etc.) -- SENTENCE_ENDED below is what handles the "just finished
         // speaking, advance to the next one" case. If we're mid-utterance,
         // drop it and speak whatever is now current instead.
-        if (!playing) return;
+        if (!playing && !awaitingStartRef.current) return;
         activeUtteranceRef.current = null;
         window.speechSynthesis.cancel();
         startSpeakingCurrentSentence();
@@ -532,6 +587,8 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
         // that event already decided what happens next.
         if (activeUtteranceRef.current !== event.utterance) return;
         activeUtteranceRef.current = null;
+        // Ended (or errored) without ever confirming a start -- nothing is playing.
+        if (awaitingStartRef.current) awaitingStartRef.current = false;
 
         if (pendingSplitRef.current) {
           const { remainder } = pendingSplitRef.current;
@@ -550,6 +607,26 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
         return;
       }
 
+      case 'UTTERANCE_STARTED': {
+        // A start for an utterance we already dropped (paused/changed) -- ignore it.
+        if (activeUtteranceRef.current !== event.utterance) return;
+        if (!isNetworkVoice()) return; // local voices: state was already set when play was requested
+        if (awaitingStartRef.current) {
+          // The voice confirmed it's sounding: now, and only now, the player is playing.
+          awaitingStartRef.current = false;
+          if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
+          if (!playing) dispatch(play());
+          silentAudioRef.current?.play().catch(() => {});
+        } else if (!playing) {
+          // Started while the player says paused -- the state wins, stop the voice.
+          activeUtteranceRef.current = null;
+          window.speechSynthesis.cancel();
+          return;
+        }
+        reassertFocus();
+        return;
+      }
+
       case 'FREEZE_NUDGE': {
         // Chrome's SpeechSynthesis engine can silently freeze after ~15s of
         // continuous speech. Nudging pause immediately followed by resume
@@ -564,6 +641,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
         // this nudge's pause was landing -- don't resume if so.
         if (!latestRef.current.isPlaying) return;
         await engineAwaitResume();
+        reassertFocus(); // network voices never fire onresume, so this is the only hook after a nudge
         armFreezeNudgeTimer(); // still the same utterance -- protect again in case it runs even longer
         return;
       }
@@ -667,6 +745,33 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
     navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
   }, [isPlaying]);
 
+  // Chrome only creates this tab's media session once something has played, and autoplay
+  // needs a user gesture -- so a freshly loaded reader has no session and the headset
+  // can't reach it. Prime it on the first gesture (or right away
+  // if the page already has sticky activation): play the anchor and pause it immediately,
+  // leaving a suspended-but-controllable session, the same state a click-play then pause
+  // leaves behind.
+  useEffect(() => {
+    let primed = false;
+    const prime = () => {
+      const a = silentAudioRef.current;
+      if (primed || !a || latestRef.current.isPlaying) return;
+      primed = true;
+      a.play()
+        .then(() => { if (!latestRef.current.isPlaying) a.pause(); })
+        .catch(() => { primed = false; });
+    };
+    const ua = (navigator as Navigator & { userActivation?: { hasBeenActive: boolean } }).userActivation;
+    if (ua?.hasBeenActive) prime();
+    const onGesture = () => prime();
+    window.addEventListener('pointerdown', onGesture, { capture: true });
+    window.addEventListener('keydown', onGesture, { capture: true });
+    return () => {
+      window.removeEventListener('pointerdown', onGesture, { capture: true });
+      window.removeEventListener('keydown', onGesture, { capture: true });
+    };
+  }, []);
+
   // The freeze-nudge timer itself is armed/cleared/re-armed at each real
   // utterance start/pause/resume (see armFreezeNudgeTimer above) -- this
   // effect only guarantees cleanup on unmount, not a recurring poll.
@@ -717,7 +822,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
         onClose={() => setShowDocDetail(false)}
       />
       <div data-testid="browser-player" className={s.container}>
-        <audio ref={silentAudioRef} src={SILENT_AUDIO_SRC} loop />
+        <audio ref={silentAudioRef} src={ANCHOR_SRC} loop />
         <div className={s.audioPlayerContainer}>
           <section className={s.leftSection}>
             <div
