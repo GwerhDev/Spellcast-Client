@@ -286,4 +286,46 @@ describe('BrowserPlayer single event queue (TCORE-81)', () => {
     expect(mockSpeechSynthesis.speaking).toBe(true);
     expect(mockSpeechSynthesis.paused).toBe(false);
   });
+
+  it('re-reads the current sentence with the new volume after a volume drag, instead of resuming or skipping ahead', async () => {
+    const { store } = renderWithProviders(
+      <BrowserPlayer showVoiceSelectorModal={vi.fn()} showPlayerConfigModal={vi.fn()} />,
+      { preloadedState: baseState }
+    );
+    await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+    const speaksBeforeDrag = mockSpeechSynthesis.speak.mock.calls.length;
+    expect(speaksBeforeDrag).toBeGreaterThan(0);
+
+    fireEvent.click(screen.getByTestId('volume-btn'));
+    const slider = screen.getByTestId('volume-slider');
+    await act(async () => { fireEvent.pointerDown(slider); await vi.advanceTimersByTimeAsync(0); });
+    expect(mockSpeechSynthesis.cancel).toHaveBeenCalled();
+
+    await act(async () => {
+      fireEvent.change(slider, { target: { value: '0.3' } });
+      fireEvent.pointerUp(slider);
+      await vi.advanceTimersByTimeAsync(0);
+    });
+
+    expect(mockSpeechSynthesis.resume).not.toHaveBeenCalled();
+    expect(mockSpeechSynthesis.speak).toHaveBeenCalledTimes(speaksBeforeDrag + 1);
+    const reread = mockSpeechSynthesis.speak.mock.calls[speaksBeforeDrag][0] as SpeechSynthesisUtterance;
+    expect(reread.text).toBe('Sentence one.');
+    expect(reread.volume).toBeCloseTo(0.3);
+    expect(store.getState().spellReader.currentSentenceIndex).toBe(0);
+    expect(store.getState().browserPlayer.isPlaying).toBe(true);
+  });
+
+  it('closes the volume slider on a click outside it', async () => {
+    renderWithProviders(
+      <BrowserPlayer showVoiceSelectorModal={vi.fn()} showPlayerConfigModal={vi.fn()} />,
+      { preloadedState: baseState }
+    );
+    fireEvent.click(screen.getByTestId('volume-btn'));
+    fireEvent.mouseDown(screen.getByTestId('volume-slider'));
+    expect(screen.getByTestId('volume-slider')).toBeInTheDocument();
+
+    fireEvent.mouseDown(document.body);
+    expect(screen.queryByTestId('volume-slider')).not.toBeInTheDocument();
+  });
 });

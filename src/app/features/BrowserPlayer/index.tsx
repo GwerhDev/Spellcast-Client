@@ -574,17 +574,26 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
         return;
       }
 
+      // An utterance's volume is fixed once speak() is called, so resuming the same
+      // utterance after a drag would keep the old volume (and network voices may not
+      // resume at all, ending the sentence and skipping ahead). Instead, stop while the
+      // slider is held and re-read the current sentence with the new volume on release.
       case 'VOLUME_DRAG_START': {
-        volumeWasPlayingRef.current = playing && !!activeUtteranceRef.current && window.speechSynthesis.speaking;
-        if (volumeWasPlayingRef.current) { clearFreezeNudgeTimer(); await engineAwaitPause(); }
+        volumeWasPlayingRef.current = (playing || awaitingStartRef.current) && !!activeUtteranceRef.current;
+        if (!volumeWasPlayingRef.current) return;
+        clearFreezeNudgeTimer();
+        activeUtteranceRef.current = null;
+        window.speechSynthesis.cancel();
         return;
       }
 
       case 'VOLUME_DRAG_END': {
         if (!volumeWasPlayingRef.current) return;
         volumeWasPlayingRef.current = false;
-        await engineAwaitResume();
-        armFreezeNudgeTimer();
+        // Paused (or content changed) mid-drag: that event already decided what's next.
+        if (!latestRef.current.isPlaying && !awaitingStartRef.current) return;
+        if (activeUtteranceRef.current) return;
+        startSpeakingCurrentSentence();
         return;
       }
 
@@ -765,6 +774,22 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
     if (!('mediaSession' in navigator)) return;
     navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
   }, [isPlaying]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        showVolumeSlider &&
+        volumeSliderRef.current &&
+        !volumeSliderRef.current.contains(event.target as Node) &&
+        volumeButtonRef.current &&
+        !volumeButtonRef.current.contains(event.target as Node)
+      ) {
+        setShowVolumeSlider(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showVolumeSlider]);
 
   // Chrome only creates this tab's media session once something has played, and autoplay
   // needs a user gesture -- so a freshly loaded reader has no session and the headset

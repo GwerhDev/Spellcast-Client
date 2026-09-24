@@ -71,6 +71,7 @@ export const VolumeControls: React.FC<VolumeControlsProps> = ({
   return (
     <div className={s.container}>
       <button
+        data-testid="volume-btn"
         className={s.volumeIcon}
         onClick={handleVolumeButtonClick}
         ref={volumeButtonRef}
@@ -87,6 +88,7 @@ export const VolumeControls: React.FC<VolumeControlsProps> = ({
           <input
             type="range"
             min="0" max="1" step="0.01"
+            data-testid="volume-slider"
             value={volume}
             onChange={(e) => setVolume(parseFloat(e.target.value))}
             onPointerDown={onSliderPointerDown}
