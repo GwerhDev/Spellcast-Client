@@ -34,23 +34,21 @@ export const Start = () => {
   // spells themselves, just whether to offer the Read tab.
   useEffect(() => {
     let cancelled = false;
+    // With at least one spell, "Read" is the first tab and the default; it only exists with
+    // spells, so if the last one is deleted while it's showing, fall back to "Text". Both
+    // are picked in the same update as the answer, so there's never a frame on a tab that
+    // no longer matches (e.g. the Read content still showing with its tab already gone).
+    const apply = (exists: boolean) => {
+      if (cancelled) return;
+      setHasSpells(exists);
+      if (exists && !userPickedTab.current) setInputType('read');
+      if (!exists) setInputType(prev => (prev === 'read' ? 'text' : prev));
+    };
     hasSpellsInDB(userId)
-      .then(exists => {
-        if (cancelled) return;
-        setHasSpells(exists);
-        // Picked in the same update as the answer, so there's no frame on the wrong tab.
-        if (exists && !userPickedTab.current) setInputType('read');
-      })
-      .catch(() => { if (!cancelled) setHasSpells(false); });
+      .then(apply)
+      .catch(() => apply(false));
     return () => { cancelled = true; };
   }, [userId, listVersion]);
-
-  // With at least one spell, "Read" is the first tab and the default (set above when the
-  // answer arrives); it only exists with spells, so if the last one is deleted while it's
-  // showing, fall back to "Text".
-  useEffect(() => {
-    if (hasSpellsKnown === false && inputType === 'read') setInputType('text');
-  }, [hasSpellsKnown, inputType]);
 
   const handleInputTypeChange = (type: string) => {
     userPickedTab.current = true;
