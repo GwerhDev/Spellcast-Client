@@ -4,7 +4,8 @@ import { renderWithProviders } from '../../../../test/renderWithProviders';
 import { Start } from '../index';
 import { SPELL_DRAG_TYPE } from '../../../../config/consts';
 import type { Spell } from '../../../../interfaces';
-import { invalidateSpellList } from '../../../../store/spellReaderSlice';
+import { invalidateSpellList, setSpellLoaded } from '../../../../store/spellReaderSlice';
+import { play } from '../../../../store/browserPlayerSlice';
 
 // ImportOption uses pdfjs-dist (DOMMatrix not in jsdom)
 vi.mock('../ImportOption', () => ({
@@ -106,5 +107,61 @@ describe('Start', () => {
     act(() => { store.dispatch(invalidateSpellList()); });
     await waitFor(() => expect(screen.queryByTestId('segmented-tab-read')).not.toBeInTheDocument());
     expect(screen.queryByTestId('read-option')).not.toBeInTheDocument();
+  });
+
+  describe('drag state', () => {
+    // jsdom has no DragEvent, so fireEvent.dragLeave drops relatedTarget; build the leave
+    // as a MouseEvent (which carries it) with the drag's dataTransfer attached.
+    const dragLeave = (el: Element, relatedTarget: EventTarget | null) => {
+      const event = new MouseEvent('dragleave', { bubbles: true, relatedTarget });
+      Object.defineProperty(event, 'dataTransfer', { value: spellDrag().dataTransfer });
+      act(() => { el.dispatchEvent(event); });
+    };
+
+    const dragOverStart = async () => {
+      renderWithProviders(<Start />);
+      await screen.findByTestId('read-option');
+      fireEvent.click(screen.getByTestId('segmented-tab-text'));
+      fireEvent.dragEnter(screen.getByTestId('start'), spellDrag());
+      expect(screen.getByTestId('read-option-hint')).toHaveTextContent('Drop it');
+    };
+
+    it('stays active while moving between elements inside Start', async () => {
+      await dragOverStart();
+      const start = screen.getByTestId('start');
+      dragLeave(start, screen.getByTestId('play-button'));
+      expect(screen.getByTestId('read-option-hint')).toHaveTextContent('Drop it');
+    });
+
+    // The drag entered through the Text tab's content, which the switch to Read removed --
+    // its own dragleave never comes, so the state can't rely on counting enter/leave pairs.
+    it('ends when the drag leaves Start, even after entering through a removed element', async () => {
+      await dragOverStart();
+      dragLeave(screen.getByTestId('start'), document.body);
+      expect(screen.getByTestId('read-option-hint')).not.toHaveTextContent('Drop it');
+    });
+
+    it('ends when the drag is cancelled or dropped elsewhere (dragend)', async () => {
+      await dragOverStart();
+      act(() => { document.dispatchEvent(new Event('dragend', { bubbles: true })); });
+      expect(screen.getByTestId('read-option-hint')).not.toHaveTextContent('Drop it');
+    });
+  });
+
+  it('dropping the spell that is already playing does not pause it', async () => {
+    const { store } = renderWithProviders(<Start />);
+    await screen.findByTestId('read-option');
+    const start = screen.getByTestId('start');
+    await act(async () => { fireEvent.drop(start, spellDrag()); });
+    await waitFor(() => expect(store.getState().spellReader.spellId).toBe('spell-1'));
+    act(() => {
+      store.dispatch(setSpellLoaded(true));
+      store.dispatch(play());
+    });
+    const { toggleSeq } = store.getState().browserPlayer;
+    fireEvent.dragEnter(start, spellDrag());
+    await act(async () => { fireEvent.drop(start, spellDrag()); });
+    expect(store.getState().browserPlayer.toggleSeq).toBe(toggleSeq);
+    expect(store.getState().browserPlayer.isPlaying).toBe(true);
   });
 });

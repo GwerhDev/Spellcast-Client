@@ -1,6 +1,6 @@
 import { useDispatch } from 'react-redux';
 import { useAppSelector } from '../store/hooks';
-import { setAutoPlayOnLoad, resetBrowserPlayer, requestTogglePlay } from '../store/browserPlayerSlice';
+import { setAutoPlayOnLoad, resetBrowserPlayer, requestTogglePlay, requestResume } from '../store/browserPlayerSlice';
 import { setAutoPlayOnLoad as setAudioAutoPlayOnLoad, resetAudioPlayer, requestTogglePlay as requestAudioTogglePlay } from '../store/audioPlayerSlice';
 import { setSpellFile, setSpellInfo, resetSpellReader } from '../store/spellReaderSlice';
 import type { Spell } from '../interfaces';
@@ -20,11 +20,9 @@ export const usePlaySpell = () => {
     else dispatch(requestTogglePlay());
   };
 
-  const playSpell = (spell: Spell) => {
-    if (activeSpellId === spell.id && (readerLoaded || audioPlaying || browserPlaying)) {
-      togglePlayback();
-      return;
-    }
+  const isLoaded = (spell: Spell) => activeSpellId === spell.id && (readerLoaded || audioPlaying || browserPlaying);
+
+  const loadAndPlay = (spell: Spell) => {
     const totalPages = spell.pagesContent ? (() => { try { return JSON.parse(spell.pagesContent!).length; } catch { return 1; } })() : 1;
     dispatch(resetSpellReader());
     dispatch(resetBrowserPlayer());
@@ -35,5 +33,22 @@ export const usePlaySpell = () => {
     dispatch(setSpellInfo({ totalPages }));
   };
 
-  return { playSpell, togglePlayback };
+  // A play button: the already-loaded spell toggles play/pause.
+  const playSpell = (spell: Spell) => {
+    if (isLoaded(spell)) { togglePlayback(); return; }
+    loadAndPlay(spell);
+  };
+
+  // "Read this" (e.g. dropping a spell to read it): the already-loaded spell keeps playing,
+  // or resumes if paused -- never pauses.
+  const readSpell = (spell: Spell) => {
+    if (!isLoaded(spell)) { loadAndPlay(spell); return; }
+    if (audioPlaying || browserPlaying) return;
+    // The browser player's resume is a no-op if it's already playing; the AI player only
+    // has a toggle, which is safe here because it was just checked to be paused.
+    if (selectedVoiceType !== 'browser') dispatch(requestAudioTogglePlay());
+    else dispatch(requestResume());
+  };
+
+  return { playSpell, readSpell, togglePlayback };
 };

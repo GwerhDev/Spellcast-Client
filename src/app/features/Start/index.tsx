@@ -19,15 +19,12 @@ export const Start = () => {
   const [inputType, setInputType] = useState('text');
   const [hasSpells, setHasSpells] = useState(false);
   const [dragActive, setDragActive] = useState(false);
-  // dragenter/dragleave fire for every child element crossed; counting them is what tells
-  // "left the section" apart from "moved onto a child".
-  const dragDepth = useRef(0);
   // Once the user picks a tab, the default-tab logic below stops overriding their choice.
   const userPickedTab = useRef(false);
   const dispatch = useDispatch();
   const userId = useAppSelector(state => state.session.userData?.id);
   const listVersion = useAppSelector(state => state.spellReader.listVersion);
-  const { playSpell } = usePlaySpell();
+  const { readSpell } = usePlaySpell();
   const { t } = useLanguage();
 
   useEffect(() => {
@@ -56,7 +53,6 @@ export const Start = () => {
   const handleDragEnter = (e: React.DragEvent) => {
     if (!isSpellDrag(e)) return;
     e.preventDefault();
-    dragDepth.current += 1;
     setDragActive(true);
     if (inputType !== 'read') setInputType('read');
   };
@@ -67,22 +63,37 @@ export const Start = () => {
     e.dataTransfer.dropEffect = 'copy';
   };
 
+  // Only a leave toward somewhere outside Start ends the drag state; moving between Start's
+  // own children also fires dragleave. (Not counted enter/leave pairs: switching tabs
+  // removes the element the drag entered through, and a removed node never gets its leave.)
   const handleDragLeave = (e: React.DragEvent) => {
     if (!isSpellDrag(e)) return;
-    dragDepth.current = Math.max(0, dragDepth.current - 1);
-    if (dragDepth.current === 0) setDragActive(false);
+    if (e.currentTarget.contains(e.relatedTarget as Node | null)) return;
+    setDragActive(false);
   };
+
+  // A drag can also end without ever leaving Start (Esc, or dropped somewhere that isn't a
+  // target); dragend fires on the dragged card and bubbles up to the document either way.
+  useEffect(() => {
+    if (!dragActive) return;
+    const end = () => setDragActive(false);
+    document.addEventListener('dragend', end);
+    document.addEventListener('drop', end);
+    return () => {
+      document.removeEventListener('dragend', end);
+      document.removeEventListener('drop', end);
+    };
+  }, [dragActive]);
 
   const handleDrop = async (e: React.DragEvent) => {
     if (!isSpellDrag(e)) return;
     e.preventDefault();
-    dragDepth.current = 0;
     setDragActive(false);
     const spellId = e.dataTransfer.getData(SPELL_DRAG_TYPE);
     if (!spellId) return;
     try {
       const spell = await getSpellById(spellId, userId);
-      if (spell) playSpell(spell);
+      if (spell) readSpell(spell);
     } catch (error) {
       console.error('Failed to load dropped spell:', error);
     }
