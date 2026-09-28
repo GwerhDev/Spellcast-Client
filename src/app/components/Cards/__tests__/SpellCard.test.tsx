@@ -4,6 +4,7 @@ import { renderWithProviders } from '../../../../test/renderWithProviders';
 import { SpellCard } from '../SpellCard';
 import type { Spell } from '../../../../interfaces';
 import * as db from '../../../../db';
+import { SPELL_DRAG_TYPE } from '../../../../config/consts';
 
 const mockDoc: Spell = {
   id: 'doc-1',
@@ -39,6 +40,22 @@ describe('SpellCard', () => {
   it('shows the play button when onPlay is provided and not in selection mode', () => {
     renderCard({ onPlay: vi.fn() });
     expect(screen.getByTestId('play-button')).toBeInTheDocument();
+  });
+
+  describe('drag to read', () => {
+    it('is draggable and puts its spell id on the drag data', () => {
+      renderCard();
+      const card = screen.getByTestId('spell-card-doc-1');
+      expect(card).toHaveAttribute('draggable', 'true');
+      const setData = vi.fn();
+      fireEvent.dragStart(card, { dataTransfer: { setData, effectAllowed: '' } });
+      expect(setData).toHaveBeenCalledWith(SPELL_DRAG_TYPE, 'doc-1');
+    });
+
+    it('is not draggable in selection mode', () => {
+      renderCard({ selectionMode: true });
+      expect(screen.getByTestId('spell-card-doc-1')).toHaveAttribute('draggable', 'false');
+    });
   });
 
   it('hides the play button while in selection mode', () => {

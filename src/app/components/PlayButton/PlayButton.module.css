@@ -26,6 +26,7 @@
 }
 
 /* sizes */
+.lg { width: 96px; height: 96px; font-size: 34px; }
 .md { width: 48px; height: 48px; font-size: 18px; }
 .sm { width: 38px; height: 38px; font-size: 14px; }
 

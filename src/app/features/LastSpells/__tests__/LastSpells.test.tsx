@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { screen } from '@testing-library/react';
+import { screen, fireEvent, waitFor } from '@testing-library/react';
 import { renderWithProviders, makeStore } from '../../../../test/renderWithProviders';
 import { LastSpells } from '../index';
 import * as db from '../../../../db';
@@ -43,5 +43,19 @@ describe('LastSpells', () => {
     vi.spyOn(db, 'getSpellsFromDB').mockResolvedValue([mockDoc] as never);
     renderWithProviders(<LastSpells />, { store: loggedStore() });
     expect(await screen.findByTestId('spell-card-doc-1')).toBeInTheDocument();
+  });
+
+  it('announces the deletion to every spell list (listVersion), not only refetching itself', async () => {
+    vi.spyOn(db, 'getSpellsFromDB').mockResolvedValue([mockDoc] as never);
+    vi.spyOn(db, 'deleteSpellFromDB').mockResolvedValue(undefined as never);
+    const store = loggedStore();
+    renderWithProviders(<LastSpells />, { store });
+    await screen.findByTestId('spell-card-doc-1');
+    const before = store.getState().spellReader.listVersion;
+    fireEvent.click(screen.getByTestId('spell-card-menu-btn-doc-1'));
+    fireEvent.click(screen.getByTestId('spell-card-delete-doc-1'));
+    fireEvent.click(screen.getByTestId('delete-confirm-confirm-btn'));
+    await waitFor(() => expect(store.getState().spellReader.listVersion).toBe(before + 1));
+    expect(db.deleteSpellFromDB).toHaveBeenCalledWith('doc-1', 'user-1');
   });
 });

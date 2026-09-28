@@ -4,16 +4,14 @@ import { getSpellsFromDB, deleteSpellFromDB } from '../../../db';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { DeleteConfirmModal } from '../../components/Modals/DeleteConfirmModal';
 // import { SpellExportModal } from '../../components/Modals/SpellExportModal'; // .spell export: future
-import { useAppSelector } from '../../../store/hooks';
+import { useAppSelector, useAppDispatch } from '../../../store/hooks';
+import { invalidateSpellList } from '../../../store/spellReaderSlice';
 import { Spell } from '../../../interfaces';
 import { SpellCard } from '../../components/Cards/SpellCard';
 import { resolveCoverFrameId, getCoverFrameCorners } from '../../../utils/coverFrame';
 import { useCoverFrame3DSection } from '../../../hooks/useCoverFrame3DSection';
 // import { useSpellExport } from '../../../hooks/useSpellExport'; // .spell export: future
-import { useDispatch } from 'react-redux';
-import { setAutoPlayOnLoad, resetBrowserPlayer, requestTogglePlay } from '../../../store/browserPlayerSlice';
-import { setAutoPlayOnLoad as setAudioAutoPlayOnLoad, resetAudioPlayer, requestTogglePlay as requestAudioTogglePlay } from '../../../store/audioPlayerSlice';
-import { setSpellFile, setSpellInfo, resetSpellReader } from '../../../store/spellReaderSlice';
+import { usePlaySpell } from '../../../hooks/usePlaySpell';
 import { useLanguage } from '../../../i18n';
 import { faArrowRight, faBuildingColumns, faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -25,7 +23,6 @@ export const LastSpells: React.FC = () => {
   const uploadQueue = useAppSelector((state) => state.spellUpload.queue);
   const audioPlaying = useAppSelector((state) => state.audioPlayer.isPlaying);
   const browserPlaying = useAppSelector((state) => state.browserPlayer.isPlaying);
-  const selectedVoiceType = useAppSelector((state) => state.voice.selectedVoice.type);
   const { activeCoverFrameId } = useAppSelector((state) => state.casterInventory);
   const { t } = useLanguage();
   const [documents, setDocuments] = useState<Spell[]>([]);
@@ -42,7 +39,8 @@ export const LastSpells: React.FC = () => {
   const carouselWrapperRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const location = useLocation();
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
+  const { playSpell } = usePlaySpell();
 
   // TCORE-124: gates 3D corners for this whole section -- passed straight to each SpellCard
   // below as show3D. See useCoverFrame3DSection/useCoverFrame3DGate for the actual
@@ -63,24 +61,6 @@ export const LastSpells: React.FC = () => {
     el.scrollBy({ left: dir === 'next' ? 280 : -280, behavior: 'smooth' });
   };
 
-  const handlePlay = (doc: Spell) => {
-    if (activeDocId === doc.id && (readerLoaded || audioPlaying || browserPlaying)) {
-      if (selectedVoiceType !== 'browser') {
-        dispatch(requestAudioTogglePlay());
-      } else {
-        dispatch(requestTogglePlay());
-      }
-      return;
-    }
-    const totalPages = doc.pagesContent ? (() => { try { return JSON.parse(doc.pagesContent!).length; } catch { return 1; } })() : 1;
-    dispatch(resetSpellReader());
-    dispatch(resetBrowserPlayer());
-    dispatch(resetAudioPlayer());
-    dispatch(setAutoPlayOnLoad(true));
-    dispatch(setAudioAutoPlayOnLoad(true));
-    dispatch(setSpellFile({ id: doc.id, title: doc.title, progress: doc.progress }));
-    dispatch(setSpellInfo({ totalPages }));
-  };
 
   const fetchSpells = async () => {
     try {
@@ -133,7 +113,9 @@ export const LastSpells: React.FC = () => {
     if (selectedDoc) {
       try {
         await deleteSpellFromDB(selectedDoc.id, userData.id);
-        fetchSpells();
+        // Refetches this list (listVersion effect above) and every other view of the
+        // spells, e.g. Start's Read tab, which disappears once the last one is gone.
+        dispatch(invalidateSpellList());
       } catch (error) {
         console.error('Failed to delete spell:', error);
       } finally {
@@ -200,7 +182,7 @@ export const LastSpells: React.FC = () => {
                   onEdit={(e) => { e.stopPropagation(); navigate(`/editor/${doc.id}`, { state: { from: location.pathname } }); }}
                   onDelete={(e) => openDeleteModal(doc.id, doc.title, e)}
                   // onExport={(e) => { e.stopPropagation(); openExportModal({ id: doc.id, title: doc.title }); }} // .spell export: future
-                  onPlay={() => handlePlay(doc)}
+                  onPlay={() => playSpell(doc)}
                   uploadJob={uploadJob}
                   show3D={show3D}
                 />

@@ -7,13 +7,16 @@ interface PlayButtonProps {
   isPlaying: boolean;
   onClick: (e: React.MouseEvent<HTMLButtonElement>) => void;
   disabled?: boolean;
-  size?: 'sm' | 'md';
+  size?: 'sm' | 'md' | 'lg';
+  // Turns on the playing glow/animation without swapping the icon (e.g. a drop target
+  // reacting to something dragged over it).
+  active?: boolean;
 }
 
-export const PlayButton: React.FC<PlayButtonProps> = ({ isPlaying, onClick, disabled, size = 'md' }) => (
+export const PlayButton: React.FC<PlayButtonProps> = ({ isPlaying, onClick, disabled, size = 'md', active }) => (
   <button
     data-testid="play-button"
-    className={`${s.btn} ${s[size]} ${isPlaying ? s.playing : ''}`}
+    className={`${s.btn} ${s[size]} ${isPlaying || active ? s.playing : ''}`}
     onClick={onClick}
     disabled={disabled}
     style={disabled ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}

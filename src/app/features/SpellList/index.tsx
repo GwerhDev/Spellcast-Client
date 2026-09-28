@@ -16,7 +16,7 @@ import { faScroll, faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
 import { useDispatch } from 'react-redux';
 import { setAutoPlayOnLoad, resetBrowserPlayer, requestTogglePlay } from '../../../store/browserPlayerSlice';
 import { setAutoPlayOnLoad as setAudioAutoPlayOnLoad, resetAudioPlayer, requestTogglePlay as requestAudioTogglePlay } from '../../../store/audioPlayerSlice';
-import { setSpellFile, setSpellInfo, resetSpellReader } from '../../../store/spellReaderSlice';
+import { setSpellFile, setSpellInfo, resetSpellReader, invalidateSpellList } from '../../../store/spellReaderSlice';
 import { useLanguage } from '../../../i18n';
 import { useInfiniteList } from '../../../hooks/useInfiniteList';
 
@@ -112,7 +112,8 @@ export const SpellList: React.FC<SpellListProps> = ({ query = '', filter = 'loca
     if (selectedDoc && userData?.id) {
       try {
         await deleteSpellFromDB(selectedDoc.id, userData.id);
-        fetchLocal();
+        // Refetches this list (listVersion effect above) and every other view of the spells.
+        dispatch(invalidateSpellList());
       } catch (error) {
         console.error('Failed to delete spell:', error);
       } finally {

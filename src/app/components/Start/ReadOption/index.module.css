@@ -1,0 +1,88 @@
+.container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.stage {
+  position: relative;
+  /* Sized so the whole tab fits Start's shared option height (see .optionContainer) and
+     switching tabs never shifts the page. */
+  width: 164px;
+  height: 164px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Two faint rings around the button: they breathe slowly at rest and expand outward
+   while a spell is being dragged, like the button pulling it in. */
+.ring {
+  position: absolute;
+  inset: 22px;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 35%, transparent);
+  opacity: 0.6;
+  animation: ringBreath 4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.ringOuter {
+  inset: 2px;
+  border-style: dashed;
+  opacity: 0.35;
+  animation-delay: -2s;
+}
+
+.button {
+  position: relative;
+  z-index: 1;
+  transition: transform 0.25s ease;
+}
+
+.dragActive .button {
+  transform: scale(1.1);
+}
+
+.dragActive .ring {
+  border-color: var(--color-primary);
+  opacity: 1;
+  animation: ringPull 1.4s ease-out infinite;
+}
+
+.dragActive .ringOuter {
+  animation-delay: -0.7s;
+}
+
+.hint {
+  margin: 0;
+  max-width: 360px;
+  font-size: 0.9rem;
+  color: var(--color-light-400);
+  transition: color 0.2s ease;
+}
+
+.dragActive .hint {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+@keyframes ringBreath {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.04); }
+}
+
+@keyframes ringPull {
+  0%   { transform: scale(1.25); opacity: 0; }
+  30%  { opacity: 1; }
+  100% { transform: scale(0.9); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ring,
+  .dragActive .ring { animation: none; }
+  .button { transition: none; }
+}

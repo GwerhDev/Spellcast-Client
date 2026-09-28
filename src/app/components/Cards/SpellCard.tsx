@@ -1,4 +1,5 @@
 import s from './SpellCard.module.css';
+import { SPELL_DRAG_TYPE } from '../../../config/consts';
 import React, { useMemo, useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -153,6 +154,13 @@ export const SpellCard = ({ doc, isActive, isPlaying, onClick, onDelete, onEdit,
       data-testid={`spell-card-${doc.id}`}
       className={`${s.card} ${isActive ? s.cardActive : ''} ${selected ? s.cardSelected : ''} ${hasCoverFrame ? s.cardSquared : ''}`}
       onClick={handleClick}
+      // Draggable onto a drop target that reads spells (e.g. Start's "Read" tab), which gets
+      // the spell id under SPELL_DRAG_TYPE. Off in selection mode, where clicks select.
+      draggable={!selectionMode}
+      onDragStart={e => {
+        e.dataTransfer.setData(SPELL_DRAG_TYPE, doc.id);
+        e.dataTransfer.effectAllowed = 'copy';
+      }}
     >
       {/* TCORE-123 follow-up: everything that needs to respect .card's own rounded
           corners (or that positions itself with inset:0 expecting to be clipped, like the
@@ -196,7 +204,7 @@ export const SpellCard = ({ doc, isActive, isPlaying, onClick, onDelete, onEdit,
               <FontAwesomeIcon icon={faImage} />
               {t.spell.coverFrameLabel}
             </button>
-            <button className={`${s.menuItem} ${s.menuItemDanger}`} onClick={(e) => { e.stopPropagation(); setMenuOpen(false); onDelete(e); }}>
+            <button data-testid={`spell-card-delete-${doc.id}`} className={`${s.menuItem} ${s.menuItemDanger}`} onClick={(e) => { e.stopPropagation(); setMenuOpen(false); onDelete(e); }}>
               <FontAwesomeIcon icon={faTrash} />
               {t.common.delete}
             </button>
@@ -223,7 +231,7 @@ export const SpellCard = ({ doc, isActive, isPlaying, onClick, onDelete, onEdit,
               // below still anchor to it, and it keeps the accessible name the `<img
               // alt=...>` used to carry (the WebGL canvas itself has none).
               ? <div className={s.cover} style={coverFrameStyle} role="img" aria-label={doc.title} />
-              : <img src={coverUrl} alt={doc.title} className={s.cover} style={coverFrameStyle} />)
+              : <img src={coverUrl} alt={doc.title} className={s.cover} style={coverFrameStyle} draggable={false} />)
             : <div className={s.iconWrapper}><FontAwesomeIcon icon={faScroll} className={s.icon} /></div>
           }
           <div className={s.coverTags}>
