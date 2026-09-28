@@ -2,7 +2,7 @@ import s from '../../components/Modals/PlayerPreferences.module.css';
 import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheck, faMusic } from '@fortawesome/free-solid-svg-icons';
-import { useLanguage } from '../../../i18n';
+import { useLanguage, assetName } from '../../../i18n';
 import { useAppSelector, useAppDispatch } from '../../../store/hooks';
 import { setActiveSoundBg } from '../../../store/casterInventorySlice';
 import { soundBackgrounds } from '../../../config/assets';
@@ -130,7 +130,7 @@ export const PlayerPreferences: React.FC = () => {
                 >
                   <FontAwesomeIcon icon={faMusic} className={s.soundBgDotIcon} />
                 </span>
-                <span className={s.soundBgName}>{bg.name}</span>
+                <span className={s.soundBgName}>{assetName(t, bg)}</span>
                 {isActive && (
                   <FontAwesomeIcon icon={faCheck} className={s.soundBgCheck} />
                 )}

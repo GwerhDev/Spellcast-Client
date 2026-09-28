@@ -1,118 +1,83 @@
-import { faBoxOpen } from '@fortawesome/free-solid-svg-icons';
+import { useState } from 'react';
+import { faBoxOpen, faLayerGroup, faMusic, faFileLines, faCat, faImage } from '@fortawesome/free-solid-svg-icons';
 import { EmptyState } from '../../components/EmptyState';
-import { CompanionCard } from '../../components/Cards/CompanionCard';
-import { SoundBackgroundCard } from '../../components/Cards/SoundBackgroundCard';
-import { PageBackgroundCard } from '../../components/Cards/PageBackgroundCard';
-import { CoverFrameCard } from '../../components/Cards/CoverFrameCard';
+import { InventoryBag, type BagItem } from '../../components/Inventory/InventoryBag';
+import { ItemDetailModal } from '../../components/Inventory/ItemDetailModal';
+import { BagFilterTabs, type BagFilterTab } from '../../components/Inventory/BagFilterTabs';
 import { useAppSelector, useAppDispatch } from '../../../store/hooks';
 import { setActiveSoundBg, setActivePageBg, setActiveCompanion, setActiveCoverFrame } from '../../../store/casterInventorySlice';
-import { soundBackgrounds, pageBackgrounds, companions, coverFrames } from '../../../config/assets';
+import { soundBackgrounds, pageBackgrounds, companions, coverFrames, type Asset, type AssetCategory } from '../../../config/assets';
 import { useLanguage } from '../../../i18n';
 import s from './index.module.css';
 
-// TCORE-109: POSSESSION (what you own -- unlockedIds) + the equip surface for it. Havenstore
-// (features/HavenStoreLanding) is acquisition-only now; this is where owned cosmetics get
-// activated/deactivated, dispatching the exact same setActiveSoundBg/setActivePageBg/
-// setActiveCompanion actions the existing contextual surfaces (ReaderSettings,
-// PlayerPreferences) already use -- no new action, no new state, just another dispatcher,
-// so equipping from any of them stays in sync everywhere.
+// What the Caster owns (unlockedIds), shown as a bag of slots, and the place to equip it.
+// The Havenstore only acquires; equipping here dispatches the same setActive* actions the
+// contextual surfaces (ReaderSettings, PlayerPreferences) use, so all of them stay in sync.
 export const CasterInventoryLanding = () => {
   const dispatch = useAppDispatch();
   const { t } = useLanguage();
   const { unlockedIds, activeSoundBgId, activePageBgId, activeCompanionId, activeCoverFrameId } = useAppSelector(state => state.casterInventory);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [filter, setFilter] = useState<'all' | AssetCategory>('all');
+
+  const filterTabs: BagFilterTab[] = [
+    { id: 'all', label: t.caster.bagFilterAll, icon: faLayerGroup },
+    { id: 'sound-background', label: t.havenStore.soundBackgrounds, icon: faMusic },
+    { id: 'page-background', label: t.havenStore.pageBackgrounds, icon: faFileLines },
+    { id: 'companion', label: t.havenStore.companions, icon: faCat },
+    { id: 'cover-frame', label: t.havenStore.coverFrames, icon: faImage },
+  ];
 
   const isUnlocked = (id: string) => unlockedIds.includes(id);
 
-  const ownedSounds = soundBackgrounds.filter(bg => isUnlocked(bg.id));
-  const ownedPages = pageBackgrounds.filter(bg => isUnlocked(bg.id));
-  const ownedCompanions = companions.filter(c => !c.comingSoon && isUnlocked(c.id));
-  const ownedCoverFrames = coverFrames.filter(b => isUnlocked(b.id));
+  const activeIdFor = (asset: Asset): string | null => {
+    switch (asset.category) {
+      case 'sound-background': return activeSoundBgId;
+      case 'page-background': return activePageBgId;
+      case 'companion': return activeCompanionId;
+      case 'cover-frame': return activeCoverFrameId;
+    }
+  };
 
-  const handleSoundToggle = (id: string) => dispatch(setActiveSoundBg(activeSoundBgId === id ? null : id));
-  const handlePageToggle = (id: string) => dispatch(setActivePageBg(id));
-  const handleCompanionToggle = (id: string) => dispatch(setActiveCompanion(activeCompanionId === id ? null : id));
-  // TCORE-123: this only ever sets/clears the GLOBAL default -- a spell with its own
-  // explicit pick (SpellCard's context menu, Last Spells/Grimoire) still overrides it
-  // regardless of what's active here.
-  const handleCoverFrameToggle = (id: string) => dispatch(setActiveCoverFrame(activeCoverFrameId === id ? null : id));
+  const owned: Asset[] = [
+    ...soundBackgrounds.filter(bg => isUnlocked(bg.id)),
+    ...pageBackgrounds.filter(bg => isUnlocked(bg.id)),
+    ...companions.filter(c => !c.comingSoon && isUnlocked(c.id)),
+    ...coverFrames.filter(f => isUnlocked(f.id)),
+  ];
+  const items: BagItem[] = owned.filter(asset => filter === 'all' || asset.category === filter).map(asset => ({ asset, isActive: activeIdFor(asset) === asset.id }));
+  const selected = owned.map(asset => ({ asset, isActive: activeIdFor(asset) === asset.id })).find(item => item.asset.id === selectedId) ?? null;
+
+  // Cover frames only ever set/clear the GLOBAL default -- a spell's own explicit pick still
+  // overrides it. Page backgrounds always have one, so they can be switched but not cleared.
+  const handleToggleActive = (asset: Asset) => {
+    const clear = activeIdFor(asset) === asset.id;
+    switch (asset.category) {
+      case 'sound-background': dispatch(setActiveSoundBg(clear ? null : asset.id)); break;
+      case 'page-background': dispatch(setActivePageBg(asset.id)); break;
+      case 'companion': dispatch(setActiveCompanion(clear ? null : asset.id)); break;
+      case 'cover-frame': dispatch(setActiveCoverFrame(clear ? null : asset.id)); break;
+    }
+  };
 
   return (
     <div data-testid="caster-inventory" className={s.container}>
-      <div className={s.section}>
-        <p className={s.sectionLabel}>{t.havenStore.soundBackgrounds}</p>
-        {ownedSounds.length > 0 ? (
-          <div className={s.soundGrid}>
-            {ownedSounds.map(bg => (
-              <SoundBackgroundCard
-                key={bg.id}
-                asset={bg}
-                unlocked
-                isActive={activeSoundBgId === bg.id}
-                onAction={handleSoundToggle}
-              />
-            ))}
-          </div>
-        ) : (
-          <EmptyState icon={faBoxOpen} message={t.caster.inventoryEmptySounds} />
-        )}
-      </div>
-
-      <div className={s.section}>
-        <p className={s.sectionLabel}>{t.havenStore.pageBackgrounds}</p>
-        {ownedPages.length > 0 ? (
-          <div className={s.pageGrid}>
-            {ownedPages.map(bg => (
-              <PageBackgroundCard
-                key={bg.id}
-                asset={bg}
-                unlocked
-                isActive={activePageBgId === bg.id}
-                onAction={handlePageToggle}
-              />
-            ))}
-          </div>
-        ) : (
-          <EmptyState icon={faBoxOpen} message={t.caster.inventoryEmptyPages} />
-        )}
-      </div>
-
-      <div className={s.section}>
-        <p className={s.sectionLabel}>{t.havenStore.companions}</p>
-        {ownedCompanions.length > 0 ? (
-          <div className={s.soundGrid}>
-            {ownedCompanions.map(companion => (
-              <CompanionCard
-                key={companion.id}
-                companion={companion}
-                unlocked
-                isActive={activeCompanionId === companion.id}
-                onAction={handleCompanionToggle}
-              />
-            ))}
-          </div>
-        ) : (
-          <EmptyState icon={faBoxOpen} message={t.caster.inventoryEmptyCompanions} />
-        )}
-      </div>
-
-      <div className={s.section}>
-        <p className={s.sectionLabel}>{t.havenStore.coverFrames}</p>
-        {ownedCoverFrames.length > 0 ? (
-          <div className={s.pageGrid}>
-            {ownedCoverFrames.map(border => (
-              <CoverFrameCard
-                key={border.id}
-                asset={border}
-                unlocked
-                isActive={activeCoverFrameId === border.id}
-                onAction={handleCoverFrameToggle}
-              />
-            ))}
-          </div>
-        ) : (
-          <EmptyState icon={faBoxOpen} message={t.caster.inventoryEmptyCoverFrames} />
-        )}
-      </div>
+      {owned.length > 0 ? (
+        <InventoryBag
+          items={items}
+          onSelect={asset => setSelectedId(asset.id)}
+          tabs={<BagFilterTabs tabs={filterTabs} active={filter} onChange={id => setFilter(id as 'all' | AssetCategory)} />}
+        />
+      ) : (
+        <EmptyState icon={faBoxOpen} message={t.caster.inventoryEmpty} testId="inventory-empty" />
+      )}
+      <ItemDetailModal
+        asset={selected?.asset ?? null}
+        isActive={!!selected?.isActive}
+        canDeactivate={selected?.asset.category !== 'page-background'}
+        onToggleActive={handleToggleActive}
+        onClose={() => setSelectedId(null)}
+      />
     </div>
   );
 };

@@ -3,3 +3,4 @@ export { soundBackgrounds } from './soundBackgrounds';
 export { pageBackgrounds } from './pageBackgrounds';
 export { companions } from './companions';
 export { coverFrames } from './coverFrames';
+export { SOUND_ARTWORK } from './soundArtwork';

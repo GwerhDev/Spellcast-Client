@@ -457,13 +457,20 @@ export const en = {
       { title: 'Patrones de Diseño', author: 'Erich Gamma' },
       { title: 'Cuentos Inconclusos', author: 'J.R.R. Tolkien' },
     ],
-    // TCORE-109: /caster/inventory -- shown per-section when nothing owned of that type yet.
-    inventoryEmptySounds: 'No sound backgrounds unlocked yet — find some in the Havenstore.',
-    inventoryEmptyPages: 'No page backgrounds unlocked yet — find some in the Havenstore.',
-    inventoryEmptyCompanions: 'No companions unlocked yet — find some in the Havenstore.',
     // TCORE-123: cover frames are all free, so this is realistically never shown, but kept
     // for the same reason the other categories have one -- consistency if that ever changes.
-    inventoryEmptyCoverFrames: 'No cover frames unlocked yet — find some in the Havenstore.',
+    // Caster's bag: owned items laid out in a grid of slots.
+    inventoryEmpty: 'Your bag is empty — find items in the Havenstore.',
+    bagFilterAll: 'All',
+    itemCategory: {
+      'sound-background': 'Sound background',
+      'page-background': 'Page background',
+      'companion': 'Companion',
+      'cover-frame': 'Cover frame',
+    },
+    itemOriginFree: 'Free',
+    itemOriginPurchase: 'Purchased',
+    itemOriginAchievement: 'Achievement',
   },
   gamification: {
     level: 'Level',
@@ -533,5 +540,32 @@ export const en = {
     body: 'The Grimoire cover frame has arrived — bronze corner plates and clasp medallions, like an old spellbook. Set it as your default now, or pick it later per spell from its own menu, or as your default from your Caster inventory.',
     cta: 'Set as default',
     dismiss: 'Maybe later',
+  },
+  // Catalog copy for Havenstore/inventory items, keyed by asset id (and tag). The catalog in
+  // config/assets keeps English fallbacks for any id missing here.
+  assets: {
+    items: {
+      'rain-window': { name: 'Rain on Window', description: 'Soft droplets against a windowpane' },
+      'cafe-murmur': { name: 'Café Murmur', description: 'Gentle café ambience with distant chatter' },
+      'ancient-forest': { name: 'Ancient Forest', description: 'Birds and rustling leaves in a deep forest' },
+      'ocean-tides': { name: 'Ocean Tides', description: 'Rhythmic waves on a quiet shore' },
+      'crackling-hearth': { name: 'Crackling Hearth', description: 'Warm fireplace on a winter night' },
+      'northern-winds': { name: 'Northern Winds', description: 'Haunting winds from the far north' },
+      'default': { name: 'Default', description: 'Your current theme paper color' },
+      'parchment': { name: 'Parchment', description: 'Warm vintage parchment paper' },
+      'midnight-slate': { name: 'Midnight Slate', description: 'Deep blue-gray for late night reading' },
+      'warm-linen': { name: 'Warm Linen', description: 'Soft linen-white for comfortable reading' },
+      'scholars-amber': { name: "Scholar's Amber", description: 'Antique amber tone for focused study' },
+      'cats': { name: 'Kuro & Sunny', description: 'A pair of cats that wander around while you read.' },
+      'grimoire': { name: 'Grimoire', description: 'Bronze corner plates and clasp medallions, like an old spellbook' },
+    },
+    tags: {
+      rain: 'rain', calm: 'calm', focus: 'focus', 'café': 'café', social: 'social',
+      nature: 'nature', forest: 'forest', ocean: 'ocean', relaxing: 'relaxing',
+      fire: 'fire', cozy: 'cozy', warm: 'warm', wind: 'wind', atmospheric: 'atmospheric',
+      rare: 'rare', minimal: 'minimal', default: 'default', vintage: 'vintage', dark: 'dark',
+      night: 'night', light: 'light', cats: 'cats', companion: 'companion', pet: 'pet',
+      fantasy: 'fantasy', ornate: 'ornate', bronze: 'bronze',
+    },
   },
 } as const;

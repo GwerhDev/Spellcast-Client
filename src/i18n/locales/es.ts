@@ -461,12 +461,18 @@ export const es: Translations = {
       { title: 'Patrones de Diseño', author: 'Erich Gamma' },
       { title: 'Cuentos Inconclusos', author: 'J.R.R. Tolkien' },
     ],
-    // TCORE-109: /caster/inventory -- se muestra por sección cuando aún no hay nada de ese
-    // tipo conseguido.
-    inventoryEmptySounds: 'Aún no desbloqueaste fondos de sonido — busca algunos en la Havenstore.',
-    inventoryEmptyPages: 'Aún no desbloqueaste fondos de hoja — busca algunos en la Havenstore.',
-    inventoryEmptyCompanions: 'Aún no desbloqueaste compañeros — busca algunos en la Havenstore.',
-    inventoryEmptyCoverFrames: 'Aún no desbloqueaste marcos de portada — busca algunos en la Havenstore.',
+    // Bolsa del Caster: los objetos conseguidos en una cuadrícula de espacios.
+    inventoryEmpty: 'Tu bolsa está vacía — busca objetos en la Havenstore.',
+    bagFilterAll: 'Todo',
+    itemCategory: {
+      'sound-background': 'Fondo de sonido',
+      'page-background': 'Fondo de hoja',
+      'companion': 'Compañero',
+      'cover-frame': 'Marco de portada',
+    },
+    itemOriginFree: 'Gratis',
+    itemOriginPurchase: 'Comprado',
+    itemOriginAchievement: 'Por logro',
   },
   gamification: {
     level: 'Nivel',
@@ -535,5 +541,32 @@ export const es: Translations = {
     body: 'Llegó el marco de portada Grimoire — cantoneras de bronce y medallones a broche, como un viejo libro de hechizos. Fíjalo como tu predeterminado ahora, o elígelo más tarde por spell desde su propio menú, o como predeterminado desde tu inventario del Caster.',
     cta: 'Fijar como predeterminado',
     dismiss: 'Más tarde',
+  },
+  // Textos del catálogo de Havenstore/inventario, por id de asset (y por etiqueta). El
+  // catálogo en config/assets conserva el texto en inglés como respaldo.
+  assets: {
+    items: {
+      'rain-window': { name: 'Lluvia en la ventana', description: 'Gotas suaves contra el cristal' },
+      'cafe-murmur': { name: 'Murmullo de café', description: 'Ambiente tranquilo de café con charlas a lo lejos' },
+      'ancient-forest': { name: 'Bosque ancestral', description: 'Pájaros y hojas susurrantes en un bosque profundo' },
+      'ocean-tides': { name: 'Mareas del océano', description: 'Olas rítmicas en una orilla tranquila' },
+      'crackling-hearth': { name: 'Hogar crepitante', description: 'Una chimenea cálida en una noche de invierno' },
+      'northern-winds': { name: 'Vientos del norte', description: 'Vientos inquietantes del lejano norte' },
+      'default': { name: 'Del tema', description: 'El color de hoja de tu tema actual' },
+      'parchment': { name: 'Pergamino', description: 'Pergamino antiguo de tono cálido' },
+      'midnight-slate': { name: 'Pizarra de medianoche', description: 'Gris azulado profundo para leer de noche' },
+      'warm-linen': { name: 'Lino cálido', description: 'Blanco lino suave para una lectura cómoda' },
+      'scholars-amber': { name: 'Ámbar del erudito', description: 'Tono ámbar antiguo para estudiar concentrado' },
+      'cats': { name: 'Kuro y Sunny', description: 'Un par de gatos que rondan mientras lees.' },
+      'grimoire': { name: 'Grimorio', description: 'Cantoneras de bronce y medallones a broche, como un viejo libro de hechizos' },
+    },
+    tags: {
+      rain: 'lluvia', calm: 'calma', focus: 'concentración', 'café': 'café', social: 'social',
+      nature: 'naturaleza', forest: 'bosque', ocean: 'océano', relaxing: 'relajante',
+      fire: 'fuego', cozy: 'acogedor', warm: 'cálido', wind: 'viento', atmospheric: 'atmosférico',
+      rare: 'raro', minimal: 'minimalista', default: 'predeterminado', vintage: 'antiguo', dark: 'oscuro',
+      night: 'noche', light: 'claro', cats: 'gatos', companion: 'compañero', pet: 'mascota',
+      fantasy: 'fantasía', ornate: 'ornamentado', bronze: 'bronce',
+    },
   },
 };

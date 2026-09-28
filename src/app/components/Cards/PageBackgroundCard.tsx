@@ -2,7 +2,7 @@ import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faLock, faTrophy, faCheck } from '@fortawesome/free-solid-svg-icons';
 import type { PageBackground } from '../../../config/assets';
-import { useLanguage } from '../../../i18n';
+import { useLanguage, assetName } from '../../../i18n';
 import s from './PageBackgroundCard.module.css';
 
 interface PageBackgroundCardProps {
@@ -51,7 +51,7 @@ export const PageBackgroundCard: React.FC<PageBackgroundCardProps> = ({ asset, u
         )}
       </div>
       <div className={s.productBody}>
-        <span className={s.productName}>{asset.name}</span>
+        <span className={s.productName}>{assetName(t, asset)}</span>
         <div className={s.productFooter}>
           {asset.unlockMethod === 'free' && <span className={s.freeBadge}>{t.havenStore.free}</span>}
           {asset.unlockMethod === 'achievement' && (

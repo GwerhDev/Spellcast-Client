@@ -10,7 +10,7 @@ import { TabModal } from '../../components/Modals/TabModal';
 import { CompanionCard } from '../../components/Cards/CompanionCard';
 import { NumberStepper } from '../../components/Inputs/NumberStepper';
 import { ToggleRow } from '../../components/Inputs/ToggleRow';
-import { useLanguage } from '../../../i18n';
+import { useLanguage, assetName } from '../../../i18n';
 
 const DisplayTab: React.FC = () => {
   const dispatch = useDispatch();
@@ -74,7 +74,7 @@ const AppearanceTab: React.FC = () => {
                 className={`${s.bgSwatch} ${isActive ? s.bgSwatchActive : ''}`}
                 style={thumbStyle}
                 onClick={() => dispatch(setActivePageBg(bg.id))}
-                title={bg.name}
+                title={assetName(t, bg)}
               />
             );
           })}

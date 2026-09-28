@@ -2,7 +2,7 @@ import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faLock, faTrophy, faCheck, faImage } from '@fortawesome/free-solid-svg-icons';
 import type { CoverFrame } from '../../../config/assets';
-import { useLanguage } from '../../../i18n';
+import { useLanguage, assetName } from '../../../i18n';
 import { getCoverFrameStyle, getCoverFrameCorners } from '../../../utils/coverFrame';
 import { CoverFrameCorners } from '../CoverFrameCorners';
 // TCORE-123: reuses PageBackgroundCard's module -- every class below but the thumbnail
@@ -54,7 +54,7 @@ export const CoverFrameCard: React.FC<CoverFrameCardProps> = ({ asset, unlocked,
         )}
       </div>
       <div className={s.productBody}>
-        <span className={s.productName}>{asset.name}</span>
+        <span className={s.productName}>{assetName(t, asset)}</span>
         <div className={s.productFooter}>
           {asset.unlockMethod === 'free' && <span className={s.freeBadge}>{t.havenStore.free}</span>}
           {asset.unlockMethod === 'achievement' && (

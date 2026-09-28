@@ -6,7 +6,7 @@ import { CustomModal } from './CustomModal';
 import type { CoverFrame } from '../../../config/assets';
 import { getCoverFrameStyle, getCoverFrameCorners } from '../../../utils/coverFrame';
 import { CoverFrameCorners } from '../CoverFrameCorners';
-import { useLanguage } from '../../../i18n';
+import { useLanguage, assetName } from '../../../i18n';
 
 interface CoverFramePickerModalProps {
   show: boolean;
@@ -69,7 +69,7 @@ export const CoverFramePickerModal: React.FC<CoverFramePickerModalProps> = ({ sh
               <span className={s.swatch} style={getCoverFrameStyle(border.id)}>
                 {corners && <CoverFrameCorners config={corners} />}
               </span>
-              <span className={s.optionName}>{border.name}</span>
+              <span className={s.optionName}>{assetName(t, border)}</span>
               {isSelected && <FontAwesomeIcon icon={faCheck} className={s.checkIcon} />}
             </button>
           );

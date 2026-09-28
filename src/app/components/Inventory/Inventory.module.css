@@ -1,0 +1,392 @@
+/* ── Bag grid ─────────────────────────────────────────────── */
+
+.bag {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap: 6px;
+  padding: 10px;
+  border-radius: 10px;
+  background: var(--surface-inset);
+  border: 1px solid var(--line);
+  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.35);
+}
+
+@media (max-width: 600px) {
+  .bag {
+    grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
+  }
+}
+
+.slot {
+  position: relative;
+  aspect-ratio: 1;
+  padding: 0;
+  border-radius: 6px;
+  background: var(--surface-base);
+  border: 1px solid var(--line-soft);
+  box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+}
+
+.slotFilled {
+  cursor: pointer;
+  border-color: var(--line);
+  transition: border-color 0.12s ease;
+}
+
+.slotFilled:hover,
+.slotFilled:focus-visible {
+  border-color: var(--color-primary);
+  outline: none;
+}
+
+.slotActive {
+  border-color: color-mix(in srgb, var(--color-primary) 60%, transparent);
+}
+
+.slotActiveMark {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  font-size: 0.5rem;
+  border-radius: 50%;
+  color: var(--background-color-dark);
+  background: var(--color-primary);
+}
+
+/* Light theme: the dark theme's deep inset shadows read as heavy gray blocks on light
+   surfaces -- keep the recessed look with much softer shadows. */
+:global(html.light) .bag {
+  box-shadow: inset 0 1px 6px rgba(0, 0, 0, 0.08);
+}
+
+:global(html.light) .slot {
+  border-color: var(--line);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+:global(html.light) .popover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+/* ── Item artwork ─────────────────────────────────────────── */
+
+.thumb {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.thumbDetail {
+  border-radius: 8px;
+}
+
+.thumbIcon {
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 1.1rem;
+}
+
+.thumbDetail .thumbIcon {
+  font-size: 2.5rem;
+}
+
+.pageLines {
+  width: 58%;
+  display: flex;
+  flex-direction: column;
+  gap: 12%;
+}
+
+.thumbSlot .pageLines {
+  gap: 3px;
+}
+
+.pageLine {
+  height: 2px;
+  background: currentColor;
+  border-radius: 2px;
+}
+
+.coverPreview {
+  position: relative;
+  width: 62%;
+  aspect-ratio: 3 / 4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--color-dark-300);
+}
+
+.coverPreviewIcon {
+  color: var(--color-light-400);
+  font-size: 0.8rem;
+}
+
+.thumbDetail .coverPreview {
+  width: 55%;
+}
+
+.thumbDetail .coverPreviewIcon {
+  font-size: 1.6rem;
+}
+
+/* ── Hover popover ────────────────────────────────────────── */
+
+.popover {
+  position: fixed;
+  z-index: 1040;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-width: 220px;
+  padding: 0.5rem 0.7rem;
+  border-radius: 8px;
+  background: var(--surface-overlay);
+  border: 1px solid var(--line);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(4px) scale(0.98);
+  transition: opacity 0.12s ease, transform 0.12s ease;
+}
+
+.popoverVisible {
+  opacity: 1;
+  transform: none;
+}
+
+.popoverName {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-color-accent);
+}
+
+.popoverCategory {
+  font-size: 0.68rem;
+  color: var(--color-light-400);
+}
+
+.popoverActive {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 2px;
+  font-size: 0.66rem;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+/* ── Detail modal ─────────────────────────────────────────── */
+
+.detail {
+  display: flex;
+  gap: 1.25rem;
+  padding: 0 1rem 0.5rem;
+}
+
+@media (max-width: 600px) {
+  .detail {
+    flex-direction: column;
+  }
+}
+
+.detailPreview {
+  flex: 0 0 180px;
+  height: 180px;
+  border-radius: 8px;
+  box-shadow: inset 0 1px 6px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+}
+
+@media (max-width: 600px) {
+  .detailPreview {
+    flex-basis: auto;
+    width: 100%;
+  }
+}
+
+.detailInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.detailMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.detailCategory {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-light-400);
+}
+
+.detailOrigin {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.68rem;
+  color: var(--color-light-300);
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--color-dark-300);
+}
+
+.detailDescription {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: var(--text-color);
+}
+
+.detailTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.detailTag {
+  font-size: 0.68rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  color: var(--color-light-300);
+  border: 1px solid var(--line);
+}
+
+.detailActions {
+  display: flex;
+  margin-top: auto;
+  padding-top: 0.5rem;
+}
+
+.detailActiveNote {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+/* ── Filter tabs (right edge of the bag) ──────────────────── */
+
+.bagWithTabs {
+  display: flex;
+  align-items: flex-start;
+}
+
+.bagWithTabs > .bag {
+  flex: 1;
+  min-width: 0;
+}
+
+.tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 12px;
+}
+
+.tab {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  margin-left: -1px;
+  padding: 0;
+  border-radius: 0 8px 8px 0;
+  border: 1px solid var(--line);
+  border-left: none;
+  background: var(--surface-raised);
+  color: var(--color-light-400);
+  cursor: pointer;
+  transition: color 0.12s ease, background 0.12s ease;
+}
+
+.tab:hover,
+.tab:focus-visible {
+  color: var(--text-color-accent);
+  outline: none;
+}
+
+.tabActive {
+  background: var(--surface-inset);
+  color: var(--color-primary);
+}
+
+.tabActive:hover,
+.tabActive:focus-visible {
+  color: var(--color-primary);
+}
+
+.tabLabel {
+  position: absolute;
+  right: calc(100% + 8px);
+  top: 50%;
+  white-space: nowrap;
+  padding: 0.3rem 0.55rem;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-color-accent);
+  background: var(--surface-overlay);
+  border: 1px solid var(--line);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(4px, -50%);
+  transition: opacity 0.12s ease, transform 0.12s ease;
+  z-index: 2;
+}
+
+.tab:hover .tabLabel,
+.tab:focus-visible .tabLabel {
+  opacity: 1;
+  transform: translate(0, -50%);
+}
+
+:global(html.light) .tabLabel {
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+}
+
+@media (max-width: 600px) {
+  .bagWithTabs {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .tabs {
+    flex-direction: row;
+    padding: 0 0 0 12px;
+  }
+
+  .tab {
+    margin: 0 0 -1px;
+    border-radius: 8px 8px 0 0;
+    border: 1px solid var(--line);
+    border-bottom: none;
+  }
+
+  .tabLabel {
+    display: none;
+  }
+}

@@ -2,7 +2,7 @@ import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCat, faLock, faTrophy, faCheck } from '@fortawesome/free-solid-svg-icons';
 import type { Companion } from '../../../config/assets';
-import { useLanguage } from '../../../i18n';
+import { useLanguage, assetName, assetDescription } from '../../../i18n';
 import s from './CompanionCard.module.css';
 
 interface CompanionCardProps {
@@ -54,8 +54,8 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({ companion, unlocke
         )}
       </div>
       <div className={s.productBody}>
-        <span className={s.productName}>{companion.name}</span>
-        <p className={s.productDesc}>{companion.description}</p>
+        <span className={s.productName}>{assetName(t, companion)}</span>
+        <p className={s.productDesc}>{assetDescription(t, companion)}</p>
         <div className={s.productFooter}>
           {comingSoon ? (
             <span className={s.soonBadge} data-testid={`companion-soon-${companion.id}`}>
