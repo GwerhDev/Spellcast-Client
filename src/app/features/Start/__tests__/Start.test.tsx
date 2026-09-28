@@ -17,9 +17,11 @@ vi.mock('../TextOption', () => ({
 }));
 
 const spell = { id: 'spell-1', userId: undefined, title: 'Spell one', createdAt: new Date(), pagesContent: '["a"]' } as Spell;
+const mockHasSpells = vi.fn();
 const mockGetSpells = vi.fn();
 const mockGetSpellById = vi.fn();
 vi.mock('../../../../db', () => ({
+  hasSpellsInDB: (...args: unknown[]) => mockHasSpells(...args),
   getSpellsFromDB: (...args: unknown[]) => mockGetSpells(...args),
   getSpellById: (...args: unknown[]) => mockGetSpellById(...args),
 }));
@@ -34,6 +36,7 @@ const spellDrag = (id = 'spell-1') => ({
 });
 
 beforeEach(() => {
+  mockHasSpells.mockReset().mockResolvedValue(true);
   mockGetSpells.mockReset().mockResolvedValue([spell]);
   mockGetSpellById.mockReset().mockResolvedValue(spell);
 });
@@ -45,9 +48,9 @@ describe('Start', () => {
   });
 
   it('has no Read tab when the grimoire is empty', async () => {
-    mockGetSpells.mockResolvedValue([]);
+    mockHasSpells.mockResolvedValue(false);
     renderWithProviders(<Start />);
-    await waitFor(() => expect(mockGetSpells).toHaveBeenCalled());
+    await waitFor(() => expect(mockHasSpells).toHaveBeenCalled());
     expect(screen.queryByTestId('segmented-tab-read')).not.toBeInTheDocument();
   });
 
@@ -66,9 +69,9 @@ describe('Start', () => {
   });
 
   it('defaults to Text when the grimoire is empty', async () => {
-    mockGetSpells.mockResolvedValue([]);
+    mockHasSpells.mockResolvedValue(false);
     renderWithProviders(<Start />);
-    await waitFor(() => expect(mockGetSpells).toHaveBeenCalled());
+    await waitFor(() => expect(mockHasSpells).toHaveBeenCalled());
     expect(screen.queryByTestId('read-option')).not.toBeInTheDocument();
   });
 
@@ -103,7 +106,7 @@ describe('Start', () => {
   it('drops the Read tab (back to Text) once the last spell is deleted', async () => {
     const { store } = renderWithProviders(<Start />);
     await screen.findByTestId('read-option');
-    mockGetSpells.mockResolvedValue([]);
+    mockHasSpells.mockResolvedValue(false);
     act(() => { store.dispatch(invalidateSpellList()); });
     await waitFor(() => expect(screen.queryByTestId('segmented-tab-read')).not.toBeInTheDocument());
     expect(screen.queryByTestId('read-option')).not.toBeInTheDocument();
@@ -163,5 +166,23 @@ describe('Start', () => {
     await act(async () => { fireEvent.drop(start, spellDrag()); });
     expect(store.getState().browserPlayer.toggleSeq).toBe(toggleSeq);
     expect(store.getState().browserPlayer.isPlaying).toBe(true);
+  });
+
+  it('only asks whether spells exist, never loads them all', async () => {
+    renderWithProviders(<Start />);
+    await screen.findByTestId('read-option');
+    expect(mockHasSpells).toHaveBeenCalled();
+    expect(mockGetSpells).not.toHaveBeenCalled();
+  });
+
+  it('keeps the tabs hidden until the check answers, then opens directly on Read', async () => {
+    let answer: (exists: boolean) => void = () => {};
+    mockHasSpells.mockReturnValue(new Promise<boolean>(resolve => { answer = resolve; }));
+    renderWithProviders(<Start />);
+    expect(screen.getByTestId('start-body').className).toMatch(/pending/);
+    expect(screen.queryByTestId('segmented-tab-read')).not.toBeInTheDocument();
+    await act(async () => { answer(true); });
+    expect(screen.getByTestId('start-body').className).not.toMatch(/pending/);
+    expect(screen.getByTestId('read-option')).toBeInTheDocument();
   });
 });

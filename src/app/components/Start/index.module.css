@@ -18,6 +18,18 @@
   flex-direction: column;
 }
 
+.body {
+  gap: 1rem;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+}
+
+.pending {
+  visibility: hidden;
+}
+
 .createContainer p {
   color: var(--color-light-400);
   margin: 0;

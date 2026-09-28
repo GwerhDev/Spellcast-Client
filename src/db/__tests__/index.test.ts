@@ -100,6 +100,35 @@ describe('db/index.ts CRUD', () => {
     expect(result[0].title).toBe('Legacy');
   });
 
+  describe('hasSpellsInDB', () => {
+    it('is false for a user with no spells', async () => {
+      const { saveSpellToDB, hasSpellsInDB } = await importDb();
+      await saveSpellToDB(seedSpell({ userId: 'user-2' }));
+      expect(await hasSpellsInDB('user-1')).toBe(false);
+    });
+
+    it('is true as soon as the user has one spell', async () => {
+      const { saveSpellToDB, hasSpellsInDB } = await importDb();
+      await saveSpellToDB(seedSpell({ userId: 'user-1' }));
+      expect(await hasSpellsInDB('user-1')).toBe(true);
+    });
+
+    it('goes back to false once the last spell is deleted', async () => {
+      const { saveSpellToDB, deleteSpellFromDB, hasSpellsInDB } = await importDb();
+      const id = await saveSpellToDB(seedSpell({ userId: 'user-1' }));
+      await deleteSpellFromDB(id, 'user-1');
+      expect(await hasSpellsInDB('user-1')).toBe(false);
+    });
+
+    it('agrees with getSpellsFromDB on legacy spells stored under a differently-typed userId', async () => {
+      const { saveSpellToDB, hasSpellsInDB } = await importDb();
+      // @ts-expect-error -- deliberately mistyped userId to model legacy data
+      await saveSpellToDB(seedSpell({ title: 'Legacy', userId: 42 }));
+      expect(await hasSpellsInDB('42')).toBe(true);
+      expect(await hasSpellsInDB('43')).toBe(false);
+    });
+  });
+
   it('getSpellById returns undefined when the spell exists but belongs to a different user', async () => {
     const { saveSpellToDB, getSpellById } = await importDb();
     const id = await saveSpellToDB(seedSpell({ userId: 'user-1' }));

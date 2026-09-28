@@ -7,7 +7,7 @@ import { ReadOption } from './ReadOption';
 import { useDispatch } from 'react-redux';
 import { resetSpellState } from '../../../store/spellSlice';
 import { useAppSelector } from '../../../store/hooks';
-import { getSpellById, getSpellsFromDB } from '../../../db';
+import { getSpellById, hasSpellsInDB } from '../../../db';
 import { usePlaySpell } from '../../../hooks/usePlaySpell';
 import { SPELL_DRAG_TYPE } from '../../../config/consts';
 import { useLanguage } from '../../../i18n';
@@ -17,7 +17,10 @@ const isSpellDrag = (e: React.DragEvent) => Array.from(e.dataTransfer.types).inc
 
 export const Start = () => {
   const [inputType, setInputType] = useState('text');
-  const [hasSpells, setHasSpells] = useState(false);
+  // null until the first check answers: the tabs wait for it, so Start opens directly on its
+  // real default (Read when there are spells) instead of showing Text and then jumping.
+  const [hasSpellsKnown, setHasSpells] = useState<boolean | null>(null);
+  const hasSpells = !!hasSpellsKnown;
   const [dragActive, setDragActive] = useState(false);
   // Once the user picks a tab, the default-tab logic below stops overriding their choice.
   const userPickedTab = useRef(false);
@@ -27,20 +30,27 @@ export const Start = () => {
   const { readSpell } = usePlaySpell();
   const { t } = useLanguage();
 
+  // Only asks whether any spell exists (a count, no records loaded) -- Start doesn't need the
+  // spells themselves, just whether to offer the Read tab.
   useEffect(() => {
     let cancelled = false;
-    getSpellsFromDB(userId)
-      .then(spells => { if (!cancelled) setHasSpells(spells.length > 0); })
+    hasSpellsInDB(userId)
+      .then(exists => {
+        if (cancelled) return;
+        setHasSpells(exists);
+        // Picked in the same update as the answer, so there's no frame on the wrong tab.
+        if (exists && !userPickedTab.current) setInputType('read');
+      })
       .catch(() => { if (!cancelled) setHasSpells(false); });
     return () => { cancelled = true; };
   }, [userId, listVersion]);
 
-  // With at least one spell, "Read" is the first tab and the default; it only exists with
-  // spells, so if the last one is deleted while it's showing, fall back to "Text".
+  // With at least one spell, "Read" is the first tab and the default (set above when the
+  // answer arrives); it only exists with spells, so if the last one is deleted while it's
+  // showing, fall back to "Text".
   useEffect(() => {
-    if (hasSpells && !userPickedTab.current) setInputType('read');
-    if (!hasSpells && inputType === 'read') setInputType('text');
-  }, [hasSpells, inputType]);
+    if (hasSpellsKnown === false && inputType === 'read') setInputType('text');
+  }, [hasSpellsKnown, inputType]);
 
   const handleInputTypeChange = (type: string) => {
     userPickedTab.current = true;
@@ -125,14 +135,18 @@ export const Start = () => {
     >
       <div className={s.createContainer}>
         <h1 className="featured-glow">{t.start.castSpell}</h1>
-        <p>{getSubtitle()}</p>
+        {/* Laid out but invisible until the spells check answers, so the page doesn't shift
+            and never flashes a tab it's about to leave. */}
+        <div data-testid="start-body" className={`${s.body} ${hasSpellsKnown === null ? s.pending : ''}`}>
+          <p>{getSubtitle()}</p>
 
-        <SegmentedTabs tabs={inputTypeTabs} active={inputType} onChange={handleInputTypeChange} />
+          <SegmentedTabs tabs={inputTypeTabs} active={inputType} onChange={handleInputTypeChange} />
 
-        <div className={s.optionContainer}>
-          {inputType === 'import' && <ImportOption />}
-          {inputType === 'text' && <TextOption />}
-          {inputType === 'read' && <ReadOption dragActive={dragActive} />}
+          <div className={s.optionContainer}>
+            {hasSpellsKnown !== null && inputType === 'import' && <ImportOption />}
+            {hasSpellsKnown !== null && inputType === 'text' && <TextOption />}
+            {inputType === 'read' && <ReadOption dragActive={dragActive} />}
+          </div>
         </div>
       </div>
     </div>
