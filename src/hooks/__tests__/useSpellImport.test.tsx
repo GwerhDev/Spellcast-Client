@@ -91,11 +91,20 @@ describe('useSpellImport', () => {
     const store = makeStore('user-1');
     const { result } = renderImport(store);
 
-    let importPromise!: Promise<void>;
+    let importPromise!: Promise<string | null>;
     act(() => { importPromise = result.current.importFile(new File(['x'], 'x.spell')); });
     expect(result.current.isImporting).toBe(true);
 
     await act(async () => { resolveImport!('new-id'); await importPromise; });
     expect(result.current.isImporting).toBe(false);
+  });
+
+  it('resolves to the new spell id, or null when the import fails', async () => {
+    const store = makeStore('user-1');
+    const { result } = renderImport(store);
+    importSpellFromFileMock.mockResolvedValueOnce('new-id');
+    await act(async () => { expect(await result.current.importFile(new File(['x'], 'a.spell'))).toBe('new-id'); });
+    importSpellFromFileMock.mockRejectedValueOnce(new Error('bad file'));
+    await act(async () => { expect(await result.current.importFile(new File(['x'], 'b.spell'))).toBeNull(); });
   });
 });

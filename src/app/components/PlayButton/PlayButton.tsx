@@ -13,17 +13,17 @@ interface PlayButtonProps {
   active?: boolean;
   // Replaces the play/pause icon (e.g. a brand mark while there's nothing to play yet).
   icon?: React.ReactNode;
-  // Nothing to do on click yet: shown as-is (not dimmed like `disabled`), with a plain
-  // cursor and no hover glow/sheen inviting a click.
-  idle?: boolean;
+  // Tooltip and accessible name, for when the icon alone doesn't say what the click does.
+  title?: string;
 }
 
-export const PlayButton: React.FC<PlayButtonProps> = ({ isPlaying, onClick, disabled, size = 'md', active, icon, idle }) => (
+export const PlayButton: React.FC<PlayButtonProps> = ({ isPlaying, onClick, disabled, size = 'md', active, icon, title }) => (
   <button
     data-testid="play-button"
-    className={`${s.btn} ${s[size]} ${isPlaying || active ? s.playing : ''} ${idle ? s.idle : ''}`}
-    onClick={idle ? undefined : onClick}
-    aria-disabled={idle || undefined}
+    className={`${s.btn} ${s[size]} ${isPlaying || active ? s.playing : ''}`}
+    onClick={onClick}
+    title={title}
+    aria-label={title}
     disabled={disabled}
     style={disabled ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
   >

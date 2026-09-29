@@ -10,9 +10,9 @@ import { importSpellFromFile } from '../utils/spellFormat';
  * audio) into IndexedDB, then invalidates the spell list so it shows up without a manual
  * refresh. Lives in src/hooks/ for the same layering reason as useSpellExport.
  *
- * Exposes a plain `importFile(file)` rather than owning a hidden `<input>` itself: its one
- * caller, ImportOption, already has its own file input/dropzone (shared with PDF import,
- * TCORE-90-adjacent unification) and just needs to route a `.spell` File here.
+ * Exposes a plain `importFile(file)` rather than owning a hidden `<input>` itself: its
+ * callers (ImportOption, Start's Read tab) each have their own file input/dropzone and just
+ * need to route a `.spell` File here.
  */
 export function useSpellImport() {
   const dispatch = useAppDispatch();
@@ -20,17 +20,21 @@ export function useSpellImport() {
   const { userData } = useAppSelector((state) => state.session);
   const [isImporting, setIsImporting] = useState(false);
 
-  const importFile = async (file: File): Promise<void> => {
-    if (!userData.id) return;
+  // Resolves to the new spell's id (null if it couldn't be imported), so a caller can go on
+  // to use it -- e.g. start reading it right away.
+  const importFile = async (file: File): Promise<string | null> => {
+    if (!userData.id) return null;
 
     setIsImporting(true);
     try {
-      await importSpellFromFile(file, userData.id);
+      const spellId = await importSpellFromFile(file, userData.id);
       dispatch(invalidateSpellList());
       dispatch(addApiResponse({ message: t.spell.importSuccess.replace('{title}', file.name.replace(/\.spell$/i, '')), type: 'success' }));
+      return spellId;
     } catch (error) {
       console.error('Failed to import .spell file:', error);
       dispatch(addApiResponse({ message: t.spell.importError, type: 'error' }));
+      return null;
     } finally {
       setIsImporting(false);
     }

@@ -26,10 +26,6 @@
   flex-direction: column;
 }
 
-.pending {
-  visibility: hidden;
-}
-
 .createContainer p {
   color: var(--color-light-400);
   margin: 0;

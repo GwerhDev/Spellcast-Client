@@ -393,36 +393,6 @@ export const getSpellsFromDB = async (userId: string | undefined): Promise<Spell
   });
 };
 
-// Whether the user has at least one spell, without loading any of them: counts through the
-// userId index (no records read). Mirrors getSpellsFromDB's type-tolerant fallback for spells
-// saved under a differently-typed id, but walks a cursor and stops at the first match.
-export const hasSpellsInDB = async (userId: string | undefined): Promise<boolean> => {
-  const db = await openDB();
-  const transaction = db.transaction(SPELLS_STORE_NAME, 'readonly');
-  const spellStore = transaction.objectStore(SPELLS_STORE_NAME);
-  const spellIndex = spellStore.index('userId');
-
-  return new Promise((resolve, reject) => {
-    const countRequest = userId == null ? spellStore.count() : spellIndex.count(userId);
-    countRequest.onerror = () => reject(countRequest.error);
-    countRequest.onsuccess = () => {
-      if (countRequest.result > 0 || userId == null) {
-        resolve(countRequest.result > 0);
-        return;
-      }
-      const cursorRequest = spellStore.openCursor();
-      cursorRequest.onerror = () => reject(cursorRequest.error);
-      cursorRequest.onsuccess = () => {
-        const cursor = cursorRequest.result;
-        if (!cursor) { resolve(false); return; }
-        const spell = cursor.value as Spell | null;
-        if (spell && sameUser(spell.userId, userId)) { resolve(true); return; }
-        cursor.continue();
-      };
-    };
-  });
-};
-
 export const getSpellById = async (id: string, userId: string | undefined): Promise<Spell | undefined> => {
   const db = await openDB();
   const transaction = db.transaction(SPELLS_STORE_NAME, 'readonly');

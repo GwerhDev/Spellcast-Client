@@ -154,13 +154,13 @@
   border-color: rgba(242, 242, 242, 0.3);
 }
 
-/* Corner shortcut to the loaded spell's reader. Scoped under .container so it outranks
+/* Corner shortcuts shown with a spell loaded: open a .spell file (left) and open the loaded
+   spell's reader (right). Scoped under .container so it outranks
    IconButton's own .base/.transparent (same specificity otherwise, which would leave the
    winner to CSS Modules' bundle order -- see PlayButton.module.css for that failure). */
-.container .openReader {
+.container .cornerButton {
   position: absolute;
   top: 0.6rem;
-  right: 0.6rem;
   z-index: 1;
   width: 34px;
   height: 34px;
@@ -176,25 +176,39 @@
   transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease;
 }
 
-.container .openReader:hover,
-.container .openReader:focus-visible {
+.container .cornerButton:hover,
+.container .cornerButton:focus-visible {
   color: var(--color-primary);
   border-color: color-mix(in srgb, var(--color-primary) 55%, transparent);
   outline: none;
 }
 
+/* Per-corner position, same scope so it sits with the rest of the corner button rules. */
+.container .cornerLeft {
+  left: 0.6rem;
+}
+
+.container .cornerRight {
+  right: 0.6rem;
+}
+
 /* Over the cover: a dark translucent chip with light icon, readable over any artwork. */
-.hasCover .openReader {
+.hasCover .cornerButton {
   color: rgba(242, 242, 242, 0.85);
   background: rgba(8, 10, 14, 0.45);
   border-color: rgba(242, 242, 242, 0.18);
   backdrop-filter: blur(6px);
 }
 
-.hasCover .openReader:hover,
-.hasCover .openReader:focus-visible {
+.hasCover .cornerButton:hover,
+.hasCover .cornerButton:focus-visible {
   color: #fff;
   border-color: rgba(242, 242, 242, 0.45);
+}
+
+/* The picker behind "open a .spell file" (link in the hint, or the left corner button). */
+.fileInput {
+  display: none;
 }
 
 /* The Spellcast mark drawn as a mask in the button's own text color, so it follows the
@@ -264,6 +278,7 @@
   color: var(--color-light-300);
   transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
 }
+
 
 .hintIcon {
   font-size: 0.75rem;

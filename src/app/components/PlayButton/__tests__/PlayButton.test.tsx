@@ -15,13 +15,9 @@ describe('PlayButton', () => {
     expect(screen.getByTestId('custom-icon')).toBeInTheDocument();
   });
 
-  it('when idle, is not disabled but marked aria-disabled and ignores clicks', () => {
-    const onClick = vi.fn();
-    render(<PlayButton isPlaying={false} onClick={onClick} idle />);
-    const button = screen.getByTestId('play-button');
-    expect(button).not.toBeDisabled();
-    expect(button).toHaveAttribute('aria-disabled', 'true');
-    fireEvent.click(button);
-    expect(onClick).not.toHaveBeenCalled();
+  it('uses the title as tooltip and accessible name', () => {
+    render(<PlayButton isPlaying={false} onClick={vi.fn()} title="Open a file" />);
+    expect(screen.getByTestId('play-button')).toHaveAttribute('title', 'Open a file');
+    expect(screen.getByTestId('play-button')).toHaveAttribute('aria-label', 'Open a file');
   });
 });
