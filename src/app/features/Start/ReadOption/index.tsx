@@ -3,7 +3,7 @@ import { PlayButton } from '../../../components/PlayButton/PlayButton';
 import { Waveform } from '../../../components/Waveform/Waveform';
 import spellcastLogo from '../../../../assets/spellcast-logo.svg';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useId, useRef, useState } from 'react';
 import { faBookOpenReader, faEject, faFeatherPointed, faHandPointer, faPen, faSpinner, faUpload } from '@fortawesome/free-solid-svg-icons';
 import { useNavigate } from 'react-router-dom';
 import { IconButton } from '../../../components/Buttons/IconButton';
@@ -46,6 +46,7 @@ export const ReadOption = ({ dragActive, onWrite, onImport }: ReadOptionProps) =
   const navigate = useNavigate();
   const buttonRef = useRef<HTMLDivElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const menuId = useId();
   const closeMenu = useCallback(() => setMenuOpen(false), []);
   // A file from the computer being dragged over this tab (spells from the grimoire are
   // tracked by Start as `dragActive`).
@@ -151,7 +152,7 @@ export const ReadOption = ({ dragActive, onWrite, onImport }: ReadOptionProps) =
       <div className={s.stage}>
         <span className={s.ring} aria-hidden="true" />
         <span className={`${s.ring} ${s.ringOuter}`} aria-hidden="true" />
-        <RadialMenu open={showMenu} items={menuItems} onClose={closeMenu} anchorRef={buttonRef} />
+        <RadialMenu id={menuId} open={showMenu} items={menuItems} onClose={closeMenu} anchorRef={buttonRef} />
         <div ref={buttonRef} className={s.button}>
           <PlayButton
             size="lg"
@@ -159,6 +160,9 @@ export const ReadOption = ({ dragActive, onWrite, onImport }: ReadOptionProps) =
             active={dropping || showMenu}
             onClick={showBrand ? () => setMenuOpen(open => !open) : togglePlayback}
             title={showBrand ? t.start.readMenu : undefined}
+            hasPopup={showBrand ? 'menu' : undefined}
+            expanded={showMenu}
+            controls={menuId}
             icon={showBrand ? (
               <span
                 data-testid="read-option-brand-icon"

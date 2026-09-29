@@ -20,4 +20,21 @@ describe('PlayButton', () => {
     expect(screen.getByTestId('play-button')).toHaveAttribute('title', 'Open a file');
     expect(screen.getByTestId('play-button')).toHaveAttribute('aria-label', 'Open a file');
   });
+
+  it('announces a menu it opens, and whether it is open', () => {
+    const { rerender } = render(<PlayButton isPlaying={false} onClick={vi.fn()} hasPopup="menu" expanded={false} controls="m1" />);
+    const button = screen.getByTestId('play-button');
+    expect(button).toHaveAttribute('aria-haspopup', 'menu');
+    expect(button).toHaveAttribute('aria-expanded', 'false');
+    expect(button).toHaveAttribute('aria-controls', 'm1');
+    rerender(<PlayButton isPlaying={false} onClick={vi.fn()} hasPopup="menu" expanded controls="m1" />);
+    expect(button).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it('as a plain play button, has no menu attributes', () => {
+    render(<PlayButton isPlaying={false} onClick={vi.fn()} />);
+    const button = screen.getByTestId('play-button');
+    expect(button).not.toHaveAttribute('aria-haspopup');
+    expect(button).not.toHaveAttribute('aria-expanded');
+  });
 });

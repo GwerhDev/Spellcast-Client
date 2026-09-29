@@ -15,15 +15,23 @@ interface PlayButtonProps {
   icon?: React.ReactNode;
   // Tooltip and accessible name, for when the icon alone doesn't say what the click does.
   title?: string;
+  // When the button opens a menu instead of playing: announces that it has one, whether
+  // it's open, and which element it is.
+  hasPopup?: 'menu';
+  expanded?: boolean;
+  controls?: string;
 }
 
-export const PlayButton: React.FC<PlayButtonProps> = ({ isPlaying, onClick, disabled, size = 'md', active, icon, title }) => (
+export const PlayButton: React.FC<PlayButtonProps> = ({ isPlaying, onClick, disabled, size = 'md', active, icon, title, hasPopup, expanded, controls }) => (
   <button
     data-testid="play-button"
     className={`${s.btn} ${s[size]} ${isPlaying || active ? s.playing : ''}`}
     onClick={onClick}
     title={title}
     aria-label={title}
+    aria-haspopup={hasPopup}
+    aria-expanded={hasPopup ? !!expanded : undefined}
+    aria-controls={hasPopup ? controls : undefined}
     disabled={disabled}
     style={disabled ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
   >

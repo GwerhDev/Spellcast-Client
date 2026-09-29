@@ -22,11 +22,13 @@ interface RadialMenuProps {
   // The element the menu floats around (e.g. its toggle button): clicks on it are left to
   // it, so toggling it again doesn't count as an outside click that re-closes the menu.
   anchorRef?: React.RefObject<HTMLElement | null>;
+  // For the toggle's aria-controls.
+  id?: string;
 }
 
 // Options floating in an arc around a central control, positioned from its center. Closes
 // on Escape, on a click outside it (and its anchor), and after an option is picked.
-export const RadialMenu = ({ open, items, onClose, radius = 110, startAngle = 160, endAngle = 20, anchorRef }: RadialMenuProps) => {
+export const RadialMenu = ({ open, items, onClose, radius = 110, startAngle = 160, endAngle = 20, anchorRef, id }: RadialMenuProps) => {
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -48,7 +50,7 @@ export const RadialMenu = ({ open, items, onClose, radius = 110, startAngle = 16
   const step = items.length > 1 ? (endAngle - startAngle) / (items.length - 1) : 0;
 
   return (
-    <div ref={menuRef} data-testid="radial-menu" role="menu" aria-hidden={!open} className={`${s.menu} ${open ? s.open : ''}`}>
+    <div ref={menuRef} id={id} data-testid="radial-menu" role="menu" aria-hidden={!open} className={`${s.menu} ${open ? s.open : ''}`}>
       {items.map((item, i) => {
         const angle = ((startAngle + step * i) * Math.PI) / 180;
         const x = Math.round(Math.cos(angle) * radius);

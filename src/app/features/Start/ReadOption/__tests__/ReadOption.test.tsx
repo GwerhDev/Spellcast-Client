@@ -45,8 +45,13 @@ describe('ReadOption', () => {
       renderWithProviders(<Read />, { store });
       expect(screen.getByTestId('read-option-brand-icon')).toBeInTheDocument();
       expect(menuHidden()).toBe(true);
-      fireEvent.click(screen.getByTestId('play-button'));
+      const button = screen.getByTestId('play-button');
+      expect(button).toHaveAttribute('aria-haspopup', 'menu');
+      expect(button).toHaveAttribute('aria-expanded', 'false');
+      expect(button).toHaveAttribute('aria-controls', screen.getByTestId('radial-menu').id);
+      fireEvent.click(button);
       expect(menuHidden()).toBe(false);
+      expect(button).toHaveAttribute('aria-expanded', 'true');
       expect(store.getState().browserPlayer.toggleSeq).toBe(0);
       expect(store.getState().audioPlayer.toggleSeq).toBe(0);
     });

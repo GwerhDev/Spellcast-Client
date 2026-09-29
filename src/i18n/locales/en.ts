@@ -498,7 +498,7 @@ export const en = {
     writeTab: 'Write',
     importTab: 'Import',
     readSubtitle: 'Drag a spell to start reading it',
-    readDropHint: 'Drag a spell here to start reading it.',
+    readDropHint: 'Click to show options or drag a spell here to start reading it.',
     readDropRelease: 'Drop it to start reading',
     readNowPlaying: 'Reading',
     readPaused: 'Paused',

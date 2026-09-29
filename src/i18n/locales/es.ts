@@ -500,7 +500,7 @@ export const es: Translations = {
     writeTab: 'Escribir',
     importTab: 'Importar',
     readSubtitle: 'Arrastra un spell para empezar a leerlo',
-    readDropHint: 'Arrastra un spell hasta aquí para empezar a leerlo.',
+    readDropHint: 'Haz clic para ver opciones o arrastra un spell hasta aquí para empezar a leerlo.',
     readDropRelease: 'Suéltalo para empezar a leer',
     readNowPlaying: 'Leyendo',
     readPaused: 'En pausa',
