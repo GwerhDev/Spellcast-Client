@@ -88,6 +88,9 @@ export const SpellCard = ({ doc, isActive, isPlaying, onClick, onDelete, onEdit,
   const [menuOpen, setMenuOpen] = useState(false);
   // While this card is being dragged it keeps its place as an empty placeholder.
   const [dragging, setDragging] = useState(false);
+  // The frame scheduled to switch to the placeholder; a drag that ends before it runs must
+  // cancel it, or it would turn the placeholder on after the drag is already over.
+  const dragFrameRef = useRef<number | null>(null);
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
   const btnRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -164,9 +167,18 @@ export const SpellCard = ({ doc, isActive, isPlaying, onClick, onDelete, onEdit,
         e.dataTransfer.effectAllowed = 'copy';
         // The browser snapshots the drag image right after this handler; switching to the
         // placeholder on the next frame keeps the real card as what follows the cursor.
-        requestAnimationFrame(() => setDragging(true));
+        dragFrameRef.current = requestAnimationFrame(() => {
+          dragFrameRef.current = null;
+          setDragging(true);
+        });
       }}
-      onDragEnd={() => setDragging(false)}
+      onDragEnd={() => {
+        if (dragFrameRef.current !== null) {
+          cancelAnimationFrame(dragFrameRef.current);
+          dragFrameRef.current = null;
+        }
+        setDragging(false);
+      }}
     >
       {/* TCORE-123 follow-up: everything that needs to respect .card's own rounded
           corners (or that positions itself with inset:0 expecting to be clipped, like the

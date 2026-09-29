@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { screen, fireEvent, waitFor } from '@testing-library/react';
+import { screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { renderWithProviders } from '../../../../test/renderWithProviders';
 import { SpellCard } from '../SpellCard';
 import type { Spell } from '../../../../interfaces';
@@ -59,6 +59,16 @@ describe('SpellCard', () => {
       // Swapped a frame later, after the browser has snapshotted the real card as drag image.
       expect(await screen.findByTestId('spell-card-placeholder-doc-1')).toBeInTheDocument();
       fireEvent.dragEnd(card);
+      expect(screen.queryByTestId('spell-card-placeholder-doc-1')).not.toBeInTheDocument();
+    });
+
+    it('does not leave the placeholder behind when the drag ends before the next frame', async () => {
+      renderCard();
+      const card = screen.getByTestId('spell-card-doc-1');
+      fireEvent.dragStart(card, { dataTransfer: { setData: vi.fn(), effectAllowed: '' } });
+      fireEvent.dragEnd(card);
+      // Let the frame the dragstart scheduled run (and its update render) before checking.
+      await act(async () => { await new Promise(resolve => requestAnimationFrame(() => resolve(null))); });
       expect(screen.queryByTestId('spell-card-placeholder-doc-1')).not.toBeInTheDocument();
     });
 
