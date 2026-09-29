@@ -1,10 +1,32 @@
+/* Same panel as Text's textarea and Import's dropzone, so the three tabs share one box. */
 .container {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  width: 100%;
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 0.75rem;
+  box-sizing: border-box;
+  border-radius: 8px;
+  border: 2px solid var(--color-dark-300);
+  background: var(--component-background);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Nothing loaded: no panel, just the button and hint on the page itself (a dragged spell
+   still lights the border up below, marking where to drop it). */
+.container.empty {
+  background: transparent;
+  border-color: transparent;
+}
+
+.container.dragActive {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 20px color-mix(in srgb, var(--color-primary) 45%, transparent);
 }
 
 .stage {
@@ -57,6 +79,80 @@
   animation-delay: -0.7s;
 }
 
+/* The loaded spell's cover filling the panel, darkened by a gradient (heavier toward the
+   bottom, where the title sits) and a vignette at the edges so the button and text stay
+   readable over any artwork. */
+.panelCover {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-position: center 22%;
+  background-size: cover;
+  /* Slightly out of focus and dimmed, like depth of field: the cover reads as far behind
+     the button instead of level with it. Scaled so the blur doesn't fade its edges. */
+  filter: blur(3px) brightness(0.72) saturate(1.1);
+  transform: scale(1.08);
+  animation: fadeIn 0.6s ease;
+  pointer-events: none;
+}
+
+.panelCover::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 75% 90% at 50% 45%, transparent 35%, rgba(8, 10, 14, 0.55) 100%),
+    linear-gradient(180deg, rgba(8, 10, 14, 0.35) 0%, rgba(8, 10, 14, 0.5) 55%, rgba(8, 10, 14, 0.85) 100%);
+}
+
+/* Over the cover: a heavily blurred, saturated copy of it, strongest behind the button
+   and fading out toward the edges, so the button sits in a soft glow of the cover's own
+   colors while the artwork stays sharp around it. */
+.panelGlow {
+  position: absolute;
+  inset: -20px;
+  z-index: -1;
+  background-position: center 22%;
+  background-size: cover;
+  filter: blur(28px) saturate(1.4);
+  opacity: 0.85;
+  -webkit-mask-image: radial-gradient(circle 190px at 50% 44%, #000 30%, transparent 100%);
+  mask-image: radial-gradient(circle 190px at 50% 44%, #000 30%, transparent 100%);
+  animation: fadeIn 0.6s ease;
+  pointer-events: none;
+}
+
+/* Recessed well: an inner shadow over the artwork along the panel's edges, heaviest at the
+   top, as if the cover sat sunk beneath the panel's rim. */
+.hasCover::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  box-shadow:
+    inset 0 14px 28px -6px rgba(0, 0, 0, 0.75),
+    inset 0 -10px 24px -8px rgba(0, 0, 0, 0.6),
+    inset 14px 0 26px -10px rgba(0, 0, 0, 0.55),
+    inset -14px 0 26px -10px rgba(0, 0, 0, 0.55);
+  pointer-events: none;
+}
+
+/* Over artwork the text is always light, whatever the theme. */
+.hasCover .nowTitle {
+  color: #f2f2f2;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.6);
+}
+
+.hasCover .nowStatus,
+.hasCover .nowDot {
+  color: rgba(242, 242, 242, 0.8);
+}
+
+.hasCover:not(.dragActive) .ring {
+  border-color: rgba(242, 242, 242, 0.3);
+}
+
 /* The Spellcast mark drawn as a mask in the button's own text color, so it follows the
    theme (the logo file itself is a fixed blue). */
 .brandIcon {
@@ -73,6 +169,41 @@
   mask-repeat: no-repeat;
 }
 
+/* What's loaded: a small status line (waveform, playing/paused, page) over the title. */
+.nowReading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  max-width: 420px;
+  min-width: 0;
+}
+
+.nowStatus {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-primary);
+}
+
+.nowDot {
+  color: var(--color-light-400);
+}
+
+.nowTitle {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-color-accent);
+}
+
 .hint {
   margin: 0;
   max-width: 360px;
@@ -84,6 +215,10 @@
 .dragActive .hint {
   color: var(--color-primary);
   font-weight: 600;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
 }
 
 @keyframes ringBreath {
