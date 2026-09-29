@@ -821,7 +821,14 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
   // The freeze-nudge timer itself is armed/cleared/re-armed at each real
   // utterance start/pause/resume (see armFreezeNudgeTimer above) -- this
   // effect only guarantees cleanup on unmount, not a recurring poll.
-  useEffect(() => () => clearFreezeNudgeTimer(), []);
+  // Unmounting also silences the engine: the player goes away when its spell is
+  // unloaded or deleted, and speechSynthesis (unlike an <audio> element leaving
+  // the page) would otherwise keep speaking with no player left to stop it.
+  useEffect(() => () => {
+    clearFreezeNudgeTimer();
+    activeUtteranceRef.current = null;
+    window.speechSynthesis?.cancel();
+  }, []);
 
   // Routed through the queue like everything else (VISIBILITY_CHECK case in
   // handleEvent above) rather than checking the engine here directly -- this

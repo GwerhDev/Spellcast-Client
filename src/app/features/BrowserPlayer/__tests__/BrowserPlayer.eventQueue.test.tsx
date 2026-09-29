@@ -328,4 +328,17 @@ describe('BrowserPlayer single event queue (TCORE-81)', () => {
     fireEvent.mouseDown(document.body);
     expect(screen.queryByTestId('volume-slider')).not.toBeInTheDocument();
   });
+
+  it('silences the speech engine when the player unmounts (spell unloaded or deleted)', async () => {
+    const { unmount } = renderWithProviders(
+      <BrowserPlayer showVoiceSelectorModal={vi.fn()} showPlayerConfigModal={vi.fn()} />,
+      { preloadedState: baseState }
+    );
+    await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+    expect(mockSpeechSynthesis.speaking).toBe(true);
+    mockSpeechSynthesis.cancel.mockClear();
+    unmount();
+    expect(mockSpeechSynthesis.cancel).toHaveBeenCalled();
+    expect(mockSpeechSynthesis.speaking).toBe(false);
+  });
 });
