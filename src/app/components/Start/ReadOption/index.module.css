@@ -1,4 +1,4 @@
-/* Same panel as Text's textarea and Import's dropzone, so the three tabs share one box. */
+/* Same panel as Write's textarea and Import's dropzone, so the three tabs share one box. */
 .container {
   position: relative;
   isolation: isolate;
@@ -204,17 +204,39 @@
   color: var(--text-color-accent);
 }
 
+/* A small pill with a dashed edge, like the empty slot a dragged card leaves behind; it
+   goes solid in the accent color while a spell is dragged over. */
 .hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
   margin: 0;
-  max-width: 360px;
-  font-size: 0.9rem;
-  color: var(--color-light-400);
-  transition: color 0.2s ease;
+  max-width: 100%;
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  border: 1px dashed color-mix(in srgb, var(--color-light-400) 60%, transparent);
+  background: color-mix(in srgb, var(--component-background) 60%, transparent);
+  font-size: 0.8rem;
+  color: var(--color-light-300);
+  transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.hintIcon {
+  font-size: 0.75rem;
+  color: var(--color-primary);
+  opacity: 0.8;
 }
 
 .dragActive .hint {
+  border-style: solid;
+  border-color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
   color: var(--color-primary);
   font-weight: 600;
+}
+
+.dragActive .hintIcon {
+  opacity: 1;
 }
 
 @keyframes fadeIn {

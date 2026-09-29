@@ -1,6 +1,6 @@
 import s from '../../components/Start/index.module.css';
 import { useEffect, useRef, useState } from 'react';
-import { TextOption } from './TextOption';
+import { WriteOption } from './WriteOption';
 import { SegmentedTabs } from '../../components/Tabs/SegmentedTabs';
 import { ImportOption } from './ImportOption';
 import { ReadOption } from './ReadOption';
@@ -16,9 +16,9 @@ import { faBookOpen, faPen, faUpload } from '@fortawesome/free-solid-svg-icons';
 const isSpellDrag = (e: React.DragEvent) => Array.from(e.dataTransfer.types).includes(SPELL_DRAG_TYPE);
 
 export const Start = () => {
-  const [inputType, setInputType] = useState('text');
+  const [inputType, setInputType] = useState('write');
   // null until the first check answers: the tabs wait for it, so Start opens directly on its
-  // real default (Read when there are spells) instead of showing Text and then jumping.
+  // real default (Read when there are spells) instead of showing Write and then jumping.
   const [hasSpellsKnown, setHasSpells] = useState<boolean | null>(null);
   const hasSpells = !!hasSpellsKnown;
   const [dragActive, setDragActive] = useState(false);
@@ -35,14 +35,14 @@ export const Start = () => {
   useEffect(() => {
     let cancelled = false;
     // With at least one spell, "Read" is the first tab and the default; it only exists with
-    // spells, so if the last one is deleted while it's showing, fall back to "Text". Both
+    // spells, so if the last one is deleted while it's showing, fall back to "Write". Both
     // are picked in the same update as the answer, so there's never a frame on a tab that
     // no longer matches (e.g. the Read content still showing with its tab already gone).
     const apply = (exists: boolean) => {
       if (cancelled) return;
       setHasSpells(exists);
       if (exists && !userPickedTab.current) setInputType('read');
-      if (!exists) setInputType(prev => (prev === 'read' ? 'text' : prev));
+      if (!exists) setInputType(prev => (prev === 'read' ? 'write' : prev));
     };
     hasSpellsInDB(userId)
       .then(apply)
@@ -110,7 +110,7 @@ export const Start = () => {
   const getSubtitle = () => {
     switch (inputType) {
       case 'import': return t.start.importSubtitle;
-      case 'text':   return t.start.textSubtitle;
+      case 'write':  return t.start.writeSubtitle;
       case 'read':   return t.start.readSubtitle;
       default:       return;
     }
@@ -118,7 +118,7 @@ export const Start = () => {
 
   const inputTypeTabs = [
     ...(hasSpells ? [{ id: 'read', label: t.start.readTab, icon: faBookOpen }] : []),
-    { id: 'text', label: t.start.textTab, icon: faPen },
+    { id: 'write', label: t.start.writeTab, icon: faPen },
     { id: 'import', label: t.start.importTab, icon: faUpload },
   ];
 
@@ -142,7 +142,7 @@ export const Start = () => {
 
           <div className={s.optionContainer}>
             {hasSpellsKnown !== null && inputType === 'import' && <ImportOption />}
-            {hasSpellsKnown !== null && inputType === 'text' && <TextOption />}
+            {hasSpellsKnown !== null && inputType === 'write' && <WriteOption />}
             {inputType === 'read' && <ReadOption dragActive={dragActive} />}
           </div>
         </div>

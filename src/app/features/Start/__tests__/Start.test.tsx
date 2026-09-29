@@ -11,9 +11,9 @@ import { play } from '../../../../store/browserPlayerSlice';
 vi.mock('../ImportOption', () => ({
   ImportOption: () => null,
 }));
-// TextOption uses window.speechSynthesis (not in jsdom)
-vi.mock('../TextOption', () => ({
-  TextOption: () => null,
+// WriteOption uses window.speechSynthesis (not in jsdom)
+vi.mock('../WriteOption', () => ({
+  WriteOption: () => null,
 }));
 
 const spell = { id: 'spell-1', userId: undefined, title: 'Spell one', createdAt: new Date(), pagesContent: '["a"]' } as Spell;
@@ -64,11 +64,11 @@ describe('Start', () => {
   it('keeps the tab the user picked instead of jumping back to Read', async () => {
     renderWithProviders(<Start />);
     await screen.findByTestId('read-option');
-    fireEvent.click(screen.getByTestId('segmented-tab-text'));
+    fireEvent.click(screen.getByTestId('segmented-tab-write'));
     expect(screen.queryByTestId('read-option')).not.toBeInTheDocument();
   });
 
-  it('defaults to Text when the grimoire is empty', async () => {
+  it('defaults to Write when the grimoire is empty', async () => {
     mockHasSpells.mockResolvedValue(false);
     renderWithProviders(<Start />);
     await waitFor(() => expect(mockHasSpells).toHaveBeenCalled());
@@ -103,7 +103,7 @@ describe('Start', () => {
     expect(store.getState().browserPlayer.autoPlayOnLoad).toBe(true);
   });
 
-  it('drops the Read tab (back to Text) once the last spell is deleted', async () => {
+  it('drops the Read tab (back to Write) once the last spell is deleted', async () => {
     const { store } = renderWithProviders(<Start />);
     await screen.findByTestId('read-option');
     mockHasSpells.mockResolvedValue(false);
@@ -124,7 +124,7 @@ describe('Start', () => {
     const dragOverStart = async () => {
       renderWithProviders(<Start />);
       await screen.findByTestId('read-option');
-      fireEvent.click(screen.getByTestId('segmented-tab-text'));
+      fireEvent.click(screen.getByTestId('segmented-tab-write'));
       fireEvent.dragEnter(screen.getByTestId('start'), spellDrag());
       expect(screen.getByTestId('read-option-hint')).toHaveTextContent('Drop it');
     };
@@ -136,7 +136,7 @@ describe('Start', () => {
       expect(screen.getByTestId('read-option-hint')).toHaveTextContent('Drop it');
     });
 
-    // The drag entered through the Text tab's content, which the switch to Read removed --
+    // The drag entered through the Write tab's content, which the switch to Read removed --
     // its own dragleave never comes, so the state can't rely on counting enter/leave pairs.
     it('ends when the drag leaves Start, even after entering through a removed element', async () => {
       await dragOverStart();

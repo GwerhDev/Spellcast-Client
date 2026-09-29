@@ -8,7 +8,7 @@ export interface TimelineEntry {
   end: number;
 }
 
-// Wraps a plain string (no Tiptap editor behind it — e.g. Start/TextOption's free-text box,
+// Wraps a plain string (no Tiptap editor behind it — e.g. Start/WriteOption's free-text box,
 // or a JSON.parse fallback when a stored page turns out not to be valid JSON) into the
 // minimal doc/paragraph/text tree the backend's Node contract expects.
 export const wrapPlainText = (text: string): JSONContent => ({

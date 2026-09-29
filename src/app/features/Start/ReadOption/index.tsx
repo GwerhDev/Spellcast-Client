@@ -2,6 +2,8 @@ import s from '../../../components/Start/ReadOption/index.module.css';
 import { PlayButton } from '../../../components/PlayButton/PlayButton';
 import { Waveform } from '../../../components/Waveform/Waveform';
 import spellcastLogo from '../../../../assets/spellcast-logo.svg';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faHandPointer } from '@fortawesome/free-solid-svg-icons';
 import { useAppSelector } from '../../../../store/hooks';
 import { usePlaySpell } from '../../../../hooks/usePlaySpell';
 import { useSpellCoverUrl } from '../../../../hooks/useSpellCoverUrl';
@@ -20,7 +22,7 @@ const brandMask = cssUrl(spellcastLogo);
 
 // The "Read" tab: the player's own PlayButton as the drop target. Dropping a spell starts
 // reading it; when something is already loaded, the button plays/pauses it, over that
-// spell's cover filling the tab's panel (same box as Text's textarea / Import's dropzone).
+// spell's cover filling the tab's panel (same box as Write's textarea / Import's dropzone).
 export const ReadOption = ({ dragActive }: ReadOptionProps) => {
   const { t } = useLanguage();
   const { togglePlayback } = usePlaySpell();
@@ -81,7 +83,8 @@ export const ReadOption = ({ dragActive }: ReadOptionProps) => {
         </div>
       ) : (
         <p data-testid="read-option-hint" className={s.hint}>
-          {dragActive ? t.start.readDropRelease : t.start.readDropHint}
+          <FontAwesomeIcon icon={faHandPointer} className={s.hintIcon} />
+          <span>{dragActive ? t.start.readDropRelease : t.start.readDropHint}</span>
         </p>
       )}
     </div>

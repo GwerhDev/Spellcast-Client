@@ -1,4 +1,4 @@
-import s from '../../../components/Start/TextOption/index.module.css';
+import s from '../../../components/Start/WriteOption/index.module.css';
 import modal from '../../../components/Modals/VoiceSelectorModal.module.css';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -15,7 +15,7 @@ import { faCircle as faRegCircle } from '@fortawesome/free-regular-svg-icons';
 import { CustomModal } from '../../../components/Modals/CustomModal';
 import { useLanguage } from '../../../../i18n';
 
-export const TextOption: React.FC = () => {
+export const WriteOption: React.FC = () => {
   const [text, setText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -232,10 +232,10 @@ export const TextOption: React.FC = () => {
 
   return (
     <>
-      <form data-testid="text-option-form" className={s.form} onSubmit={(e) => e.preventDefault()}>
+      <form data-testid="write-option-form" className={s.form} onSubmit={(e) => e.preventDefault()}>
         <div className={s.textareaWrapper}>
           <textarea
-            data-testid="text-option-textarea"
+            data-testid="write-option-textarea"
             className={s.textarea}
             placeholder={t.player.enterText}
             value={text}
@@ -288,7 +288,7 @@ export const TextOption: React.FC = () => {
               </div>
               <span className={s.iconFixed}>
                 <button
-                  data-testid="text-option-play-btn"
+                  data-testid="write-option-play-btn"
                   type="button"
                   className={s.submitButton}
                   disabled={isLoading || !text.trim()}
