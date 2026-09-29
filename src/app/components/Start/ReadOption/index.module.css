@@ -57,6 +57,22 @@
   animation-delay: -0.7s;
 }
 
+/* The Spellcast mark drawn as a mask in the button's own text color, so it follows the
+   theme (the logo file itself is a fixed blue). */
+.brandIcon {
+  display: block;
+  width: 1.5em;
+  height: 1.5em;
+  background-color: currentColor;
+  /* mask-image itself is set inline (the logo's bundled URL); position/size/repeat here. */
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+
 .hint {
   margin: 0;
   max-width: 360px;

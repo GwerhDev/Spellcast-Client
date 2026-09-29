@@ -1,5 +1,6 @@
 import s from '../../../components/Start/ReadOption/index.module.css';
 import { PlayButton } from '../../../components/PlayButton/PlayButton';
+import spellcastLogo from '../../../../assets/spellcast-logo.svg';
 import { useAppSelector } from '../../../../store/hooks';
 import { usePlaySpell } from '../../../../hooks/usePlaySpell';
 import { useLanguage } from '../../../../i18n';
@@ -12,6 +13,10 @@ interface ReadOptionProps {
 
 // The "Read" tab: the player's own PlayButton as the drop target. Dropping a spell starts
 // reading it; when something is already loaded, the button plays/pauses it.
+// Quoted: Vite inlines small SVGs as data URIs containing single quotes, which an unquoted
+// url() rejects.
+const brandMask = `url("${spellcastLogo}")`;
+
 export const ReadOption = ({ dragActive }: ReadOptionProps) => {
   const { t } = useLanguage();
   const { togglePlayback } = usePlaySpell();
@@ -20,6 +25,9 @@ export const ReadOption = ({ dragActive }: ReadOptionProps) => {
   const browserPlaying = useAppSelector(state => state.browserPlayer.isPlaying);
   const isPlaying = audioPlaying || browserPlaying;
   const hasSpell = !!spellId;
+  // Nothing loaded and nothing being dragged: the button shows the Spellcast mark and does
+  // nothing on click; a spell dragged over turns it back into a play button.
+  const idle = !hasSpell && !dragActive;
 
   const hint = dragActive
     ? t.start.readDropRelease
@@ -38,7 +46,15 @@ export const ReadOption = ({ dragActive }: ReadOptionProps) => {
             isPlaying={isPlaying}
             active={dragActive}
             onClick={togglePlayback}
-            disabled={!hasSpell && !dragActive}
+            idle={idle}
+            icon={idle ? (
+              <span
+                data-testid="read-option-brand-icon"
+                className={s.brandIcon}
+                style={{ maskImage: brandMask, WebkitMaskImage: brandMask }}
+                aria-hidden="true"
+              />
+            ) : undefined}
           />
         </div>
       </div>

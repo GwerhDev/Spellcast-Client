@@ -86,6 +86,8 @@ export const SpellCard = ({ doc, isActive, isPlaying, onClick, onDelete, onEdit,
 
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  // While this card is being dragged it keeps its place as an empty placeholder.
+  const [dragging, setDragging] = useState(false);
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
   const btnRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -152,7 +154,7 @@ export const SpellCard = ({ doc, isActive, isPlaying, onClick, onDelete, onEdit,
     <>
     <div
       data-testid={`spell-card-${doc.id}`}
-      className={`${s.card} ${isActive ? s.cardActive : ''} ${selected ? s.cardSelected : ''} ${hasCoverFrame ? s.cardSquared : ''}`}
+      className={`${s.card} ${isActive ? s.cardActive : ''} ${selected ? s.cardSelected : ''} ${hasCoverFrame ? s.cardSquared : ''} ${dragging ? s.cardDragging : ''}`}
       onClick={handleClick}
       // Draggable onto a drop target that reads spells (e.g. Start's "Read" tab), which gets
       // the spell id under SPELL_DRAG_TYPE. Off in selection mode, where clicks select.
@@ -160,7 +162,11 @@ export const SpellCard = ({ doc, isActive, isPlaying, onClick, onDelete, onEdit,
       onDragStart={e => {
         e.dataTransfer.setData(SPELL_DRAG_TYPE, doc.id);
         e.dataTransfer.effectAllowed = 'copy';
+        // The browser snapshots the drag image right after this handler; switching to the
+        // placeholder on the next frame keeps the real card as what follows the cursor.
+        requestAnimationFrame(() => setDragging(true));
       }}
+      onDragEnd={() => setDragging(false)}
     >
       {/* TCORE-123 follow-up: everything that needs to respect .card's own rounded
           corners (or that positions itself with inset:0 expecting to be clipped, like the
@@ -287,7 +293,12 @@ export const SpellCard = ({ doc, isActive, isPlaying, onClick, onDelete, onEdit,
           its corners' overhang without .cardClip's overflow:hidden cutting it off -- the 2D
           CoverFrameCorners mechanism doesn't need this margin (each of its <img> tags
           overhangs its own single edge independently, with no shared bounding box). */}
-      {hasCoverFrame && (
+      {dragging && (
+        <div className={s.dragPlaceholder} data-testid={`spell-card-placeholder-${doc.id}`} aria-hidden="true">
+          <FontAwesomeIcon icon={faScroll} />
+        </div>
+      )}
+      {hasCoverFrame && !dragging && (
         // z-index only set here, inline, for the 3D branch -- see .coverFrameSlot's own
         // CSS comment for why 2D CoverFrameCorners needs to stay at z-index:auto (matches
         // production) while CoverFrame3DView's own larger ornaments need to yield to

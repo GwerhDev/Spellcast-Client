@@ -52,6 +52,16 @@ describe('SpellCard', () => {
       expect(setData).toHaveBeenCalledWith(SPELL_DRAG_TYPE, 'doc-1');
     });
 
+    it('leaves an empty placeholder in its place while dragged, and restores it on dragend', async () => {
+      renderCard();
+      const card = screen.getByTestId('spell-card-doc-1');
+      fireEvent.dragStart(card, { dataTransfer: { setData: vi.fn(), effectAllowed: '' } });
+      // Swapped a frame later, after the browser has snapshotted the real card as drag image.
+      expect(await screen.findByTestId('spell-card-placeholder-doc-1')).toBeInTheDocument();
+      fireEvent.dragEnd(card);
+      expect(screen.queryByTestId('spell-card-placeholder-doc-1')).not.toBeInTheDocument();
+    });
+
     it('is not draggable in selection mode', () => {
       renderCard({ selectionMode: true });
       expect(screen.getByTestId('spell-card-doc-1')).toHaveAttribute('draggable', 'false');

@@ -25,6 +25,30 @@
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
+/* Being dragged: the card keeps its exact size (content hidden, not removed) and shows an
+   empty dashed slot with the scroll icon where it was. */
+.cardDragging,
+.cardDragging:hover {
+  border: 1px dashed color-mix(in srgb, var(--color-primary) 45%, transparent);
+  background: color-mix(in srgb, var(--color-primary) 5%, transparent);
+  box-shadow: none;
+}
+
+.cardDragging > .cardClip {
+  visibility: hidden;
+}
+
+.dragPlaceholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.2rem;
+  color: color-mix(in srgb, var(--color-primary) 45%, transparent);
+  pointer-events: none;
+}
+
 .card:hover {
   border-color: color-mix(in srgb, var(--color-primary) 45%, transparent);
   box-shadow: 0 0 16px rgba(115, 165, 204, 0.12);
