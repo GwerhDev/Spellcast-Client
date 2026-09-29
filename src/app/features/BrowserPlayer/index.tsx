@@ -1,4 +1,6 @@
 import s from '../../components/Players/BrowserPlayer/BrowserPlayer.module.css';
+import { usePlaySpell } from '../../../hooks/usePlaySpell';
+import { UnloadSpellButton } from '../../components/Players/shared/UnloadSpellButton/UnloadSpellButton';
 import { useLanguage } from '../../../i18n';
 import { useEffect, useState, useRef, SetStateAction } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
@@ -86,6 +88,7 @@ type EngineEvent =
 
 export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, showPlayerConfigModal }) => {
   const { t } = useLanguage();
+  const { unloadSpell } = usePlaySpell();
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const {
@@ -900,6 +903,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
               </div>
             )}
             <VoiceSelectorButton onClick={() => showVoiceSelectorModal(true)} />
+            <UnloadSpellButton onClick={unloadSpell} title={t.player.unloadSpell} />
           </section>
 
           <PlaybackControls

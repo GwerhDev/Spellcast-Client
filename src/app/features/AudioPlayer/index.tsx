@@ -1,4 +1,6 @@
 import s from '../../components/Players/AudioPlayer/AudioPlayer.module.css';
+import { usePlaySpell } from '../../../hooks/usePlaySpell';
+import { UnloadSpellButton } from '../../components/Players/shared/UnloadSpellButton/UnloadSpellButton';
 import { useLanguage } from '../../../i18n';
 import { useRef, useEffect, useState, SetStateAction } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
@@ -61,6 +63,7 @@ let hasWarnedAboutAudioCacheQuota = false;
 
 export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, showPlayerConfigModal }) => {
   const { t } = useLanguage();
+  const { unloadSpell } = usePlaySpell();
   const audioRef = useRef<HTMLAudioElement>(null);
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -639,6 +642,7 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
               </div>
             )}
             <VoiceSelectorButton onClick={() => showVoiceSelectorModal(true)} credentialError={credentialError} />
+            <UnloadSpellButton onClick={unloadSpell} title={t.player.unloadSpell} />
           </section>
 
           <PlaybackControls

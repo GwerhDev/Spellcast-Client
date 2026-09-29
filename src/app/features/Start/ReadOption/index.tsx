@@ -132,7 +132,7 @@ export const ReadOption = ({ dragActive }: ReadOptionProps) => {
         <IconButton
           data-testid="read-option-unload"
           icon={faEject}
-          title={t.start.readUnload}
+          title={t.player.unloadSpell}
           className={`${s.cornerButton} ${s.cornerLeft}`}
           onClick={unloadSpell}
           disabled={importing}

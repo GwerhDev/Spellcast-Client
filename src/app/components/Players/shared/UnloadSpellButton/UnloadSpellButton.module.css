@@ -1,0 +1,26 @@
+/* Small round button sized to sit next to VoiceSelectorButton's pill as one group.
+   `button.` raises specificity above IconButton's own .base/.transparent, so these win
+   regardless of the order CSS Modules bundles them in. */
+button.unload {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 0.6rem;
+  color: var(--color-light-400);
+  background: transparent;
+  border: 1px solid var(--line);
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+button.unload:hover,
+button.unload:focus-visible {
+  color: var(--color-primary);
+  border-color: color-mix(in srgb, var(--color-primary) 55%, transparent);
+  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+  outline: none;
+}
