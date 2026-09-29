@@ -43,7 +43,9 @@ const CoverFrame3DRoot = lazy(() =>
 
 export default function DefaultLayout() {
   const { selectedVoice } = useSelector((state: RootState) => state.voice);
-  const { isLoaded: documentLoaded } = useSelector((state: RootState) => state.spellReader);
+  // The player shows as soon as a spell is chosen, not only once its pages are read: the
+  // title (and cover) are already known, and reading a big spell's pages can take a while.
+  const { spellId: activeSpellId } = useSelector((state: RootState) => state.spellReader);
   const minimized = useSelector((state: RootState) => state.desktop.minimized);
   const dispatch = useAppDispatch();
   const { showModal: showAttentionGuard, handleContinue: handleAttentionGuardContinue } = useAttentionGuard();
@@ -144,11 +146,13 @@ export default function DefaultLayout() {
               </Suspense>
             )}
           </div>
-          {documentLoaded && (
+          {activeSpellId && (
             <div className="audioplayer-container">
               {selectedVoice.type === 'browser'
-                ? <BrowserPlayer showVoiceSelectorModal={setIsVoiceSelectorOpen} showPlayerConfigModal={setIsPlayerSettingsOpen} />
-                : <AudioPlayer showVoiceSelectorModal={setIsVoiceSelectorOpen} showPlayerConfigModal={setIsPlayerSettingsOpen} />}
+                // Keyed by spell: each spell gets a fresh player instance, as it did when the
+                // player only mounted once that spell's pages were loaded.
+                ? <BrowserPlayer key={activeSpellId} showVoiceSelectorModal={setIsVoiceSelectorOpen} showPlayerConfigModal={setIsPlayerSettingsOpen} />
+                : <AudioPlayer key={activeSpellId} showVoiceSelectorModal={setIsVoiceSelectorOpen} showPlayerConfigModal={setIsPlayerSettingsOpen} />}
             </div>
           )}
           <LogoutModal />

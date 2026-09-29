@@ -9,6 +9,9 @@ import { ReadOption } from '../index';
 const mockGetSpellById = vi.fn();
 vi.mock('../../../../../db', () => ({
   getSpellById: (...args: unknown[]) => mockGetSpellById(...args),
+  // Covers are read through getSpellById here, so each test's own spell (and timing) applies.
+  getSpellCover: (...args: unknown[]) => Promise.resolve(mockGetSpellById(...args)).then((d) => (d as { cover?: Blob } | null | undefined)?.cover ?? null),
+  getCachedSpellCover: () => undefined,
 }));
 
 const mockImportFile = vi.fn();

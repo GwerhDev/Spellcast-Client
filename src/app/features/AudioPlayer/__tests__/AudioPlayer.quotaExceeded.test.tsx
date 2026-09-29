@@ -27,6 +27,8 @@ vi.mock('../../../../db/audioCache', () => ({
 
 vi.mock('../../../../db', () => ({
   getSpellById: vi.fn(() => Promise.resolve({ pagesContent: JSON.stringify([{ type: 'doc' }]) })),
+  getSpellCover: vi.fn(() => Promise.resolve(null)),
+  getCachedSpellCover: () => undefined,
 }));
 
 const textToSpeechServiceMock = vi.fn();

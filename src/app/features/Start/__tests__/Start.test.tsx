@@ -20,6 +20,9 @@ const spell = { id: 'spell-1', userId: undefined, title: 'Spell one', createdAt:
 const mockGetSpellById = vi.fn();
 vi.mock('../../../../db', () => ({
   getSpellById: (...args: unknown[]) => mockGetSpellById(...args),
+  // Covers are read through getSpellById here, so each test's own spell (and timing) applies.
+  getSpellCover: (...args: unknown[]) => Promise.resolve(mockGetSpellById(...args)).then((d) => (d as { cover?: Blob } | null | undefined)?.cover ?? null),
+  getCachedSpellCover: () => undefined,
 }));
 
 // A drag carrying a spell, as a SpellCard's dragstart sets it up.

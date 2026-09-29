@@ -228,6 +228,120 @@ describe('db/index.ts CRUD', () => {
     ).rejects.toThrow();
   });
 
+  describe('reading progress in its own database (backward compatible)', () => {
+    // The spell record exactly as stored, bypassing getSpellById's progress overlay.
+    const rawSpell = async (id: string) => {
+      const db = await new Promise<IDBDatabase>((resolve, reject) => {
+        const req = indexedDB.open(DB_NAME, DB_VERSION);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+      return new Promise<Record<string, unknown>>((resolve, reject) => {
+        const req = db.transaction(SPELLS_STORE_NAME, 'readonly').objectStore(SPELLS_STORE_NAME).get(id);
+        req.onsuccess = () => { resolve(req.result); db.close(); };
+        req.onerror = () => reject(req.error);
+      });
+    };
+    const progressAt = (lastReadSentenceIndex: number) => ({ currentPage: 3, pagesProgress: [], lastReadSentenceIndex });
+
+    it('a spell with no stored progress yet (every existing spell) keeps reading its embedded progress', async () => {
+      const { saveSpellToDB, getSpellById, getSpellsFromDB } = await importDb();
+      const id = await saveSpellToDB(seedSpell({ userId: 'user-1' }));
+      const embedded = (await rawSpell(id)).progress;
+      expect((await getSpellById(id, 'user-1'))?.progress).toEqual(embedded);
+      expect((await getSpellsFromDB('user-1'))[0].progress).toEqual(embedded);
+    });
+
+    it('a progress update is read back everywhere, without rewriting the spell record', async () => {
+      const { saveSpellToDB, updateSpellProgress, getSpellById, getSpellsFromDB } = await importDb();
+      const id = await saveSpellToDB(seedSpell({ userId: 'user-1' }));
+      const before = await rawSpell(id);
+      await updateSpellProgress(id, 'user-1', progressAt(7));
+      expect((await getSpellById(id, 'user-1'))?.progress).toEqual(progressAt(7));
+      expect((await getSpellsFromDB('user-1'))[0].progress).toEqual(progressAt(7));
+      // The record itself -- embedded progress included -- is left exactly as it was.
+      expect(await rawSpell(id)).toEqual(before);
+    });
+
+    it("ignores a stored progress record that belongs to another user", async () => {
+      const { saveSpellToDB, getSpellById } = await importDb();
+      const { setStoredProgress } = await import('../spellProgress');
+      const id = await saveSpellToDB(seedSpell({ userId: 'user-1' }));
+      await setStoredProgress(id, 'user-2', progressAt(99));
+      expect((await getSpellById(id, 'user-1'))?.progress?.lastReadSentenceIndex).toBe(0);
+    });
+
+    it('accepts progress for a legacy spell stored under a differently-typed userId', async () => {
+      const { saveSpellToDB, updateSpellProgress, getSpellById } = await importDb();
+      // @ts-expect-error -- deliberately mistyped userId to model legacy data
+      const id = await saveSpellToDB(seedSpell({ userId: 42 }));
+      await updateSpellProgress(id, '42', progressAt(5));
+      expect((await getSpellById(id, '42'))?.progress).toEqual(progressAt(5));
+    });
+
+    it('deleting a spell also removes its stored progress', async () => {
+      const { saveSpellToDB, updateSpellProgress, deleteSpellFromDB } = await importDb();
+      const { getStoredProgress } = await import('../spellProgress');
+      const id = await saveSpellToDB(seedSpell({ userId: 'user-1' }));
+      await updateSpellProgress(id, 'user-1', progressAt(2));
+      await deleteSpellFromDB(id, 'user-1');
+      expect(await getStoredProgress(id)).toBeUndefined();
+    });
+
+    it('clearAllData also clears stored progress', async () => {
+      const { saveSpellToDB, updateSpellProgress, clearAllData } = await importDb();
+      const { getAllStoredProgress } = await import('../spellProgress');
+      const id = await saveSpellToDB(seedSpell({ userId: 'user-1' }));
+      await updateSpellProgress(id, 'user-1', progressAt(2));
+      await clearAllData();
+      expect((await getAllStoredProgress()).size).toBe(0);
+    });
+  });
+
+  describe('covers kept in memory', () => {
+    it('is unknown until the spell has been read, then known (cover or none) without another read', async () => {
+      const { saveSpellToDB, getSpellsFromDB, getCachedSpellCover } = await importDb();
+      const cover = new Blob(['img'], { type: 'image/jpeg' }) as unknown as globalThis.Blob;
+      const withCover = await saveSpellToDB({ ...seedSpell({ userId: 'user-1' }), cover });
+      const without = await saveSpellToDB(seedSpell({ userId: 'user-1', title: 'No cover' }));
+      expect(getCachedSpellCover(withCover)).toBeUndefined();
+      await getSpellsFromDB('user-1');
+      expect(getCachedSpellCover(withCover)).toBeTruthy();
+      expect(getCachedSpellCover(without)).toBeNull();
+    });
+
+    it('getSpellCover reads the spell once when unknown, then answers from memory', async () => {
+      const { saveSpellToDB, getSpellCover, getCachedSpellCover } = await importDb();
+      const cover = new Blob(['img'], { type: 'image/jpeg' }) as unknown as globalThis.Blob;
+      const id = await saveSpellToDB({ ...seedSpell({ userId: 'user-1' }), cover });
+      expect(await getSpellCover(id, 'user-1')).toBeTruthy();
+      expect(getCachedSpellCover(id)).toBeTruthy();
+    });
+
+    it('follows a cover change and forgets a deleted spell', async () => {
+      const { saveSpellToDB, getSpellById, updateSpellFull, deleteSpellFromDB, getCachedSpellCover } = await importDb();
+      const id = await saveSpellToDB(seedSpell({ userId: 'user-1' }));
+      await getSpellById(id, 'user-1');
+      expect(getCachedSpellCover(id)).toBeNull();
+      const cover = new Blob(['new'], { type: 'image/jpeg' }) as unknown as globalThis.Blob;
+      await updateSpellFull(id, 'user-1', { title: 'T', pagesContent: '[]', cover });
+      expect(getCachedSpellCover(id)).toBeTruthy();
+      await deleteSpellFromDB(id, 'user-1');
+      expect(getCachedSpellCover(id)).toBeUndefined();
+    });
+  });
+
+  it('concurrent getSpellById calls for the same spell share one read but each get their own copy', async () => {
+    const { saveSpellToDB, getSpellById } = await importDb();
+    const id = await saveSpellToDB(seedSpell({ userId: 'user-1', title: 'Shared' }));
+    const [a, b] = await Promise.all([getSpellById(id, 'user-1'), getSpellById(id, 'user-1')]);
+    expect(a).toEqual(b);
+    expect(a).not.toBe(b);
+    a!.title = 'Mutated';
+    expect(b!.title).toBe('Shared');
+    expect((await getSpellById(id, 'user-1'))?.title).toBe('Shared');
+  });
+
   it('updateSpellMetadata updates only description/author/tags/language, never touching title/pagesContent (TCORE-103)', async () => {
     const { saveSpellToDB, updateSpellMetadata, getSpellById } = await importDb();
     const id = await saveSpellToDB(seedSpell({ userId: 'user-1', title: 'Original Title', pagesContent: '[1,2,3]' }));

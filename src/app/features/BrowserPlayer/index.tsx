@@ -26,7 +26,7 @@ import { VoiceSelectorButton } from '../../components/Players/shared/VoiceSelect
 import { PlayerConfigButton } from '../../components/Players/shared/PlayerConfigButton/PlayerConfigButton';
 import { useNavigate } from 'react-router-dom';
 import { setSelectedVoice } from '../../../store/voiceSlice';
-import { getSpellById } from '../../../db';
+import { getSpellCover } from '../../../db';
 import { useAppSelector } from '../../../store/hooks';
 import { faScroll } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -182,10 +182,12 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
     setCoverUrl(null);
     setCoverSettled(false);
     if (spellId && userData?.id) {
-      getSpellById(spellId, userData.id).then(doc => {
+      // From memory when the spell was already listed (Last Spells / Grimoire), instead of
+      // reading the whole spell record just for its cover.
+      getSpellCover(spellId, userData.id).then(cover => {
         if (cancelled) return;
-        if (doc?.cover) {
-          url = URL.createObjectURL(doc.cover);
+        if (cover) {
+          url = URL.createObjectURL(cover);
           setCoverUrl(url);
         }
         setCoverSettled(true);
@@ -713,7 +715,9 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
       // every time something in its deps changes until coverSettled flips
       // true, then proceeds exactly once. Not a timer: it's driven by the
       // real fetch's own completion, whenever that actually happens.
-      if (!coverSettled) return;
+      // Also wait for the spell's pages: the player now mounts as soon as a spell is
+      // chosen, before they're read, and there'd be nothing to speak yet.
+      if (!coverSettled || !isLoaded) return;
       dispatch(setAutoPlayOnLoad(false));
       enqueue({ type: 'CLICK_PLAY' });
       return;
@@ -896,10 +900,10 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
                 </div>
               )}
             </div>
-            {isLoaded && (
+            {spellTitle && (
               <div className={s.spellDetails}>
                 <p data-testid="browser-player-title" title={spellTitle || ''} onClick={spellId ? handleTitle : undefined} style={spellId ? undefined : { cursor: 'default' }}>{spellTitle}</p>
-                {spellId && <small onClick={handleSearcher}>{t.spell.page} {currentPage} {t.spell.of} {totalPages}</small>}
+                {spellId && isLoaded && <small onClick={handleSearcher}>{t.spell.page} {currentPage} {t.spell.of} {totalPages}</small>}
               </div>
             )}
             <VoiceSelectorButton onClick={() => showVoiceSelectorModal(true)} />

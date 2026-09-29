@@ -2,6 +2,7 @@ import { DB_NAME, DB_VERSION, SPELLS_STORE_NAME } from "../config/api";
 import { Spell, SpellProgress } from "../interfaces";
 import { setOriginalPdf, deleteOriginalPdf } from "./originalPdfs";
 import { clearSpellAudioCache } from "./audioCache";
+import { getStoredProgress, getAllStoredProgress, setStoredProgress, deleteStoredProgress, clearStoredProgress } from "./spellProgress";
 
 // The pre-rename (TCORE-78) store name, frozen on purpose: it names whatever a
 // browser already has on disk from before this migration shipped, so it must never
@@ -15,6 +16,13 @@ const MIGRATION_COMPLETE_KEY = 'spellcast:migration:documentsToSpells:complete';
 // resolve, without ever matching a genuinely different user.
 const sameUser = (a: string | undefined, b: string | undefined): boolean =>
   a != null && b != null && String(a) === String(b);
+
+// Reading progress lives in its own database (see db/spellProgress.ts). A stored record,
+// when there is one for the same user, wins over the progress embedded on the spell --
+// which is still what every spell saved before that database existed uses until its first
+// update. A failed progress read never fails the spell read: the embedded value stands.
+const withStoredProgress = <T extends Spell>(spell: T, record: { userId: string | undefined; progress: SpellProgress } | undefined): T =>
+  record && sameUser(record.userId, spell.userId) ? { ...spell, progress: record.progress } : spell;
 
 let dbPromise: Promise<IDBDatabase> | null = null;
 
@@ -44,10 +52,15 @@ export const clearAllData = async (): Promise<void> => {
   const transaction = db.transaction(SPELLS_STORE_NAME, 'readwrite');
   const store = transaction.objectStore(SPELLS_STORE_NAME);
 
-  return new Promise((resolve, reject) => {
+  await new Promise<void>((resolve, reject) => {
     const request = store.clear();
     request.onsuccess = () => resolve();
     request.onerror = (event) => reject((event.target as IDBRequest).error);
+  });
+  coverCache.clear();
+  // Best-effort: with the spells gone, leftover progress records are unreachable anyway.
+  await clearStoredProgress().catch((err) => {
+    console.error('[IndexedDB] Failed to clear reading progress:', err);
   });
 };
 
@@ -345,7 +358,7 @@ export const saveSpellToDB = async (spell: Omit<Spell, 'id' | 'createdAt' | 'pro
   });
 };
 
-export const getSpellsFromDB = async (userId: string | undefined): Promise<Spell[]> => {
+const readSpellsFromStore = async (userId: string | undefined): Promise<Spell[]> => {
   const db = await openDB();
   const transaction = db.transaction(SPELLS_STORE_NAME, 'readonly');
   const spellStore = transaction.objectStore(SPELLS_STORE_NAME);
@@ -393,7 +406,59 @@ export const getSpellsFromDB = async (userId: string | undefined): Promise<Spell
   });
 };
 
-export const getSpellById = async (id: string, userId: string | undefined): Promise<Spell | undefined> => {
+export const getSpellsFromDB = async (userId: string | undefined): Promise<Spell[]> => {
+  const [spells, stored] = await Promise.all([
+    readSpellsFromStore(userId),
+    getAllStoredProgress().catch(() => new Map()),
+  ]);
+  spells.forEach(rememberCover);
+  return spells.map(spell => withStoredProgress(spell, stored.get(spell.id)));
+};
+
+// Covers kept in memory as spells are read (the Last Spells / Grimoire listing reads them
+// all), so the players and the Read tab can show a spell's cover without reading its whole
+// record again just for it. `null` = known to have no cover; missing = not read yet.
+const coverCache = new Map<string, Blob | null>();
+const rememberCover = (spell: Spell) => { coverCache.set(spell.id, spell.cover ?? null); };
+
+// The cover already in memory, if this spell has been read this session (sync, so a view
+// can show it on its first render); undefined when unknown.
+export const getCachedSpellCover = (id: string): Blob | null | undefined => coverCache.get(id);
+
+// A spell's cover: from memory when known, otherwise from one read of the spell.
+export const getSpellCover = async (id: string, userId: string | undefined): Promise<Blob | null> => {
+  const cached = coverCache.get(id);
+  if (cached !== undefined) return cached;
+  const spell = await getSpellById(id, userId);
+  return spell?.cover ?? null;
+};
+
+// Concurrent reads of the same spell share one IndexedDB read: starting a spell asks for
+// it from several places at once (the page processor, the player, the Read tab), and each
+// read deserializes the whole record. Only while a read is in flight -- nothing is cached
+// after it settles -- and every caller gets its own shallow copy.
+const inFlightSpellReads = new Map<string, Promise<Spell | undefined>>();
+
+export const getSpellById = (id: string, userId: string | undefined): Promise<Spell | undefined> => {
+  const key = `${id}|${userId ?? ''}`;
+  let read = inFlightSpellReads.get(key);
+  if (!read) {
+    read = Promise.all([
+      readSpellFromStore(id, userId),
+      getStoredProgress(id).catch(() => undefined),
+    ]).then(([spell, stored]) => {
+      if (!spell) return undefined;
+      rememberCover(spell);
+      return withStoredProgress(spell, stored);
+    });
+    inFlightSpellReads.set(key, read);
+    const forget = () => { if (inFlightSpellReads.get(key) === read) inFlightSpellReads.delete(key); };
+    read.then(forget, forget);
+  }
+  return read.then(spell => (spell ? { ...spell } : undefined));
+};
+
+const readSpellFromStore = async (id: string, userId: string | undefined): Promise<Spell | undefined> => {
   const db = await openDB();
   const transaction = db.transaction(SPELLS_STORE_NAME, 'readonly');
   const spellStore = transaction.objectStore(SPELLS_STORE_NAME);
@@ -450,6 +515,13 @@ export const deleteSpellFromDB = async (id: string, userId: string | undefined):
   await clearSpellAudioCache(id).catch((err) => {
     console.error(`[IndexedDB] Failed to clear audio cache for removed spell "${id}":`, err);
   });
+
+  coverCache.delete(id);
+
+  // Same reasoning: a deleted spell's reading position is unreachable, just leftover data.
+  await deleteStoredProgress(id).catch((err) => {
+    console.error(`[IndexedDB] Failed to delete reading progress for removed spell "${id}":`, err);
+  });
 };
 
 export const updateSpellContent = async (
@@ -500,7 +572,10 @@ export const updateSpellFull = async (
       const spell = getRequest.result as Spell | undefined;
       if (spell && sameUser(spell.userId, userId)) {
         const putRequest = store.put({ ...spell, ...updates });
-        putRequest.onsuccess = () => resolve();
+        putRequest.onsuccess = () => {
+          if ('cover' in updates) coverCache.set(id, updates.cover ?? null);
+          resolve();
+        };
         putRequest.onerror = (e) => reject((e.target as IDBRequest).error);
       } else {
         reject(new Error('Spell not found or user mismatch.'));
@@ -526,29 +601,35 @@ export const getSpellOriginalPages = async (id: string, userId: string | undefin
   });
 };
 
+// Writes only to the progress database (db/spellProgress.ts), never the spell record: a
+// progress update no longer reads and rewrites the whole spell (its pages and images) on
+// every sentence, nor locks the spells store while doing it. The embedded progress is left
+// untouched, as the fallback for anything still reading an older copy of the record.
 export const updateSpellProgress = async (spellId: string, userId: string, progress: SpellProgress): Promise<void> => {
-    const db = await openDB();
-    const transaction = db.transaction(SPELLS_STORE_NAME, 'readwrite');
-    const store = transaction.objectStore(SPELLS_STORE_NAME);
+  if (!(await spellBelongsToUser(spellId, userId))) throw new Error('Spell not found or user mismatch.');
+  await setStoredProgress(spellId, userId, progress);
+};
 
-    return new Promise((resolve, reject) => {
-        const getRequest = store.get(spellId);
+// Ownership check for progress writes without deserializing the spell: the userId index
+// yields just that user's spell ids. Legacy spells stored under a differently-typed userId
+// (see getSpellsFromDB's fallback) miss the index, so those fall back to one full read.
+// Remembered per session, so the check costs nothing after a spell's first progress write.
+const knownOwnership = new Set<string>();
 
-        getRequest.onsuccess = () => {
-            const spell = getRequest.result as Spell | undefined;
-            if (spell && sameUser(spell.userId, userId)) {
-                const updatedSpell = { ...spell, progress };
-                const putRequest = store.put(updatedSpell);
-
-                putRequest.onsuccess = () => resolve();
-                putRequest.onerror = (event) => reject((event.target as IDBRequest).error);
-            } else {
-                reject(new Error('Spell not found or user mismatch.'));
-            }
-        };
-
-        getRequest.onerror = (event) => reject((event.target as IDBRequest).error);
-    });
+const spellBelongsToUser = async (spellId: string, userId: string): Promise<boolean> => {
+  const key = `${spellId}|${userId}`;
+  if (knownOwnership.has(key)) return true;
+  const db = await openDB();
+  const store = db.transaction(SPELLS_STORE_NAME, 'readonly').objectStore(SPELLS_STORE_NAME);
+  const ownedIds = await new Promise<IDBValidKey[]>((resolve, reject) => {
+    const request = store.index('userId').getAllKeys(userId);
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+  let owns = ownedIds.includes(spellId);
+  if (!owns) owns = !!(await readSpellFromStore(spellId, userId));
+  if (owns) knownOwnership.add(key);
+  return owns;
 };
 
 // TCORE-103: updates description/author/tags/language, never pagesContent -- used by the

@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { screen, act, fireEvent } from '@testing-library/react';
 import { renderWithProviders } from '../../../../test/renderWithProviders';
 import { BrowserPlayer } from '../index';
+import { setSpellLoaded } from '../../../../store/spellReaderSlice';
 
 vi.mock('../../../../db', () => ({
   getSpellById: vi.fn().mockResolvedValue(null),
@@ -340,5 +341,21 @@ describe('BrowserPlayer single event queue (TCORE-81)', () => {
     unmount();
     expect(mockSpeechSynthesis.cancel).toHaveBeenCalled();
     expect(mockSpeechSynthesis.speaking).toBe(false);
+  });
+
+  // The player mounts as soon as a spell is chosen, before its pages are read.
+  it('autoplay waits for the spell pages to be loaded before playing', async () => {
+    const { store } = renderWithProviders(
+      <BrowserPlayer showVoiceSelectorModal={vi.fn()} showPlayerConfigModal={vi.fn()} />,
+      { preloadedState: { ...baseState, spellReader: { ...baseState.spellReader, isLoaded: false } } }
+    );
+    await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+    expect(mockSpeechSynthesis.speak).not.toHaveBeenCalled();
+    expect(store.getState().browserPlayer.isPlaying).toBe(false);
+    expect(store.getState().browserPlayer.autoPlayOnLoad).toBe(true);
+
+    await act(async () => { store.dispatch(setSpellLoaded(true)); await Promise.resolve(); await Promise.resolve(); });
+    expect(mockSpeechSynthesis.speak).toHaveBeenCalled();
+    expect(store.getState().browserPlayer.isPlaying).toBe(true);
   });
 });

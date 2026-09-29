@@ -12,6 +12,9 @@ const getSpellByIdMock = vi.fn(() => new Promise((resolve) => { resolveGetSpellB
   (spellId: string, userId: string) => Promise<{ cover: Blob } | null>;
 vi.mock('../../../../db', () => ({
   getSpellById: (...args: [string, string]) => getSpellByIdMock(...args),
+  // Covers are read through getSpellById here, so each test's own spell (and timing) applies.
+  getSpellCover: (...args: [string, string]) => Promise.resolve(getSpellByIdMock(...args)).then((d) => (d as { cover?: Blob } | null | undefined)?.cover ?? null),
+  getCachedSpellCover: () => undefined,
 }));
 
 let mockSpeaking = false;

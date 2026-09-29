@@ -30,7 +30,7 @@ import { addSignalNotice } from '../../../store/signalSlice';
 import type { CredentialError } from '../../components/Players/shared/VoiceSelectorButton/VoiceSelectorButton';
 import { getCachedAudio, setCachedAudio, AUDIO_CACHE_VERSION } from '../../../db/audioCache';
 import { isQuotaExceededError } from '../../../utils/storageQuota';
-import { getSpellById } from '../../../db';
+import { getSpellById, getSpellCover } from '../../../db';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '../../../store/hooks';
 import { faScroll } from '@fortawesome/free-solid-svg-icons';
@@ -192,10 +192,12 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
     setCoverUrl(null);
     setCoverSettled(false);
     if (spellId && userData?.id) {
-      getSpellById(spellId, userData.id).then(doc => {
+      // From memory when the spell was already listed (Last Spells / Grimoire), instead of
+      // reading the whole spell record just for its cover.
+      getSpellCover(spellId, userData.id).then(cover => {
         if (cancelled) return;
-        if (doc?.cover) {
-          url = URL.createObjectURL(doc.cover);
+        if (cover) {
+          url = URL.createObjectURL(cover);
           setCoverUrl(url);
         }
         setCoverSettled(true);
@@ -635,10 +637,10 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
                 </div>
               )}
             </div>
-            {isLoaded && (
+            {spellTitle && (
               <div className={s.spellDetails}>
                 <p data-testid="audio-player-title" title={spellTitle || ''} onClick={spellId ? handleTitle : undefined} style={spellId ? undefined : { cursor: 'default' }}>{spellTitle}</p>
-                {spellId && <small onClick={handleSearcher}>{t.spell.page} {currentPage} {t.spell.of} {totalPages}</small>}
+                {spellId && isLoaded && <small onClick={handleSearcher}>{t.spell.page} {currentPage} {t.spell.of} {totalPages}</small>}
               </div>
             )}
             <VoiceSelectorButton onClick={() => showVoiceSelectorModal(true)} credentialError={credentialError} />
