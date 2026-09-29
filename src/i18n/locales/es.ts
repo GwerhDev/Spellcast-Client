@@ -493,6 +493,7 @@ export const es: Translations = {
     readDropRelease: 'Suéltalo para empezar a leer',
     readNowPlaying: 'Leyendo',
     readPaused: 'En pausa',
+    readOpenReader: 'Abrir en el lector',
     orImportNew: 'Importar nuevo archivo',
     addMore: 'Añadir más archivos',
     dragDrop: 'Arrastra y suelta un PDF o un archivo .spell aquí, o haz clic para seleccionar uno',

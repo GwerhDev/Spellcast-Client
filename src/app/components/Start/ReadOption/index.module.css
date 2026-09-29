@@ -154,6 +154,47 @@
   border-color: rgba(242, 242, 242, 0.3);
 }
 
+/* Corner shortcut to the loaded spell's reader. */
+.openReader {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  z-index: 1;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 0.9rem;
+  color: var(--color-light-300);
+  background: color-mix(in srgb, var(--component-background) 70%, transparent);
+  border: 1px solid var(--line);
+  transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+}
+
+.openReader:hover,
+.openReader:focus-visible {
+  color: var(--color-primary);
+  border-color: color-mix(in srgb, var(--color-primary) 55%, transparent);
+  outline: none;
+}
+
+/* Over the cover: a dark translucent chip with light icon, readable over any artwork. */
+.hasCover .openReader {
+  color: rgba(242, 242, 242, 0.85);
+  background: rgba(8, 10, 14, 0.45);
+  border-color: rgba(242, 242, 242, 0.18);
+  backdrop-filter: blur(6px);
+}
+
+.hasCover .openReader:hover,
+.hasCover .openReader:focus-visible {
+  color: #fff;
+  border-color: rgba(242, 242, 242, 0.45);
+}
+
 /* The Spellcast mark drawn as a mask in the button's own text color, so it follows the
    theme (the logo file itself is a fixed blue). */
 .brandIcon {

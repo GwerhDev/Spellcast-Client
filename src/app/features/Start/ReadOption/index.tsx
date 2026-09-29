@@ -3,7 +3,9 @@ import { PlayButton } from '../../../components/PlayButton/PlayButton';
 import { Waveform } from '../../../components/Waveform/Waveform';
 import spellcastLogo from '../../../../assets/spellcast-logo.svg';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faHandPointer } from '@fortawesome/free-solid-svg-icons';
+import { faBookOpenReader, faHandPointer } from '@fortawesome/free-solid-svg-icons';
+import { useNavigate } from 'react-router-dom';
+import { IconButton } from '../../../components/Buttons/IconButton';
 import { useAppSelector } from '../../../../store/hooks';
 import { usePlaySpell } from '../../../../hooks/usePlaySpell';
 import { useSpellCoverUrl } from '../../../../hooks/useSpellCoverUrl';
@@ -26,6 +28,7 @@ const brandMask = cssUrl(spellcastLogo);
 export const ReadOption = ({ dragActive }: ReadOptionProps) => {
   const { t } = useLanguage();
   const { togglePlayback } = usePlaySpell();
+  const navigate = useNavigate();
   const { spellId, spellTitle, currentPage, totalPages, isLoaded } = useAppSelector(state => state.spellReader);
   const userId = useAppSelector(state => state.session.userData?.id);
   const audioPlaying = useAppSelector(state => state.audioPlayer.isPlaying);
@@ -45,6 +48,15 @@ export const ReadOption = ({ dragActive }: ReadOptionProps) => {
           <div data-testid="read-option-cover" className={s.panelCover} style={{ backgroundImage: cssUrl(coverUrl) }} aria-hidden="true" />
           <div className={s.panelGlow} style={{ backgroundImage: cssUrl(coverUrl) }} aria-hidden="true" />
         </>
+      )}
+      {hasSpell && !dragActive && (
+        <IconButton
+          data-testid="read-option-open-reader"
+          icon={faBookOpenReader}
+          title={t.start.readOpenReader}
+          className={s.openReader}
+          onClick={() => navigate(`/spell/${spellId}/reader`)}
+        />
       )}
       <div className={s.stage}>
         <span className={s.ring} aria-hidden="true" />

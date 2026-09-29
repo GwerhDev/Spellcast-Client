@@ -3,6 +3,7 @@ import { screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { renderWithProviders, makeStore } from '../../../../../test/renderWithProviders';
 import { setSpellFile } from '../../../../../store/spellReaderSlice';
 import { play } from '../../../../../store/browserPlayerSlice';
+import { Routes, Route } from 'react-router-dom';
 import { ReadOption } from '../index';
 
 const mockGetSpellById = vi.fn();
@@ -97,5 +98,33 @@ describe('ReadOption', () => {
     renderWithProviders(<ReadOption dragActive={false} />, { store });
     await screen.findByTestId('read-option-cover');
     expect(screen.getByTestId('read-option').className).not.toMatch(/noCover/);
+  });
+
+  describe('open-in-reader shortcut', () => {
+    it('is not shown with nothing loaded', () => {
+      renderWithProviders(<ReadOption dragActive={false} />);
+      expect(screen.queryByTestId('read-option-open-reader')).not.toBeInTheDocument();
+    });
+
+    it('is hidden while a spell is dragged over', () => {
+      const store = makeStore();
+      store.dispatch(setSpellFile({ id: 'spell-1', title: 'Spell one' }));
+      renderWithProviders(<ReadOption dragActive />, { store });
+      expect(screen.queryByTestId('read-option-open-reader')).not.toBeInTheDocument();
+    });
+
+    it("navigates to the loaded spell's reader", () => {
+      const store = makeStore();
+      store.dispatch(setSpellFile({ id: 'spell-1', title: 'Spell one' }));
+      renderWithProviders(
+        <Routes>
+          <Route path="/" element={<ReadOption dragActive={false} />} />
+          <Route path="/spell/:id/reader" element={<div data-testid="reader-route" />} />
+        </Routes>,
+        { store },
+      );
+      fireEvent.click(screen.getByTestId('read-option-open-reader'));
+      expect(screen.getByTestId('reader-route')).toBeInTheDocument();
+    });
   });
 });

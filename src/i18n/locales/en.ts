@@ -491,6 +491,7 @@ export const en = {
     readDropRelease: 'Drop it to start reading',
     readNowPlaying: 'Reading',
     readPaused: 'Paused',
+    readOpenReader: 'Open in the reader',
     orImportNew: 'Import new file',
     addMore: 'Add more files',
     dragDrop: 'Drag and drop a PDF or .spell file here, or click to select one',
