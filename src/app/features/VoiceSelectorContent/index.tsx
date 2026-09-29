@@ -26,16 +26,24 @@ function getBrowserVoiceDocs(): { label: string; url: string } {
   return { label: 'your browser', url: 'https://developer.mozilla.org/en-US/docs/Web/API/SpeechSynthesis/getVoices' };
 }
 
+type VoiceChoice = { value: string; type: 'browser' | 'ai' };
+
 interface VoiceSelectorContentProps {
   onClose: () => void;
+  // Controlled mode, for a voice picked for something other than the player (e.g. Start's
+  // Write box): which voice to mark as selected, and what to do with a pick. Without these
+  // it drives the player's own voice, as it always has (global selection, saved preference).
+  selected?: VoiceChoice;
+  onSelect?: (voice: VoiceChoice) => void;
 }
 
-export const VoiceSelectorContent: React.FC<VoiceSelectorContentProps> = ({ onClose }) => {
+export const VoiceSelectorContent: React.FC<VoiceSelectorContentProps> = ({ onClose, selected, onSelect }) => {
   const browserVoiceDocs = getBrowserVoiceDocs();
   const dispatch = useDispatch();
   const { loading: credentialsLoading } = useSelector((state: RootState) => state.credentials);
   const activeCredential = useSelector(selectCurrentCredential);
-  const { selectedVoice } = useSelector((state: RootState) => state.voice);
+  const { selectedVoice: playerVoice } = useSelector((state: RootState) => state.voice);
+  const selectedVoice = selected ?? playerVoice;
   const userId = useSelector((state: RootState) => state.session.userData?.id);
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<'browser' | 'ai'>(selectedVoice.type === 'ai' ? 'ai' : selectedVoice.type);
@@ -65,9 +73,10 @@ export const VoiceSelectorContent: React.FC<VoiceSelectorContentProps> = ({ onCl
     window.speechSynthesis.speak(utter);
   };
 
-  const handleVoiceSelection = async (selected: { value: string; name: string; gender: string; isBrowser?: boolean }) => {
+  const handleVoiceSelection = async (picked: { value: string; name: string; gender: string; isBrowser?: boolean }) => {
     onClose();
-    const newVoice = { value: selected.value, type: selected.isBrowser ? 'browser' : 'ai' } as const;
+    const newVoice = { value: picked.value, type: picked.isBrowser ? 'browser' : 'ai' } as const;
+    if (onSelect) { onSelect(newVoice); return; }
     if (newVoice.type !== selectedVoice.type) {
       window.speechSynthesis.cancel();
       dispatch(stopBrowser());

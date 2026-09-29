@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import s from './CustomModal.module.css';
 import { IconButton } from '../Buttons/IconButton';
 import { faXmark } from '@fortawesome/free-solid-svg-icons';
@@ -16,7 +17,10 @@ export const CustomModal: React.FC<ModalProps> = ({ show, onClose, title, childr
     return null;
   }
 
-  return (
+  // Portaled to <body> so the overlay always covers the whole screen: opened from inside
+  // another modal, its box (backdrop-filter) would otherwise become the containing block for
+  // this `position: fixed` overlay and squeeze it into that box.
+  return createPortal(
     <div className={s.overlay} onClick={onClose}>
       <div className={`${s.container} ${compact ? s.compact : ''}`}>
         <div className={s.modalContent} onClick={(e) => e.stopPropagation()}>
@@ -27,6 +31,7 @@ export const CustomModal: React.FC<ModalProps> = ({ show, onClose, title, childr
           {children}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 };

@@ -1,18 +1,17 @@
 import s from '../../../components/Start/WriteOption/index.module.css';
-import modal from '../../../components/Modals/VoiceSelectorModal.module.css';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { RootState } from '../../../../store';
 import { textToSpeechService } from '../../../../services/tts';
+import { selectCurrentCredential } from '../../../../store/credentialsSlice';
 import { pause as pauseGlobalBrowser } from '../../../../store/browserPlayerSlice';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faPlay, faPause, faSpinner,
-  faVolumeUp, faVolumeMute, faVolumeHigh, faStop,
-  faPlug, faDesktop, faHardDrive, faCloud, faCircle as faFilledCircle,
+  faVolumeUp, faVolumeMute,
+  faPlug, faDesktop,
 } from '@fortawesome/free-solid-svg-icons';
-import { faCircle as faRegCircle } from '@fortawesome/free-regular-svg-icons';
 import { CustomModal } from '../../../components/Modals/CustomModal';
+import { VoiceSelectorContent } from '../../VoiceSelectorContent';
 import { useLanguage } from '../../../../i18n';
 
 export const WriteOption: React.FC = () => {
@@ -28,17 +27,17 @@ export const WriteOption: React.FC = () => {
   const [volume, setVolume] = useState(1);
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
   const [showVoiceModal, setShowVoiceModal] = useState(false);
-  const [modalTab, setModalTab] = useState<'browser' | 'ai'>('browser');
-  const [previewingVoice, setPreviewingVoice] = useState<string | null>(null);
 
   const volumeRef = useRef(1);
   const volumeSliderRef = useRef<HTMLDivElement>(null);
   const volumeButtonRef = useRef<HTMLButtonElement>(null);
 
-  const { credentials } = useSelector((state: RootState) => state.credentials);
+  // Same credential the voice selector lists (the active one), so the default provider
+  // voice picked here is always one it shows.
+  const activeCredential = useSelector(selectCurrentCredential);
   const aiVoices = useMemo(
-    () => credentials?.[0]?.voices?.map(v => ({ value: v.value, name: v.name })) ?? [],
-    [credentials]
+    () => activeCredential?.voices?.map(v => ({ value: v.value, name: v.name })) ?? [],
+    [activeCredential]
   );
   const dispatch = useDispatch();
 
@@ -215,21 +214,6 @@ export const WriteOption: React.FC = () => {
     setShowVoiceModal(false);
   };
 
-  const handleModalPreview = (e: React.MouseEvent, voiceName: string) => {
-    e.stopPropagation();
-    window.speechSynthesis.cancel();
-    if (previewingVoice === voiceName) {
-      setPreviewingVoice(null);
-      return;
-    }
-    const utter = new SpeechSynthesisUtterance('This is a preview of this voice.');
-    const voice = window.speechSynthesis.getVoices().find(v => v.name === voiceName);
-    if (voice) utter.voice = voice;
-    utter.onend = () => setPreviewingVoice(null);
-    setPreviewingVoice(voiceName);
-    window.speechSynthesis.speak(utter);
-  };
-
   return (
     <>
       <form data-testid="write-option-form" className={s.form} onSubmit={(e) => e.preventDefault()}>
@@ -245,7 +229,14 @@ export const WriteOption: React.FC = () => {
           />
           <div className={s.toolbar}>
             <div className={s.voiceInfo}>
-              <span className={s.voiceInfoTrigger} onClick={() => setShowVoiceModal(true)} role="button" tabIndex={0}>
+              <span
+                data-testid="write-option-voice-btn"
+                className={s.voiceInfoTrigger}
+                onClick={() => setShowVoiceModal(true)}
+                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setShowVoiceModal(true); } }}
+                role="button"
+                tabIndex={0}
+              >
                 <FontAwesomeIcon icon={voiceType === 'browser' ? faDesktop : faPlug} className={s.voiceInfoIcon} />
                 <span className={s.voiceInfoName}>
                   {voiceType === 'browser'
@@ -303,60 +294,11 @@ export const WriteOption: React.FC = () => {
       </form>
 
       <CustomModal title={t.player.selectVoice} show={showVoiceModal} onClose={() => setShowVoiceModal(false)}>
-        <div className={modal.tabContainer}>
-          <button
-            className={`${modal.tabButton} ${modal.left} ${modalTab === 'browser' ? modal.activeTab : ''}`}
-            onClick={() => setModalTab('browser')}
-          >
-            <FontAwesomeIcon icon={faDesktop} />
-            <span className={modal.title}>{t.player.browserVoices}</span>
-          </button>
-          <button
-            className={`${modal.tabButton} ${modal.right} ${modalTab === 'ai' ? modal.activeTab : ''}`}
-            onClick={() => setModalTab('ai')}
-          >
-            <FontAwesomeIcon icon={faPlug} />
-            <span className={modal.title}>{t.player.providerVoices}</span>
-          </button>
-        </div>
-        <ul className={modal.voiceList}>
-          {modalTab === 'browser' ? (
-            browserVoices.map((v) => (
-              <li
-                key={v.name}
-                className={`${modal.voiceOption} ${voiceType === 'browser' && selectedVoiceValue === v.name ? modal.activeVoice : ''}`}
-                onClick={() => handleVoiceSelect('browser', v.name)}
-              >
-                <FontAwesomeIcon icon={voiceType === 'browser' && selectedVoiceValue === v.name ? faFilledCircle : faRegCircle} />
-                <span>{v.name}</span>
-                <FontAwesomeIcon
-                  icon={v.localService ? faHardDrive : faCloud}
-                  className={modal.genderIcon}
-                  title={v.localService ? t.player.localVoice : t.player.networkVoice}
-                />
-                <button
-                  className={modal.previewButton}
-                  onClick={(e) => handleModalPreview(e, v.name)}
-                  title={t.player.previewVoice}
-                >
-                  <FontAwesomeIcon icon={previewingVoice === v.name ? faStop : faVolumeHigh} />
-                </button>
-              </li>
-            ))
-          ) : (
-            aiVoices.map((v) => (
-              <li
-                key={v.value}
-                className={`${modal.voiceOption} ${voiceType === 'ai' && selectedVoiceValue === v.value ? modal.activeVoice : ''}`}
-                onClick={() => handleVoiceSelect('ai', v.value)}
-              >
-                <FontAwesomeIcon icon={voiceType === 'ai' && selectedVoiceValue === v.value ? faFilledCircle : faRegCircle} />
-                <span>{v.name}</span>
-                <FontAwesomeIcon icon={faPlug} className={modal.genderIcon} />
-              </li>
-            ))
-          )}
-        </ul>
+        <VoiceSelectorContent
+          onClose={() => setShowVoiceModal(false)}
+          selected={{ value: selectedVoiceValue, type: voiceType }}
+          onSelect={voice => handleVoiceSelect(voice.type, voice.value)}
+        />
       </CustomModal>
     </>
   );
