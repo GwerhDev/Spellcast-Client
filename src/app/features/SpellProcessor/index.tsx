@@ -41,14 +41,14 @@ export const SpellProcessor = () => {
   const { userData } = useAppSelector((state) => state.session);
   const { currentPage, spellId, isLoaded, currentSentenceIndex, contentVersion } = useSelector((state: RootState) => state.spellReader);
 
-  const [pages, setPages] = useState<string[]>([]);
-  const [docLoaded, setDocLoaded] = useState(false);
+  // The loaded pages, tagged with the spell they belong to. On a spell change (or unload)
+  // this still holds the PREVIOUS spell's pages for the render where spellId has already
+  // moved on -- clearing it is only a scheduled update -- so publishing checks the tag rather
+  // than trusting that the state has caught up.
+  const [loaded, setLoaded] = useState<{ spellId: string; pages: string[] } | null>(null);
 
   useEffect(() => {
-    // Also on unload (spellId back to null): the previous spell's pages must go, or the
-    // effect below would republish them and mark a spell loaded again with none selected.
-    setDocLoaded(false);
-    setPages([]);
+    setLoaded(null);
     if (!spellId) return;
     // A spell unloaded or swapped while its read is still in flight must not land late.
     let cancelled = false;
@@ -58,22 +58,22 @@ export const SpellProcessor = () => {
         const parsed = JSON.parse(doc.pagesContent) as JSONContent[];
         const withCover = await injectCoverIntoPages(parsed, doc.cover ?? null);
         if (cancelled) return;
-        setPages(withCover.map((p) => JSON.stringify(p)));
+        setLoaded({ spellId, pages: withCover.map((p) => JSON.stringify(p)) });
       } else {
-        setPages([]);
+        setLoaded({ spellId, pages: [] });
       }
-      setDocLoaded(true);
     });
     return () => { cancelled = true; };
   }, [spellId, userData.id, contentVersion]);
 
   useEffect(() => {
-    if (!docLoaded || !spellId) return;
-    const text = pages[currentPage - 1] ?? '';
+    // Only this spell's own pages: never the previous spell's, still in state for a render.
+    if (!spellId || loaded?.spellId !== spellId) return;
+    const text = loaded.pages[currentPage - 1] ?? '';
     dispatch(setPageText({ text }));
     dispatch(setSentences({ sentences: extractSentencesFromJSON(text) }));
     dispatch(setSpellLoaded(true));
-  }, [currentPage, docLoaded, pages, spellId, dispatch]);
+  }, [currentPage, loaded, spellId, dispatch]);
 
   useEffect(() => {
     if (!isLoaded || currentSentenceIndex < 0 || !spellId) return;

@@ -64,4 +64,37 @@ describe('SpellProcessor', () => {
     await act(async () => { finishA(spell('a', 'a one.')); });
     expect(store.getState().spellReader.sentences).toEqual(['b one.']);
   });
+
+  // Switching spells used to publish the PREVIOUS spell's page under the new spellId for one
+  // render (its pages were still in state), marking it loaded -- so the new player autoplayed
+  // the old text, then restarted once the new spell's pages arrived.
+  it("never publishes the previous spell's page as the new spell's, while the new one loads", async () => {
+    let finishB: (value: unknown) => void = () => {};
+    mockGetSpellById.mockImplementation((id: string) =>
+      id === 'b' ? new Promise(resolve => { finishB = resolve; }) : Promise.resolve(spell('a', 'a one.')));
+    const store = makeStore();
+    store.dispatch(setSpellFile({ id: 'a', title: 'a' }));
+    renderWithProviders(<SpellProcessor />, { store });
+    await waitFor(() => expect(store.getState().spellReader.sentences).toEqual(['a one.']));
+
+    const published: string[][] = [];
+    const loadedFlags: boolean[] = [];
+    store.subscribe(() => {
+      const r = store.getState().spellReader;
+      published.push(r.sentences);
+      loadedFlags.push(r.isLoaded);
+    });
+    // What playSpell does on a spell change: reset, then the new spell, in one batch.
+    act(() => {
+      store.dispatch(resetSpellReader());
+      store.dispatch(setSpellFile({ id: 'b', title: 'b' }));
+    });
+    await act(async () => { await Promise.resolve(); });
+    expect(published.some(sentences => sentences.includes('a one.'))).toBe(false);
+    expect(store.getState().spellReader.isLoaded).toBe(false);
+
+    await act(async () => { finishB(spell('b', 'b one.')); });
+    await waitFor(() => expect(store.getState().spellReader.sentences).toEqual(['b one.']));
+    expect(store.getState().spellReader.isLoaded).toBe(true);
+  });
 });
