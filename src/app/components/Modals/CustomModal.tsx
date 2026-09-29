@@ -21,7 +21,7 @@ export const CustomModal: React.FC<ModalProps> = ({ show, onClose, title, childr
       <div className={`${s.container} ${compact ? s.compact : ''}`}>
         <div className={s.modalContent} onClick={(e) => e.stopPropagation()}>
           <span className={s.closeButtonContainer}>
-            <IconButton className={s.closeButton} icon={faXmark} onClick={onClose} />
+            <IconButton data-testid="custom-modal-close" className={s.closeButton} icon={faXmark} onClick={onClose} />
           </span>
           <h3>{title}</h3>
           {children}

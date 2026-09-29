@@ -1,3 +1,4 @@
+import type React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { renderWithProviders, makeStore } from '../../../../../test/renderWithProviders';
@@ -30,24 +31,70 @@ beforeEach(() => {
   URL.revokeObjectURL = vi.fn();
 });
 
+// Every render gets the menu callbacks; tests that care pass their own.
+const Read = (props: Partial<React.ComponentProps<typeof ReadOption>>) => (
+  <ReadOption dragActive={false} onWrite={vi.fn()} onImport={vi.fn()} {...props} />
+);
+
 describe('ReadOption', () => {
-  it('with nothing loaded, the Spellcast-mark button opens the .spell picker (said only in its title)', () => {
-    const store = makeStore();
-    renderWithProviders(<ReadOption dragActive={false} />, { store });
-    expect(screen.getByTestId('read-option-hint')).toHaveTextContent('Drag a spell');
-    expect(screen.getByTestId('read-option-hint')).not.toHaveTextContent('.spell');
-    const button = screen.getByTestId('play-button');
-    expect(screen.getByTestId('read-option-brand-icon')).toBeInTheDocument();
-    expect(button).toHaveAttribute('title', 'Open a .spell file');
-    const pick = vi.spyOn(screen.getByTestId('read-option-file-input'), 'click');
-    fireEvent.click(button);
-    expect(pick).toHaveBeenCalled();
-    expect(store.getState().browserPlayer.toggleSeq).toBe(0);
-    expect(store.getState().audioPlayer.toggleSeq).toBe(0);
+  describe('the Spellcast button menu (nothing loaded)', () => {
+    const menuHidden = () => screen.getByTestId('radial-menu').getAttribute('aria-hidden') === 'true';
+
+    it('shows the Spellcast mark; a click opens the menu instead of playing', () => {
+      const store = makeStore();
+      renderWithProviders(<Read />, { store });
+      expect(screen.getByTestId('read-option-brand-icon')).toBeInTheDocument();
+      expect(menuHidden()).toBe(true);
+      fireEvent.click(screen.getByTestId('play-button'));
+      expect(menuHidden()).toBe(false);
+      expect(store.getState().browserPlayer.toggleSeq).toBe(0);
+      expect(store.getState().audioPlayer.toggleSeq).toBe(0);
+    });
+
+    it('a second click on the button closes it', () => {
+      renderWithProviders(<Read />);
+      fireEvent.click(screen.getByTestId('play-button'));
+      fireEvent.mouseDown(screen.getByTestId('play-button'));
+      fireEvent.click(screen.getByTestId('play-button'));
+      expect(menuHidden()).toBe(true);
+    });
+
+    it('Write and Import open their modals through Start, and close the menu', () => {
+      const onWrite = vi.fn();
+      const onImport = vi.fn();
+      renderWithProviders(<Read onWrite={onWrite} onImport={onImport} />);
+      fireEvent.click(screen.getByTestId('play-button'));
+      fireEvent.click(screen.getByTestId('radial-menu-item-write'));
+      expect(onWrite).toHaveBeenCalled();
+      expect(menuHidden()).toBe(true);
+      fireEvent.click(screen.getByTestId('play-button'));
+      fireEvent.click(screen.getByTestId('radial-menu-item-import'));
+      expect(onImport).toHaveBeenCalled();
+    });
+
+    it('Editor navigates to the editor', () => {
+      renderWithProviders(
+        <Routes>
+          <Route path="/" element={<Read />} />
+          <Route path="/editor" element={<div data-testid="editor-route" />} />
+        </Routes>,
+      );
+      fireEvent.click(screen.getByTestId('play-button'));
+      fireEvent.click(screen.getByTestId('radial-menu-item-editor'));
+      expect(screen.getByTestId('editor-route')).toBeInTheDocument();
+    });
+
+    it('closes when a spell is dragged over (the button turns back into play)', () => {
+      const { rerender } = renderWithProviders(<Read />);
+      fireEvent.click(screen.getByTestId('play-button'));
+      expect(menuHidden()).toBe(false);
+      rerender(<Read dragActive />);
+      expect(menuHidden()).toBe(true);
+    });
   });
 
   it('turns back into a play button while a spell is dragged over', () => {
-    renderWithProviders(<ReadOption dragActive />);
+    renderWithProviders(<Read dragActive />);
     expect(screen.getByTestId('read-option-hint')).toHaveTextContent('Drop it');
     expect(screen.queryByTestId('read-option-brand-icon')).not.toBeInTheDocument();
     expect(screen.getByTestId('play-button')).not.toHaveAttribute('title');
@@ -56,7 +103,7 @@ describe('ReadOption', () => {
   it('shows the loaded spell and toggles playback from the button', () => {
     const store = makeStore();
     store.dispatch(setSpellFile({ id: 'spell-1', title: 'Spell one' }));
-    renderWithProviders(<ReadOption dragActive={false} />, { store });
+    renderWithProviders(<Read />, { store });
     expect(screen.getByTestId('read-option-title')).toHaveTextContent('Spell one');
     expect(screen.queryByTestId('read-option-hint')).not.toBeInTheDocument();
     expect(screen.queryByTestId('read-option-brand-icon')).not.toBeInTheDocument();
@@ -69,7 +116,7 @@ describe('ReadOption', () => {
     mockGetSpellById.mockResolvedValue({ id: 'spell-1', title: 'Spell one', cover: new Blob(['x']) });
     const store = makeStore();
     store.dispatch(setSpellFile({ id: 'spell-1', title: 'Spell one' }));
-    renderWithProviders(<ReadOption dragActive={false} />, { store });
+    renderWithProviders(<Read />, { store });
     const cover = await screen.findByTestId('read-option-cover');
     expect(cover.style.backgroundImage).toContain('blob:cover');
   });
@@ -78,7 +125,7 @@ describe('ReadOption', () => {
     mockGetSpellById.mockResolvedValue({ id: 'spell-1', title: 'Spell one' });
     const store = makeStore();
     store.dispatch(setSpellFile({ id: 'spell-1', title: 'Spell one' }));
-    renderWithProviders(<ReadOption dragActive={false} />, { store });
+    renderWithProviders(<Read />, { store });
     await waitFor(() => expect(mockGetSpellById).toHaveBeenCalled());
     expect(screen.queryByTestId('read-option-cover')).not.toBeInTheDocument();
   });
@@ -86,14 +133,14 @@ describe('ReadOption', () => {
   it('shows the status line: playing vs paused', () => {
     const store = makeStore();
     store.dispatch(setSpellFile({ id: 'spell-1', title: 'Spell one' }));
-    renderWithProviders(<ReadOption dragActive={false} />, { store });
+    renderWithProviders(<Read />, { store });
     expect(screen.getByTestId('read-option-now')).toHaveTextContent('Paused');
     act(() => { store.dispatch(play()); });
     expect(screen.getByTestId('read-option-now')).toHaveTextContent('Reading');
   });
 
   it('has a transparent panel (no box) while nothing is loaded', () => {
-    renderWithProviders(<ReadOption dragActive={false} />);
+    renderWithProviders(<Read />);
     expect(screen.getByTestId('read-option').className).toMatch(/noCover/);
   });
 
@@ -101,7 +148,7 @@ describe('ReadOption', () => {
     mockGetSpellById.mockResolvedValue({ id: 'spell-1', title: 'Spell one' });
     const store = makeStore();
     store.dispatch(setSpellFile({ id: 'spell-1', title: 'Spell one' }));
-    renderWithProviders(<ReadOption dragActive={false} />, { store });
+    renderWithProviders(<Read />, { store });
     await waitFor(() => expect(mockGetSpellById).toHaveBeenCalled());
     expect(screen.getByTestId('read-option').className).toMatch(/noCover/);
   });
@@ -110,21 +157,21 @@ describe('ReadOption', () => {
     mockGetSpellById.mockResolvedValue({ id: 'spell-1', title: 'Spell one', cover: new Blob(['x']) });
     const store = makeStore();
     store.dispatch(setSpellFile({ id: 'spell-1', title: 'Spell one' }));
-    renderWithProviders(<ReadOption dragActive={false} />, { store });
+    renderWithProviders(<Read />, { store });
     await screen.findByTestId('read-option-cover');
     expect(screen.getByTestId('read-option').className).not.toMatch(/noCover/);
   });
 
   describe('open-in-reader shortcut', () => {
     it('is not shown with nothing loaded', () => {
-      renderWithProviders(<ReadOption dragActive={false} />);
+      renderWithProviders(<Read />);
       expect(screen.queryByTestId('read-option-open-reader')).not.toBeInTheDocument();
     });
 
     it('is hidden while a spell is dragged over', () => {
       const store = makeStore();
       store.dispatch(setSpellFile({ id: 'spell-1', title: 'Spell one' }));
-      renderWithProviders(<ReadOption dragActive />, { store });
+      renderWithProviders(<Read dragActive />, { store });
       expect(screen.queryByTestId('read-option-open-reader')).not.toBeInTheDocument();
     });
 
@@ -133,7 +180,7 @@ describe('ReadOption', () => {
       store.dispatch(setSpellFile({ id: 'spell-1', title: 'Spell one' }));
       renderWithProviders(
         <Routes>
-          <Route path="/" element={<ReadOption dragActive={false} />} />
+          <Route path="/" element={<Read />} />
           <Route path="/spell/:id/reader" element={<div data-testid="reader-route" />} />
         </Routes>,
         { store },
@@ -143,26 +190,11 @@ describe('ReadOption', () => {
     });
   });
 
-  describe('opening .spell files from the computer', () => {
-    it('the picker only accepts .spell files', () => {
-      renderWithProviders(<ReadOption dragActive={false} />);
-      expect(screen.getByTestId('read-option-file-input')).toHaveAttribute('accept', '.spell');
-    });
-
-    it('imports a picked .spell (stored in the browser) and starts reading it', async () => {
+  describe('dropping .spell files from the computer', () => {
+    it('imports .spell files dropped on it (stored in the browser) and starts reading the first', async () => {
       mockGetSpellById.mockResolvedValue({ id: 'imported-1', title: 'Imported', createdAt: new Date(), userId: undefined });
       const store = makeStore();
-      renderWithProviders(<ReadOption dragActive={false} />, { store });
-      fireEvent.change(screen.getByTestId('read-option-file-input'), { target: { files: [spellFile()] } });
-      await waitFor(() => expect(store.getState().spellReader.spellId).toBe('imported-1'));
-      expect(mockImportFile).toHaveBeenCalledWith(expect.objectContaining({ name: 'book.spell' }));
-      expect(store.getState().browserPlayer.autoPlayOnLoad).toBe(true);
-    });
-
-    it('imports .spell files dropped on the tab', async () => {
-      mockGetSpellById.mockResolvedValue({ id: 'imported-1', title: 'Imported', createdAt: new Date(), userId: undefined });
-      const store = makeStore();
-      renderWithProviders(<ReadOption dragActive={false} />, { store });
+      renderWithProviders(<Read />, { store });
       const option = screen.getByTestId('read-option');
       fireEvent.dragOver(option, fileDrag([spellFile()]));
       expect(option.className).toMatch(/dragActive/);
@@ -174,7 +206,7 @@ describe('ReadOption', () => {
 
     it('refuses anything that is not a .spell, with an error message', async () => {
       const store = makeStore();
-      renderWithProviders(<ReadOption dragActive={false} />, { store });
+      renderWithProviders(<Read />, { store });
       await act(async () => { fireEvent.drop(screen.getByTestId('read-option'), fileDrag([spellFile('book.pdf')])); });
       expect(mockImportFile).not.toHaveBeenCalled();
       const responses = store.getState().apiResponses.responses;
@@ -184,10 +216,8 @@ describe('ReadOption', () => {
     it('does not start reading when the import fails', async () => {
       mockImportFile.mockResolvedValue(null);
       const store = makeStore();
-      renderWithProviders(<ReadOption dragActive={false} />, { store });
-      await act(async () => {
-        fireEvent.change(screen.getByTestId('read-option-file-input'), { target: { files: [spellFile()] } });
-      });
+      renderWithProviders(<Read />, { store });
+      await act(async () => { fireEvent.drop(screen.getByTestId('read-option'), fileDrag([spellFile()])); });
       await waitFor(() => expect(mockImportFile).toHaveBeenCalled());
       expect(mockGetSpellById).not.toHaveBeenCalledWith('imported-1', expect.anything());
       expect(store.getState().spellReader.spellId).toBeNull();
@@ -196,8 +226,8 @@ describe('ReadOption', () => {
     it('shows the importing state while a file is being imported', async () => {
       let finish: (id: string | null) => void = () => {};
       mockImportFile.mockReturnValue(new Promise(resolve => { finish = resolve; }));
-      renderWithProviders(<ReadOption dragActive={false} />);
-      fireEvent.change(screen.getByTestId('read-option-file-input'), { target: { files: [spellFile()] } });
+      renderWithProviders(<Read />);
+      fireEvent.drop(screen.getByTestId('read-option'), fileDrag([spellFile()]));
       await waitFor(() => expect(screen.getByTestId('read-option-hint')).toHaveTextContent('Importing spell'));
       await act(async () => { finish(null); });
       expect(screen.getByTestId('read-option-hint')).not.toHaveTextContent('Importing spell');
@@ -206,24 +236,24 @@ describe('ReadOption', () => {
 
   describe('unload button', () => {
     it('is only shown with a spell loaded, not while dragging', () => {
-      const { unmount } = renderWithProviders(<ReadOption dragActive={false} />);
+      const { unmount } = renderWithProviders(<Read />);
       expect(screen.queryByTestId('read-option-unload')).not.toBeInTheDocument();
       unmount();
 
       const store = makeStore();
       store.dispatch(setSpellFile({ id: 'spell-1', title: 'Spell one' }));
-      const { unmount: unmount2 } = renderWithProviders(<ReadOption dragActive={false} />, { store });
+      const { unmount: unmount2 } = renderWithProviders(<Read />, { store });
       expect(screen.getByTestId('read-option-unload')).toBeInTheDocument();
       unmount2();
 
-      renderWithProviders(<ReadOption dragActive />, { store });
+      renderWithProviders(<Read dragActive />, { store });
       expect(screen.queryByTestId('read-option-unload')).not.toBeInTheDocument();
     });
 
     it('takes the spell out of the player, back to the empty Read tab', () => {
       const store = makeStore();
       store.dispatch(setSpellFile({ id: 'spell-1', title: 'Spell one' }));
-      renderWithProviders(<ReadOption dragActive={false} />, { store });
+      renderWithProviders(<Read />, { store });
       fireEvent.click(screen.getByTestId('read-option-unload'));
       expect(store.getState().spellReader.spellId).toBeNull();
       expect(screen.getByTestId('read-option-brand-icon')).toBeInTheDocument();

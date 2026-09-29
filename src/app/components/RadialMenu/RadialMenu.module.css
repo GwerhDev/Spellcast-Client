@@ -1,0 +1,89 @@
+/* Zero-size box at the anchor's center; every option is translated out from it. */
+.menu {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.item {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+  pointer-events: none;
+  opacity: 0;
+  /* Starts tucked behind the center control, then flies out to its spot. */
+  transform: translate(-50%, -50%) translate(0, 0) scale(0.4);
+  transition:
+    transform 0.32s cubic-bezier(0.34, 1.4, 0.64, 1),
+    opacity 0.2s ease;
+  transition-delay: calc(var(--i) * 40ms);
+}
+
+.open .item {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translate(-50%, -50%) translate(var(--x), var(--y)) scale(1);
+}
+
+.itemIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  font-size: 1.05rem;
+  color: var(--color-primary);
+  background: var(--component-background);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 35%, transparent);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.item:hover .itemIcon,
+.item:focus-visible .itemIcon {
+  color: var(--app-white);
+  background: color-mix(in srgb, var(--color-primary) 70%, var(--component-background));
+  border-color: var(--color-primary);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--color-primary) 55%, transparent);
+}
+
+.item:focus-visible {
+  outline: none;
+}
+
+.itemLabel {
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--color-light-300);
+}
+
+.item:hover .itemLabel,
+.item:focus-visible .itemLabel {
+  color: var(--color-primary);
+}
+
+:global(html.light) .itemIcon {
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .item {
+    transition: opacity 0.15s ease;
+    transition-delay: 0ms;
+  }
+}

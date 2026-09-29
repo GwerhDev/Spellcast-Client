@@ -1,7 +1,7 @@
 import s from '../../components/Start/index.module.css';
 import { useEffect, useState } from 'react';
 import { WriteOption } from './WriteOption';
-import { SegmentedTabs } from '../../components/Tabs/SegmentedTabs';
+import { CustomModal } from '../../components/Modals/CustomModal';
 import { ImportOption } from './ImportOption';
 import { ReadOption } from './ReadOption';
 import { useDispatch } from 'react-redux';
@@ -11,33 +11,31 @@ import { getSpellById } from '../../../db';
 import { usePlaySpell } from '../../../hooks/usePlaySpell';
 import { SPELL_DRAG_TYPE } from '../../../config/consts';
 import { useLanguage } from '../../../i18n';
-import { faBookOpen, faPen, faUpload } from '@fortawesome/free-solid-svg-icons';
 
 const isSpellDrag = (e: React.DragEvent) => Array.from(e.dataTransfer.types).includes(SPELL_DRAG_TYPE);
 
 export const Start = () => {
-  // Read is always the first tab and the default: it both reads what's already in the
-  // grimoire (drag a spell) and opens .spell files from the computer.
-  const [inputType, setInputType] = useState('read');
   const [dragActive, setDragActive] = useState(false);
+  // Write and Import open from the Spellcast button's menu (see ReadOption), as modals.
+  const [modal, setModal] = useState<'write' | 'import' | null>(null);
   const dispatch = useDispatch();
   const userId = useAppSelector(state => state.session.userData?.id);
   const { readSpell } = usePlaySpell();
   const { t } = useLanguage();
 
-  const handleInputTypeChange = (type: string) => {
-    setInputType(type);
-    dispatch(resetSpellState());
+  // Closing Import drops whatever it had pending (a PDF picked but not created yet), as
+  // leaving its tab used to.
+  const closeModal = () => {
+    if (modal === 'import') dispatch(resetSpellState());
+    setModal(null);
   };
 
-  // A spell dragged anywhere over Start jumps to the Read tab, so it can be dropped without
-  // switching tabs by hand. Files dragged in are left to the tab showing (Import's dropzone,
-  // or Read's own .spell file drop).
+  // A spell dragged anywhere over Start lights up the Read control, so it can be dropped
+  // anywhere on the section. Files dragged in are left to ReadOption's own .spell drop.
   const handleDragEnter = (e: React.DragEvent) => {
     if (!isSpellDrag(e)) return;
     e.preventDefault();
     setDragActive(true);
-    if (inputType !== 'read') setInputType('read');
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -47,8 +45,8 @@ export const Start = () => {
   };
 
   // Only a leave toward somewhere outside Start ends the drag state; moving between Start's
-  // own children also fires dragleave. (Not counted enter/leave pairs: switching tabs
-  // removes the element the drag entered through, and a removed node never gets its leave.)
+  // own children also fires dragleave. (Not counted enter/leave pairs: an element the drag
+  // entered through can be removed mid-drag, and a removed node never gets its leave.)
   const handleDragLeave = (e: React.DragEvent) => {
     if (!isSpellDrag(e)) return;
     if (e.currentTarget.contains(e.relatedTarget as Node | null)) return;
@@ -82,21 +80,6 @@ export const Start = () => {
     }
   };
 
-  const getSubtitle = () => {
-    switch (inputType) {
-      case 'import': return t.start.importSubtitle;
-      case 'write':  return t.start.writeSubtitle;
-      case 'read':   return t.start.readSubtitle;
-      default:       return;
-    }
-  };
-
-  const inputTypeTabs = [
-    { id: 'read', label: t.start.readTab, icon: faBookOpen },
-    { id: 'write', label: t.start.writeTab, icon: faPen },
-    { id: 'import', label: t.start.importTab, icon: faUpload },
-  ];
-
   return (
     <div
       data-testid="start"
@@ -109,17 +92,23 @@ export const Start = () => {
       <div className={s.createContainer}>
         <h1 className="featured-glow">{t.start.castSpell}</h1>
         <div data-testid="start-body" className={s.body}>
-          <p>{getSubtitle()}</p>
-
-          <SegmentedTabs tabs={inputTypeTabs} active={inputType} onChange={handleInputTypeChange} />
+          <p>{t.start.readSubtitle}</p>
 
           <div className={s.optionContainer}>
-            {inputType === 'import' && <ImportOption />}
-            {inputType === 'write' && <WriteOption />}
-            {inputType === 'read' && <ReadOption dragActive={dragActive} />}
+            <ReadOption dragActive={dragActive} onWrite={() => setModal('write')} onImport={() => setModal('import')} />
           </div>
         </div>
       </div>
+      <CustomModal show={modal === 'write'} title={t.start.writeTab} onClose={closeModal} compact>
+        <div data-testid="start-write-modal" className={s.modalBody}>
+          <WriteOption />
+        </div>
+      </CustomModal>
+      <CustomModal show={modal === 'import'} title={t.start.importTab} onClose={closeModal} compact>
+        <div data-testid="start-import-modal" className={s.modalBody}>
+          <ImportOption />
+        </div>
+      </CustomModal>
     </div>
   );
 };

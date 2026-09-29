@@ -26,6 +26,19 @@
   flex-direction: column;
 }
 
+/* Write and Import modals share one minimum content height (Write's textarea box), so
+   switching between them doesn't resize the modal; Import still grows past it with PDFs
+   queued for review. */
+.modalBody {
+  min-height: 184px;
+  display: flex;
+  flex-direction: column;
+}
+
+.modalBody > * {
+  flex: 1;
+}
+
 .createContainer p {
   color: var(--color-light-400);
   margin: 0;

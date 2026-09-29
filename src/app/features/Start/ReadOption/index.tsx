@@ -3,10 +3,11 @@ import { PlayButton } from '../../../components/PlayButton/PlayButton';
 import { Waveform } from '../../../components/Waveform/Waveform';
 import spellcastLogo from '../../../../assets/spellcast-logo.svg';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { useRef, useState } from 'react';
-import { faBookOpenReader, faEject, faHandPointer, faSpinner } from '@fortawesome/free-solid-svg-icons';
+import { useCallback, useRef, useState } from 'react';
+import { faBookOpenReader, faEject, faFeatherPointed, faHandPointer, faPen, faSpinner, faUpload } from '@fortawesome/free-solid-svg-icons';
 import { useNavigate } from 'react-router-dom';
 import { IconButton } from '../../../components/Buttons/IconButton';
+import { RadialMenu, type RadialMenuItem } from '../../../components/RadialMenu/RadialMenu';
 import { useAppDispatch, useAppSelector } from '../../../../store/hooks';
 import { addApiResponse } from '../../../../store/apiResponsesSlice';
 import { getSpellById } from '../../../../db';
@@ -17,8 +18,11 @@ import { useLanguage } from '../../../../i18n';
 
 interface ReadOptionProps {
   // A spell is being dragged over Start (the drop itself is handled there, so a spell can
-  // be dropped anywhere on the section, whatever tab was showing).
+  // be dropped anywhere on the section).
   dragActive: boolean;
+  // The Spellcast button's menu: Start owns the Write/Import modals these open.
+  onWrite: () => void;
+  onImport: () => void;
 }
 
 // Quoted: Vite inlines small SVGs as data URIs containing single quotes, which an unquoted
@@ -29,18 +33,20 @@ const brandMask = cssUrl(spellcastLogo);
 const isSpellFile = (file: File) => file.name.toLowerCase().endsWith('.spell');
 const isFileDrag = (e: React.DragEvent) => Array.from(e.dataTransfer.types).includes('Files');
 
-// The "Read" tab: the player's own PlayButton as the drop target. Dropping a spell starts
-// reading it; so does opening a .spell file from the computer (picked or dropped here), which
-// is first imported into the browser like the Import tab does. When something is already
-// loaded, the button plays/pauses it, over that spell's cover filling the tab's panel (same
-// box as Write's textarea / Import's dropzone).
-export const ReadOption = ({ dragActive }: ReadOptionProps) => {
+// Start's central control: the player's own PlayButton as the drop target. Dropping a spell
+// starts reading it; so does dropping a .spell file from the computer, which is first
+// imported into the browser. With nothing loaded the button shows the Spellcast mark and
+// opens a menu floating around it (Write, Import, Editor); once something is loaded it
+// plays/pauses it, over that spell's cover filling the panel.
+export const ReadOption = ({ dragActive, onWrite, onImport }: ReadOptionProps) => {
   const { t } = useLanguage();
   const { togglePlayback, readSpell, unloadSpell } = usePlaySpell();
   const { importFile } = useSpellImport();
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const buttonRef = useRef<HTMLDivElement>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const closeMenu = useCallback(() => setMenuOpen(false), []);
   // A file from the computer being dragged over this tab (spells from the grimoire are
   // tracked by Start as `dragActive`).
   const [fileDragActive, setFileDragActive] = useState(false);
@@ -53,13 +59,23 @@ export const ReadOption = ({ dragActive }: ReadOptionProps) => {
   const hasSpell = !!spellId;
   const coverUrl = useSpellCoverUrl(spellId, userId);
   // Nothing loaded and nothing being dragged: the button shows the Spellcast mark and opens
-  // a .spell file from the computer; a spell dragged over turns it back into a play button.
+  // the menu; a spell dragged over turns it back into a play button.
   const dropping = dragActive || fileDragActive;
   const showBrand = !hasSpell && !dropping;
+  // The menu only belongs to the Spellcast button: a drag starting or a spell loading
+  // closes it along with that button.
+  const showMenu = menuOpen && showBrand;
   const showNowReading = hasSpell && !!spellTitle && !dropping && !importing;
 
-  // Imports every .spell (saved in the browser, lists refreshed, a toast per file) and starts
-  // reading the first one. Anything else is refused here -- PDFs belong to the Import tab.
+  const menuItems: RadialMenuItem[] = [
+    { id: 'write', label: t.start.writeTab, icon: faPen, onSelect: onWrite },
+    { id: 'import', label: t.start.importTab, icon: faUpload, onSelect: onImport },
+    { id: 'editor', label: t.nav.editor, icon: faFeatherPointed, onSelect: () => navigate('/editor') },
+  ];
+
+  // Imports every dropped .spell (saved in the browser, lists refreshed, a toast per file)
+  // and starts reading the first one. Anything else is refused here -- PDFs go through
+  // Import, which has their review step.
   const openSpellFiles = async (files: File[]) => {
     const spellFiles = files.filter(isSpellFile);
     if (spellFiles.length === 0) {
@@ -99,29 +115,14 @@ export const ReadOption = ({ dragActive }: ReadOptionProps) => {
     void openSpellFiles(Array.from(e.dataTransfer.files));
   };
 
-  const openFilePicker = () => fileInputRef.current?.click();
-
   return (
     <div
       data-testid="read-option"
-      className={`${s.container} ${dropping ? s.dragActive : ''} ${coverUrl ? s.hasCover : s.noCover}`}
+      className={`${s.container} ${dropping ? s.dragActive : ''} ${coverUrl ? s.hasCover : s.noCover} ${showMenu ? s.menuOpen : ''}`}
       onDragOver={handleFileDragOver}
       onDragLeave={handleFileDragLeave}
       onDrop={handleFileDrop}
     >
-      <input
-        ref={fileInputRef}
-        data-testid="read-option-file-input"
-        type="file"
-        accept=".spell"
-        multiple
-        className={s.fileInput}
-        onChange={e => {
-          const files = Array.from(e.target.files ?? []);
-          e.target.value = '';
-          if (files.length) void openSpellFiles(files);
-        }}
-      />
       {coverUrl && (
         <>
           <div data-testid="read-option-cover" className={s.panelCover} style={{ backgroundImage: cssUrl(coverUrl) }} aria-hidden="true" />
@@ -150,13 +151,14 @@ export const ReadOption = ({ dragActive }: ReadOptionProps) => {
       <div className={s.stage}>
         <span className={s.ring} aria-hidden="true" />
         <span className={`${s.ring} ${s.ringOuter}`} aria-hidden="true" />
-        <div className={s.button}>
+        <RadialMenu open={showMenu} items={menuItems} onClose={closeMenu} anchorRef={buttonRef} />
+        <div ref={buttonRef} className={s.button}>
           <PlayButton
             size="lg"
             isPlaying={isPlaying}
-            active={dropping}
-            onClick={showBrand ? openFilePicker : togglePlayback}
-            title={showBrand ? t.start.readOpenSpellFile : undefined}
+            active={dropping || showMenu}
+            onClick={showBrand ? () => setMenuOpen(open => !open) : togglePlayback}
+            title={showBrand ? t.start.readMenu : undefined}
             icon={showBrand ? (
               <span
                 data-testid="read-option-brand-icon"
@@ -183,7 +185,7 @@ export const ReadOption = ({ dragActive }: ReadOptionProps) => {
           <span data-testid="read-option-title" className={s.nowTitle} title={spellTitle ?? undefined}>{spellTitle}</span>
         </div>
       ) : (
-        <p data-testid="read-option-hint" className={s.hint}>
+        <p data-testid="read-option-hint" className={`${s.hint} ${showMenu ? s.hintHidden : ''}`} aria-hidden={showMenu || undefined}>
           <FontAwesomeIcon icon={importing ? faSpinner : faHandPointer} spin={importing} className={s.hintIcon} />
           <span>{importing ? t.start.readImporting : dropping ? t.start.readDropRelease : t.start.readDropHint}</span>
         </p>

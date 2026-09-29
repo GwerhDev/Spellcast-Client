@@ -5,6 +5,7 @@ import { Start } from '../index';
 import { SPELL_DRAG_TYPE } from '../../../../config/consts';
 import type { Spell } from '../../../../interfaces';
 import { setSpellLoaded } from '../../../../store/spellReaderSlice';
+import { setSpellDetails } from '../../../../store/spellSlice';
 import { play } from '../../../../store/browserPlayerSlice';
 
 // ImportOption uses pdfjs-dist (DOMMatrix not in jsdom)
@@ -44,34 +45,41 @@ describe('Start', () => {
     expect(screen.getByTestId('start')).toBeInTheDocument();
   });
 
-  it('always offers Read, first and selected by default, even with an empty grimoire', () => {
+  it('shows the Read control on its own, with no tabs', () => {
     renderWithProviders(<Start />);
     expect(screen.getByTestId('read-option')).toBeInTheDocument();
-    const tabs = screen.getAllByTestId(/^segmented-tab-/);
-    expect(tabs.map(tab => tab.getAttribute('data-testid'))).toEqual(['segmented-tab-read', 'segmented-tab-write', 'segmented-tab-import']);
+    expect(screen.queryAllByTestId(/^segmented-tab-/)).toHaveLength(0);
   });
 
-  it('switches tabs when the user picks one', () => {
+  it('opens Write and Import as modals from the Spellcast button menu', () => {
     renderWithProviders(<Start />);
-    fireEvent.click(screen.getByTestId('segmented-tab-write'));
-    expect(screen.queryByTestId('read-option')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('play-button'));
+    fireEvent.click(screen.getByTestId('radial-menu-item-write'));
+    expect(screen.getByTestId('start-write-modal')).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('custom-modal-close'));
+    expect(screen.queryByTestId('start-write-modal')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('play-button'));
+    fireEvent.click(screen.getByTestId('radial-menu-item-import'));
+    expect(screen.getByTestId('start-import-modal')).toBeInTheDocument();
   });
 
-  it('switches to the Read tab when a spell is dragged over, whatever tab was showing', async () => {
-    renderWithProviders(<Start />);
-    await screen.findByTestId('read-option');
-    fireEvent.click(screen.getByTestId('segmented-tab-import'));
-    expect(screen.queryByTestId('read-option')).not.toBeInTheDocument();
-    fireEvent.dragEnter(screen.getByTestId('start'), spellDrag());
-    expect(screen.getByTestId('read-option')).toBeInTheDocument();
+  it('closing Import drops whatever it had pending', () => {
+    const { store } = renderWithProviders(<Start />);
+    fireEvent.click(screen.getByTestId('play-button'));
+    fireEvent.click(screen.getByTestId('radial-menu-item-import'));
+    act(() => { store.dispatch(setSpellDetails({ fileContent: 'x', size: 1, type: 'pdf', title: 'Pending', totalPages: 1 })); });
+    fireEvent.click(screen.getByTestId('custom-modal-close'));
+    expect(store.getState().spell.isLoaded).toBe(false);
   });
 
-  it('ignores drags that are not spells (e.g. files for the import dropzone)', async () => {
+  it('lights up the Read control when a spell is dragged over, but not for file drags', () => {
     renderWithProviders(<Start />);
-    await screen.findByTestId('read-option');
-    fireEvent.click(screen.getByTestId('segmented-tab-import'));
-    fireEvent.dragEnter(screen.getByTestId('start'), { dataTransfer: { types: ['Files'] } });
-    expect(screen.queryByTestId('read-option')).not.toBeInTheDocument();
+    const start = screen.getByTestId('start');
+    fireEvent.dragEnter(start, { dataTransfer: { types: ['Files'] } });
+    expect(screen.getByTestId('read-option-hint')).not.toHaveTextContent('Drop it');
+    fireEvent.dragEnter(start, spellDrag());
+    expect(screen.getByTestId('read-option-hint')).toHaveTextContent('Drop it');
   });
 
   it('starts reading the dropped spell without navigating', async () => {
@@ -97,7 +105,6 @@ describe('Start', () => {
     const dragOverStart = async () => {
       renderWithProviders(<Start />);
       await screen.findByTestId('read-option');
-      fireEvent.click(screen.getByTestId('segmented-tab-write'));
       fireEvent.dragEnter(screen.getByTestId('start'), spellDrag());
       expect(screen.getByTestId('read-option-hint')).toHaveTextContent('Drop it');
     };
@@ -109,9 +116,9 @@ describe('Start', () => {
       expect(screen.getByTestId('read-option-hint')).toHaveTextContent('Drop it');
     });
 
-    // The drag entered through the Write tab's content, which the switch to Read removed --
-    // its own dragleave never comes, so the state can't rely on counting enter/leave pairs.
-    it('ends when the drag leaves Start, even after entering through a removed element', async () => {
+    // An element a drag entered through can be removed mid-drag, and its dragleave never
+    // comes -- so the state relies on relatedTarget, not on counting enter/leave pairs.
+    it('ends when the drag leaves Start', async () => {
       await dragOverStart();
       dragLeave(screen.getByTestId('start'), document.body);
       expect(screen.getByTestId('read-option-hint')).not.toHaveTextContent('Drop it');

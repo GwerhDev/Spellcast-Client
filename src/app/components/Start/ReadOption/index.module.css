@@ -23,6 +23,8 @@
 .container.noCover {
   background: transparent;
   border-color: transparent;
+  /* No cover to clip here, and the Spellcast button's menu floats out past the panel. */
+  overflow: visible;
 }
 
 .container.dragActive {
@@ -206,11 +208,6 @@
   border-color: rgba(242, 242, 242, 0.45);
 }
 
-/* The picker behind "open a .spell file" (link in the hint, or the left corner button). */
-.fileInput {
-  display: none;
-}
-
 /* The Spellcast mark drawn as a mask in the button's own text color, so it follows the
    theme (the logo file itself is a fixed blue). */
 .brandIcon {
@@ -284,6 +281,16 @@
   font-size: 0.75rem;
   color: var(--color-primary);
   opacity: 0.8;
+}
+
+/* Hidden (space kept) while the menu is open: its bottom option floats where the hint is. */
+.hintHidden {
+  visibility: hidden;
+}
+
+/* The ring breathing around the button stays calm while the menu is out. */
+.menuOpen .ring {
+  animation-play-state: paused;
 }
 
 .dragActive .hint {
