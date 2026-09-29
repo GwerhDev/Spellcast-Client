@@ -358,4 +358,16 @@ describe('BrowserPlayer single event queue (TCORE-81)', () => {
     expect(mockSpeechSynthesis.speak).toHaveBeenCalled();
     expect(store.getState().browserPlayer.isPlaying).toBe(true);
   });
+
+  // Clearing autoPlayOnLoad re-ran the content effect as a CONTENT_CHANGED, which cancelled
+  // the sentence autoplay had just started and spoke it again.
+  it('autoplay speaks the first sentence once, without cancelling and restarting it', async () => {
+    renderWithProviders(
+      <BrowserPlayer showVoiceSelectorModal={vi.fn()} showPlayerConfigModal={vi.fn()} />,
+      { preloadedState: baseState }
+    );
+    await act(async () => { await Promise.resolve(); await Promise.resolve(); await vi.advanceTimersByTimeAsync(0); });
+    expect(mockSpeechSynthesis.speak).toHaveBeenCalledTimes(1);
+    expect((mockSpeechSynthesis.speak.mock.calls[0][0] as SpeechSynthesisUtterance).text).toBe('Sentence one.');
+  });
 });

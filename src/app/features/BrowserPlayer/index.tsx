@@ -708,7 +708,16 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
   // what's needed for a spell mounted with autoPlayOnLoad already true (the
   // "play from a list card" path): there is no earlier render to compare
   // against, mounting IS the change.
+  // What the last handled content was, so a re-run that isn't a content change -- notably
+  // the autoplay branch below clearing autoPlayOnLoad, itself a dependency -- doesn't turn
+  // into a CONTENT_CHANGED that cancels and restarts the sentence autoplay just started.
+  const handledContentRef = useRef<{ spellId: string | null; page: number; index: number; sentences: string[]; loaded: boolean } | null>(null);
   useEffect(() => {
+    const content = { spellId, page: currentPage, index: currentSentenceIndex, sentences, loaded: isLoaded };
+    const prev = handledContentRef.current;
+    const contentChanged = !prev
+      || prev.spellId !== content.spellId || prev.page !== content.page || prev.index !== content.index
+      || prev.sentences !== content.sentences || prev.loaded !== content.loaded;
     if (autoPlayOnLoad) {
       // Wait for the cover fetch to settle before ever starting to speak --
       // see coverSettled above. This effect just re-runs (still a no-op)
@@ -718,10 +727,13 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
       // Also wait for the spell's pages: the player now mounts as soon as a spell is
       // chosen, before they're read, and there'd be nothing to speak yet.
       if (!coverSettled || !isLoaded) return;
+      handledContentRef.current = content;
       dispatch(setAutoPlayOnLoad(false));
       enqueue({ type: 'CLICK_PLAY' });
       return;
     }
+    if (!contentChanged) return;
+    handledContentRef.current = content;
     enqueue({ type: 'CONTENT_CHANGED' });
     //eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentSentenceIndex, sentences, isLoaded, currentPage, spellId, autoPlayOnLoad, coverSettled]);
