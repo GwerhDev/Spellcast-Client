@@ -2,7 +2,9 @@
   position: fixed;
   bottom: 20px;
   right: 20px;
-  z-index: 1000;
+  /* Above CustomModal's overlay (1050), which is portaled to <body>: a toast raised while a
+     modal stays open (e.g. importing several .spell files from Import) must still show. */
+  z-index: 1100;
   display: flex;
   flex-direction: column-reverse;
   gap: 1rem;
