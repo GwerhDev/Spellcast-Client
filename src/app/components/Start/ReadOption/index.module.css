@@ -154,8 +154,8 @@
   border-color: rgba(242, 242, 242, 0.3);
 }
 
-/* Corner shortcuts shown with a spell loaded: open a .spell file (left) and open the loaded
-   spell's reader (right). Scoped under .container so it outranks
+/* Corner shortcuts shown with a spell loaded: unload it (left) and open its reader
+   (right). Scoped under .container so it outranks
    IconButton's own .base/.transparent (same specificity otherwise, which would leave the
    winner to CSS Modules' bundle order -- see PlayButton.module.css for that failure). */
 .container .cornerButton {

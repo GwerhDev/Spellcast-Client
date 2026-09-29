@@ -4,7 +4,7 @@ import { Waveform } from '../../../components/Waveform/Waveform';
 import spellcastLogo from '../../../../assets/spellcast-logo.svg';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useRef, useState } from 'react';
-import { faBookOpenReader, faFolderOpen, faHandPointer, faSpinner } from '@fortawesome/free-solid-svg-icons';
+import { faBookOpenReader, faEject, faHandPointer, faSpinner } from '@fortawesome/free-solid-svg-icons';
 import { useNavigate } from 'react-router-dom';
 import { IconButton } from '../../../components/Buttons/IconButton';
 import { useAppDispatch, useAppSelector } from '../../../../store/hooks';
@@ -36,7 +36,7 @@ const isFileDrag = (e: React.DragEvent) => Array.from(e.dataTransfer.types).incl
 // box as Write's textarea / Import's dropzone).
 export const ReadOption = ({ dragActive }: ReadOptionProps) => {
   const { t } = useLanguage();
-  const { togglePlayback, readSpell } = usePlaySpell();
+  const { togglePlayback, readSpell, unloadSpell } = usePlaySpell();
   const { importFile } = useSpellImport();
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
@@ -130,11 +130,11 @@ export const ReadOption = ({ dragActive }: ReadOptionProps) => {
       )}
       {hasSpell && !dropping && (
         <IconButton
-          data-testid="read-option-open-file"
-          icon={faFolderOpen}
-          title={t.start.readOpenSpellFile}
+          data-testid="read-option-unload"
+          icon={faEject}
+          title={t.start.readUnload}
           className={`${s.cornerButton} ${s.cornerLeft}`}
-          onClick={openFilePicker}
+          onClick={unloadSpell}
           disabled={importing}
         />
       )}

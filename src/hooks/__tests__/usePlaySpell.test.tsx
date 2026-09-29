@@ -88,4 +88,17 @@ describe('usePlaySpell', () => {
       expect(store.getState().audioPlayer.toggleSeq).toBe(1);
     });
   });
+
+  it('unloadSpell leaves nothing loaded and both players reset', () => {
+    const { store, result, rerender } = setup();
+    act(() => result.current.playSpell(spell));
+    act(() => { store.dispatch(setSpellLoaded(true)); store.dispatch(play()); });
+    rerender();
+    act(() => result.current.unloadSpell());
+    const state = store.getState();
+    expect(state.spellReader.spellId).toBeNull();
+    expect(state.spellReader.isLoaded).toBe(false);
+    expect(state.browserPlayer.isPlaying).toBe(false);
+    expect(state.audioPlayer.isPlaying).toBe(false);
+  });
 });

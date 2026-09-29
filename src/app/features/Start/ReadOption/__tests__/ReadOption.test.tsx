@@ -141,17 +141,6 @@ describe('ReadOption', () => {
   });
 
   describe('opening .spell files from the computer', () => {
-    it('offers the corner "open a .spell file" button only with a spell loaded (otherwise the Spellcast button does it)', () => {
-      const { unmount } = renderWithProviders(<ReadOption dragActive={false} />);
-      expect(screen.queryByTestId('read-option-open-file')).not.toBeInTheDocument();
-      unmount();
-
-      const store = makeStore();
-      store.dispatch(setSpellFile({ id: 'spell-1', title: 'Spell one' }));
-      renderWithProviders(<ReadOption dragActive={false} />, { store });
-      expect(screen.getByTestId('read-option-open-file')).toBeInTheDocument();
-    });
-
     it('the picker only accepts .spell files', () => {
       renderWithProviders(<ReadOption dragActive={false} />);
       expect(screen.getByTestId('read-option-file-input')).toHaveAttribute('accept', '.spell');
@@ -209,6 +198,33 @@ describe('ReadOption', () => {
       await waitFor(() => expect(screen.getByTestId('read-option-hint')).toHaveTextContent('Importing spell'));
       await act(async () => { finish(null); });
       expect(screen.getByTestId('read-option-hint')).not.toHaveTextContent('Importing spell');
+    });
+  });
+
+  describe('unload button', () => {
+    it('is only shown with a spell loaded, not while dragging', () => {
+      const { unmount } = renderWithProviders(<ReadOption dragActive={false} />);
+      expect(screen.queryByTestId('read-option-unload')).not.toBeInTheDocument();
+      unmount();
+
+      const store = makeStore();
+      store.dispatch(setSpellFile({ id: 'spell-1', title: 'Spell one' }));
+      const { unmount: unmount2 } = renderWithProviders(<ReadOption dragActive={false} />, { store });
+      expect(screen.getByTestId('read-option-unload')).toBeInTheDocument();
+      unmount2();
+
+      renderWithProviders(<ReadOption dragActive />, { store });
+      expect(screen.queryByTestId('read-option-unload')).not.toBeInTheDocument();
+    });
+
+    it('takes the spell out of the player, back to the empty Read tab', () => {
+      const store = makeStore();
+      store.dispatch(setSpellFile({ id: 'spell-1', title: 'Spell one' }));
+      renderWithProviders(<ReadOption dragActive={false} />, { store });
+      fireEvent.click(screen.getByTestId('read-option-unload'));
+      expect(store.getState().spellReader.spellId).toBeNull();
+      expect(screen.getByTestId('read-option-brand-icon')).toBeInTheDocument();
+      expect(screen.queryByTestId('read-option-unload')).not.toBeInTheDocument();
     });
   });
 });

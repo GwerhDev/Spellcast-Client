@@ -50,5 +50,13 @@ export const usePlaySpell = () => {
     else dispatch(requestResume());
   };
 
-  return { playSpell, readSpell, togglePlayback };
+  // Takes the loaded spell out of the player: with no spell loaded the persistent player
+  // unmounts (and stops), leaving nothing loaded.
+  const unloadSpell = () => {
+    dispatch(resetBrowserPlayer());
+    dispatch(resetAudioPlayer());
+    dispatch(resetSpellReader());
+  };
+
+  return { playSpell, readSpell, togglePlayback, unloadSpell };
 };

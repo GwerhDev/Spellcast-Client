@@ -492,6 +492,7 @@ export const en = {
     readNowPlaying: 'Reading',
     readPaused: 'Paused',
     readOpenReader: 'Open in the reader',
+    readUnload: 'Unload spell',
     readOpenSpellFile: 'Open a .spell file',
     readImporting: 'Importing spell…',
     readOnlySpellFiles: 'Only .spell files can be opened here. PDFs go in Import.',

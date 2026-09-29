@@ -494,6 +494,7 @@ export const es: Translations = {
     readNowPlaying: 'Leyendo',
     readPaused: 'En pausa',
     readOpenReader: 'Abrir en el lector',
+    readUnload: 'Desmontar spell',
     readOpenSpellFile: 'Abrir un archivo .spell',
     readImporting: 'Importando spell…',
     readOnlySpellFiles: 'Aquí solo se pueden abrir archivos .spell. Los PDF van en Importar.',
