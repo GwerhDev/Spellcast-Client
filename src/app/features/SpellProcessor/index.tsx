@@ -45,28 +45,35 @@ export const SpellProcessor = () => {
   const [docLoaded, setDocLoaded] = useState(false);
 
   useEffect(() => {
-    if (!spellId) return;
+    // Also on unload (spellId back to null): the previous spell's pages must go, or the
+    // effect below would republish them and mark a spell loaded again with none selected.
     setDocLoaded(false);
     setPages([]);
+    if (!spellId) return;
+    // A spell unloaded or swapped while its read is still in flight must not land late.
+    let cancelled = false;
     getSpellById(spellId, userData.id).then(async (doc) => {
+      if (cancelled) return;
       if (doc?.pagesContent) {
         const parsed = JSON.parse(doc.pagesContent) as JSONContent[];
         const withCover = await injectCoverIntoPages(parsed, doc.cover ?? null);
+        if (cancelled) return;
         setPages(withCover.map((p) => JSON.stringify(p)));
       } else {
         setPages([]);
       }
       setDocLoaded(true);
     });
+    return () => { cancelled = true; };
   }, [spellId, userData.id, contentVersion]);
 
   useEffect(() => {
-    if (!docLoaded) return;
+    if (!docLoaded || !spellId) return;
     const text = pages[currentPage - 1] ?? '';
     dispatch(setPageText({ text }));
     dispatch(setSentences({ sentences: extractSentencesFromJSON(text) }));
     dispatch(setSpellLoaded(true));
-  }, [currentPage, docLoaded, pages, dispatch]);
+  }, [currentPage, docLoaded, pages, spellId, dispatch]);
 
   useEffect(() => {
     if (!isLoaded || currentSentenceIndex < 0 || !spellId) return;
