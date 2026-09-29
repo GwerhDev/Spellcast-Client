@@ -154,8 +154,10 @@
   border-color: rgba(242, 242, 242, 0.3);
 }
 
-/* Corner shortcut to the loaded spell's reader. */
-.openReader {
+/* Corner shortcut to the loaded spell's reader. Scoped under .container so it outranks
+   IconButton's own .base/.transparent (same specificity otherwise, which would leave the
+   winner to CSS Modules' bundle order -- see PlayButton.module.css for that failure). */
+.container .openReader {
   position: absolute;
   top: 0.6rem;
   right: 0.6rem;
@@ -174,8 +176,8 @@
   transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease;
 }
 
-.openReader:hover,
-.openReader:focus-visible {
+.container .openReader:hover,
+.container .openReader:focus-visible {
   color: var(--color-primary);
   border-color: color-mix(in srgb, var(--color-primary) 55%, transparent);
   outline: none;
