@@ -79,6 +79,24 @@ export const setStoredProgress = async (spellId: string, userId: string | undefi
   });
 };
 
+// Writes several records in one transaction (e.g. resetting every spell's progress at once).
+export const setStoredProgressMany = async (entries: { spellId: string; userId: string | undefined; progress: SpellProgress }[]): Promise<void> => {
+  if (entries.length === 0) return;
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(STORE_NAME, 'readwrite');
+    const store = transaction.objectStore(STORE_NAME);
+    const updatedAt = Date.now();
+    entries.forEach(({ spellId, userId, progress }) => {
+      const record: ProgressRecord = { spellId, userId, progress, updatedAt };
+      store.put(record);
+    });
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = () => reject(transaction.error);
+    transaction.onabort = () => reject(transaction.error);
+  });
+};
+
 export const deleteStoredProgress = async (spellId: string): Promise<void> => {
   const db = await openDB();
   return new Promise((resolve, reject) => {

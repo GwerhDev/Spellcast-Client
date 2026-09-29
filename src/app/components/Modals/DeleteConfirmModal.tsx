@@ -11,9 +11,12 @@ interface DeleteConfirmModalProps {
   onConfirm: () => void;
   title: string;
   message: string;
+  // Confirm button label for destructive actions that aren't a deletion (e.g. a reset);
+  // defaults to "Delete".
+  confirmText?: string;
 }
 
-export const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({ show, onClose, onConfirm, title, message }) => {
+export const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({ show, onClose, onConfirm, title, message, confirmText }) => {
   const { t } = useLanguage();
   if (!show) {
     return null;
@@ -25,7 +28,7 @@ export const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({ show, on
         <p>{message}</p>
         <div className={s.buttons}>
           <SecondaryButton data-testid="delete-confirm-cancel-btn" onClick={onClose}>{t.common.cancel}</SecondaryButton>
-          <PrimaryButton data-testid="delete-confirm-confirm-btn" onClick={onConfirm} className={s.deleteButton}>{t.common.delete}</PrimaryButton>
+          <PrimaryButton data-testid="delete-confirm-confirm-btn" onClick={onConfirm} className={s.deleteButton}>{confirmText ?? t.common.delete}</PrimaryButton>
         </div>
       </div>
     </CustomModal>

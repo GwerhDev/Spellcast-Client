@@ -47,9 +47,18 @@ describe('BrowserStorage drill-downs', () => {
     renderBrowserStorage();
     await screen.findByTestId('storage-detail-audio-cache');
 
-    // Only spells/audio cache are buttons; voiceProfile/appSettings stay plain divs.
+    // Only spells/audio cache/reading progress are buttons; voiceProfile/appSettings stay plain divs.
     const allDetailValues = screen.getAllByText(/^(—|\d+)$/);
     const buttons = allDetailValues.filter((el) => el.closest('button'));
-    expect(buttons).toHaveLength(2);
+    expect(buttons).toHaveLength(3);
+  });
+
+  it('shows the reading progress records, drilling down to the spells screen where they are reset', async () => {
+    renderBrowserStorage();
+
+    const link = await screen.findByTestId('storage-detail-reading-progress');
+    link.click();
+
+    expect(navigateMock).toHaveBeenCalledWith('/caster/settings/storage/local/spells');
   });
 });

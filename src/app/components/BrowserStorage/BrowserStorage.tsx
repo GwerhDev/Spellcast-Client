@@ -24,6 +24,7 @@ interface ItemCounts {
   spells: number;
   audioPages: number;
   voiceProfiles: number;
+  readingProgress: number;
 }
 
 interface SettingEntry {
@@ -100,9 +101,10 @@ export const BrowserStorage: React.FC = () => {
       countIDBStore(DB_NAME, SPELLS_STORE_NAME),
       countIDBStore('spellcast-audio-cache', 'audio_pages'),
       countIDBStore('spellcast-preferences', 'user_voice'),
-    ]).then(([spells, audioPages, voiceProfiles]) => {
-      setCounts({ spells, audioPages, voiceProfiles });
-    }).catch(() => setCounts({ spells: 0, audioPages: 0, voiceProfiles: 0 }));
+      countIDBStore('spellcast-progress', 'progress'),
+    ]).then(([spells, audioPages, voiceProfiles, readingProgress]) => {
+      setCounts({ spells, audioPages, voiceProfiles, readingProgress });
+    }).catch(() => setCounts({ spells: 0, audioPages: 0, voiceProfiles: 0, readingProgress: 0 }));
 
     setSettings(
       KNOWN_LS_KEYS
@@ -136,6 +138,8 @@ export const BrowserStorage: React.FC = () => {
     { label: t.storage.spells,  value: counts?.spells  ?? '—', path: 'settings/storage/local/spells', testId: 'storage-detail-spells' },
     { label: t.storage.audioCache, value: counts?.audioPages ?? '—', path: 'settings/storage/local/audio-cache', testId: 'storage-detail-audio-cache' },
     { label: t.storage.voiceProfile, value: counts?.voiceProfiles ?? '—' },
+    // Reset from the spells screen (per spell or all at once), so it drills down there.
+    { label: t.storage.readingProgress, value: counts?.readingProgress ?? '—', path: 'settings/storage/local/spells', testId: 'storage-detail-reading-progress' },
     { label: t.storage.appSettings, value: settings.length || '—' },
   ];
 

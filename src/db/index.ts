@@ -2,7 +2,7 @@ import { DB_NAME, DB_VERSION, SPELLS_STORE_NAME } from "../config/api";
 import { Spell, SpellProgress } from "../interfaces";
 import { setOriginalPdf, deleteOriginalPdf } from "./originalPdfs";
 import { clearSpellAudioCache } from "./audioCache";
-import { getStoredProgress, getAllStoredProgress, setStoredProgress, deleteStoredProgress, clearStoredProgress } from "./spellProgress";
+import { getStoredProgress, getAllStoredProgress, setStoredProgress, setStoredProgressMany, deleteStoredProgress, clearStoredProgress } from "./spellProgress";
 
 // The pre-rename (TCORE-78) store name, frozen on purpose: it names whatever a
 // browser already has on disk from before this migration shipped, so it must never
@@ -23,6 +23,13 @@ const sameUser = (a: string | undefined, b: string | undefined): boolean =>
 // update. A failed progress read never fails the spell read: the embedded value stands.
 const withStoredProgress = <T extends Spell>(spell: T, record: { userId: string | undefined; progress: SpellProgress } | undefined): T =>
   record && sameUser(record.userId, spell.userId) ? { ...spell, progress: record.progress } : spell;
+
+// Where a spell starts: what a new spell is saved with, and what a reset writes back.
+export const initialSpellProgress = (): SpellProgress => ({
+  currentPage: 0,
+  pagesProgress: [],
+  lastReadSentenceIndex: 0,
+});
 
 let dbPromise: Promise<IDBDatabase> | null = null;
 
@@ -58,6 +65,8 @@ export const clearAllData = async (): Promise<void> => {
     request.onerror = (event) => reject((event.target as IDBRequest).error);
   });
   coverCache.clear();
+  knownOwnership.clear();
+  announceCoverChange(null);
   // Best-effort: with the spells gone, leftover progress records are unreachable anyway.
   await clearStoredProgress().catch((err) => {
     console.error('[IndexedDB] Failed to clear reading progress:', err);
@@ -344,11 +353,7 @@ export const saveSpellToDB = async (spell: Omit<Spell, 'id' | 'createdAt' | 'pro
     ...spell,
     id: crypto.randomUUID(),
     createdAt: new Date(),
-    progress: {
-      currentPage: 0,
-      pagesProgress: [],
-      lastReadSentenceIndex: 0,
-    }
+    progress: initialSpellProgress(),
   };
 
   return new Promise((resolve, reject) => {
@@ -420,6 +425,25 @@ export const getSpellsFromDB = async (userId: string | undefined): Promise<Spell
 // record again just for it. `null` = known to have no cover; missing = not read yet.
 const coverCache = new Map<string, Blob | null>();
 const rememberCover = (spell: Spell) => { coverCache.set(spell.id, spell.cover ?? null); };
+
+// Other tabs keep their own copy of that memory: when a cover changes (or a spell is
+// deleted) here, they drop theirs and read it again next time, instead of showing the old
+// one until reloaded. A message only ever makes a tab forget, never trusts a payload.
+// `null` = forget every cover (all data cleared).
+const coverChannel: BroadcastChannel | null =
+  typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('spellcast-covers') : null;
+// Node's BroadcastChannel (tests) would otherwise keep the process alive; browsers have no unref.
+(coverChannel as unknown as { unref?: () => void } | null)?.unref?.();
+if (coverChannel) {
+  coverChannel.onmessage = (event: MessageEvent<{ id: string | null }>) => {
+    const id = event.data?.id;
+    if (id == null) coverCache.clear();
+    else coverCache.delete(id);
+  };
+}
+const announceCoverChange = (id: string | null) => {
+  try { coverChannel?.postMessage({ id }); } catch { /* best-effort */ }
+};
 
 // The cover already in memory, if this spell has been read this session (sync, so a view
 // can show it on its first render); undefined when unknown.
@@ -517,6 +541,10 @@ export const deleteSpellFromDB = async (id: string, userId: string | undefined):
   });
 
   coverCache.delete(id);
+  announceCoverChange(id);
+  // A progress write still in flight for this spell (e.g. the player saving its position
+  // as it's deleted) must not pass the ownership check from memory and leave a record behind.
+  [...knownOwnership].forEach(key => { if (key.startsWith(`${id}|`)) knownOwnership.delete(key); });
 
   // Same reasoning: a deleted spell's reading position is unreachable, just leftover data.
   await deleteStoredProgress(id).catch((err) => {
@@ -573,7 +601,10 @@ export const updateSpellFull = async (
       if (spell && sameUser(spell.userId, userId)) {
         const putRequest = store.put({ ...spell, ...updates });
         putRequest.onsuccess = () => {
-          if ('cover' in updates) coverCache.set(id, updates.cover ?? null);
+          if ('cover' in updates) {
+            coverCache.set(id, updates.cover ?? null);
+            announceCoverChange(id);
+          }
           resolve();
         };
         putRequest.onerror = (e) => reject((e.target as IDBRequest).error);
@@ -630,6 +661,29 @@ const spellBelongsToUser = async (spellId: string, userId: string): Promise<bool
   if (!owns) owns = !!(await readSpellFromStore(spellId, userId));
   if (owns) knownOwnership.add(key);
   return owns;
+};
+
+// Back to the start, as if never read. Writes the initial progress rather than deleting
+// the stored record: a spell saved before the progress database existed would otherwise
+// fall back to the position embedded on its record, undoing the reset.
+export const resetSpellProgress = async (spellId: string, userId: string): Promise<void> => {
+  await updateSpellProgress(spellId, userId, initialSpellProgress());
+};
+
+// Every spell of the user back to the start, in one write. Ids come from the userId index;
+// legacy spells stored under a differently-typed userId miss it, so when it has none the
+// same type-tolerant listing as getSpellsFromDB is used. Resolves to how many were reset.
+export const resetAllSpellProgress = async (userId: string): Promise<number> => {
+  const db = await openDB();
+  const store = db.transaction(SPELLS_STORE_NAME, 'readonly').objectStore(SPELLS_STORE_NAME);
+  let ids = await new Promise<string[]>((resolve, reject) => {
+    const request = store.index('userId').getAllKeys(userId);
+    request.onsuccess = () => resolve(request.result.map(String));
+    request.onerror = () => reject(request.error);
+  });
+  if (ids.length === 0) ids = (await readSpellsFromStore(userId)).map(spell => spell.id);
+  await setStoredProgressMany(ids.map(spellId => ({ spellId, userId, progress: initialSpellProgress() })));
+  return ids.length;
 };
 
 // TCORE-103: updates description/author/tags/language, never pagesContent -- used by the

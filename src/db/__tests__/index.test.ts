@@ -296,6 +296,81 @@ describe('db/index.ts CRUD', () => {
       await clearAllData();
       expect((await getAllStoredProgress()).size).toBe(0);
     });
+
+    // A spell saved before the progress database existed: its position lives only on the
+    // record itself (what every spell read before that change looks like on disk).
+    const embedProgress = async (id: string, progress: unknown) => {
+      const db = await new Promise<IDBDatabase>((resolve, reject) => {
+        const req = indexedDB.open(DB_NAME, DB_VERSION);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+      const record = await rawSpell(id);
+      await new Promise<void>((resolve, reject) => {
+        const tx = db.transaction(SPELLS_STORE_NAME, 'readwrite');
+        tx.objectStore(SPELLS_STORE_NAME).put({ ...record, progress });
+        tx.oncomplete = () => { db.close(); resolve(); };
+        tx.onerror = () => reject(tx.error);
+      });
+    };
+
+    describe('resetting', () => {
+      it('sends a spell back to the start, even one whose position is only embedded on its record', async () => {
+        const { saveSpellToDB, resetSpellProgress, getSpellById, initialSpellProgress } = await importDb();
+        const id = await saveSpellToDB(seedSpell({ userId: 'user-1' }));
+        await embedProgress(id, progressAt(9));
+        expect((await getSpellById(id, 'user-1'))?.progress).toEqual(progressAt(9));
+        await resetSpellProgress(id, 'user-1');
+        expect((await getSpellById(id, 'user-1'))?.progress).toEqual(initialSpellProgress());
+      });
+
+      it("never touches the spell record's own embedded progress", async () => {
+        const { saveSpellToDB, resetSpellProgress } = await importDb();
+        const id = await saveSpellToDB(seedSpell({ userId: 'user-1' }));
+        await embedProgress(id, progressAt(9));
+        await resetSpellProgress(id, 'user-1');
+        expect((await rawSpell(id)).progress).toEqual(progressAt(9));
+      });
+
+      it("refuses to reset another user's spell", async () => {
+        const { saveSpellToDB, resetSpellProgress } = await importDb();
+        const id = await saveSpellToDB(seedSpell({ userId: 'user-2' }));
+        await expect(resetSpellProgress(id, 'user-1')).rejects.toThrow();
+      });
+
+      it("resets every spell of the user at once, and only theirs", async () => {
+        const { saveSpellToDB, updateSpellProgress, resetAllSpellProgress, getSpellsFromDB, initialSpellProgress } = await importDb();
+        const a = await saveSpellToDB(seedSpell({ userId: 'user-1', title: 'A' }));
+        const b = await saveSpellToDB(seedSpell({ userId: 'user-1', title: 'B' }));
+        const other = await saveSpellToDB(seedSpell({ userId: 'user-2', title: 'Other' }));
+        await updateSpellProgress(a, 'user-1', progressAt(4));
+        await embedProgress(b, progressAt(6));
+        await updateSpellProgress(other, 'user-2', progressAt(8));
+
+        expect(await resetAllSpellProgress('user-1')).toBe(2);
+        (await getSpellsFromDB('user-1')).forEach(spell => expect(spell.progress).toEqual(initialSpellProgress()));
+        expect((await getSpellsFromDB('user-2'))[0].progress).toEqual(progressAt(8));
+      });
+
+      it('resets legacy spells stored under a differently-typed userId', async () => {
+        const { saveSpellToDB, updateSpellProgress, resetAllSpellProgress, getSpellsFromDB, initialSpellProgress } = await importDb();
+        // @ts-expect-error -- deliberately mistyped userId to model legacy data
+        const id = await saveSpellToDB(seedSpell({ userId: 42 }));
+        await updateSpellProgress(id, '42', progressAt(5));
+        expect(await resetAllSpellProgress('42')).toBe(1);
+        expect((await getSpellsFromDB('42'))[0].progress).toEqual(initialSpellProgress());
+      });
+    });
+
+    it('a progress write for a spell deleted meanwhile is refused, leaving no record behind', async () => {
+      const { saveSpellToDB, updateSpellProgress, deleteSpellFromDB } = await importDb();
+      const { getAllStoredProgress } = await import('../spellProgress');
+      const id = await saveSpellToDB(seedSpell({ userId: 'user-1' }));
+      await updateSpellProgress(id, 'user-1', progressAt(1)); // ownership now remembered
+      await deleteSpellFromDB(id, 'user-1');
+      await expect(updateSpellProgress(id, 'user-1', progressAt(2))).rejects.toThrow();
+      expect((await getAllStoredProgress()).has(id)).toBe(false);
+    });
   });
 
   describe('covers kept in memory', () => {
@@ -328,6 +403,18 @@ describe('db/index.ts CRUD', () => {
       expect(getCachedSpellCover(id)).toBeTruthy();
       await deleteSpellFromDB(id, 'user-1');
       expect(getCachedSpellCover(id)).toBeUndefined();
+    });
+
+    it("forgets a cover another tab changed, so it's read again instead of shown stale", async () => {
+      const { saveSpellToDB, getSpellById, getCachedSpellCover } = await importDb();
+      const id = await saveSpellToDB(seedSpell({ userId: 'user-1' }));
+      await getSpellById(id, 'user-1');
+      expect(getCachedSpellCover(id)).toBeNull();
+      // Another tab's db module announcing a cover change for this spell.
+      const otherTab = new BroadcastChannel('spellcast-covers');
+      otherTab.postMessage({ id });
+      await vi.waitFor(() => expect(getCachedSpellCover(id)).toBeUndefined());
+      otherTab.close();
     });
   });
 

@@ -2,11 +2,13 @@ import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import s from './index.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBoxOpen, faTrash, faArrowUpRightFromSquare } from '@fortawesome/free-solid-svg-icons';
+import { faBoxOpen, faTrash, faArrowUpRightFromSquare, faRotateLeft } from '@fortawesome/free-solid-svg-icons';
 import { useLanguage } from '../../../i18n';
 import { useAppDispatch, useAppSelector } from '../../../store/hooks';
 import { addApiResponse } from '../../../store/apiResponsesSlice';
-import { getSpellsFromDB } from '../../../db';
+import { getSpellsFromDB, resetSpellProgress, resetAllSpellProgress } from '../../../db';
+import { invalidateSpellList } from '../../../store/spellReaderSlice';
+import { usePlaySpell } from '../../../hooks/usePlaySpell';
 import { deleteOriginalPdf, getAllOriginalPdfSizes } from '../../../db/originalPdfs';
 import { getAudioCacheSummary, clearSpellAudioCache } from '../../../db/audioCache';
 import { formatBytes } from '../../../utils/formatBytes';
@@ -22,9 +24,14 @@ interface SpellRow {
   pdfBytes: number;
   audioBytes: number;
   totalBytes: number;
+  // Page the reader is on (1-based); 0 when never started.
+  currentPage: number;
 }
 
-type ConfirmTarget = { id: string; title: string; kind: 'pdf' | 'audio' } | null;
+type ConfirmTarget =
+  | { id: string; title: string; kind: 'pdf' | 'audio' | 'progress' }
+  | { kind: 'all-progress' }
+  | null;
 
 // TCORE-119: needs direct IndexedDB access across three separate stores (spells,
 // originalPdfs, audioCache), so it's a Layer 3 feature per CLAUDE.md, not a Layer 4
@@ -35,6 +42,8 @@ export const SpellStorageManager = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { userData } = useAppSelector((state) => state.session);
+  const loadedSpellId = useAppSelector((state) => state.spellReader.spellId);
+  const { unloadSpell } = usePlaySpell();
 
   const [rows, setRows] = useState<SpellRow[] | null>(null);
   const [confirmTarget, setConfirmTarget] = useState<ConfirmTarget>(null);
@@ -56,7 +65,11 @@ export const SpellStorageManager = () => {
         + (spell.cover?.size ?? 0);
       const pdfBytes = pdfSizes[spell.id] ?? 0;
       const audioBytes = audioSummary.bySpell[spell.id]?.totalBytes ?? 0;
-      return { id: spell.id, title: spell.title, contentBytes, pdfBytes, audioBytes, totalBytes: contentBytes + pdfBytes + audioBytes };
+      return {
+        id: spell.id, title: spell.title, contentBytes, pdfBytes, audioBytes,
+        totalBytes: contentBytes + pdfBytes + audioBytes,
+        currentPage: spell.progress?.currentPage ?? 0,
+      };
     });
     nextRows.sort((a, b) => b.totalBytes - a.totalBytes);
     setRows(nextRows);
@@ -78,7 +91,48 @@ export const SpellStorageManager = () => {
     await reload();
   };
 
+  // A spell reset while it's loaded would keep playing from where it was and save that
+  // position right back, so it's taken out of the player first.
+  const afterProgressReset = async (resetIds: string[] | 'all') => {
+    if (loadedSpellId && (resetIds === 'all' || resetIds.includes(loadedSpellId))) unloadSpell();
+    setConfirmTarget(null);
+    dispatch(invalidateSpellList());
+    await reload();
+  };
+
+  const handleResetProgress = async (id: string, title: string) => {
+    if (!userData.id) return;
+    await resetSpellProgress(id, userData.id);
+    dispatch(addApiResponse({ message: t.storage.spellStorageProgressResetToast.replace('{title}', title), type: 'success' }));
+    await afterProgressReset([id]);
+  };
+
+  const handleResetAllProgress = async () => {
+    if (!userData.id) return;
+    await resetAllSpellProgress(userData.id);
+    dispatch(addApiResponse({ message: t.storage.spellStorageProgressResetAllToast, type: 'success' }));
+    await afterProgressReset('all');
+  };
+
   if (!rows) return <Spinner isLoading message={t.storage.calculating} />;
+
+  const anyStarted = rows.some(row => row.currentPage > 0);
+
+  const confirmTitle = (target: ConfirmTarget): string => {
+    if (!target) return '';
+    if (target.kind === 'all-progress') return t.storage.spellStorageResetAllProgressConfirmTitle;
+    if (target.kind === 'progress') return t.storage.spellStorageResetProgressConfirmTitle.replace('{title}', target.title);
+    if (target.kind === 'pdf') return t.storage.spellStorageDropPdfConfirmTitle.replace('{title}', target.title);
+    return t.storage.audioCacheClearSpellConfirmTitle.replace('{title}', target.title);
+  };
+
+  const confirmMessage = (target: ConfirmTarget): string => {
+    if (!target) return '';
+    if (target.kind === 'all-progress') return t.storage.spellStorageResetAllProgressConfirmDesc;
+    if (target.kind === 'progress') return t.storage.spellStorageResetProgressConfirmDesc;
+    if (target.kind === 'pdf') return t.storage.spellStorageDropPdfConfirmDesc;
+    return t.storage.audioCacheClearSpellConfirmDesc;
+  };
 
   return (
     <div className={s.container} data-testid="spell-storage-manager">
@@ -88,6 +142,15 @@ export const SpellStorageManager = () => {
           <p className={s.subtitle}>{t.storage.spellStorageSubtitle}</p>
         </div>
         <div className={s.headerActions}>
+          {anyStarted && (
+            <PrimaryButton
+              data-testid="spell-storage-reset-all-progress-btn"
+              variant="danger"
+              icon={faRotateLeft}
+              text={t.storage.spellStorageResetAllProgress}
+              onClick={() => setConfirmTarget({ kind: 'all-progress' })}
+            />
+          )}
           <button
             className={s.audioLink}
             data-testid="spell-storage-manage-audio-link"
@@ -136,6 +199,27 @@ export const SpellStorageManager = () => {
                 </li>
                 <li className={s.breakdownRow}>
                   <div className={s.breakdownInfo}>
+                    <span className={s.breakdownLabel}>{t.storage.spellStorageProgress}</span>
+                    <span className={s.breakdownBytes} data-testid={`spell-storage-progress-${row.id}`}>
+                      {row.currentPage > 0
+                        ? t.storage.spellStorageProgressPage.replace('{page}', String(row.currentPage))
+                        : t.storage.spellStorageProgressNone}
+                    </span>
+                  </div>
+                  {row.currentPage > 0 && (
+                    <div className={s.breakdownActions}>
+                      <PrimaryButton
+                        data-testid={`spell-storage-reset-progress-${row.id}-btn`}
+                        variant="danger"
+                        icon={faRotateLeft}
+                        text={t.storage.spellStorageResetProgress}
+                        onClick={() => setConfirmTarget({ id: row.id, title: row.title, kind: 'progress' })}
+                      />
+                    </div>
+                  )}
+                </li>
+                <li className={s.breakdownRow}>
+                  <div className={s.breakdownInfo}>
                     <span className={s.breakdownLabel}>{t.storage.spellStorageAudio}</span>
                     <span className={s.breakdownBytes}>{formatBytes(row.audioBytes)}</span>
                   </div>
@@ -162,13 +246,14 @@ export const SpellStorageManager = () => {
         onClose={() => setConfirmTarget(null)}
         onConfirm={() => {
           if (!confirmTarget) return;
-          if (confirmTarget.kind === 'pdf') handleDropPdf(confirmTarget.id, confirmTarget.title);
+          if (confirmTarget.kind === 'all-progress') handleResetAllProgress();
+          else if (confirmTarget.kind === 'progress') handleResetProgress(confirmTarget.id, confirmTarget.title);
+          else if (confirmTarget.kind === 'pdf') handleDropPdf(confirmTarget.id, confirmTarget.title);
           else handleClearAudio(confirmTarget.id, confirmTarget.title);
         }}
-        title={confirmTarget?.kind === 'pdf'
-          ? t.storage.spellStorageDropPdfConfirmTitle.replace('{title}', confirmTarget.title)
-          : t.storage.audioCacheClearSpellConfirmTitle.replace('{title}', confirmTarget?.title ?? '')}
-        message={confirmTarget?.kind === 'pdf' ? t.storage.spellStorageDropPdfConfirmDesc : t.storage.audioCacheClearSpellConfirmDesc}
+        title={confirmTitle(confirmTarget)}
+        message={confirmMessage(confirmTarget)}
+        confirmText={confirmTarget?.kind === 'progress' || confirmTarget?.kind === 'all-progress' ? t.storage.spellStorageResetConfirm : undefined}
       />
     </div>
   );
