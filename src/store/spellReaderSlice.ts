@@ -108,8 +108,20 @@ const spellReaderSlice = createSlice({
       state.currentPage = action.payload;
       state.currentSentenceIndex = state.progress?.currentPage === action.payload ? state.progress.lastReadSentenceIndex : 0;
     },
-    resetSpellReader() {
-      return initialState;
+    // Clears the loaded spell, not the session around it: the list/content counters must
+    // keep counting up (sending listVersion back to 0 made every spell list refetch as if
+    // the list had changed), and the reader preferences keep what the user set this session
+    // rather than reverting to the values read at startup.
+    resetSpellReader(state) {
+      return {
+        ...initialState,
+        fitToWidth: state.fitToWidth,
+        lightningMode: state.lightningMode,
+        attentionGuardEnabled: state.attentionGuardEnabled,
+        attentionGuardInterval: state.attentionGuardInterval,
+        listVersion: state.listVersion,
+        contentVersion: state.contentVersion,
+      };
     },
     setPageText(state, action: PayloadAction<{ text: string }>) {
       state.currentPageText = action.payload.text;

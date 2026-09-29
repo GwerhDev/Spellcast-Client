@@ -146,5 +146,23 @@ describe('spellReaderSlice', () => {
       expect(reset.spellId).toBeNull();
       expect(reset.isLoaded).toBe(false);
     });
+
+    // Sending listVersion back to 0 made every spell list refetch on the next play, as if
+    // the list had changed (seen right after storing a new spell, which bumps it).
+    it('keeps the list and content counters counting up', () => {
+      let state = reducer(initial, invalidateSpellList());
+      state = reducer(state, invalidateContent());
+      state = reducer(reducer(state, setSpellFile({ id: 'x', title: 'X' })), resetSpellReader());
+      expect(state.listVersion).toBe(1);
+      expect(state.contentVersion).toBe(1);
+    });
+
+    it('keeps the reader preferences set this session', () => {
+      let state = reducer(initial, setFitToWidth(!initial.fitToWidth));
+      state = reducer(state, setLightningMode(!initial.lightningMode));
+      state = reducer(reducer(state, setSpellFile({ id: 'x', title: 'X' })), resetSpellReader());
+      expect(state.fitToWidth).toBe(!initial.fitToWidth);
+      expect(state.lightningMode).toBe(!initial.lightningMode);
+    });
   });
 });
