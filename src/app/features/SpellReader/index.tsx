@@ -1,6 +1,6 @@
 import s from '../../components/SpellReader/index.module.css';
 import { useNavigate } from 'react-router-dom';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useZoom } from '../../../hooks/useZoom';
 import { ZoomOverlay } from '../../components/Zoom/ZoomOverlay';
@@ -194,13 +194,20 @@ export const SpellReader = () => {
     } else if (elemTop - TOP_MARGIN < container.scrollTop) {
       container.scrollTo({ top: Math.max(0, elemTop - TOP_MARGIN), behavior: 'smooth' });
     }
-  }, [activeSentenceIndex, isPlaying, aiIsPlaying, selectedVoice.type, fitToWidth]);
+    // editedText too: on a page change the sentence index often moves before the new page
+    // has rendered (or doesn't move at all, e.g. 0 -> 0), so following it only then scrolled
+    // against the previous page's layout, or not at all.
+  }, [activeSentenceIndex, isPlaying, aiIsPlaying, selectedVoice.type, fitToWidth, editedText]);
 
-  useEffect(() => {
-    if (selectedVoice.type === 'browser') return;
+  // A new page starts at the top, whatever the voice -- keyed on the rendered content rather
+  // than currentPage, since the page's text lands a render after the page number. Browser
+  // voices used to skip this and kept the previous page's scroll offset: a short page after
+  // a long one opened scrolled down, its start cut off above an empty viewport. A layout
+  // effect, so it lands before paint and before the follow effect above scrolls from here.
+  useLayoutEffect(() => {
     const container = fitToWidth ? scrollContainerRef.current : paperBgRef.current;
     if (container) container.scrollTop = 0;
-  }, [currentPage, selectedVoice.type, fitToWidth]);
+  }, [editedText, fitToWidth]);
 
   const handleEdit = () => { navigate(`/editor/${spellId}/${currentPage}`); };
   const handleSentenceClick = (clickedIndex: number) => {
