@@ -78,13 +78,24 @@ describe('ReadOption', () => {
 
   it('has a transparent panel (no box) while nothing is loaded', () => {
     renderWithProviders(<ReadOption dragActive={false} />);
-    expect(screen.getByTestId('read-option').className).toMatch(/empty/);
+    expect(screen.getByTestId('read-option').className).toMatch(/noCover/);
   });
 
-  it('shows the panel once a spell is loaded', () => {
+  it('keeps the panel transparent for a loaded spell without a cover', async () => {
+    mockGetSpellById.mockResolvedValue({ id: 'spell-1', title: 'Spell one' });
     const store = makeStore();
     store.dispatch(setSpellFile({ id: 'spell-1', title: 'Spell one' }));
     renderWithProviders(<ReadOption dragActive={false} />, { store });
-    expect(screen.getByTestId('read-option').className).not.toMatch(/empty/);
+    await waitFor(() => expect(mockGetSpellById).toHaveBeenCalled());
+    expect(screen.getByTestId('read-option').className).toMatch(/noCover/);
+  });
+
+  it('shows the panel once the loaded spell has a cover', async () => {
+    mockGetSpellById.mockResolvedValue({ id: 'spell-1', title: 'Spell one', cover: new Blob(['x']) });
+    const store = makeStore();
+    store.dispatch(setSpellFile({ id: 'spell-1', title: 'Spell one' }));
+    renderWithProviders(<ReadOption dragActive={false} />, { store });
+    await screen.findByTestId('read-option-cover');
+    expect(screen.getByTestId('read-option').className).not.toMatch(/noCover/);
   });
 });

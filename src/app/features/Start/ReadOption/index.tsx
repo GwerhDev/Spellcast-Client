@@ -39,7 +39,7 @@ export const ReadOption = ({ dragActive }: ReadOptionProps) => {
   const showNowReading = hasSpell && !!spellTitle && !dragActive;
 
   return (
-    <div data-testid="read-option" className={`${s.container} ${dragActive ? s.dragActive : ''} ${coverUrl ? s.hasCover : ''} ${hasSpell ? '' : s.empty}`}>
+    <div data-testid="read-option" className={`${s.container} ${dragActive ? s.dragActive : ''} ${coverUrl ? s.hasCover : s.noCover}`}>
       {coverUrl && (
         <>
           <div data-testid="read-option-cover" className={s.panelCover} style={{ backgroundImage: cssUrl(coverUrl) }} aria-hidden="true" />

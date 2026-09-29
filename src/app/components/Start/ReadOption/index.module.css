@@ -17,9 +17,10 @@
   transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
-/* Nothing loaded: no panel, just the button and hint on the page itself (a dragged spell
-   still lights the border up below, marking where to drop it). */
-.container.empty {
+/* No cover to show (nothing loaded, a spell without one, or its cover still loading): no
+   panel, just the button and hint on the page itself (a dragged spell still lights the
+   border up below, marking where to drop it). */
+.container.noCover {
   background: transparent;
   border-color: transparent;
 }
