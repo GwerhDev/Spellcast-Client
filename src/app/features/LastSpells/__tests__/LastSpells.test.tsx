@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { screen, fireEvent } from '@testing-library/react';
+import { screen, fireEvent, act } from '@testing-library/react';
 import { renderWithProviders, makeStore } from '../../../../test/renderWithProviders';
 import { LastSpells } from '../index';
 import * as db from '../../../../db';
+import { invalidateSpellList } from '../../../../store/spellReaderSlice';
 
 // The detail modal loads the spell on its own; a stub is enough to see which spell a card opened.
 vi.mock('../../../components/Modals/SpellDetailModal', () => ({
@@ -57,5 +58,22 @@ describe('LastSpells', () => {
     expect(screen.queryByTestId('spell-detail-modal-stub')).not.toBeInTheDocument();
     fireEvent.click(await screen.findByTestId('spell-card-doc-1'));
     expect(screen.getByTestId('spell-detail-modal-stub')).toHaveTextContent('doc-1');
+  });
+
+  // Changes saved from the detail modal (a cover frame, a cover) refresh every list; the
+  // list going back to its skeleton would unmount the modal it's showing.
+  it('keeps the open detail modal (and the cards) while the list refetches', async () => {
+    const getSpells = vi.spyOn(db, 'getSpellsFromDB').mockResolvedValue([mockDoc] as never);
+    const store = loggedStore();
+    renderWithProviders(<LastSpells />, { store });
+    fireEvent.click(await screen.findByTestId('spell-card-doc-1'));
+    expect(screen.getByTestId('spell-detail-modal-stub')).toBeInTheDocument();
+
+    // A refetch that hasn't come back yet.
+    getSpells.mockReturnValue(new Promise(() => {}));
+    act(() => { store.dispatch(invalidateSpellList()); });
+    expect(screen.getByTestId('spell-detail-modal-stub')).toBeInTheDocument();
+    expect(screen.getByTestId('spell-card-doc-1')).toBeInTheDocument();
+    expect(screen.queryByTestId('skeleton-card')).not.toBeInTheDocument();
   });
 });

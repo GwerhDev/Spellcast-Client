@@ -46,7 +46,9 @@ export const SpellList: React.FC<SpellListProps> = ({ query = '', filter = 'loca
   const fetchLocal = async () => {
     if (!logged) { setIsLoading(false); return; }
     try {
-      setIsLoading(true);
+      // No going back to the loading state on a refetch (isLoading starts true, for the
+      // first load only): the skeleton replaces everything this renders, including the
+      // open detail modal, which would close and reopen on every change saved from it.
       const [docs, ids] = await Promise.all([getSpellsFromDB(userData.id), getAllOriginalPdfIds()]);
       setDocuments(docs.sort((a: Spell, b: Spell) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
       setPdfIds(ids);
