@@ -2,6 +2,7 @@ import { DB_NAME, DB_VERSION, SPELLS_STORE_NAME } from "../config/api";
 import { Spell, SpellProgress } from "../interfaces";
 import { setOriginalPdf, deleteOriginalPdf } from "./originalPdfs";
 import { clearSpellAudioCache } from "./audioCache";
+import { sameUser } from "../utils/grimoire";
 import { getStoredProgress, getAllStoredProgress, setStoredProgress, setStoredProgressMany, deleteStoredProgress, clearStoredProgress } from "./spellProgress";
 
 // The pre-rename (TCORE-78) store name, frozen on purpose: it names whatever a
@@ -10,12 +11,6 @@ import { getStoredProgress, getAllStoredProgress, setStoredProgress, setStoredPr
 const LEGACY_DOCUMENTS_STORE_NAME = 'documents';
 const MIGRATION_COMPLETE_KEY = 'spellcast:migration:documentsToSpells:complete';
 
-// Loose user match: a spell's userId and the session id come from the same
-// source, but historical records may store it in a different type (e.g. number
-// vs string after a backend change). Compare as strings so old spells still
-// resolve, without ever matching a genuinely different user.
-const sameUser = (a: string | undefined, b: string | undefined): boolean =>
-  a != null && b != null && String(a) === String(b);
 
 // Reading progress lives in its own database (see db/spellProgress.ts). A stored record,
 // when there is one for the same user, wins over the progress embedded on the spell --

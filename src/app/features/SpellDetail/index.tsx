@@ -24,6 +24,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBookOpenReader, faScroll, faWandMagicSparkles, faArrowLeft, faTrash, faTriangleExclamation, faFileLines, faChartSimple, faFont, faClock, faLanguage, faCalendar, faFilePdf } from '@fortawesome/free-solid-svg-icons';
 import { GrimoireStatus } from '../../components/GrimoireStatus/GrimoireStatus';
 import { countSpellWords, estimateListeningMinutes } from '../../../utils/spellStats';
+import { isInCasterGrimoire } from '../../../utils/grimoire';
 import { useLanguage } from '../../../i18n';
 // import { useSpellExport } from '../../../hooks/useSpellExport'; // .spell export: future
 
@@ -147,10 +148,9 @@ export const SpellDetail: React.FC = () => {
   const resolvedCoverFrameId = resolveCoverFrameId(doc.coverFrameId, activeCoverFrameId);
   const coverFrameCorners = getCoverFrameCorners(resolvedCoverFrameId);
   const coverFrame3D = show3D ? getCoverFrame3D(resolvedCoverFrameId) : null;
-  // Every spell this page can open today is a local one, stored for this caster: it's in
-  // their grimoire by definition. Once shared spells can be opened here too, this comes
-  // from the caster's library instead, and the not-in-grimoire case offers transcribing it.
-  const inGrimoire = true;
+  // Only the caster's own transcriptions can be edited or deleted; a spell outside their
+  // grimoire (once shared spells can be opened here) offers transcribing it instead.
+  const inGrimoire = isInCasterGrimoire(doc.userId, userData?.id);
   const listeningMinutes = wordCount ? estimateListeningMinutes(wordCount) : null;
   const listeningLabel = listeningMinutes === null ? null
     : listeningMinutes < 60
@@ -213,11 +213,11 @@ export const SpellDetail: React.FC = () => {
             )}
             <div className={s.actions}>
               <PrimaryButton data-testid="spell-detail-continue-btn" icon={faBookOpenReader} onClick={currentPage > 0 ? handleContinueReading : handlePlay}>{t.spell.openInReader}</PrimaryButton>
-              <SecondaryButton data-testid="spell-detail-edit-btn" icon={faWandMagicSparkles} onClick={handleEdit}>{t.spell.editSpell}</SecondaryButton>
+              {inGrimoire && <SecondaryButton data-testid="spell-detail-edit-btn" icon={faWandMagicSparkles} onClick={handleEdit}>{t.spell.editSpell}</SecondaryButton>}
               {/* .spell export: future
               <SecondaryButton data-testid="spell-detail-export-btn" icon={faFileExport} onClick={() => openExportModal({ id: doc.id, title: doc.title })}>{t.spell.exportSpell}</SecondaryButton>
               */}
-              <PrimaryButton data-testid="spell-detail-delete-btn" variant="danger" icon={faTrash} onClick={() => setShowDeleteModal(true)}>{t.common.delete}</PrimaryButton>
+              {inGrimoire && <PrimaryButton data-testid="spell-detail-delete-btn" variant="danger" icon={faTrash} onClick={() => setShowDeleteModal(true)}>{t.common.delete}</PrimaryButton>}
             </div>
           </div>
         </div>

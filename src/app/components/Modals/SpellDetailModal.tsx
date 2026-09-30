@@ -7,6 +7,7 @@ import { getSpellById, deleteSpellFromDB } from '../../../db';
 import { hasOriginalPdf } from '../../../db/originalPdfs';
 import { resolveCoverFrameId, getCoverFrameStyle, getCoverFrameCorners } from '../../../utils/coverFrame';
 import { CoverFrameCorners } from '../CoverFrameCorners';
+import { isInCasterGrimoire } from '../../../utils/grimoire';
 import { setAutoPlayOnLoad, resetBrowserPlayer } from '../../../store/browserPlayerSlice';
 import { setAutoPlayOnLoad as setAudioAutoPlayOnLoad } from '../../../store/audioPlayerSlice';
 import { invalidateSpellList, resetSpellReader } from '../../../store/spellReaderSlice';
@@ -69,6 +70,9 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
   const progressPct = (pagesCount && currentPage > 0)
     ? Math.min(Math.round(currentPage / pagesCount * 100), 100)
     : null;
+
+  // Editing and deleting are only for the caster's own transcriptions.
+  const inGrimoire = !!doc && isInCasterGrimoire(doc.userId, userData?.id);
 
   const handleRead = () => {
     dispatch(setAutoPlayOnLoad(true));
@@ -165,8 +169,12 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
             </div>
             <div className={s.actions}>
               <PrimaryButton data-testid="spell-detail-modal-continue-btn" icon={faBookOpenReader} onClick={handleRead}>{t.spell.openInReader}</PrimaryButton>
-              <SecondaryButton data-testid="spell-detail-modal-edit-btn" icon={faWandMagicSparkles} onClick={handleEdit}>{t.spell.editSpell}</SecondaryButton>
-              <PrimaryButton data-testid="spell-detail-modal-delete-btn" variant="danger" icon={faTrash} onClick={() => setShowDeleteModal(true)}>{t.common.delete}</PrimaryButton>
+              {inGrimoire && (
+                <>
+                  <SecondaryButton data-testid="spell-detail-modal-edit-btn" icon={faWandMagicSparkles} onClick={handleEdit}>{t.spell.editSpell}</SecondaryButton>
+                  <PrimaryButton data-testid="spell-detail-modal-delete-btn" variant="danger" icon={faTrash} onClick={() => setShowDeleteModal(true)}>{t.common.delete}</PrimaryButton>
+                </>
+              )}
             </div>
           </div>
         )}

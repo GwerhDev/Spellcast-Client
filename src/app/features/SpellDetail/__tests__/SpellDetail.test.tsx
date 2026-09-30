@@ -109,6 +109,16 @@ describe('SpellDetail', () => {
     expect(screen.getByTestId('spell-detail-listening')).toHaveTextContent('~2 min');
   });
 
+  it("hides edit and delete for a spell outside the caster's grimoire", async () => {
+    vi.spyOn(db, 'getSpellById').mockResolvedValue({ ...mockDoc, userId: 'user-2' } as never);
+    renderDetail();
+    await screen.findByTestId('spell-detail-title');
+    expect(screen.getByTestId('spell-detail-continue-btn')).toBeInTheDocument();
+    expect(screen.queryByTestId('spell-detail-edit-btn')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('spell-detail-delete-btn')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('grimoire-status-in')).not.toBeInTheDocument();
+  });
+
   describe('metadata section', () => {
     it('shows description/author/language/tags when the spell has them', async () => {
       vi.spyOn(db, 'getSpellById').mockResolvedValue({

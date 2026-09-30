@@ -4,6 +4,9 @@ import { SpellProgress } from '../interfaces';
 interface SpellReaderState {
   spellId: string | null;
   spellTitle: string | null;
+  // Who the loaded spell's record belongs to, so views of it can tell whether it's in the
+  // caster's grimoire (see isInCasterGrimoire) without reading the whole record again.
+  spellUserId?: string;
   totalPages: number;
   currentPage: number;
   isLoaded: boolean;
@@ -58,8 +61,9 @@ const spellReaderSlice = createSlice({
   name: 'spellReader',
   initialState,
   reducers: {
-    setSpellFile(state, action: PayloadAction<{ id: string, title: string, progress?: SpellProgress }>) {
+    setSpellFile(state, action: PayloadAction<{ id: string, title: string, userId?: string, progress?: SpellProgress }>) {
       state.spellId = action.payload.id;
+      state.spellUserId = action.payload.userId;
       state.spellTitle = action.payload.title;
       state.progress = action.payload.progress;
       if (action.payload.progress) {

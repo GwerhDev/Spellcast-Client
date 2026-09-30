@@ -220,14 +220,23 @@ describe('ReadOption', () => {
   });
 
   describe("the loaded spell's edit and delete shortcuts", () => {
-    const loaded = () => {
+    // A caster's own spell by default; `owner` loads someone else's.
+    const loaded = (owner = 'user-1') => {
       const store = makeStore();
-      store.dispatch(setSpellFile({ id: 'spell-1', title: 'Spell one' }));
+      store.dispatch({ type: 'session/setSession', payload: { logged: true, userData: { id: 'user-1', loader: false } } });
+      store.dispatch(setSpellFile({ id: 'spell-1', title: 'Spell one', userId: owner }));
       return store;
     };
 
     it('are not shown with nothing loaded', () => {
       renderWithProviders(<Read />);
+      expect(screen.queryByTestId('read-option-edit')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('read-option-delete')).not.toBeInTheDocument();
+    });
+
+    it("are not shown for a spell outside the caster's grimoire (the reader shortcut still is)", () => {
+      renderWithProviders(<Read />, { store: loaded('user-2') });
+      expect(screen.getByTestId('read-option-open-reader')).toBeInTheDocument();
       expect(screen.queryByTestId('read-option-edit')).not.toBeInTheDocument();
       expect(screen.queryByTestId('read-option-delete')).not.toBeInTheDocument();
     });
@@ -251,7 +260,7 @@ describe('ReadOption', () => {
       expect(mockDeleteSpellFromDB).not.toHaveBeenCalled();
       fireEvent.click(screen.getByTestId('delete-confirm-confirm-btn'));
       await waitFor(() => expect(store.getState().spellReader.spellId).toBeNull());
-      expect(mockDeleteSpellFromDB).toHaveBeenCalledWith('spell-1', undefined);
+      expect(mockDeleteSpellFromDB).toHaveBeenCalledWith('spell-1', 'user-1');
     });
   });
 

@@ -61,7 +61,7 @@ export const LocalSpellReader: React.FC = () => {
           ? (JSON.parse(doc.pagesContent) as unknown[]).length
           : 1;
 
-        dispatch(setSpellFile({ id, title: doc.title, progress: doc.progress }));
+        dispatch(setSpellFile({ id, title: doc.title, userId: doc.userId, progress: doc.progress }));
         dispatch(setSpellInfo({ totalPages }));
         dispatch(setHasInitialPageSet(true));
         setIsLoading(false);

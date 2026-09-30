@@ -60,6 +60,14 @@ describe('SpellDetailModal', () => {
     expect(screen.getByTestId('spell-detail-route')).toBeInTheDocument();
   });
 
+  it("hides edit and delete for a spell outside the caster's grimoire", async () => {
+    vi.spyOn(db, 'getSpellById').mockResolvedValue({ ...mockDoc, userId: 'user-2' } as never);
+    renderWithProviders(<SpellDetailModal spellId="doc-1" show onClose={vi.fn()} />, { store: loggedStore() });
+    expect(await screen.findByTestId('spell-detail-modal-continue-btn')).toBeInTheDocument();
+    expect(screen.queryByTestId('spell-detail-modal-edit-btn')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('spell-detail-modal-delete-btn')).not.toBeInTheDocument();
+  });
+
   it('renders nothing when show is false', () => {
     renderWithProviders(<SpellDetailModal spellId="doc-1" show={false} onClose={vi.fn()} />, { store: loggedStore() });
     expect(screen.queryByTestId('spell-detail-modal-continue-btn')).not.toBeInTheDocument();

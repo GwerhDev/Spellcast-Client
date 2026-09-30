@@ -29,7 +29,7 @@ export const usePlaySpell = () => {
     dispatch(resetAudioPlayer());
     dispatch(setAutoPlayOnLoad(true));
     dispatch(setAudioAutoPlayOnLoad(true));
-    dispatch(setSpellFile({ id: spell.id, title: spell.title, progress: spell.progress }));
+    dispatch(setSpellFile({ id: spell.id, title: spell.title, userId: spell.userId, progress: spell.progress }));
     dispatch(setSpellInfo({ totalPages }));
   };
 

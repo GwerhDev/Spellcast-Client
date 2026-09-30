@@ -16,6 +16,7 @@ import { invalidateSpellList } from '../../../../store/spellReaderSlice';
 import { useSpellImport } from '../../../../hooks/useSpellImport';
 import { usePlaySpell } from '../../../../hooks/usePlaySpell';
 import { useSpellCoverUrl } from '../../../../hooks/useSpellCoverUrl';
+import { isInCasterGrimoire } from '../../../../utils/grimoire';
 import { useLanguage } from '../../../../i18n';
 
 interface ReadOptionProps {
@@ -56,12 +57,14 @@ export const ReadOption = ({ dragActive, onWrite, onImport }: ReadOptionProps) =
   const [fileDragActive, setFileDragActive] = useState(false);
   const [importing, setImporting] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const { spellId, spellTitle, currentPage, totalPages, isLoaded } = useAppSelector(state => state.spellReader);
+  const { spellId, spellTitle, spellUserId, currentPage, totalPages, isLoaded } = useAppSelector(state => state.spellReader);
   const userId = useAppSelector(state => state.session.userData?.id);
   const audioPlaying = useAppSelector(state => state.audioPlayer.isPlaying);
   const browserPlaying = useAppSelector(state => state.browserPlayer.isPlaying);
   const isPlaying = audioPlaying || browserPlaying;
   const hasSpell = !!spellId;
+  // Edit and delete are only offered for the caster's own transcriptions.
+  const inGrimoire = hasSpell && isInCasterGrimoire(spellUserId, userId);
   const coverUrl = useSpellCoverUrl(spellId, userId);
   // Nothing loaded and nothing being dragged: the button shows the Spellcast mark and opens
   // the menu; a spell dragged over turns it back into a play button.
@@ -167,21 +170,25 @@ export const ReadOption = ({ dragActive, onWrite, onImport }: ReadOptionProps) =
             className={s.cornerButton}
             onClick={() => navigate(`/spell/${spellId}/reader`)}
           />
-          <IconButton
-            data-testid="read-option-edit"
-            icon={faWandMagicSparkles}
-            title={t.spell.editSpell}
-            className={s.cornerButton}
-            onClick={() => navigate(`/editor/${spellId}`, { state: { from: location.pathname } })}
-          />
-          <IconButton
-            data-testid="read-option-delete"
-            icon={faTrash}
-            title={t.common.delete}
-            className={`${s.cornerButton} ${s.cornerDanger}`}
-            onClick={() => setShowDeleteModal(true)}
-            disabled={importing}
-          />
+          {inGrimoire && (
+            <>
+              <IconButton
+                data-testid="read-option-edit"
+                icon={faWandMagicSparkles}
+                title={t.spell.editSpell}
+                className={s.cornerButton}
+                onClick={() => navigate(`/editor/${spellId}`, { state: { from: location.pathname } })}
+              />
+              <IconButton
+                data-testid="read-option-delete"
+                icon={faTrash}
+                title={t.common.delete}
+                className={`${s.cornerButton} ${s.cornerDanger}`}
+                onClick={() => setShowDeleteModal(true)}
+                disabled={importing}
+              />
+            </>
+          )}
         </div>
       )}
       <div className={s.stage}>

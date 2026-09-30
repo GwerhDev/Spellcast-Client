@@ -75,7 +75,7 @@ export const SpellList: React.FC<SpellListProps> = ({ query = '', filter = 'loca
     dispatch(resetAudioPlayer());
     dispatch(setAutoPlayOnLoad(true));
     dispatch(setAudioAutoPlayOnLoad(true));
-    dispatch(setSpellFile({ id: doc.id, title: doc.title, progress: doc.progress }));
+    dispatch(setSpellFile({ id: doc.id, title: doc.title, userId: doc.userId, progress: doc.progress }));
     dispatch(setSpellInfo({ totalPages }));
   };
 
