@@ -735,7 +735,7 @@ export const updateSpellMetadata = async (
   });
 };
 
-// TCORE-123: picking a spell's cover frame. Writes only to the cover frame database
+// Picking a spell's cover frame. Writes only to the cover frame database
 // (db/spellCoverFrames.ts), never the spell record: it no longer reads and rewrites the whole
 // spell (its pages and images) for one field, which made picking a frame slow on big spells
 // -- and, as before, can't race the editor's autosave into clobbering an in-flight edit.
