@@ -4,10 +4,12 @@ import { renderWithProviders } from '../../../../test/renderWithProviders';
 import { BrowserPlayer } from '../index';
 import { SpellProcessor } from '../../SpellProcessor';
 
+// Page turns, with SpellProcessor mounted alongside the player as in the app: it's what
+// publishes each page's sentences, a render after the page number changes.
+//
 // A page with no text (a cover, an illustration) has no sentences. Starting playback ON
 // such a page used to mark the player as playing and stop there: nothing to speak, so no
-// sentence ever ended, and nothing turned the page. SpellProcessor is mounted alongside the
-// player, as in the app, because it's what publishes each page's sentences after a turn.
+// sentence ever ended, and nothing turned the page.
 const textPage = (text: string) => ({ type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text }] }] });
 const coverPage = { type: 'doc', content: [{ type: 'image', attrs: { src: 'cover.png' } }] };
 
@@ -88,6 +90,55 @@ const settle = async () => {
   for (let i = 0; i < 6; i++) await act(async () => { await new Promise(resolve => setTimeout(resolve, 5)); });
 };
 
+// The engine finishing the sentence it's speaking.
+const endSentence = async () => {
+  await act(async () => { (activeUtterance as unknown as { onend?: () => void } | null)?.onend?.(); });
+  await settle();
+};
+const timesSpoken = (text: string) =>
+  mockSpeechSynthesis.speak.mock.calls.filter(([utterance]) => utterance.text === text).length;
+
+// The page number and the page's sentences arrive in separate renders; reacting to both
+// spoke the new page's first sentence, cancelled it and spoke it again.
+describe('BrowserPlayer turning the page', () => {
+  it("speaks the new page's first sentence once, not once per render of the turn", async () => {
+    pages = [textPage('One a. One b.'), textPage('Two a. Two b.')];
+    const { store } = renderWithProviders(<Reader />, { preloadedState: stateFor({ autoPlayOnLoad: true, totalPages: 2 }) as never });
+    await settle();
+    await endSentence(); // One a.
+    await endSentence(); // One b. -> turns the page
+
+    expect(store.getState().spellReader.currentPage).toBe(2);
+    expect(activeUtterance?.text).toBe('Two a.');
+    expect(timesSpoken('Two a.')).toBe(1);
+    expect(timesSpoken('One a.')).toBe(1);
+  });
+
+  it('starts once on the page after a textless one in the middle of the read', async () => {
+    pages = [textPage('One.'), coverPage, textPage('Three.'), textPage('Four.')];
+    const { store } = renderWithProviders(<Reader />, { preloadedState: stateFor({ autoPlayOnLoad: true, totalPages: 4 }) as never });
+    await settle();
+    await endSentence(); // One. -> page 2 (no text) -> page 3
+
+    expect(store.getState().spellReader.currentPage).toBe(3);
+    expect(timesSpoken('Three.')).toBe(1);
+  });
+
+  it('a page turned by hand while playing drops the old sentence and starts the new page once', async () => {
+    pages = [textPage('One a. One b.'), textPage('Two a. Two b.')];
+    const { store } = renderWithProviders(<Reader />, { preloadedState: stateFor({ autoPlayOnLoad: true, totalPages: 2 }) as never });
+    await settle();
+    expect(activeUtterance?.text).toBe('One a.');
+
+    await act(async () => { fireEvent.click(screen.getByTestId('playback-next-btn')); });
+    await settle();
+
+    expect(store.getState().spellReader.currentPage).toBe(2);
+    expect(activeUtterance?.text).toBe('Two a.');
+    expect(timesSpoken('Two a.')).toBe(1);
+  });
+});
+
 describe('BrowserPlayer on a page with no text', () => {
   it('autoplay starting on a cover moves on and reads the next page', async () => {
     pages = [coverPage, textPage('Page two first. Page two second.'), textPage('Page three.')];
@@ -97,6 +148,7 @@ describe('BrowserPlayer on a page with no text', () => {
     expect(store.getState().spellReader.currentPage).toBe(2);
     expect(store.getState().browserPlayer.isPlaying).toBe(true);
     expect(activeUtterance?.text).toBe('Page two first.');
+    expect(timesSpoken('Page two first.')).toBe(1);
   });
 
   it('pressing play on a cover moves on and reads the next page', async () => {

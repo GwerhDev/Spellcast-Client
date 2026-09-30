@@ -745,6 +745,13 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
       return;
     }
     if (!contentChanged) return;
+    // A page turn lands in two renders: the page number first, its sentences a render later
+    // (SpellProcessor publishes them, always as a new array, in reaction to the turn). In
+    // between, `sentences` is still the previous page's. Reacting to both meant speaking
+    // the new page's first sentence, cancelling it, and speaking it again -- so wait for
+    // the sentences that belong to the new page, and react once.
+    const pageTurned = !!prev && (prev.spellId !== content.spellId || prev.page !== content.page);
+    if (pageTurned && prev.sentences === content.sentences) return;
     handledContentRef.current = content;
     enqueue({ type: 'CONTENT_CHANGED' });
     //eslint-disable-next-line react-hooks/exhaustive-deps
