@@ -241,4 +241,47 @@ describe('SpellDetailModal', () => {
 
     await waitFor(() => expect(store.getState().spellReader.listVersion).toBe(1));
   });
+
+  // Opened from a card, the card hands over its cover: it flies in and shows right away,
+  // while only the details wait for the spell to be read (a big spell takes a while).
+  describe('cover handed over by the card', () => {
+    const cardCover = document.createElement('div');
+    const origin = { rect: { top: 400, left: 60, width: 120, height: 180 }, coverUrl: 'blob:card-cover', element: cardCover };
+
+    beforeEach(() => {
+      Object.defineProperty(window, 'matchMedia', {
+        configurable: true,
+        value: (query: string) => ({ matches: false, media: query, addEventListener: vi.fn(), removeEventListener: vi.fn() }),
+      });
+    });
+
+    it("flies in and shows the card's cover before the spell has been read", async () => {
+      vi.spyOn(db, 'getSpellById').mockReturnValue(new Promise(() => {}) as never);
+      renderWithProviders(<SpellDetailModal spellId="doc-1" show onClose={vi.fn()} origin={origin} />, { store: loggedStore() });
+
+      // Still loading, and the cover isn't waiting for it: it has already taken off...
+      expect(screen.getByTestId('spell-detail-modal-loading')).toBeInTheDocument();
+      expect(screen.getByTestId('cover-flight')).toBeInTheDocument();
+      // ...and once landed, the slot shows it, with only the details on the spinner.
+      await waitFor(() => expect(screen.queryByTestId('cover-flight')).not.toBeInTheDocument());
+      const slot = screen.getByTestId('spell-detail-modal-cover');
+      expect(slot.className).not.toMatch(/coverAway/);
+      expect(slot.querySelector('img')?.getAttribute('src')).toBe('blob:card-cover');
+      expect(screen.getByTestId('spell-detail-modal-loading')).toBeInTheDocument();
+    });
+
+    // (The card's cover also bridges the one frame before that copy exists; jsdom runs that
+    // effect in the same flush, so the frame itself can't be observed here.)
+    it('switches to its own copy of the cover once the spell has been read', async () => {
+      URL.createObjectURL = vi.fn(() => 'blob:modal-cover');
+      URL.revokeObjectURL = vi.fn();
+      vi.spyOn(db, 'getSpellById').mockResolvedValue({ ...mockDoc, cover: new Blob(['x']) } as never);
+      renderWithProviders(<SpellDetailModal spellId="doc-1" show onClose={vi.fn()} origin={origin} />, { store: loggedStore() });
+
+      await screen.findByTestId('spell-detail-modal-continue-btn');
+      const img = screen.getByTestId('spell-detail-modal-cover').querySelector('img');
+      expect(img).not.toBeNull();
+      await waitFor(() => expect(img?.getAttribute('src')).toBe('blob:modal-cover'));
+    });
+  });
 });

@@ -93,14 +93,16 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
   const flownIn = useRef(false);
   const flies = !!origin && !prefersReducedMotion();
 
-  // Takes off once the spell is read: the modal has its final size then, so the cover slot
-  // is where it'll stay (the flight still follows it if it settles a little more).
+  // Takes off right away, without waiting for the spell to be read (a big one takes a
+  // while): the card already handed over its cover, and the slot it lands in is there from
+  // the first render, sized like the loaded one. If the modal settles as the rest arrives,
+  // the flight follows the slot there.
   useLayoutEffect(() => {
     if (!show) { flownIn.current = false; setFlight(null); setLeaving(false); return; }
-    if (!flies || !origin || flownIn.current || !doc || !coverSlotRef.current) return;
+    if (!flies || !origin || flownIn.current || !coverSlotRef.current) return;
     flownIn.current = true;
     setFlight({ from: origin.rect, src: origin.coverUrl, direction: 'in' });
-  }, [show, flies, origin, doc]);
+  }, [show, flies, origin]);
 
   const flightTarget = () => {
     if (flight?.direction === 'out') {
@@ -137,6 +139,10 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
     getSpellById(spellId, userData.id).then(spell => { if (!cancelled) setDoc(spell ?? null); });
     return () => { cancelled = true; };
   }, [spellId, userData?.id, show]);
+
+  // The card's cover bridges the moment between the spell being read and this modal's own
+  // copy of its cover existing, so the cover shown while loading never blinks out.
+  const shownCoverUrl = coverUrl ?? (doc?.cover && origin ? origin.coverUrl : null);
 
   useEffect(() => {
     if (!doc?.cover) { setCoverUrl(null); return; }
@@ -228,11 +234,12 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
     <>
       <CustomModal show={show} onClose={requestClose} title="" compact motion={flies ? (leaving ? 'leave' : 'enter') : undefined}>
         {!doc && flies && origin ? (
-          // Still reading the spell, opened from a card: the cover slot is already here, so
-          // the flying cover has its place to land while the rest loads.
+          // Still reading the spell, opened from a card: the card's cover is already here --
+          // it's what flies in, and it stays once landed -- and only the details wait on the
+          // spinner.
           <div className={s.content}>
             <div className={s.header}>
-              <div ref={coverSlotRef} data-testid="spell-detail-modal-cover" className={`${s.coverWrap} ${s.coverAway}`}>
+              <div ref={coverSlotRef} data-testid="spell-detail-modal-cover" className={`${s.coverWrap} ${flight ? s.coverAway : ''}`}>
                 <img src={origin.coverUrl} alt="" className={s.cover} />
               </div>
               <div data-testid="spell-detail-modal-loading" className={`${s.info} ${s.loading}`}>
@@ -248,11 +255,11 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
           <div className={s.content}>
             <div className={s.header}>
               <div ref={coverSlotRef} data-testid="spell-detail-modal-cover" className={`${s.coverWrap} ${flight ? s.coverAway : ''}`}>
-                {coverUrl
-                  ? <img src={coverUrl} alt={doc.title} className={s.cover} style={getCoverFrameStyle(resolvedCoverFrameId)} />
+                {shownCoverUrl
+                  ? <img src={shownCoverUrl} alt={doc.title} className={s.cover} style={getCoverFrameStyle(resolvedCoverFrameId)} />
                   : <div className={s.coverPlaceholder}><FontAwesomeIcon icon={faScroll} /></div>
                 }
-                {coverUrl && coverFrameCorners && <CoverFrameCorners config={coverFrameCorners} />}
+                {shownCoverUrl && coverFrameCorners && <CoverFrameCorners config={coverFrameCorners} />}
                 {/* Shown on hover: the cover and its frame, for the caster's own spells. */}
                 {inGrimoire && (
                   <IconButton
