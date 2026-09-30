@@ -136,8 +136,9 @@ describe('useAttentionGuard', () => {
       act(() => { result.current.handleContinue(); });
 
       expect(store.getState().spellReader.showAttentionGuard).toBe(false);
-      expect(store.getState().browserPlayer.isPlaying).toBe(true);
+      // Only the request: the player's queue sets isPlaying once the voice really resumes.
       expect(store.getState().browserPlayer.resumeSeq).toBe(1);
+      expect(store.getState().browserPlayer.isPlaying).toBe(false);
     });
 
     it('toggles the AI audio player when that is the selected voice type', async () => {

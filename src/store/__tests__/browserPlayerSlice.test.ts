@@ -9,6 +9,7 @@ import reducer, {
   setAutoPlayOnLoad,
   requestTogglePlay,
   requestExternalPause,
+  requestResume,
 } from '../browserPlayerSlice';
 
 const initial = { isPlaying: false, voice: null, volume: 1, autoPlayOnLoad: false, toggleSeq: 0, resumeSeq: 0, externalPauseSeq: 0 };
@@ -55,6 +56,14 @@ describe('browserPlayerSlice', () => {
     expect(s1.toggleSeq).toBe(1);
     const s2 = reducer(s1, requestTogglePlay());
     expect(s2.toggleSeq).toBe(2);
+  });
+
+  // The player's queue is what decides and sets isPlaying once the voice really resumes; a
+  // request that also set it made the queue skip the resume as "already playing".
+  it('requestResume only asks: increments resumeSeq without claiming it is playing', () => {
+    const s1 = reducer(initial, requestResume());
+    expect(s1.resumeSeq).toBe(1);
+    expect(s1.isPlaying).toBe(false);
   });
 
   it('requestExternalPause sets isPlaying false and increments externalPauseSeq', () => {

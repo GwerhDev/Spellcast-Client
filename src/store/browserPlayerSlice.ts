@@ -49,9 +49,12 @@ const browserPlayerSlice = createSlice({
     requestTogglePlay: (state) => {
       state.toggleSeq += 1;
     },
+    // Only asks: BrowserPlayer's queue decides, and it's what sets isPlaying once the voice
+    // actually resumes (on its onstart, for network voices). Setting it here too made the
+    // queue see "already playing" and skip the resume, leaving the button and the background
+    // sound playing over a silent voice.
     requestResume: (state) => {
       state.resumeSeq += 1;
-      state.isPlaying = true;
     },
     // For callers outside BrowserPlayer (e.g. the attention guard's
     // inactivity timeout) that need to pause playback without touching
