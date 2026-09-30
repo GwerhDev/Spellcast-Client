@@ -1,4 +1,5 @@
-/* Same panel as Write's textarea and Import's dropzone, so the three tabs share one box. */
+/* The altar: Start's central panel, where a spell is placed to be read. The whole panel is
+   the drop target, and its border lights up while something droppable is over it. */
 .container {
   position: relative;
   isolation: isolate;
@@ -41,8 +42,8 @@
 
 .stage {
   position: relative;
-  /* Sized so the whole tab fits Start's shared option height (see .optionContainer) and
-     switching tabs never shifts the page. */
+  /* Sized so the whole altar fits Start's shared option height (see .optionContainer), so
+     loading a spell never shifts the page. */
   width: 164px;
   height: 164px;
   display: flex;
@@ -92,8 +93,8 @@
   filter: drop-shadow(0 0 calc(4px + var(--proximity, 0) * 22px) color-mix(in srgb, var(--color-primary) 70%, transparent));
 }
 
-/* A beam of light from a spell dragged over Start onto the button (variables set from
-   ReadOption). The element starts at the button's center and runs out to the pointer,
+/* A beam of light from a spell dragged over the altar onto the button (variables set from
+   the Altar feature). The element starts at the button's center and runs out to the pointer,
    rotated toward it: narrow and bright at the pointer, opening into a soft cone as wide as
    the button where it lands, with light flowing along it toward the button. */
 .beam,
@@ -223,14 +224,11 @@
   border-color: rgba(242, 242, 242, 0.3);
 }
 
-/* Corner shortcuts shown with a spell loaded: unload it (left) and open its reader
-   (right). Scoped under .container so it outranks
+/* Corner shortcuts shown with a spell loaded (see AltarCornerButton). Scoped under
+   .container so it outranks
    IconButton's own .base/.transparent (same specificity otherwise, which would leave the
    winner to CSS Modules' bundle order -- see PlayButton.module.css for that failure). */
 .container .cornerButton {
-  position: absolute;
-  top: 0.6rem;
-  z-index: 1;
   width: 34px;
   height: 34px;
   padding: 0;
@@ -252,25 +250,23 @@
   outline: none;
 }
 
-/* Per-corner position, same scope so it sits with the rest of the corner button rules. */
-.container .cornerLeft {
-  left: 0.6rem;
-}
-
-/* The loaded spell's actions (reader, edit, delete), stacked down the right corner. The
-   stack is what's positioned; its buttons flow inside it. */
+/* The corner slots (unload on the left; reader, edit and delete on the right): the stack
+   is what's positioned, its buttons flow down inside it. */
 .container .cornerStack {
   position: absolute;
   top: 0.6rem;
-  right: 0.6rem;
   z-index: 1;
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
 }
 
-.container .cornerStack .cornerButton {
-  position: static;
+.container .cornerStackLeft {
+  left: 0.6rem;
+}
+
+.container .cornerStackRight {
+  right: 0.6rem;
 }
 
 /* Over the cover: a dark translucent chip with light icon, readable over any artwork. */

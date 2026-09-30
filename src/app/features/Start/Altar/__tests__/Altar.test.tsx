@@ -2,10 +2,11 @@ import type React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { renderWithProviders, makeStore } from '../../../../../test/renderWithProviders';
-import { setSpellFile } from '../../../../../store/spellReaderSlice';
+import { setSpellFile, setSpellLoaded } from '../../../../../store/spellReaderSlice';
 import { play } from '../../../../../store/browserPlayerSlice';
 import { Routes, Route } from 'react-router-dom';
-import { ReadOption } from '../index';
+import { Altar } from '../index';
+import { SPELL_DRAG_TYPE } from '../../../../../config/consts';
 
 const mockGetSpellById = vi.fn();
 const mockDeleteSpellFromDB = vi.fn();
@@ -35,18 +36,30 @@ beforeEach(() => {
 });
 
 // Every render gets the menu callbacks; tests that care pass their own.
-const Read = (props: Partial<React.ComponentProps<typeof ReadOption>>) => (
-  <ReadOption dragActive={false} onWrite={vi.fn()} onImport={vi.fn()} {...props} />
+const Read = (props: Partial<React.ComponentProps<typeof Altar>>) => (
+  <Altar onWrite={vi.fn()} onImport={vi.fn()} {...props} />
 );
 
-describe('ReadOption', () => {
+// A drag carrying a spell, as a SpellCard's dragstart sets it up.
+const spellDrag = (id = 'spell-1') => ({
+  dataTransfer: {
+    types: [SPELL_DRAG_TYPE],
+    getData: (type: string) => (type === SPELL_DRAG_TYPE ? id : ''),
+    dropEffect: 'none',
+  },
+});
+// A spell dragged onto the altar, and that drag ending (cancelled or dropped elsewhere).
+const dragSpellOver = () => fireEvent.dragEnter(screen.getByTestId('altar'), spellDrag());
+const endSpellDrag = () => act(() => { document.dispatchEvent(new Event('dragend', { bubbles: true })); });
+
+describe('Altar', () => {
   describe('the Spellcast button menu (nothing loaded)', () => {
     const menuHidden = () => screen.getByTestId('radial-menu').getAttribute('aria-hidden') === 'true';
 
     it('shows the Spellcast mark; a click opens the menu instead of playing', () => {
       const store = makeStore();
       renderWithProviders(<Read />, { store });
-      expect(screen.getByTestId('read-option-brand-icon')).toBeInTheDocument();
+      expect(screen.getByTestId('altar-brand-icon')).toBeInTheDocument();
       expect(menuHidden()).toBe(true);
       const button = screen.getByTestId('play-button');
       expect(button).toHaveAttribute('aria-haspopup', 'menu');
@@ -93,10 +106,10 @@ describe('ReadOption', () => {
     });
 
     it('closes when a spell is dragged over (the button turns back into play)', () => {
-      const { rerender } = renderWithProviders(<Read />);
+      renderWithProviders(<Read />);
       fireEvent.click(screen.getByTestId('play-button'));
       expect(menuHidden()).toBe(false);
-      rerender(<Read dragActive />);
+      dragSpellOver();
       expect(menuHidden()).toBe(true);
     });
   });
@@ -105,10 +118,11 @@ describe('ReadOption', () => {
     const dragOver = (x: number, y: number) =>
       document.dispatchEvent(new MouseEvent('dragover', { clientX: x, clientY: y }));
 
-    it('runs from the pointer to the button while a spell is dragged over Start; the button stays put', async () => {
-      const { rerender } = renderWithProviders(<Read dragActive />);
-      const panel = screen.getByTestId('read-option');
-      const stage = screen.getByTestId('read-option-stage');
+    it('runs from the pointer to the button while a spell is dragged over the altar; the button stays put', async () => {
+      renderWithProviders(<Read />);
+      dragSpellOver();
+      const panel = screen.getByTestId('altar');
+      const stage = screen.getByTestId('altar-stage');
       // jsdom lays everything out at (0, 0): the pointer is straight below the button.
       dragOver(0, 100);
       await waitFor(() => expect(panel.style.getPropertyValue('--beam-length')).toBe('100.0px'));
@@ -116,7 +130,7 @@ describe('ReadOption', () => {
       expect(panel.style.getPropertyValue('--spark-y')).toBe('100.0px');
       expect(panel.style.getPropertyValue('--beam-opacity')).toBe('1');
       expect(Number(stage.style.getPropertyValue('--proximity'))).toBeGreaterThan(0);
-      rerender(<Read dragActive={false} />);
+      endSpellDrag();
       expect(panel.style.getPropertyValue('--beam-opacity')).toBe('');
       expect(stage.style.getPropertyValue('--proximity')).toBe('');
     });
@@ -125,14 +139,15 @@ describe('ReadOption', () => {
       renderWithProviders(<Read />);
       dragOver(0, 100);
       await new Promise(r => setTimeout(r, 40));
-      expect(screen.getByTestId('read-option').style.getPropertyValue('--beam-opacity')).toBe('');
+      expect(screen.getByTestId('altar').style.getPropertyValue('--beam-opacity')).toBe('');
     });
   });
 
   it('turns back into a play button while a spell is dragged over', () => {
-    renderWithProviders(<Read dragActive />);
-    expect(screen.getByTestId('read-option-hint')).toHaveTextContent('Drop it');
-    expect(screen.queryByTestId('read-option-brand-icon')).not.toBeInTheDocument();
+    renderWithProviders(<Read />);
+    dragSpellOver();
+    expect(screen.getByTestId('altar-hint')).toHaveTextContent('Drop it');
+    expect(screen.queryByTestId('altar-brand-icon')).not.toBeInTheDocument();
     expect(screen.getByTestId('play-button')).not.toHaveAttribute('title');
   });
 
@@ -140,11 +155,11 @@ describe('ReadOption', () => {
     const store = makeStore();
     store.dispatch(setSpellFile({ id: 'spell-1', title: 'Spell one' }));
     renderWithProviders(<Read />, { store });
-    expect(screen.getByTestId('read-option-title')).toHaveTextContent('Spell one');
-    expect(screen.queryByTestId('read-option-hint')).not.toBeInTheDocument();
-    expect(screen.queryByTestId('read-option-brand-icon')).not.toBeInTheDocument();
+    expect(screen.getByTestId('altar-title')).toHaveTextContent('Spell one');
+    expect(screen.queryByTestId('altar-hint')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('altar-brand-icon')).not.toBeInTheDocument();
     expect(screen.queryByTestId('play-button')).not.toBeInTheDocument();
-    const wave = screen.getByTestId('read-option-wave');
+    const wave = screen.getByTestId('altar-wave');
     expect(wave.tagName).not.toBe('BUTTON');
     const before = store.getState().browserPlayer.toggleSeq;
     fireEvent.click(wave);
@@ -155,7 +170,7 @@ describe('ReadOption', () => {
     const store = makeStore();
     store.dispatch(setSpellFile({ id: 'spell-1', title: 'Spell one' }));
     renderWithProviders(<Read />, { store });
-    const wave = () => screen.getByTestId('read-option-wave').querySelector('[data-testid="waveform"]')!;
+    const wave = () => screen.getByTestId('altar-wave').querySelector('[data-testid="waveform"]')!;
     expect(wave().className).toMatch(/idle/);
     act(() => { store.dispatch(play()); });
     expect(wave().className).toMatch(/active/);
@@ -164,8 +179,9 @@ describe('ReadOption', () => {
   it('brings the play button back as the drop target while a spell is dragged over a loaded one', () => {
     const store = makeStore();
     store.dispatch(setSpellFile({ id: 'spell-1', title: 'Spell one' }));
-    renderWithProviders(<Read dragActive />, { store });
-    expect(screen.queryByTestId('read-option-wave')).not.toBeInTheDocument();
+    renderWithProviders(<Read />, { store });
+    dragSpellOver();
+    expect(screen.queryByTestId('altar-wave')).not.toBeInTheDocument();
     expect(screen.getByTestId('play-button')).toBeInTheDocument();
   });
 
@@ -174,7 +190,7 @@ describe('ReadOption', () => {
     const store = makeStore();
     store.dispatch(setSpellFile({ id: 'spell-1', title: 'Spell one' }));
     renderWithProviders(<Read />, { store });
-    const cover = await screen.findByTestId('read-option-cover');
+    const cover = await screen.findByTestId('altar-cover');
     expect(cover.style.backgroundImage).toContain('blob:cover');
   });
 
@@ -184,21 +200,21 @@ describe('ReadOption', () => {
     store.dispatch(setSpellFile({ id: 'spell-1', title: 'Spell one' }));
     renderWithProviders(<Read />, { store });
     await waitFor(() => expect(mockGetSpellById).toHaveBeenCalled());
-    expect(screen.queryByTestId('read-option-cover')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('altar-cover')).not.toBeInTheDocument();
   });
 
   it('shows the status line: playing vs paused', () => {
     const store = makeStore();
     store.dispatch(setSpellFile({ id: 'spell-1', title: 'Spell one' }));
     renderWithProviders(<Read />, { store });
-    expect(screen.getByTestId('read-option-now')).toHaveTextContent('Paused');
+    expect(screen.getByTestId('altar-now')).toHaveTextContent('Paused');
     act(() => { store.dispatch(play()); });
-    expect(screen.getByTestId('read-option-now')).toHaveTextContent('Reading');
+    expect(screen.getByTestId('altar-now')).toHaveTextContent('Reading');
   });
 
   it('has a transparent panel (no box) while nothing is loaded', () => {
     renderWithProviders(<Read />);
-    expect(screen.getByTestId('read-option').className).toMatch(/noCover/);
+    expect(screen.getByTestId('altar').className).toMatch(/noCover/);
   });
 
   it('keeps the panel transparent for a loaded spell without a cover', async () => {
@@ -207,7 +223,7 @@ describe('ReadOption', () => {
     store.dispatch(setSpellFile({ id: 'spell-1', title: 'Spell one' }));
     renderWithProviders(<Read />, { store });
     await waitFor(() => expect(mockGetSpellById).toHaveBeenCalled());
-    expect(screen.getByTestId('read-option').className).toMatch(/noCover/);
+    expect(screen.getByTestId('altar').className).toMatch(/noCover/);
   });
 
   it('shows the panel once the loaded spell has a cover', async () => {
@@ -215,21 +231,22 @@ describe('ReadOption', () => {
     const store = makeStore();
     store.dispatch(setSpellFile({ id: 'spell-1', title: 'Spell one' }));
     renderWithProviders(<Read />, { store });
-    await screen.findByTestId('read-option-cover');
-    expect(screen.getByTestId('read-option').className).not.toMatch(/noCover/);
+    await screen.findByTestId('altar-cover');
+    expect(screen.getByTestId('altar').className).not.toMatch(/noCover/);
   });
 
   describe('open-in-reader shortcut', () => {
     it('is not shown with nothing loaded', () => {
       renderWithProviders(<Read />);
-      expect(screen.queryByTestId('read-option-open-reader')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('altar-open-reader')).not.toBeInTheDocument();
     });
 
     it('is hidden while a spell is dragged over', () => {
       const store = makeStore();
       store.dispatch(setSpellFile({ id: 'spell-1', title: 'Spell one' }));
-      renderWithProviders(<Read dragActive />, { store });
-      expect(screen.queryByTestId('read-option-open-reader')).not.toBeInTheDocument();
+      renderWithProviders(<Read />, { store });
+      dragSpellOver();
+      expect(screen.queryByTestId('altar-open-reader')).not.toBeInTheDocument();
     });
 
     it("navigates to the loaded spell's reader", () => {
@@ -242,7 +259,7 @@ describe('ReadOption', () => {
         </Routes>,
         { store },
       );
-      fireEvent.click(screen.getByTestId('read-option-open-reader'));
+      fireEvent.click(screen.getByTestId('altar-open-reader'));
       expect(screen.getByTestId('reader-route')).toBeInTheDocument();
     });
   });
@@ -258,15 +275,15 @@ describe('ReadOption', () => {
 
     it('are not shown with nothing loaded', () => {
       renderWithProviders(<Read />);
-      expect(screen.queryByTestId('read-option-edit')).not.toBeInTheDocument();
-      expect(screen.queryByTestId('read-option-delete')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('altar-edit')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('altar-delete')).not.toBeInTheDocument();
     });
 
     it("are not shown for a spell outside the caster's grimoire (the reader shortcut still is)", () => {
       renderWithProviders(<Read />, { store: loaded('user-2') });
-      expect(screen.getByTestId('read-option-open-reader')).toBeInTheDocument();
-      expect(screen.queryByTestId('read-option-edit')).not.toBeInTheDocument();
-      expect(screen.queryByTestId('read-option-delete')).not.toBeInTheDocument();
+      expect(screen.getByTestId('altar-open-reader')).toBeInTheDocument();
+      expect(screen.queryByTestId('altar-edit')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('altar-delete')).not.toBeInTheDocument();
     });
 
     it('edit opens the loaded spell in the editor', () => {
@@ -277,18 +294,96 @@ describe('ReadOption', () => {
         </Routes>,
         { store: loaded() },
       );
-      fireEvent.click(screen.getByTestId('read-option-edit'));
+      fireEvent.click(screen.getByTestId('altar-edit'));
       expect(screen.getByTestId('editor-route')).toBeInTheDocument();
     });
 
     it('delete asks first, then deletes the spell and unloads it', async () => {
       const store = loaded();
       renderWithProviders(<Read />, { store });
-      fireEvent.click(screen.getByTestId('read-option-delete'));
+      fireEvent.click(screen.getByTestId('altar-delete'));
       expect(mockDeleteSpellFromDB).not.toHaveBeenCalled();
       fireEvent.click(screen.getByTestId('delete-confirm-confirm-btn'));
       await waitFor(() => expect(store.getState().spellReader.spellId).toBeNull());
       expect(mockDeleteSpellFromDB).toHaveBeenCalledWith('spell-1', 'user-1');
+    });
+  });
+
+  describe('dropping a spell from the grimoire (the whole panel is the drop target)', () => {
+    const readable = { id: 'spell-1', userId: undefined, title: 'Spell one', createdAt: new Date(), pagesContent: '["a"]' };
+
+    it('lights up for a spell dragged over it, but not for other drags', () => {
+      renderWithProviders(<Read />);
+      const altar = screen.getByTestId('altar');
+      fireEvent.dragEnter(altar, { dataTransfer: { types: ['text/plain'] } });
+      expect(altar.className).not.toMatch(/dragActive/);
+      dragSpellOver();
+      expect(altar.className).toMatch(/dragActive/);
+      expect(screen.getByTestId('altar-hint')).toHaveTextContent('Drop it');
+    });
+
+    it('starts reading the dropped spell without navigating', async () => {
+      mockGetSpellById.mockResolvedValue(readable);
+      const store = makeStore();
+      renderWithProviders(<Read />, { store });
+      dragSpellOver();
+      await act(async () => { fireEvent.drop(screen.getByTestId('altar'), spellDrag()); });
+      await waitFor(() => expect(store.getState().spellReader.spellId).toBe('spell-1'));
+      expect(mockGetSpellById).toHaveBeenCalledWith('spell-1', undefined);
+      expect(store.getState().browserPlayer.autoPlayOnLoad).toBe(true);
+      expect(screen.getByTestId('altar').className).not.toMatch(/dragActive/);
+    });
+
+    it('dropping the spell that is already playing does not pause it', async () => {
+      mockGetSpellById.mockResolvedValue(readable);
+      const store = makeStore();
+      renderWithProviders(<Read />, { store });
+      await act(async () => { fireEvent.drop(screen.getByTestId('altar'), spellDrag()); });
+      await waitFor(() => expect(store.getState().spellReader.spellId).toBe('spell-1'));
+      act(() => {
+        store.dispatch(setSpellLoaded(true));
+        store.dispatch(play());
+      });
+      const { toggleSeq, resumeSeq } = store.getState().browserPlayer;
+      dragSpellOver();
+      await act(async () => { fireEvent.drop(screen.getByTestId('altar'), spellDrag()); });
+      expect(store.getState().browserPlayer.toggleSeq).toBe(toggleSeq);
+      expect(store.getState().browserPlayer.resumeSeq).toBe(resumeSeq);
+      expect(store.getState().browserPlayer.isPlaying).toBe(true);
+    });
+
+    describe('drag state', () => {
+      // jsdom has no DragEvent, so fireEvent.dragLeave drops relatedTarget; build the leave
+      // as a MouseEvent (which carries it) with the drag's dataTransfer attached.
+      const dragLeave = (el: Element, relatedTarget: EventTarget | null) => {
+        const event = new MouseEvent('dragleave', { bubbles: true, relatedTarget });
+        Object.defineProperty(event, 'dataTransfer', { value: spellDrag().dataTransfer });
+        act(() => { el.dispatchEvent(event); });
+      };
+      const isLit = () => /dragActive/.test(screen.getByTestId('altar').className);
+
+      it('stays active while moving between elements inside the panel', () => {
+        renderWithProviders(<Read />);
+        dragSpellOver();
+        dragLeave(screen.getByTestId('altar'), screen.getByTestId('play-button'));
+        expect(isLit()).toBe(true);
+      });
+
+      // An element a drag entered through can be removed mid-drag, and its dragleave never
+      // comes -- so the state relies on relatedTarget, not on counting enter/leave pairs.
+      it('ends when the drag leaves the panel', () => {
+        renderWithProviders(<Read />);
+        dragSpellOver();
+        dragLeave(screen.getByTestId('altar'), document.body);
+        expect(isLit()).toBe(false);
+      });
+
+      it('ends when the drag is cancelled or dropped elsewhere (dragend)', () => {
+        renderWithProviders(<Read />);
+        dragSpellOver();
+        endSpellDrag();
+        expect(isLit()).toBe(false);
+      });
     });
   });
 
@@ -297,7 +392,7 @@ describe('ReadOption', () => {
       mockGetSpellById.mockResolvedValue({ id: 'imported-1', title: 'Imported', createdAt: new Date(), userId: undefined });
       const store = makeStore();
       renderWithProviders(<Read />, { store });
-      const option = screen.getByTestId('read-option');
+      const option = screen.getByTestId('altar');
       fireEvent.dragOver(option, fileDrag([spellFile()]));
       expect(option.className).toMatch(/dragActive/);
       await act(async () => { fireEvent.drop(option, fileDrag([spellFile('a.spell'), spellFile('b.spell')])); });
@@ -309,7 +404,7 @@ describe('ReadOption', () => {
     it('refuses anything that is not a .spell, with an error message', async () => {
       const store = makeStore();
       renderWithProviders(<Read />, { store });
-      await act(async () => { fireEvent.drop(screen.getByTestId('read-option'), fileDrag([spellFile('book.pdf')])); });
+      await act(async () => { fireEvent.drop(screen.getByTestId('altar'), fileDrag([spellFile('book.pdf')])); });
       expect(mockImportFile).not.toHaveBeenCalled();
       const responses = store.getState().apiResponses.responses;
       expect(responses[responses.length - 1]).toMatchObject({ type: 'error' });
@@ -319,7 +414,7 @@ describe('ReadOption', () => {
       mockImportFile.mockResolvedValue(null);
       const store = makeStore();
       renderWithProviders(<Read />, { store });
-      await act(async () => { fireEvent.drop(screen.getByTestId('read-option'), fileDrag([spellFile()])); });
+      await act(async () => { fireEvent.drop(screen.getByTestId('altar'), fileDrag([spellFile()])); });
       await waitFor(() => expect(mockImportFile).toHaveBeenCalled());
       expect(mockGetSpellById).not.toHaveBeenCalledWith('imported-1', expect.anything());
       expect(store.getState().spellReader.spellId).toBeNull();
@@ -329,37 +424,39 @@ describe('ReadOption', () => {
       let finish: (id: string | null) => void = () => {};
       mockImportFile.mockReturnValue(new Promise(resolve => { finish = resolve; }));
       renderWithProviders(<Read />);
-      fireEvent.drop(screen.getByTestId('read-option'), fileDrag([spellFile()]));
-      await waitFor(() => expect(screen.getByTestId('read-option-hint')).toHaveTextContent('Importing spell'));
+      fireEvent.drop(screen.getByTestId('altar'), fileDrag([spellFile()]));
+      await waitFor(() => expect(screen.getByTestId('altar-hint')).toHaveTextContent('Importing spell'));
       await act(async () => { finish(null); });
-      expect(screen.getByTestId('read-option-hint')).not.toHaveTextContent('Importing spell');
+      expect(screen.getByTestId('altar-hint')).not.toHaveTextContent('Importing spell');
     });
   });
 
   describe('unload button', () => {
     it('is only shown with a spell loaded, not while dragging', () => {
       const { unmount } = renderWithProviders(<Read />);
-      expect(screen.queryByTestId('read-option-unload')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('altar-unload')).not.toBeInTheDocument();
       unmount();
 
       const store = makeStore();
       store.dispatch(setSpellFile({ id: 'spell-1', title: 'Spell one' }));
       const { unmount: unmount2 } = renderWithProviders(<Read />, { store });
-      expect(screen.getByTestId('read-option-unload')).toBeInTheDocument();
+      expect(screen.getByTestId('altar-unload')).toBeInTheDocument();
       unmount2();
 
-      renderWithProviders(<Read dragActive />, { store });
-      expect(screen.queryByTestId('read-option-unload')).not.toBeInTheDocument();
+      renderWithProviders(<Read />, { store });
+
+      dragSpellOver();
+      expect(screen.queryByTestId('altar-unload')).not.toBeInTheDocument();
     });
 
     it('takes the spell out of the player, back to the empty Read tab', () => {
       const store = makeStore();
       store.dispatch(setSpellFile({ id: 'spell-1', title: 'Spell one' }));
       renderWithProviders(<Read />, { store });
-      fireEvent.click(screen.getByTestId('read-option-unload'));
+      fireEvent.click(screen.getByTestId('altar-unload'));
       expect(store.getState().spellReader.spellId).toBeNull();
-      expect(screen.getByTestId('read-option-brand-icon')).toBeInTheDocument();
-      expect(screen.queryByTestId('read-option-unload')).not.toBeInTheDocument();
+      expect(screen.getByTestId('altar-brand-icon')).toBeInTheDocument();
+      expect(screen.queryByTestId('altar-unload')).not.toBeInTheDocument();
     });
   });
 });

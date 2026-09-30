@@ -1,12 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { screen, fireEvent, waitFor, act } from '@testing-library/react';
+import { screen, fireEvent, act } from '@testing-library/react';
 import { renderWithProviders } from '../../../../test/renderWithProviders';
 import { Start } from '../index';
 import { SPELL_DRAG_TYPE } from '../../../../config/consts';
 import type { Spell } from '../../../../interfaces';
-import { setSpellLoaded } from '../../../../store/spellReaderSlice';
 import { setSpellDetails } from '../../../../store/spellSlice';
-import { play } from '../../../../store/browserPlayerSlice';
 
 // ImportOption uses pdfjs-dist (DOMMatrix not in jsdom)
 vi.mock('../ImportOption', () => ({
@@ -45,9 +43,9 @@ describe('Start', () => {
     expect(screen.getByTestId('start')).toBeInTheDocument();
   });
 
-  it('shows the Read control on its own, with no tabs', () => {
+  it('shows the altar on its own, with no tabs', () => {
     renderWithProviders(<Start />);
-    expect(screen.getByTestId('read-option')).toBeInTheDocument();
+    expect(screen.getByTestId('altar')).toBeInTheDocument();
     expect(screen.queryAllByTestId(/^segmented-tab-/)).toHaveLength(0);
   });
 
@@ -73,79 +71,14 @@ describe('Start', () => {
     expect(store.getState().spell.isLoaded).toBe(false);
   });
 
-  it('lights up the Read control when a spell is dragged over, but not for file drags', () => {
-    renderWithProviders(<Start />);
-    const start = screen.getByTestId('start');
-    fireEvent.dragEnter(start, { dataTransfer: { types: ['Files'] } });
-    expect(screen.getByTestId('read-option-hint')).not.toHaveTextContent('Drop it');
-    fireEvent.dragEnter(start, spellDrag());
-    expect(screen.getByTestId('read-option-hint')).toHaveTextContent('Drop it');
-  });
-
-  it('starts reading the dropped spell without navigating', async () => {
+  // The altar is the drop target: the rest of the section doesn't take spells.
+  it('does not read a spell dropped on Start outside the altar', async () => {
     const { store } = renderWithProviders(<Start />);
-    await screen.findByTestId('read-option');
-    const start = screen.getByTestId('start');
-    fireEvent.dragEnter(start, spellDrag());
-    await act(async () => { fireEvent.drop(start, spellDrag()); });
-    await waitFor(() => expect(store.getState().spellReader.spellId).toBe('spell-1'));
-    expect(mockGetSpellById).toHaveBeenCalledWith('spell-1', undefined);
-    expect(store.getState().browserPlayer.autoPlayOnLoad).toBe(true);
+    const body = screen.getByTestId('start-body');
+    fireEvent.dragEnter(body, spellDrag());
+    await act(async () => { fireEvent.drop(body, spellDrag()); });
+    expect(mockGetSpellById).not.toHaveBeenCalledWith('spell-1', undefined);
+    expect(store.getState().spellReader.spellId).toBeNull();
+    expect(screen.getByTestId('altar').className).not.toMatch(/dragActive/);
   });
-
-  describe('drag state', () => {
-    // jsdom has no DragEvent, so fireEvent.dragLeave drops relatedTarget; build the leave
-    // as a MouseEvent (which carries it) with the drag's dataTransfer attached.
-    const dragLeave = (el: Element, relatedTarget: EventTarget | null) => {
-      const event = new MouseEvent('dragleave', { bubbles: true, relatedTarget });
-      Object.defineProperty(event, 'dataTransfer', { value: spellDrag().dataTransfer });
-      act(() => { el.dispatchEvent(event); });
-    };
-
-    const dragOverStart = async () => {
-      renderWithProviders(<Start />);
-      await screen.findByTestId('read-option');
-      fireEvent.dragEnter(screen.getByTestId('start'), spellDrag());
-      expect(screen.getByTestId('read-option-hint')).toHaveTextContent('Drop it');
-    };
-
-    it('stays active while moving between elements inside Start', async () => {
-      await dragOverStart();
-      const start = screen.getByTestId('start');
-      dragLeave(start, screen.getByTestId('play-button'));
-      expect(screen.getByTestId('read-option-hint')).toHaveTextContent('Drop it');
-    });
-
-    // An element a drag entered through can be removed mid-drag, and its dragleave never
-    // comes -- so the state relies on relatedTarget, not on counting enter/leave pairs.
-    it('ends when the drag leaves Start', async () => {
-      await dragOverStart();
-      dragLeave(screen.getByTestId('start'), document.body);
-      expect(screen.getByTestId('read-option-hint')).not.toHaveTextContent('Drop it');
-    });
-
-    it('ends when the drag is cancelled or dropped elsewhere (dragend)', async () => {
-      await dragOverStart();
-      act(() => { document.dispatchEvent(new Event('dragend', { bubbles: true })); });
-      expect(screen.getByTestId('read-option-hint')).not.toHaveTextContent('Drop it');
-    });
-  });
-
-  it('dropping the spell that is already playing does not pause it', async () => {
-    const { store } = renderWithProviders(<Start />);
-    await screen.findByTestId('read-option');
-    const start = screen.getByTestId('start');
-    await act(async () => { fireEvent.drop(start, spellDrag()); });
-    await waitFor(() => expect(store.getState().spellReader.spellId).toBe('spell-1'));
-    act(() => {
-      store.dispatch(setSpellLoaded(true));
-      store.dispatch(play());
-    });
-    const { toggleSeq } = store.getState().browserPlayer;
-    fireEvent.dragEnter(start, spellDrag());
-    await act(async () => { fireEvent.drop(start, spellDrag()); });
-    expect(store.getState().browserPlayer.toggleSeq).toBe(toggleSeq);
-    expect(store.getState().browserPlayer.isPlaying).toBe(true);
-  });
-
 });
