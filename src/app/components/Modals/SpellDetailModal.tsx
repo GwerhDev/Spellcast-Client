@@ -25,13 +25,17 @@ import { faBookOpenReader, faPen, faScroll, faWandMagicSparkles, faTrash } from 
 import { Tag } from '../Tag/Tag';
 import { useLanguage } from '../../../i18n';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
-import { CoverFlight, type FlightRect } from '../CoverFlight/CoverFlight';
+import { CoverFlight } from '../CoverFlight/CoverFlight';
+import { liveRect, rectOf, type FlightRect } from '../CoverFlight/flightRect';
 
 // Where the modal was opened from, when that was a spell card: its cover's place on screen
 // and image, so the cover can fly from the card into the modal (and back when closing).
 export interface SpellDetailOrigin {
   rect: FlightRect;
   coverUrl: string;
+  // The card's cover element, measured again when flying back: the page under the modal
+  // may have moved meanwhile (e.g. loading the spell turns the home page immersive).
+  element?: HTMLElement | null;
 }
 
 interface SpellDetailModalProps {
@@ -46,11 +50,6 @@ interface Flight {
   src: string;
   direction: 'in' | 'out';
 }
-
-const rectOf = (el: Element): FlightRect => {
-  const r = el.getBoundingClientRect();
-  return { top: r.top, left: r.left, width: r.width, height: r.height };
-};
 
 const prefersReducedMotion = () =>
   typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
@@ -88,6 +87,7 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
   // which stays hidden until it lands; closing flies it back and only then closes. From
   // anywhere else (the player's cover), the modal just opens.
   const coverSlotRef = useRef<HTMLDivElement>(null);
+  const flightImageRef = useRef<HTMLImageElement>(null);
   const [flight, setFlight] = useState<Flight | null>(null);
   const [leaving, setLeaving] = useState(false);
   const flownIn = useRef(false);
@@ -103,7 +103,10 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
   }, [show, flies, origin, doc]);
 
   const flightTarget = () => {
-    if (flight?.direction === 'out') return origin?.rect ?? null;
+    if (flight?.direction === 'out') {
+      // Where the card is now, not where it was when clicked; that rect if it's gone.
+      return liveRect(origin?.element, origin?.rect ?? null);
+    }
     return coverSlotRef.current ? rectOf(coverSlotRef.current) : null;
   };
 
@@ -111,7 +114,9 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
     if (leaving) return;
     if (!flies || !origin || !coverSlotRef.current) { onClose(); return; }
     setLeaving(true);
-    setFlight({ from: rectOf(coverSlotRef.current), src: coverUrl ?? origin.coverUrl, direction: 'out' });
+    // Still flying in: turn back from where the image is right now, not from the slot.
+    const from = flight?.direction === 'in' && flightImageRef.current ? rectOf(flightImageRef.current) : rectOf(coverSlotRef.current);
+    setFlight({ from, src: coverUrl ?? origin.coverUrl, direction: 'out' });
   };
 
   const handleFlightDone = () => {
@@ -346,6 +351,10 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
       </CustomModal>
       {flight && (
         <CoverFlight
+          // A new flight per leg: closing while the cover is still flying in turns it back
+          // from where it is, instead of finishing the way in first.
+          key={flight.direction}
+          imageRef={flightImageRef}
           src={flight.src}
           from={flight.from}
           target={flightTarget}

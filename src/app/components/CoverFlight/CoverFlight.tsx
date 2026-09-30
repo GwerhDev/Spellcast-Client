@@ -2,13 +2,9 @@ import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
 import s from './CoverFlight.module.css';
+import type { FlightRect } from './flightRect';
 
-export interface FlightRect {
-  top: number;
-  left: number;
-  width: number;
-  height: number;
-}
+export type { FlightRect } from './flightRect';
 
 interface CoverFlightProps {
   src: string;
@@ -20,6 +16,9 @@ interface CoverFlightProps {
   // Leaving a card: it first lifts off its place (rises, grows a little) before flying.
   lift?: boolean;
   onDone: () => void;
+  // The flying image, for an owner that needs where it is right now (e.g. to turn it back
+  // mid-flight from that exact spot).
+  imageRef?: React.Ref<HTMLImageElement>;
 }
 
 const LIFT_PX = 14;
@@ -34,7 +33,7 @@ const moved = (a: FlightRect, b: FlightRect) =>
 // A cover image flying between two places on screen (e.g. from a spell card into its detail
 // modal, and back), drawn over everything while the real ones hide: the image seems to
 // travel from one to the other instead of one disappearing and the other appearing.
-export const CoverFlight = ({ src, from, target, lift = false, onDone }: CoverFlightProps) => {
+export const CoverFlight = ({ src, from, target, lift = false, onDone, imageRef }: CoverFlightProps) => {
   const [dest, setDest] = useState<FlightRect>(() => target() ?? from);
   // The first leg (with the lift) vs a short follow-up after the destination moved.
   const [leg, setLeg] = useState<'flight' | 'settle'>('flight');
@@ -67,6 +66,7 @@ export const CoverFlight = ({ src, from, target, lift = false, onDone }: CoverFl
 
   return createPortal(
     <motion.img
+      ref={imageRef}
       data-testid="cover-flight"
       src={src}
       alt=""
