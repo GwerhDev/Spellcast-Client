@@ -46,7 +46,9 @@
 
 .optionContainer {
   width: 100%;
-  min-height: 220px;
+  /* Fits the Read panel with a spell loaded (cover, waveform, title), so the empty state
+     already takes that height and loading a spell doesn't shift the page. */
+  min-height: 280px;
   display: flex;
   flex-direction: column;
 }

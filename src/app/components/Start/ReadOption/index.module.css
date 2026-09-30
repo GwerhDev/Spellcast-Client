@@ -27,6 +27,13 @@
   overflow: visible;
 }
 
+/* With a cover the panel is a box of its own: room around the title so it doesn't sit on
+   the bottom edge. The height itself comes from Start's .optionContainer, the same with or
+   without a spell, so loading one never moves the page. */
+.container.hasCover {
+  padding-block: 1rem 1.75rem;
+}
+
 .container.dragActive {
   border-color: var(--color-primary);
   box-shadow: 0 0 20px color-mix(in srgb, var(--color-primary) 45%, transparent);
@@ -259,7 +266,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.2rem;
+  gap: 0.35rem;
   max-width: 420px;
   min-width: 0;
 }
