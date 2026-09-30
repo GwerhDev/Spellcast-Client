@@ -1,0 +1,23 @@
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.4rem;
+  min-width: 280px;
+  padding: 0.25rem 0.5rem 0.5rem;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+/* A <p>, not a heading: CustomModal restyles every h3 inside it as its own title. */
+.heading {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-light-400);
+}

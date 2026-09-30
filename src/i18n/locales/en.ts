@@ -141,11 +141,11 @@ export const en = {
     // TCORE-122: cover editing (CoverPicker), shared by SpellCreateForm and SpellEditForm.
     // Treated as one more metadata field, inside the same "Additional details" section.
     coverLabel: 'Cover',
+    editCover: 'Edit cover',
     coverUploadImage: 'Upload image',
     coverUseFirstPage: 'Use PDF cover',
-    // TCORE-123: per-spell cover frame, picked from SpellCard's context menu (Last Spells /
-    // Grimoire grid) -- separate from the Cover field above, which only lives in the
-    // create/edit forms.
+    // TCORE-123: per-spell cover frame, picked from the spell's detail (its cover's edit
+    // button), together with the cover itself (see SpellCoverModal).
     coverFrameLabel: 'Cover frame',
     coverFrameNone: 'No frame',
     coverFrameDefault: 'Default',
@@ -223,6 +223,7 @@ export const en = {
     enterText: 'Enter text to convert to speech…',
     previewVoice: 'Preview voice',
     unloadSpell: 'Unload spell',
+    mountSpell: 'Load into the player',
     browserVoices: 'Browser Voices',
     providerVoices: 'Provider Voices',
     browserVoicesDesc: 'These voices are provided by your browser.',

@@ -1,7 +1,6 @@
 import s from '../../components/SpellDetail/index.module.css';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
 import { useAppSelector } from '../../../store/hooks';
 import { getSpellById } from '../../../db';
 import { useDeleteSpells } from '../../../hooks/useDeleteSpells';
@@ -10,8 +9,6 @@ import { resolveCoverFrameId, getCoverFrameStyle, getCoverFrameCorners, getCover
 import { CoverFrameCorners } from '../../components/CoverFrameCorners';
 import { VIEW_MARGIN_X, VIEW_MARGIN_Y } from '../../components/Cover3D/constants';
 import { useCoverFrame3DSection } from '../../../hooks/useCoverFrame3DSection';
-import { setAutoPlayOnLoad } from '../../../store/browserPlayerSlice';
-import { setAutoPlayOnLoad as setAudioAutoPlayOnLoad } from '../../../store/audioPlayerSlice';
 import { Spinner } from '../../components/Spinner';
 import { PrimaryButton } from '../../components/Buttons/PrimaryButton';
 import { SecondaryButton } from '../../components/Buttons/SecondaryButton';
@@ -43,7 +40,6 @@ export const SpellDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
-  const dispatch = useDispatch();
   const { userData, logged } = useAppSelector((state) => state.session);
   const { t } = useLanguage();
   const { spellId: currentPlayingId, currentPage: readerCurrentPage } = useAppSelector((state) => state.spellReader);
@@ -56,9 +52,8 @@ export const SpellDetail: React.FC = () => {
   // TCORE-90: the original PDF no longer lives on the Spell record -- its existence is
   // looked up in the dedicated store instead of reading a `pdf` field.
   const [hasPdf, setHasPdf] = useState(false);
-  // TCORE-123: the frame itself is edited from SpellCard's context menu (Last Spells/
-  // Grimoire grid), not here -- this only resolves and displays whatever is already
-  // chosen. See resolveCoverFrameId (utils/coverFrame.ts) for the fallback rule.
+  // TCORE-123: the frame itself is edited from the detail modal's cover (SpellCoverModal),
+  // not here -- this only resolves and displays whatever is already chosen. See resolveCoverFrameId (utils/coverFrame.ts) for the fallback rule.
   const { activeCoverFrameId } = useAppSelector((state) => state.casterInventory);
   // .spell export UI is hidden for now (not ready to ship this phase) — kept wired but
   // commented out so it's a one-line re-enable later. See the export button below and
@@ -99,13 +94,9 @@ export const SpellDetail: React.FC = () => {
     hasOriginalPdf(doc.id).then(setHasPdf);
   }, [doc?.id]);
 
-  const handlePlay = () => {
-    dispatch(setAutoPlayOnLoad(true));
-    dispatch(setAudioAutoPlayOnLoad(true));
-    navigate(`/spell/${id}/reader`);
-  };
-
-  const handleContinueReading = () => navigate(`/spell/${id}/reader`);
+  // Only navigation: playback stays exactly as it is (the reader keeps a loaded spell
+  // playing or paused, and doesn't start one that wasn't).
+  const handleOpenReader = () => navigate(`/spell/${id}/reader`);
   const handleEdit = () => navigate(`/editor/${id}`, { state: { from: location.pathname } });
 
   const handleDeleteConfirm = async () => {
@@ -209,7 +200,7 @@ export const SpellDetail: React.FC = () => {
               </div>
             )}
             <div className={s.actions}>
-              <PrimaryButton data-testid="spell-detail-continue-btn" icon={faBookOpenReader} onClick={currentPage > 0 ? handleContinueReading : handlePlay}>{t.spell.openInReader}</PrimaryButton>
+              <PrimaryButton data-testid="spell-detail-continue-btn" icon={faBookOpenReader} onClick={handleOpenReader}>{t.spell.openInReader}</PrimaryButton>
               {inGrimoire && <SecondaryButton data-testid="spell-detail-edit-btn" icon={faWandMagicSparkles} onClick={handleEdit}>{t.spell.editSpell}</SecondaryButton>}
               {/* .spell export: future
               <SecondaryButton data-testid="spell-detail-export-btn" icon={faFileExport} onClick={() => openExportModal({ id: doc.id, title: doc.title })}>{t.spell.exportSpell}</SecondaryButton>

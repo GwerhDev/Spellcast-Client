@@ -5,6 +5,7 @@ import { Routes, Route } from 'react-router-dom';
 import { SpellDetailModal } from '../SpellDetailModal';
 import * as db from '../../../../db';
 import * as originalPdfsDb from '../../../../db/originalPdfs';
+import { setSpellFile, setSpellInfo, setSpellLoaded } from '../../../../store/spellReaderSlice';
 
 const mockDoc = {
   id: 'doc-1',
@@ -86,6 +87,75 @@ describe('SpellDetailModal', () => {
     rerender(<SpellDetailModal spellId="doc-2" show onClose={vi.fn()} />);
     expect(screen.getByTestId('spell-detail-modal-loading')).toBeInTheDocument();
     expect(screen.queryByTestId('spell-detail-modal-title-link')).not.toBeInTheDocument();
+  });
+
+  describe('editing the cover', () => {
+    it("offers editing the cover of the caster's own spell, which opens the cover modal", async () => {
+      vi.spyOn(db, 'getSpellById').mockResolvedValue(mockDoc as never);
+      renderWithProviders(<SpellDetailModal spellId="doc-1" show onClose={vi.fn()} />, { store: loggedStore() });
+      fireEvent.click(await screen.findByTestId('spell-detail-modal-edit-cover-btn'));
+      expect(screen.getByTestId('spell-cover-modal')).toBeInTheDocument();
+      expect(screen.getByTestId('cover-frame-options')).toBeInTheDocument();
+    });
+
+    it("isn't offered for a spell outside the caster's grimoire", async () => {
+      vi.spyOn(db, 'getSpellById').mockResolvedValue({ ...mockDoc, userId: 'user-2' } as never);
+      renderWithProviders(<SpellDetailModal spellId="doc-1" show onClose={vi.fn()} />, { store: loggedStore() });
+      await screen.findByTestId('spell-detail-modal-continue-btn');
+      expect(screen.queryByTestId('spell-detail-modal-edit-cover-btn')).not.toBeInTheDocument();
+    });
+
+    it('picking a frame saves it and shows it', async () => {
+      vi.spyOn(db, 'getSpellById').mockResolvedValue(mockDoc as never);
+      const save = vi.spyOn(db, 'updateSpellCoverFrame').mockResolvedValue(undefined);
+      const store = loggedStore();
+      renderWithProviders(<SpellDetailModal spellId="doc-1" show onClose={vi.fn()} />, { store });
+      fireEvent.click(await screen.findByTestId('spell-detail-modal-edit-cover-btn'));
+      vi.mocked(db.getSpellById).mockResolvedValue({ ...mockDoc, coverFrameId: null } as never);
+      fireEvent.click(screen.getByTestId('cover-frame-option-none'));
+      await waitFor(() => expect(save).toHaveBeenCalledWith('doc-1', 'user-1', null));
+      await waitFor(() => expect(screen.getByTestId('cover-frame-option-none').className).toMatch(/optionSelected/));
+    });
+  });
+
+  describe("the spell's playback controls", () => {
+    it('loads a spell that is not loaded into the player, paused, without navigating', async () => {
+      vi.spyOn(db, 'getSpellById').mockResolvedValue(mockDoc as never);
+      const store = loggedStore();
+      renderWithProviders(<SpellDetailModal spellId="doc-1" show onClose={vi.fn()} />, { store });
+      fireEvent.click(await screen.findByTestId('spell-transport-mount'));
+      expect(store.getState().spellReader.spellId).toBe('doc-1');
+      expect(store.getState().browserPlayer.autoPlayOnLoad).toBe(false);
+      expect(screen.getByTestId('spell-transport-toggle')).toBeInTheDocument();
+    });
+
+    it('once loaded, plays/pauses, turns its pages, and unloads', async () => {
+      vi.spyOn(db, 'getSpellById').mockResolvedValue(mockDoc as never);
+      const store = loggedStore();
+      store.dispatch(setSpellFile({ id: 'doc-1', title: 'My Book', userId: 'user-1' }));
+      store.dispatch(setSpellInfo({ totalPages: 3 }));
+      store.dispatch(setSpellLoaded(true));
+      renderWithProviders(<SpellDetailModal spellId="doc-1" show onClose={vi.fn()} />, { store });
+      const toggleSeq = store.getState().browserPlayer.toggleSeq;
+      fireEvent.click(await screen.findByTestId('spell-transport-toggle'));
+      expect(store.getState().browserPlayer.toggleSeq).toBe(toggleSeq + 1);
+      fireEvent.click(screen.getByTestId('spell-transport-next'));
+      expect(store.getState().spellReader.currentPage).toBe(2);
+      fireEvent.click(screen.getByTestId('spell-transport-previous'));
+      expect(store.getState().spellReader.currentPage).toBe(1);
+      fireEvent.click(screen.getByTestId('spell-transport-unmount'));
+      expect(store.getState().spellReader.spellId).toBeNull();
+      expect(screen.getByTestId('spell-transport-mount')).toBeInTheDocument();
+    });
+  });
+
+  it("'Open in the reader' only navigates: it never turns autoplay on", async () => {
+    vi.spyOn(db, 'getSpellById').mockResolvedValue(mockDoc as never);
+    const store = loggedStore();
+    renderWithProviders(<SpellDetailModal spellId="doc-1" show onClose={vi.fn()} />, { store });
+    fireEvent.click(await screen.findByTestId('spell-detail-modal-continue-btn'));
+    expect(store.getState().browserPlayer.autoPlayOnLoad).toBe(false);
+    expect(store.getState().audioPlayer.autoPlayOnLoad).toBe(false);
   });
 
   it('renders nothing when show is false', () => {

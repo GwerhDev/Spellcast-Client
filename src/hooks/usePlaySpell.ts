@@ -22,15 +22,23 @@ export const usePlaySpell = () => {
 
   const isLoaded = (spell: Spell) => activeSpellId === spell.id && (readerLoaded || audioPlaying || browserPlaying);
 
-  const loadAndPlay = (spell: Spell) => {
+  const load = (spell: Spell, autoplay: boolean) => {
     const totalPages = spell.pagesContent ? (() => { try { return JSON.parse(spell.pagesContent!).length; } catch { return 1; } })() : 1;
     dispatch(resetSpellReader());
     dispatch(resetBrowserPlayer());
     dispatch(resetAudioPlayer());
-    dispatch(setAutoPlayOnLoad(true));
-    dispatch(setAudioAutoPlayOnLoad(true));
+    dispatch(setAutoPlayOnLoad(autoplay));
+    dispatch(setAudioAutoPlayOnLoad(autoplay));
     dispatch(setSpellFile({ id: spell.id, title: spell.title, userId: spell.userId, progress: spell.progress }));
     dispatch(setSpellInfo({ totalPages }));
+  };
+  const loadAndPlay = (spell: Spell) => load(spell, true);
+
+  // Loads a spell into the player, paused where it was left, without starting to read it
+  // (and without navigating). Already loaded: nothing to do.
+  const mountSpell = (spell: Spell) => {
+    if (activeSpellId === spell.id) return;
+    load(spell, false);
   };
 
   // A play button: the already-loaded spell toggles play/pause.
@@ -58,5 +66,5 @@ export const usePlaySpell = () => {
     dispatch(resetSpellReader());
   };
 
-  return { playSpell, readSpell, togglePlayback, unloadSpell };
+  return { playSpell, readSpell, mountSpell, togglePlayback, unloadSpell };
 };

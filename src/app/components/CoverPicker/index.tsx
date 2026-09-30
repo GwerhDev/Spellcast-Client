@@ -2,6 +2,7 @@ import s from './index.module.css';
 import React, { useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faImage, faUpload, faFileImport } from '@fortawesome/free-solid-svg-icons';
+import { SecondaryButton } from '../Buttons/SecondaryButton';
 import { useLanguage } from '../../../i18n';
 
 // TCORE-122: cover editing, shared by SpellCreateForm (creation) and SpellEditForm
@@ -36,16 +37,14 @@ export const CoverPicker: React.FC<CoverPickerProps> = ({ coverUrl, onUploadImag
         }
       </div>
       <div className={s.actions}>
-        <button
-          type="button"
+        <SecondaryButton
           data-testid="cover-picker-upload-btn"
           className={s.actionBtn}
-          title={t.spell.coverUploadImage}
+          icon={faUpload}
           onClick={() => fileInputRef.current?.click()}
         >
-          <FontAwesomeIcon icon={faUpload} />
           {t.spell.coverUploadImage}
-        </button>
+        </SecondaryButton>
         <input
           ref={fileInputRef}
           type="file"
@@ -54,16 +53,14 @@ export const CoverPicker: React.FC<CoverPickerProps> = ({ coverUrl, onUploadImag
           onChange={handleFileChange}
         />
         {onUseFirstPage && (
-          <button
-            type="button"
+          <SecondaryButton
             data-testid="cover-picker-use-first-page-btn"
             className={s.actionBtn}
-            title={t.spell.coverUseFirstPage}
+            icon={faFileImport}
             onClick={onUseFirstPage}
           >
-            <FontAwesomeIcon icon={faFileImport} />
             {t.spell.coverUseFirstPage}
-          </button>
+          </SecondaryButton>
         )}
       </div>
     </div>

@@ -25,9 +25,53 @@
   flex-shrink: 0;
 }
 
+/* Edit the cover and its frame: appears over the cover while it's hovered (or the button
+   itself is focused). Scoped under .coverWrap so it outranks IconButton's own base rules. */
+.coverWrap .coverEditButton {
+  position: absolute;
+  right: 0.5rem;
+  bottom: 0.5rem;
+  z-index: 6;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 0.85rem;
+  color: rgba(242, 242, 242, 0.9);
+  background: rgba(8, 10, 14, 0.6);
+  border: 1px solid rgba(242, 242, 242, 0.22);
+  backdrop-filter: blur(6px);
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.2s ease, transform 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.coverWrap:hover .coverEditButton,
+.coverWrap .coverEditButton:focus-visible {
+  opacity: 1;
+  transform: none;
+}
+
+.coverWrap .coverEditButton:hover,
+.coverWrap .coverEditButton:focus-visible {
+  color: #fff;
+  border-color: color-mix(in srgb, var(--color-primary) 70%, transparent);
+  outline: none;
+}
+
+@media (hover: none) {
+  .coverWrap .coverEditButton {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 .cover {
-  width: 112px;
-  height: 154px;
+  width: 150px;
+  height: 206px;
   object-fit: cover;
   object-position: top;
   border-radius: 8px;
@@ -36,8 +80,8 @@
 }
 
 .coverPlaceholder {
-  width: 112px;
-  height: 154px;
+  width: 150px;
+  height: 206px;
   border-radius: 8px;
   border: 1px solid var(--line);
   background: var(--surface-raised);

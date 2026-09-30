@@ -89,6 +89,27 @@ describe('usePlaySpell', () => {
     });
   });
 
+  describe('mountSpell (load into the player)', () => {
+    it('loads the spell paused: no autoplay on either player', () => {
+      const { store, result } = setup();
+      act(() => result.current.mountSpell(spell));
+      const state = store.getState();
+      expect(state.spellReader.spellId).toBe('spell-1');
+      expect(state.browserPlayer.autoPlayOnLoad).toBe(false);
+      expect(state.audioPlayer.autoPlayOnLoad).toBe(false);
+    });
+
+    it('leaves the spell alone when it is already the loaded one', () => {
+      const { store, result, rerender } = setup();
+      act(() => result.current.playSpell(spell));
+      act(() => { store.dispatch(play()); });
+      rerender();
+      act(() => result.current.mountSpell(spell));
+      expect(store.getState().browserPlayer.isPlaying).toBe(true);
+      expect(store.getState().browserPlayer.autoPlayOnLoad).toBe(true);
+    });
+  });
+
   it('unloadSpell leaves nothing loaded and both players reset', () => {
     const { store, result, rerender } = setup();
     act(() => result.current.playSpell(spell));

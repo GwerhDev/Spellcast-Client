@@ -722,7 +722,7 @@ export const updateSpellMetadata = async (
 
 // TCORE-123: dedicated, single-field update -- same shape as updateSpellProgress, kept
 // separate from updateSpellContent/updateSpellFull's full-record writes so picking a cover
-// frame (from SpellCard's context menu) can never race the autosave timer into clobbering
+// frame (from the spell's detail) can never race the autosave timer into clobbering
 // an in-flight title/pagesContent edit. Accepts all three of Spell.coverFrameId's states: a
 // frame id (this spell's own explicit pick), null (explicitly "no frame", overriding the
 // global default), or undefined (clears any override, going back to following the global

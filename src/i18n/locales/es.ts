@@ -143,11 +143,11 @@ export const es: Translations = {
     // TCORE-122: edición de portada (CoverPicker), compartido por SpellCreateForm y SpellEditForm.
     // Se trata como un campo de metadata más, dentro de la misma sección "Additional details".
     coverLabel: 'Portada',
+    editCover: 'Editar portada',
     coverUploadImage: 'Subir imagen',
     coverUseFirstPage: 'Usar portada del PDF',
-    // TCORE-123: marco de portada por-spell, elegido desde el menú contextual de SpellCard
-    // (grid de Last Spells / Grimoire) -- separado del campo Portada de arriba, que solo
-    // vive en los forms de creación/edición.
+    // TCORE-123: per-spell cover frame, picked from the spell's detail (its cover's edit
+    // button), together with the cover itself (see SpellCoverModal).
     coverFrameLabel: 'Marco de portada',
     coverFrameNone: 'Sin marco',
     coverFrameDefault: 'Predeterminado',
@@ -225,6 +225,7 @@ export const es: Translations = {
     enterText: 'Ingresa el texto para convertir a voz…',
     previewVoice: 'Vista previa de voz',
     unloadSpell: 'Desmontar spell',
+    mountSpell: 'Montar en el reproductor',
     browserVoices: 'Voces del navegador',
     providerVoices: 'Voces de proveedores',
     browserVoicesDesc: 'Estas voces las proporciona tu navegador.',

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { CoverFramePickerModal } from '../CoverFramePickerModal';
+import { CoverFrameOptions } from '../CoverFrameOptions';
 import { LanguageProvider } from '../../../../i18n';
 import type { CoverFrame } from '../../../../config/assets';
 
@@ -9,23 +9,14 @@ const borders: CoverFrame[] = [
   { id: 'other', name: 'Other', description: '', category: 'cover-frame', unlockMethod: 'free', cssValue: '2px dashed #fff', thumbnail: '#fff', tags: [] },
 ];
 
-const renderModal = (props: Partial<React.ComponentProps<typeof CoverFramePickerModal>> = {}) =>
+const renderModal = (props: Partial<React.ComponentProps<typeof CoverFrameOptions>> = {}) =>
   render(
     <LanguageProvider>
-      <CoverFramePickerModal show onClose={vi.fn()} borders={borders} selectedId={undefined} onPick={vi.fn()} {...props} />
+      <CoverFrameOptions borders={borders} selectedId={undefined} onPick={vi.fn()} {...props} />
     </LanguageProvider>
   );
 
-describe('CoverFramePickerModal', () => {
-  it('renders nothing when show is false', () => {
-    const { container } = render(
-      <LanguageProvider>
-        <CoverFramePickerModal show={false} onClose={vi.fn()} borders={borders} selectedId={undefined} onPick={vi.fn()} />
-      </LanguageProvider>
-    );
-    expect(container).toBeEmptyDOMElement();
-  });
-
+describe('CoverFrameOptions', () => {
   it('renders an option for Default, No border, and each owned border', () => {
     renderModal();
     expect(screen.getByTestId('cover-frame-option-default')).toBeInTheDocument();
