@@ -1,6 +1,7 @@
 import { PlayButton } from '../../../components/PlayButton/PlayButton';
 import { AltarPanel } from '../../../components/Altar/AltarPanel';
-import { AltarBrandIcon, AltarCornerButton, AltarHint, AltarNowReading, AltarWave } from '../../../components/Altar/AltarParts';
+import { AltarBrandIcon, AltarCornerButton, AltarHint, AltarNowReading, AltarSentence, AltarWave } from '../../../components/Altar/AltarParts';
+import { activeSentenceIndex } from '../../../../utils/activeSentence';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { faBookOpenReader, faEject, faFeatherPointed, faPen, faTrash, faUpload, faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -58,7 +59,9 @@ export const Altar = ({ onWrite, onImport }: AltarProps) => {
   const [fileDragActive, setFileDragActive] = useState(false);
   const [importing, setImporting] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const { spellId, spellTitle, spellUserId, currentPage, totalPages, isLoaded } = useAppSelector(state => state.spellReader);
+  const { spellId, spellTitle, spellUserId, currentPage, totalPages, isLoaded, sentences, currentSentenceIndex } = useAppSelector(state => state.spellReader);
+  const voiceType = useAppSelector(state => state.voice.selectedVoice.type);
+  const { timeline: providerTimeline, currentTime: providerCurrentTime } = useAppSelector(state => state.audioPlayer);
   const userId = useAppSelector(state => state.session.userData?.id);
   const audioPlaying = useAppSelector(state => state.audioPlayer.isPlaying);
   const browserPlaying = useAppSelector(state => state.browserPlayer.isPlaying);
@@ -79,6 +82,14 @@ export const Altar = ({ onWrite, onImport }: AltarProps) => {
   // while paused) instead of the play/pause button -- display only, playback is driven from
   // the player. A drag or an import brings the button back as the drop target.
   const showWaveform = hasSpell && !dropping && !importing;
+  // While it plays, the footer follows the voice: the sentence being read (a provider
+  // voice's own timeline text, which is what its audio says; the page's sentence for the
+  // browser voice). Paused, it's the status and title again.
+  const sentenceIndex = activeSentenceIndex(voiceType, currentSentenceIndex, providerTimeline, providerCurrentTime);
+  const currentSentence = (voiceType === 'ai' && providerTimeline.length > 0
+    ? providerTimeline[sentenceIndex]?.text
+    : sentences[sentenceIndex])?.trim();
+  const showSentence = showNowReading && isPlaying && !!currentSentence;
 
   const menuItems: RadialMenuItem[] = [
     { id: 'write', label: t.start.writeTab, icon: faPen, onSelect: onWrite },
@@ -260,7 +271,9 @@ export const Altar = ({ onWrite, onImport }: AltarProps) => {
           icon={showBrand ? <AltarBrandIcon /> : undefined}
         />
       )}
-      footer={showNowReading ? (
+      footer={showSentence ? (
+        <AltarSentence text={currentSentence!} sentenceKey={`${currentPage}-${sentenceIndex}`} />
+      ) : showNowReading ? (
         <AltarNowReading
           status={isPlaying ? t.start.readNowPlaying : t.start.readPaused}
           page={isLoaded ? `${t.spell.page} ${currentPage} ${t.spell.of} ${totalPages}` : undefined}

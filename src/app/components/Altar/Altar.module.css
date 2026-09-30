@@ -331,6 +331,44 @@
   color: var(--color-light-400);
 }
 
+/* While playing, the footer is the sentence being read: two lines at most, each new sentence
+   fading in. Sized to take the same room as the status + title it replaces. */
+.sentence {
+  margin: 0;
+  max-width: 560px;
+  min-height: 2.8em;
+  padding-inline: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 0.98rem;
+  line-height: 1.4;
+  color: var(--text-color-accent);
+}
+
+.sentenceText {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  animation: sentenceIn 0.35s ease;
+}
+
+.hasCover .sentence {
+  color: #f2f2f2;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.7);
+}
+
+@keyframes sentenceIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sentenceText { animation: none; }
+}
+
 .nowTitle {
   max-width: 100%;
   overflow: hidden;

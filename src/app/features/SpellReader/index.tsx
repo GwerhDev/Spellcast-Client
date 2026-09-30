@@ -8,6 +8,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowLeft, faEdit, faScroll, faGear, faExpand, faCompress, faInfoCircle } from '@fortawesome/free-solid-svg-icons';
 import { RootState } from '../../../store';
+import { activeSentenceIndex as getActiveSentenceIndex } from '../../../utils/activeSentence';
 import { goToPage, setCurrentSentenceIndex, setShowReaderSettings, recordReaderActivity } from '../../../store/spellReaderSlice';
 import { setPendingSeek } from '../../../store/audioPlayerSlice';
 import { moveCompanionModel, rotateCompanionModel, scaleCompanionModel, toggleCompanionDepth, type CompanionPlacement } from '../../../store/casterInventorySlice';
@@ -165,14 +166,10 @@ export const SpellReader = () => {
     setEditedText(safeParseJSON(currentPageText));
   }, [currentPageText]);
 
-  const activeSentenceIndex = React.useMemo(() => {
-    if (selectedVoice.type !== 'ai' || aiTimeline.length === 0) return currentSentenceIndex;
-    const ms = aiCurrentTime * 1000;
-    for (let i = 0; i < aiTimeline.length; i++) {
-      if (ms < aiTimeline[i].end) return i;
-    }
-    return aiTimeline.length - 1;
-  }, [selectedVoice.type, aiTimeline, aiCurrentTime, currentSentenceIndex]);
+  const activeSentenceIndex = React.useMemo(
+    () => getActiveSentenceIndex(selectedVoice.type, currentSentenceIndex, aiTimeline, aiCurrentTime),
+    [selectedVoice.type, aiTimeline, aiCurrentTime, currentSentenceIndex],
+  );
 
   useEffect(() => {
     if (activeSentenceIndex < 0) return;

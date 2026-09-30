@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { faTrash } from '@fortawesome/free-solid-svg-icons';
-import { AltarBrandIcon, AltarCornerButton, AltarHint, AltarNowReading, AltarWave } from '../AltarParts';
+import { AltarBrandIcon, AltarCornerButton, AltarHint, AltarNowReading, AltarSentence, AltarWave } from '../AltarParts';
 
 describe('Altar parts', () => {
   it('AltarCornerButton fires its action, and marks the danger variant', () => {
@@ -40,5 +40,11 @@ describe('Altar parts', () => {
   it('AltarBrandIcon draws the mark as a mask', () => {
     render(<AltarBrandIcon />);
     expect(screen.getByTestId('altar-brand-icon').style.maskImage).toContain('url(');
+  });
+
+  it('AltarSentence shows the sentence, kept from screen readers (the voice is saying it)', () => {
+    render(<AltarSentence text="Once upon a time." sentenceKey="1-0" />);
+    expect(screen.getByTestId('altar-sentence')).toHaveTextContent('Once upon a time.');
+    expect(screen.getByTestId('altar-sentence')).toHaveAttribute('aria-hidden', 'true');
   });
 });

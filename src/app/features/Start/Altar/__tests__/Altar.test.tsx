@@ -2,8 +2,10 @@ import type React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { renderWithProviders, makeStore } from '../../../../../test/renderWithProviders';
-import { setSpellFile, setSpellLoaded } from '../../../../../store/spellReaderSlice';
-import { play } from '../../../../../store/browserPlayerSlice';
+import { setSpellFile, setSpellLoaded, setSentences, setCurrentSentenceIndex } from '../../../../../store/spellReaderSlice';
+import { play, pause } from '../../../../../store/browserPlayerSlice';
+import { play as playAudio, setAiTimeline, setCurrentTime } from '../../../../../store/audioPlayerSlice';
+import { setSelectedVoice } from '../../../../../store/voiceSlice';
 import { Routes, Route } from 'react-router-dom';
 import { Altar } from '../index';
 import { SPELL_DRAG_TYPE } from '../../../../../config/consts';
@@ -164,6 +166,53 @@ describe('Altar', () => {
     const before = store.getState().browserPlayer.toggleSeq;
     fireEvent.click(wave);
     expect(store.getState().browserPlayer.toggleSeq).toBe(before);
+  });
+
+  describe('the sentence being read', () => {
+    const loadedWith = (sentences: string[]) => {
+      const store = makeStore();
+      store.dispatch(setSpellFile({ id: 'spell-1', title: 'Spell one' }));
+      store.dispatch(setSpellLoaded(true));
+      store.dispatch(setSentences({ sentences, startIndex: 0 }));
+      return store;
+    };
+
+    it('replaces the status and title while playing, and they come back when paused', () => {
+      const store = loadedWith(['The first sentence.', 'The second one.']);
+      renderWithProviders(<Read />, { store });
+      expect(screen.getByTestId('altar-title')).toHaveTextContent('Spell one');
+      expect(screen.queryByTestId('altar-sentence')).not.toBeInTheDocument();
+
+      act(() => { store.dispatch(play()); });
+      expect(screen.getByTestId('altar-sentence')).toHaveTextContent('The first sentence.');
+      expect(screen.queryByTestId('altar-title')).not.toBeInTheDocument();
+
+      act(() => { store.dispatch(setCurrentSentenceIndex(1)); });
+      expect(screen.getByTestId('altar-sentence')).toHaveTextContent('The second one.');
+
+      act(() => { store.dispatch(pause()); });
+      expect(screen.queryByTestId('altar-sentence')).not.toBeInTheDocument();
+      expect(screen.getByTestId('altar-title')).toHaveTextContent('Spell one');
+    });
+
+    it("follows a provider voice's timeline by its playback time", () => {
+      const store = loadedWith([]);
+      store.dispatch(setSelectedVoice({ type: 'ai', value: 'provider-voice' }));
+      store.dispatch(setAiTimeline([{ text: 'Recorded one.', start: 0, end: 1000 }, { text: 'Recorded two.', start: 1000, end: 2000 }]));
+      store.dispatch(playAudio());
+      renderWithProviders(<Read />, { store });
+      expect(screen.getByTestId('altar-sentence')).toHaveTextContent('Recorded one.');
+      act(() => { store.dispatch(setCurrentTime(1.5)); });
+      expect(screen.getByTestId('altar-sentence')).toHaveTextContent('Recorded two.');
+    });
+
+    it('keeps the status and title while playing with nothing to show yet', () => {
+      const store = loadedWith([]);
+      store.dispatch(play());
+      renderWithProviders(<Read />, { store });
+      expect(screen.queryByTestId('altar-sentence')).not.toBeInTheDocument();
+      expect(screen.getByTestId('altar-title')).toBeInTheDocument();
+    });
   });
 
   it('animates the waveform only while reading', () => {

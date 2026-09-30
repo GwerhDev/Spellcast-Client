@@ -72,6 +72,20 @@ export const AltarNowReading = ({ status, page, title }: AltarNowReadingProps) =
   </div>
 );
 
+interface AltarSentenceProps {
+  text: string;
+  // Changes with each sentence, so each one fades in on its own.
+  sentenceKey: string | number;
+}
+
+// The sentence being read right now, while the loaded spell plays. Not announced to screen
+// readers: it's what the voice is already saying.
+export const AltarSentence = ({ text, sentenceKey }: AltarSentenceProps) => (
+  <p data-testid="altar-sentence" className={s.sentence} aria-hidden="true">
+    <span key={sentenceKey} className={s.sentenceText}>{text}</span>
+  </p>
+);
+
 interface AltarHintProps {
   text: string;
   // Something is in progress (an import): a spinner instead of the pointer.
