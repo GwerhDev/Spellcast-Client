@@ -12,14 +12,13 @@ import { CustomModal } from '../../components/Modals/CustomModal';
 import { DeleteConfirmModal } from '../../components/Modals/DeleteConfirmModal';
 import { PrimaryButton } from '../../components/Buttons/PrimaryButton';
 import { SecondaryButton } from '../../components/Buttons/SecondaryButton';
-import { deleteSpellFromDB } from '../../../db';
-import { useAppSelector, useAppDispatch } from '../../../store/hooks';
-import { invalidateSpellList } from '../../../store/spellReaderSlice';
+import { useDeleteSpells } from '../../../hooks/useDeleteSpells';
+import { useAppSelector } from '../../../store/hooks';
 import { useRefreshSpellMetadataFromPdf } from '../../../hooks/useRefreshSpellMetadataFromPdf';
 
 export const GrimoireLanding = () => {
   const { t } = useLanguage();
-  const dispatch = useAppDispatch();
+  const deleteSpells = useDeleteSpells();
   const { userData } = useAppSelector(state => state.session);
   const [filter, setFilter] = useState<GrimoireFilter>('all');
   const [query, setQuery] = useState('');
@@ -68,8 +67,8 @@ export const GrimoireLanding = () => {
 
   const handleBulkDeleteConfirm = async () => {
     if (!userData?.id) return;
-    await Promise.all(selectedIds.map(id => deleteSpellFromDB(id, userData.id)));
-    dispatch(invalidateSpellList());
+    // Unloads the spell in the player too, if it's among them.
+    await deleteSpells(selectedIds);
     setSelectedIds([]);
     setSelectionMode(false);
     setShowBulkDeleteModal(false);

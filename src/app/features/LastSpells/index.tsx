@@ -1,11 +1,11 @@
 import s from './index.module.css';
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { getSpellsFromDB, deleteSpellFromDB } from '../../../db';
+import { getSpellsFromDB } from '../../../db';
+import { useDeleteSpells } from '../../../hooks/useDeleteSpells';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { DeleteConfirmModal } from '../../components/Modals/DeleteConfirmModal';
 // import { SpellExportModal } from '../../components/Modals/SpellExportModal'; // .spell export: future
-import { useAppSelector, useAppDispatch } from '../../../store/hooks';
-import { invalidateSpellList } from '../../../store/spellReaderSlice';
+import { useAppSelector } from '../../../store/hooks';
 import { Spell } from '../../../interfaces';
 import { SpellCard } from '../../components/Cards/SpellCard';
 import { SpellDetailModal } from '../../components/Modals/SpellDetailModal';
@@ -39,10 +39,10 @@ export const LastSpells: React.FC = () => {
   const sliderRef = useRef<HTMLDivElement>(null);
   const carouselWrapperRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const deleteSpells = useDeleteSpells();
   // A card click opens the spell's detail in a modal (the same one the player's cover opens).
   const [detailSpellId, setDetailSpellId] = useState<string | null>(null);
   const location = useLocation();
-  const dispatch = useAppDispatch();
   const { playSpell } = usePlaySpell();
 
   // TCORE-124: gates 3D corners for this whole section -- passed straight to each SpellCard
@@ -115,10 +115,8 @@ export const LastSpells: React.FC = () => {
   const handleDeleteConfirm = async () => {
     if (selectedDoc) {
       try {
-        await deleteSpellFromDB(selectedDoc.id, userData.id);
-        // Refetches this list (listVersion effect above) and every other view of the
-        // spells, e.g. Start's Read tab, which disappears once the last one is gone.
-        dispatch(invalidateSpellList());
+        // Unloads it too if it's the spell in the player, and refreshes every list.
+        await deleteSpells([selectedDoc.id]);
       } catch (error) {
         console.error('Failed to delete spell:', error);
       } finally {

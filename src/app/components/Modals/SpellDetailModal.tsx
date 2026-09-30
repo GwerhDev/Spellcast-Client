@@ -3,14 +3,14 @@ import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { useAppSelector } from '../../../store/hooks';
-import { getSpellById, deleteSpellFromDB } from '../../../db';
+import { getSpellById } from '../../../db';
+import { useDeleteSpells } from '../../../hooks/useDeleteSpells';
 import { hasOriginalPdf } from '../../../db/originalPdfs';
 import { resolveCoverFrameId, getCoverFrameStyle, getCoverFrameCorners } from '../../../utils/coverFrame';
 import { CoverFrameCorners } from '../CoverFrameCorners';
 import { isInCasterGrimoire } from '../../../utils/grimoire';
-import { setAutoPlayOnLoad, resetBrowserPlayer } from '../../../store/browserPlayerSlice';
+import { setAutoPlayOnLoad } from '../../../store/browserPlayerSlice';
 import { setAutoPlayOnLoad as setAudioAutoPlayOnLoad } from '../../../store/audioPlayerSlice';
-import { invalidateSpellList, resetSpellReader } from '../../../store/spellReaderSlice';
 import { CustomModal } from './CustomModal';
 import { Spinner } from '../Spinner';
 import { PrimaryButton } from '../Buttons/PrimaryButton';
@@ -36,6 +36,7 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
   const { spellId: currentPlayingId, currentPage: readerCurrentPage } = useAppSelector(state => state.spellReader);
   const { activeCoverFrameId } = useAppSelector(state => state.casterInventory);
 
+  const deleteSpells = useDeleteSpells();
   const [doc, setDoc] = useState<Awaited<ReturnType<typeof getSpellById>> | null>(null);
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -96,12 +97,8 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
 
   const handleDeleteConfirm = async () => {
     if (!spellId || !userData?.id) return;
-    await deleteSpellFromDB(spellId, userData.id);
-    if (currentPlayingId === spellId) {
-      dispatch(resetBrowserPlayer());
-      dispatch(resetSpellReader());
-    }
-    dispatch(invalidateSpellList());
+    // Unloads it too, if it's the spell in the player.
+    await deleteSpells([spellId]);
     setShowDeleteModal(false);
     onClose();
   };

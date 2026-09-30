@@ -3,15 +3,15 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { useAppSelector } from '../../../store/hooks';
-import { getSpellById, deleteSpellFromDB } from '../../../db';
+import { getSpellById } from '../../../db';
+import { useDeleteSpells } from '../../../hooks/useDeleteSpells';
 import { hasOriginalPdf } from '../../../db/originalPdfs';
 import { resolveCoverFrameId, getCoverFrameStyle, getCoverFrameCorners, getCoverFrame3D } from '../../../utils/coverFrame';
 import { CoverFrameCorners } from '../../components/CoverFrameCorners';
 import { VIEW_MARGIN_X, VIEW_MARGIN_Y } from '../../components/Cover3D/constants';
 import { useCoverFrame3DSection } from '../../../hooks/useCoverFrame3DSection';
-import { setAutoPlayOnLoad, resetBrowserPlayer } from '../../../store/browserPlayerSlice';
+import { setAutoPlayOnLoad } from '../../../store/browserPlayerSlice';
 import { setAutoPlayOnLoad as setAudioAutoPlayOnLoad } from '../../../store/audioPlayerSlice';
-import { invalidateSpellList, resetSpellReader } from '../../../store/spellReaderSlice';
 import { Spinner } from '../../components/Spinner';
 import { PrimaryButton } from '../../components/Buttons/PrimaryButton';
 import { SecondaryButton } from '../../components/Buttons/SecondaryButton';
@@ -47,6 +47,7 @@ export const SpellDetail: React.FC = () => {
   const { userData, logged } = useAppSelector((state) => state.session);
   const { t } = useLanguage();
   const { spellId: currentPlayingId, currentPage: readerCurrentPage } = useAppSelector((state) => state.spellReader);
+  const deleteSpells = useDeleteSpells();
   const [doc, setDoc] = useState<Awaited<ReturnType<typeof getSpellById>> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -110,12 +111,8 @@ export const SpellDetail: React.FC = () => {
   const handleDeleteConfirm = async () => {
     if (!id || !userData?.id) return;
     try {
-      await deleteSpellFromDB(id, userData.id);
-      if (currentPlayingId === id) {
-        dispatch(resetBrowserPlayer());
-        dispatch(resetSpellReader());
-      }
-      dispatch(invalidateSpellList());
+      // Unloads it too, if it's the spell in the player.
+      await deleteSpells([id]);
       navigate('/');
     } catch {
       setError('Failed to delete spell.');

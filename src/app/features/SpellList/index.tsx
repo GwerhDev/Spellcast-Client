@@ -1,7 +1,8 @@
 import s from './index.module.css';
 import grid from '../../components/SpellGrid/index.module.css';
 import React, { useEffect, useRef, useState } from 'react';
-import { getSpellsFromDB, deleteSpellFromDB } from '../../../db';
+import { getSpellsFromDB } from '../../../db';
+import { useDeleteSpells } from '../../../hooks/useDeleteSpells';
 import { getAllOriginalPdfIds } from '../../../db/originalPdfs';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { DeleteConfirmModal } from '../../components/Modals/DeleteConfirmModal';
@@ -17,7 +18,7 @@ import { faScroll, faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
 import { useDispatch } from 'react-redux';
 import { setAutoPlayOnLoad, resetBrowserPlayer, requestTogglePlay } from '../../../store/browserPlayerSlice';
 import { setAutoPlayOnLoad as setAudioAutoPlayOnLoad, resetAudioPlayer, requestTogglePlay as requestAudioTogglePlay } from '../../../store/audioPlayerSlice';
-import { setSpellFile, setSpellInfo, resetSpellReader, invalidateSpellList } from '../../../store/spellReaderSlice';
+import { setSpellFile, setSpellInfo, resetSpellReader } from '../../../store/spellReaderSlice';
 import { useLanguage } from '../../../i18n';
 import { useInfiniteList } from '../../../hooks/useInfiniteList';
 
@@ -36,6 +37,7 @@ interface SpellListProps {
 
 export const SpellList: React.FC<SpellListProps> = ({ query = '', filter = 'local', docFilter = 'all', selectionMode, selectedIds = [], onToggleSelect, onSelectableIdsChange }) => {
   const navigate = useNavigate();
+  const deleteSpells = useDeleteSpells();
   // A card click opens the spell's detail in a modal (the same one the player's cover opens).
   const [detailSpellId, setDetailSpellId] = useState<string | null>(null);
   const location = useLocation();
@@ -114,9 +116,8 @@ export const SpellList: React.FC<SpellListProps> = ({ query = '', filter = 'loca
   const handleDeleteConfirm = async () => {
     if (selectedDoc && userData?.id) {
       try {
-        await deleteSpellFromDB(selectedDoc.id, userData.id);
-        // Refetches this list (listVersion effect above) and every other view of the spells.
-        dispatch(invalidateSpellList());
+        // Unloads it too if it's the spell in the player, and refreshes every list.
+        await deleteSpells([selectedDoc.id]);
       } catch (error) {
         console.error('Failed to delete spell:', error);
       } finally {

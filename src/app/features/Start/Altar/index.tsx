@@ -8,8 +8,8 @@ import { RadialMenu, type RadialMenuItem } from '../../../components/RadialMenu/
 import { DeleteConfirmModal } from '../../../components/Modals/DeleteConfirmModal';
 import { useAppDispatch, useAppSelector } from '../../../../store/hooks';
 import { addApiResponse } from '../../../../store/apiResponsesSlice';
-import { deleteSpellFromDB, getSpellById } from '../../../../db';
-import { invalidateSpellList } from '../../../../store/spellReaderSlice';
+import { getSpellById } from '../../../../db';
+import { useDeleteSpells } from '../../../../hooks/useDeleteSpells';
 import { useSpellImport } from '../../../../hooks/useSpellImport';
 import { usePlaySpell } from '../../../../hooks/usePlaySpell';
 import { useSpellCoverUrl } from '../../../../hooks/useSpellCoverUrl';
@@ -42,6 +42,7 @@ export const Altar = ({ onWrite, onImport }: AltarProps) => {
   const { t } = useLanguage();
   const { readSpell, unloadSpell, togglePlayback } = usePlaySpell();
   const { importFile } = useSpellImport();
+  const deleteSpells = useDeleteSpells();
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const location = useLocation();
@@ -116,13 +117,10 @@ export const Altar = ({ onWrite, onImport }: AltarProps) => {
     }
   };
 
-  // Deleting the spell that's loaded here also unloads it, so the panel doesn't keep playing
-  // a spell that no longer exists.
+  // The spell deleted here is the loaded one, so this also unloads it.
   const handleDeleteConfirm = async () => {
     if (!spellId) return;
-    await deleteSpellFromDB(spellId, userId);
-    unloadSpell();
-    dispatch(invalidateSpellList());
+    await deleteSpells([spellId]);
     setShowDeleteModal(false);
   };
 
