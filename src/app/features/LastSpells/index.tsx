@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '../../../store/hooks';
 import { Spell } from '../../../interfaces';
 import { SpellCard } from '../../components/Cards/SpellCard';
-import { SpellDetailModal } from '../../components/Modals/SpellDetailModal';
+import { SpellDetailModal, type SpellDetailOrigin } from '../../components/Modals/SpellDetailModal';
 import { useCoverFrame3DSection } from '../../../hooks/useCoverFrame3DSection';
 import { useLanguage } from '../../../i18n';
 import { faArrowRight, faBuildingColumns, faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons';
@@ -29,6 +29,7 @@ export const LastSpells: React.FC = () => {
   // A card click opens the spell's detail in a modal (the same one the player's cover
   // opens), where all of its actions live.
   const [detailSpellId, setDetailSpellId] = useState<string | null>(null);
+  const [detailOrigin, setDetailOrigin] = useState<SpellDetailOrigin | null>(null);
 
   // TCORE-124: gates 3D corners for this whole section -- passed straight to each SpellCard
   // below as show3D. See useCoverFrame3DSection/useCoverFrame3DGate for the actual
@@ -144,7 +145,8 @@ export const LastSpells: React.FC = () => {
                   doc={doc}
                   isActive={activeDocId === doc.id}
                   isPlaying={activeDocId === doc.id && (audioPlaying || browserPlaying)}
-                  onClick={() => setDetailSpellId(doc.id)}
+                  onClick={(origin) => { setDetailOrigin(origin ?? null); setDetailSpellId(doc.id); }}
+                  lifted={detailSpellId === doc.id && !!detailOrigin}
                   uploadJob={uploadJob}
                   show3D={show3D}
                 />
@@ -162,7 +164,7 @@ export const LastSpells: React.FC = () => {
           )}
         </div>
       </div>
-      <SpellDetailModal spellId={detailSpellId} show={detailSpellId !== null} onClose={() => setDetailSpellId(null)} />
+      <SpellDetailModal spellId={detailSpellId} show={detailSpellId !== null} origin={detailOrigin} onClose={() => { setDetailSpellId(null); setDetailOrigin(null); }} />
     </>
   );
 };

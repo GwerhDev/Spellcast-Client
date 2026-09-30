@@ -38,6 +38,13 @@
   visibility: hidden;
 }
 
+/* Its cover is off in the detail it opened (flying there, shown there, flying back): the
+   card keeps its place with the cover's spot empty, and the frame corners go with it. */
+.cardLifted .coverWrapper,
+.cardLifted .coverFrameSlot {
+  visibility: hidden;
+}
+
 .dragPlaceholder {
   position: absolute;
   inset: 0;

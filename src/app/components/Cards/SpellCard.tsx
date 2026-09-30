@@ -36,8 +36,11 @@ interface SpellCardProps {
   // This card's spell is the one loaded in the player (playing or paused).
   isActive?: boolean;
   isPlaying?: boolean;
-  // Opens the spell's detail, where its actions (read, edit, delete, cover) live.
-  onClick: () => void;
+  // Opens the spell's detail, where its actions (read, edit, delete, cover) live. With a
+  // cover, it comes with the cover's place on screen and image, for the cover to fly from.
+  onClick: (origin?: { rect: { top: number; left: number; width: number; height: number }; coverUrl: string }) => void;
+  // This card's cover has lifted off into its open detail: its place stays, empty.
+  lifted?: boolean;
   uploadJob?: UploadJob | null;
   selectionMode?: boolean;
   selected?: boolean;
@@ -53,7 +56,7 @@ interface SpellCardProps {
 
 // A spell in a grid: just its cover, which glows on hover. Clicking opens its detail; the
 // only thing drawn over the cover is the reading indicator, while it's the loaded spell.
-export const SpellCard = ({ doc, isActive, isPlaying, onClick, uploadJob, selectionMode, selected, onToggleSelect, show3D }: SpellCardProps) => {
+export const SpellCard = ({ doc, isActive, isPlaying, onClick, lifted = false, uploadJob, selectionMode, selected, onToggleSelect, show3D }: SpellCardProps) => {
   const totalPages = useMemo(() => {
     if (!doc.pagesContent) return null;
     try { return JSON.parse(doc.pagesContent).length; } catch { return null; }
@@ -93,9 +96,12 @@ export const SpellCard = ({ doc, isActive, isPlaying, onClick, uploadJob, select
     ? Math.min(Math.round(currentPage / totalPages * 100), 100)
     : null;
 
+  const coverRef = useRef<HTMLDivElement>(null);
+
   const handleClick = () => {
     if (selectionMode) { onToggleSelect?.(); return; }
-    onClick();
+    const box = coverRef.current?.getBoundingClientRect();
+    onClick(coverUrl && box ? { rect: { top: box.top, left: box.left, width: box.width, height: box.height }, coverUrl } : undefined);
   };
 
   const hasCoverFrame = !!(coverUrl && coverFrameCorners);
@@ -107,7 +113,7 @@ export const SpellCard = ({ doc, isActive, isPlaying, onClick, uploadJob, select
       // The cover is all a pointer device sees of it: its title as the tooltip and name.
       title={doc.title}
       aria-label={doc.title}
-      className={`${s.card} ${isActive ? s.cardActive : ''} ${selected ? s.cardSelected : ''} ${hasCoverFrame ? s.cardSquared : ''} ${dragging ? s.cardDragging : ''}`}
+      className={`${s.card} ${isActive ? s.cardActive : ''} ${selected ? s.cardSelected : ''} ${hasCoverFrame ? s.cardSquared : ''} ${dragging ? s.cardDragging : ''} ${lifted ? s.cardLifted : ''}`}
       onClick={handleClick}
       // Draggable onto a drop target that reads spells (e.g. Start's "Read" tab), which gets
       // the spell id under SPELL_DRAG_TYPE. Off in selection mode, where clicks select.
@@ -153,7 +159,7 @@ export const SpellCard = ({ doc, isActive, isPlaying, onClick, uploadJob, select
             <Waveform active={!!isPlaying} bars={4} height={14} color="white" />
           </div>
         )}
-        <div className={s.coverWrapper}>
+        <div ref={coverRef} className={s.coverWrapper}>
           {coverUrl
             ? (coverFrame3D
               // TCORE-124 follow-up: when 3D is active, the actual cover pixels are drawn

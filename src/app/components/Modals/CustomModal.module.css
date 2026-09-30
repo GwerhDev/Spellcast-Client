@@ -71,3 +71,35 @@
     padding-inline: 1rem;
     color: var(--text-color);
 }
+/* Opt-in entrance/exit (see CustomModal's `motion`): the box fades in with the overlay, and
+   back out. Opacity only -- the box never moves, so whatever flies into it (a cover from a
+   card) lands exactly where it'll stay. */
+.overlayEnter {
+  animation: overlayIn 0.3s ease both;
+}
+
+.overlayLeave {
+  animation: overlayIn 0.3s ease reverse both;
+}
+
+.enter {
+  animation: overlayIn 0.35s ease both;
+}
+
+.leave {
+  animation: overlayIn 0.3s ease reverse both;
+}
+
+@keyframes overlayIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overlayEnter,
+  .overlayLeave,
+  .enter,
+  .leave {
+    animation-duration: 0.01ms;
+  }
+}

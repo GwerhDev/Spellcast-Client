@@ -25,6 +25,11 @@
   flex-shrink: 0;
 }
 
+/* The cover is in flight to (or from) here: the slot keeps its place, empty meanwhile. */
+.coverAway {
+  visibility: hidden;
+}
+
 /* Edit the cover and its frame: appears over the cover while it's hovered (or the button
    itself is focused). Scoped under .coverWrap so it outranks IconButton's own base rules. */
 .coverWrap .coverEditButton {

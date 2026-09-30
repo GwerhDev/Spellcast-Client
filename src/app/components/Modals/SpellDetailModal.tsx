@@ -1,5 +1,5 @@
 import s from './SpellDetailModal.module.css';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { useAppSelector } from '../../../store/hooks';
@@ -25,14 +25,37 @@ import { faBookOpenReader, faPen, faScroll, faWandMagicSparkles, faTrash } from 
 import { Tag } from '../Tag/Tag';
 import { useLanguage } from '../../../i18n';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
+import { CoverFlight, type FlightRect } from '../CoverFlight/CoverFlight';
+
+// Where the modal was opened from, when that was a spell card: its cover's place on screen
+// and image, so the cover can fly from the card into the modal (and back when closing).
+export interface SpellDetailOrigin {
+  rect: FlightRect;
+  coverUrl: string;
+}
 
 interface SpellDetailModalProps {
   spellId: string | null;
   show: boolean;
   onClose: () => void;
+  origin?: SpellDetailOrigin | null;
 }
 
-export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, show, onClose }) => {
+interface Flight {
+  from: FlightRect;
+  src: string;
+  direction: 'in' | 'out';
+}
+
+const rectOf = (el: Element): FlightRect => {
+  const r = el.getBoundingClientRect();
+  return { top: r.top, left: r.left, width: r.width, height: r.height };
+};
+
+const prefersReducedMotion = () =>
+  typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+
+export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, show, onClose, origin = null }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
@@ -60,6 +83,42 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
   // TCORE-90: the original PDF no longer lives on the Spell record -- its existence is
   // looked up in the dedicated store instead of reading a `pdf` field.
   const [hasPdf, setHasPdf] = useState(false);
+
+  // Opened from a card: its cover lifts off the card and flies into this modal's cover slot,
+  // which stays hidden until it lands; closing flies it back and only then closes. From
+  // anywhere else (the player's cover), the modal just opens.
+  const coverSlotRef = useRef<HTMLDivElement>(null);
+  const [flight, setFlight] = useState<Flight | null>(null);
+  const [leaving, setLeaving] = useState(false);
+  const flownIn = useRef(false);
+  const flies = !!origin && !prefersReducedMotion();
+
+  // Takes off once the spell is read: the modal has its final size then, so the cover slot
+  // is where it'll stay (the flight still follows it if it settles a little more).
+  useLayoutEffect(() => {
+    if (!show) { flownIn.current = false; setFlight(null); setLeaving(false); return; }
+    if (!flies || !origin || flownIn.current || !doc || !coverSlotRef.current) return;
+    flownIn.current = true;
+    setFlight({ from: origin.rect, src: origin.coverUrl, direction: 'in' });
+  }, [show, flies, origin, doc]);
+
+  const flightTarget = () => {
+    if (flight?.direction === 'out') return origin?.rect ?? null;
+    return coverSlotRef.current ? rectOf(coverSlotRef.current) : null;
+  };
+
+  const requestClose = () => {
+    if (leaving) return;
+    if (!flies || !origin || !coverSlotRef.current) { onClose(); return; }
+    setLeaving(true);
+    setFlight({ from: rectOf(coverSlotRef.current), src: coverUrl ?? origin.coverUrl, direction: 'out' });
+  };
+
+  const handleFlightDone = () => {
+    const direction = flight?.direction;
+    setFlight(null);
+    if (direction === 'out') onClose();
+  };
 
   // Every open starts clean: closing (or switching to another spell) drops what the last
   // one showed, so it never flashes the previous spell while the next loads, and a read
@@ -162,15 +221,28 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
 
   return (
     <>
-      <CustomModal show={show} onClose={onClose} title="" compact>
-        {!doc ? (
+      <CustomModal show={show} onClose={requestClose} title="" compact motion={flies ? (leaving ? 'leave' : 'enter') : undefined}>
+        {!doc && flies && origin ? (
+          // Still reading the spell, opened from a card: the cover slot is already here, so
+          // the flying cover has its place to land while the rest loads.
+          <div className={s.content}>
+            <div className={s.header}>
+              <div ref={coverSlotRef} data-testid="spell-detail-modal-cover" className={`${s.coverWrap} ${s.coverAway}`}>
+                <img src={origin.coverUrl} alt="" className={s.cover} />
+              </div>
+              <div data-testid="spell-detail-modal-loading" className={`${s.info} ${s.loading}`}>
+                <Spinner isLoading message={t.common.loading} />
+              </div>
+            </div>
+          </div>
+        ) : !doc ? (
           <div data-testid="spell-detail-modal-loading" className={s.loading}>
             <Spinner isLoading message={t.common.loading} />
           </div>
         ) : (
           <div className={s.content}>
             <div className={s.header}>
-              <div data-testid="spell-detail-modal-cover" className={s.coverWrap}>
+              <div ref={coverSlotRef} data-testid="spell-detail-modal-cover" className={`${s.coverWrap} ${flight ? s.coverAway : ''}`}>
                 {coverUrl
                   ? <img src={coverUrl} alt={doc.title} className={s.cover} style={getCoverFrameStyle(resolvedCoverFrameId)} />
                   : <div className={s.coverPlaceholder}><FontAwesomeIcon icon={faScroll} /></div>
@@ -272,6 +344,15 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
           </div>
         )}
       </CustomModal>
+      {flight && (
+        <CoverFlight
+          src={flight.src}
+          from={flight.from}
+          target={flightTarget}
+          lift={flight.direction === 'in'}
+          onDone={handleFlightDone}
+        />
+      )}
       <SpellCoverModal
         show={showCoverModal}
         onClose={() => setShowCoverModal(false)}

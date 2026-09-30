@@ -6,7 +6,7 @@ import { getAllOriginalPdfIds } from '../../../db/originalPdfs';
 import { useAppSelector } from '../../../store/hooks';
 import { Spell } from '../../../interfaces';
 import { SpellCard } from '../../components/Cards/SpellCard';
-import { SpellDetailModal } from '../../components/Modals/SpellDetailModal';
+import { SpellDetailModal, type SpellDetailOrigin } from '../../components/Modals/SpellDetailModal';
 import { EmptyState } from '../../components/EmptyState';
 import { useCoverFrame3DSection } from '../../../hooks/useCoverFrame3DSection';
 import { faScroll, faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
@@ -30,6 +30,7 @@ export const SpellList: React.FC<SpellListProps> = ({ query = '', filter = 'loca
   // A card click opens the spell's detail in a modal (the same one the player's cover
   // opens), where all of its actions live.
   const [detailSpellId, setDetailSpellId] = useState<string | null>(null);
+  const [detailOrigin, setDetailOrigin] = useState<SpellDetailOrigin | null>(null);
   const { t } = useLanguage();
   const { userData, logged } = useAppSelector(state => state.session);
   const { spellId: activeDocId, listVersion, coverFrameChange } = useAppSelector(state => state.spellReader);
@@ -135,7 +136,8 @@ export const SpellList: React.FC<SpellListProps> = ({ query = '', filter = 'loca
               <SpellCard
                 key={doc.id}
                 doc={doc}
-                onClick={() => setDetailSpellId(doc.id)}
+                onClick={(origin) => { setDetailOrigin(origin ?? null); setDetailSpellId(doc.id); }}
+                lifted={detailSpellId === doc.id && !!detailOrigin}
                 isActive={activeDocId === doc.id}
                 isPlaying={activeDocId === doc.id && (audioPlaying || browserPlaying)}
                 uploadJob={uploadJob}
@@ -149,7 +151,7 @@ export const SpellList: React.FC<SpellListProps> = ({ query = '', filter = 'loca
         </div>
         {hasMore && <div ref={sentinelRef} data-testid="spell-list-sentinel" className={grid.sentinel} />}
       </div>
-      <SpellDetailModal spellId={detailSpellId} show={detailSpellId !== null} onClose={() => setDetailSpellId(null)} />
+      <SpellDetailModal spellId={detailSpellId} show={detailSpellId !== null} origin={detailOrigin} onClose={() => { setDetailSpellId(null); setDetailOrigin(null); }} />
     </>
   );
 };
