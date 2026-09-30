@@ -24,8 +24,8 @@
 }
 
 .cover {
-  width: 80px;
-  height: 110px;
+  width: 112px;
+  height: 154px;
   object-fit: cover;
   object-position: top;
   border-radius: 8px;
@@ -34,8 +34,8 @@
 }
 
 .coverPlaceholder {
-  width: 80px;
-  height: 110px;
+  width: 112px;
+  height: 154px;
   border-radius: 8px;
   border: 1px solid var(--line);
   background: var(--surface-raised);
@@ -60,6 +60,20 @@
   font-weight: 600;
   color: var(--text-1);
   line-height: 1.3;
+}
+
+.titleLink {
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.titleLink:hover,
+.titleLink:focus-visible {
+  color: var(--color-primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  outline: none;
 }
 
 .author {

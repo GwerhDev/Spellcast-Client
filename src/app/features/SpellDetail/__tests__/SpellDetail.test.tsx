@@ -93,6 +93,22 @@ describe('SpellDetail', () => {
     expect(screen.getByTestId('spell-detail-delete-btn')).toBeInTheDocument();
   });
 
+  it("marks a local spell as part of the caster's grimoire, with nothing to transcribe", async () => {
+    vi.spyOn(db, 'getSpellById').mockResolvedValue(mockDoc as never);
+    renderDetail();
+    expect(await screen.findByTestId('grimoire-status-in')).toBeInTheDocument();
+    expect(screen.queryByTestId('grimoire-status-transcribe')).not.toBeInTheDocument();
+  });
+
+  it('shows the word count and estimated listening time from the pages', async () => {
+    const words = Array.from({ length: 320 }, () => 'word').join(' ');
+    vi.spyOn(db, 'getSpellById').mockResolvedValue({ ...mockDoc, pagesContent: JSON.stringify([`<p>${words}</p>`]) } as never);
+    renderDetail();
+    await screen.findByTestId('spell-detail-title');
+    expect(screen.getByTestId('spell-detail-words')).toHaveTextContent('320');
+    expect(screen.getByTestId('spell-detail-listening')).toHaveTextContent('~2 min');
+  });
+
   describe('metadata section', () => {
     it('shows description/author/language/tags when the spell has them', async () => {
       vi.spyOn(db, 'getSpellById').mockResolvedValue({

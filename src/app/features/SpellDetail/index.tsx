@@ -1,5 +1,5 @@
 import s from '../../components/SpellDetail/index.module.css';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { useAppSelector } from '../../../store/hooks';
@@ -21,7 +21,9 @@ import { EmptyState } from '../../components/EmptyState';
 // import { SpellExportModal } from '../../components/Modals/SpellExportModal'; // .spell export: future
 import { Tag } from '../../components/Tag/Tag';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBookOpenReader, faScroll, faWandMagicSparkles, faArrowLeft, faTrash, faTriangleExclamation } from '@fortawesome/free-solid-svg-icons';
+import { faBookOpenReader, faScroll, faWandMagicSparkles, faArrowLeft, faTrash, faTriangleExclamation, faFileLines, faChartSimple, faFont, faClock, faLanguage, faCalendar, faFilePdf } from '@fortawesome/free-solid-svg-icons';
+import { GrimoireStatus } from '../../components/GrimoireStatus/GrimoireStatus';
+import { countSpellWords, estimateListeningMinutes } from '../../../utils/spellStats';
 import { useLanguage } from '../../../i18n';
 // import { useSpellExport } from '../../../hooks/useSpellExport'; // .spell export: future
 
@@ -64,6 +66,8 @@ export const SpellDetail: React.FC = () => {
   // TCORE-124: same gate LastSpells/SpellList/EditorSelectLanding use -- see
   // useCoverFrame3DSection/useCoverFrame3DGate for the actual conditions.
   const show3D = useCoverFrame3DSection(headerRef);
+  // Walks every page's text: once per spell, not on every progress re-render.
+  const wordCount = useMemo(() => countSpellWords(doc?.pagesContent), [doc?.pagesContent]);
 
   useEffect(() => {
     const load = async () => {
@@ -143,6 +147,16 @@ export const SpellDetail: React.FC = () => {
   const resolvedCoverFrameId = resolveCoverFrameId(doc.coverFrameId, activeCoverFrameId);
   const coverFrameCorners = getCoverFrameCorners(resolvedCoverFrameId);
   const coverFrame3D = show3D ? getCoverFrame3D(resolvedCoverFrameId) : null;
+  // Every spell this page can open today is a local one, stored for this caster: it's in
+  // their grimoire by definition. Once shared spells can be opened here too, this comes
+  // from the caster's library instead, and the not-in-grimoire case offers transcribing it.
+  const inGrimoire = true;
+  const listeningMinutes = wordCount ? estimateListeningMinutes(wordCount) : null;
+  const listeningLabel = listeningMinutes === null ? null
+    : listeningMinutes < 60
+      ? t.spell.durationMinutes.replace('{m}', String(listeningMinutes))
+      : t.spell.durationHours.replace('{h}', String(Math.floor(listeningMinutes / 60))).replace('{m}', String(listeningMinutes % 60));
+  const hasAbout = !!(doc.description || doc.tags?.length);
 
   return (
     <div data-testid="spell-detail" className={s.container}>
@@ -177,6 +191,11 @@ export const SpellDetail: React.FC = () => {
           <div className={s.info}>
             <h1 data-testid="spell-detail-title" className={s.title}>{doc.title}</h1>
             {doc.author && <p data-testid="spell-detail-author" className={s.author}>{doc.author}</p>}
+            <GrimoireStatus
+              inGrimoire={inGrimoire}
+              inGrimoireLabel={t.spell.inGrimoire}
+              transcribeLabel={t.spell.transcribeToGrimoire}
+            />
             <div className={s.tags}>
               {hasPdf && <span data-testid="spell-detail-pdf-tag"><Tag tone="default" size="sm">PDF</Tag></span>}
               {currentPage > 0 && progressPct !== null && (
@@ -184,44 +203,72 @@ export const SpellDetail: React.FC = () => {
               )}
               {!doc.pagesContent && <Tag tone="warning" size="sm">Unprocessed</Tag>}
             </div>
-            <p className={s.meta}>{t.spell.created} {new Date(doc.createdAt).toLocaleDateString()}</p>
-            {pagesCount && <p className={s.meta}>{pagesCount} {pagesCount === 1 ? t.spell.pageSingular : t.spell.pagePlural}</p>}
             {progressPct !== null && (
-              <div className={s.progressBarContainer}>
-                <div className={s.progressBarFill} style={{ width: `${progressPct}%` }} />
+              <div className={s.progress}>
+                <div className={s.progressBarContainer}>
+                  <div className={s.progressBarFill} style={{ width: `${progressPct}%` }} />
+                </div>
+                <p className={s.progressText}>{t.spell.page} {currentPage} {t.spell.of} {pagesCount}</p>
               </div>
             )}
-            {currentPage > 0 && pagesCount && (
-              <p className={s.meta}>{t.spell.page} {currentPage} {t.spell.of} {pagesCount}</p>
-            )}
-            {(doc.description || doc.language || doc.tags?.length) ? (
-              <div className={s.metadata} data-testid="spell-detail-metadata">
-                {doc.description && (
-                  <p className={s.metadataDescription} data-testid="spell-detail-description">{doc.description}</p>
-                )}
-                {doc.language && (
-                  <div className={s.metadataRow}>
-                    <span data-testid="spell-detail-language">
-                      <strong>{t.spell.languageLabel}:</strong> {doc.language}
-                    </span>
-                  </div>
-                )}
-                {!!doc.tags?.length && (
+            <div className={s.actions}>
+              <PrimaryButton data-testid="spell-detail-continue-btn" icon={faBookOpenReader} onClick={currentPage > 0 ? handleContinueReading : handlePlay}>{t.spell.openInReader}</PrimaryButton>
+              <SecondaryButton data-testid="spell-detail-edit-btn" icon={faWandMagicSparkles} onClick={handleEdit}>{t.spell.editSpell}</SecondaryButton>
+              {/* .spell export: future
+              <SecondaryButton data-testid="spell-detail-export-btn" icon={faFileExport} onClick={() => openExportModal({ id: doc.id, title: doc.title })}>{t.spell.exportSpell}</SecondaryButton>
+              */}
+              <PrimaryButton data-testid="spell-detail-delete-btn" variant="danger" icon={faTrash} onClick={() => setShowDeleteModal(true)}>{t.common.delete}</PrimaryButton>
+            </div>
+          </div>
+        </div>
+        <div className={`${s.body} ${hasAbout ? '' : s.bodySingle}`}>
+          {hasAbout && (
+            <section className={s.section} data-testid="spell-detail-metadata">
+              {doc.description && (
+                <>
+                  <h2 className={s.sectionHeading}>{t.spell.descriptionHeading}</h2>
+                  <p className={s.description} data-testid="spell-detail-description">{doc.description}</p>
+                </>
+              )}
+              {!!doc.tags?.length && (
+                <>
+                  <h2 className={s.sectionHeading}>{t.spell.tagsHeading}</h2>
                   <div className={s.metadataTags} data-testid="spell-detail-tags">
                     {doc.tags.map((tag) => <Tag key={tag} tone="default" size="sm">{tag}</Tag>)}
                   </div>
-                )}
+                </>
+              )}
+            </section>
+          )}
+          <section className={s.section} data-testid="spell-detail-stats">
+            <h2 className={s.sectionHeading}>{t.spell.detailsHeading}</h2>
+            <dl className={s.stats}>
+              {pagesCount !== null && (
+                <div className={s.stat}><dt><FontAwesomeIcon icon={faFileLines} />{t.spell.statPages}</dt><dd>{pagesCount}</dd></div>
+              )}
+              <div className={s.stat}>
+                <dt><FontAwesomeIcon icon={faChartSimple} />{t.spell.statProgress}</dt>
+                <dd>{progressPct !== null ? `${progressPct}%` : t.spell.statNotStarted}</dd>
               </div>
-            ) : null}
-          </div>
-        </div>
-        <div className={s.actions}>
-          <PrimaryButton data-testid="spell-detail-continue-btn" icon={faBookOpenReader} onClick={currentPage > 0 ? handleContinueReading : handlePlay}>{t.spell.openInReader}</PrimaryButton>
-          <SecondaryButton data-testid="spell-detail-edit-btn" icon={faWandMagicSparkles} onClick={handleEdit}>{t.spell.editSpell}</SecondaryButton>
-          {/* .spell export: future
-          <SecondaryButton data-testid="spell-detail-export-btn" icon={faFileExport} onClick={() => openExportModal({ id: doc.id, title: doc.title })}>{t.spell.exportSpell}</SecondaryButton>
-          */}
-          <PrimaryButton data-testid="spell-detail-delete-btn" variant="danger" icon={faTrash} onClick={() => setShowDeleteModal(true)}>{t.common.delete}</PrimaryButton>
+              {!!wordCount && (
+                <div className={s.stat}><dt><FontAwesomeIcon icon={faFont} />{t.spell.statWords}</dt><dd data-testid="spell-detail-words">{wordCount.toLocaleString()}</dd></div>
+              )}
+              {listeningLabel && (
+                <div className={s.stat}><dt><FontAwesomeIcon icon={faClock} />{t.spell.statListening}</dt><dd data-testid="spell-detail-listening">{listeningLabel}</dd></div>
+              )}
+              {doc.language && (
+                <div className={s.stat}><dt><FontAwesomeIcon icon={faLanguage} />{t.spell.statLanguage}</dt><dd data-testid="spell-detail-language">{doc.language}</dd></div>
+              )}
+              <div className={s.stat}>
+                <dt><FontAwesomeIcon icon={faCalendar} />{t.spell.statAdded}</dt>
+                <dd>{new Date(doc.createdAt).toLocaleDateString()}</dd>
+              </div>
+              <div className={s.stat}>
+                <dt><FontAwesomeIcon icon={faFilePdf} />{t.spell.statOriginalPdf}</dt>
+                <dd>{hasPdf ? t.spell.statKept : t.spell.statNotKept}</dd>
+              </div>
+            </dl>
+          </section>
         </div>
       </div>
       <DeleteConfirmModal

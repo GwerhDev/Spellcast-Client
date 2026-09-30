@@ -1,6 +1,6 @@
 import s from './SpellDetailModal.module.css';
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { useAppSelector } from '../../../store/hooks';
 import { getSpellById, deleteSpellFromDB } from '../../../db';
@@ -110,7 +110,18 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
                 {coverUrl && coverFrameCorners && <CoverFrameCorners config={coverFrameCorners} />}
               </div>
               <div className={s.info}>
-                <h2 className={s.title}>{doc.title}</h2>
+                <h2 className={s.title}>
+                  {/* The full detail lives on its own route; the modal steps aside for it. */}
+                  <Link
+                    data-testid="spell-detail-modal-title-link"
+                    className={s.titleLink}
+                    to={`/spell/${spellId}`}
+                    title={t.spell.viewFullDetail}
+                    onClick={onClose}
+                  >
+                    {doc.title}
+                  </Link>
+                </h2>
                 {doc.author && <p data-testid="spell-detail-modal-author" className={s.author}>{doc.author}</p>}
                 <div className={s.tags}>
                   {hasPdf && <span data-testid="spell-detail-modal-pdf-tag"><Tag tone="default" size="sm">PDF</Tag></span>}

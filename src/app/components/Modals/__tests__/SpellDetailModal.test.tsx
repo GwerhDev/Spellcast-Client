@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { screen, fireEvent, waitFor } from '@testing-library/react';
 import { renderWithProviders, makeStore } from '../../../../test/renderWithProviders';
+import { Routes, Route } from 'react-router-dom';
 import { SpellDetailModal } from '../SpellDetailModal';
 import * as db from '../../../../db';
 import * as originalPdfsDb from '../../../../db/originalPdfs';
@@ -42,6 +43,21 @@ describe('SpellDetailModal', () => {
       await screen.findByTestId('spell-detail-modal-continue-btn');
       expect(screen.queryByTestId('spell-detail-modal-pdf-tag')).not.toBeInTheDocument();
     });
+  });
+
+  it("the title links to the spell's full detail route, closing the modal", async () => {
+    vi.spyOn(db, 'getSpellById').mockResolvedValue(mockDoc as never);
+    const onClose = vi.fn();
+    renderWithProviders(
+      <Routes>
+        <Route path="/" element={<SpellDetailModal spellId="doc-1" show onClose={onClose} />} />
+        <Route path="/spell/:id" element={<div data-testid="spell-detail-route" />} />
+      </Routes>,
+      { store: loggedStore() },
+    );
+    fireEvent.click(await screen.findByTestId('spell-detail-modal-title-link'));
+    expect(onClose).toHaveBeenCalled();
+    expect(screen.getByTestId('spell-detail-route')).toBeInTheDocument();
   });
 
   it('renders nothing when show is false', () => {
