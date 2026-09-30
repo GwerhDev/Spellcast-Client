@@ -4,10 +4,23 @@ import { PlayerDock } from '../PlayerDock';
 
 describe('PlayerDock', () => {
   it('renders nothing with no player unless asked to show the empty dock', () => {
-    const { container, rerender } = render(<PlayerDock showEmpty={false} highlighted={false} hint="Drop here" />);
-    expect(container).toBeEmptyDOMElement();
+    const { rerender } = render(<PlayerDock showEmpty={false} highlighted={false} hint="Drop here" />);
+    expect(screen.queryByTestId('player-dock')).not.toBeInTheDocument();
     rerender(<PlayerDock showEmpty highlighted={false} hint="Drop here" />);
     expect(screen.getByTestId('player-dock-empty')).toHaveTextContent('Drop here');
+  });
+
+  // Out of the layout's flow entirely, so appearing mid-drag can't resize or add a scrollbar
+  // to the page it's rendered from.
+  it('floats the empty dock over the page (portaled to body), outside where it is rendered', () => {
+    const { container } = render(<div data-testid="host"><PlayerDock showEmpty highlighted={false} hint="Drop here" /></div>);
+    expect(screen.getByTestId('player-dock').parentElement).toBe(document.body);
+    expect(container.querySelector('[data-testid="player-dock"]')).toBeNull();
+  });
+
+  it('keeps the loaded player where it is rendered', () => {
+    render(<div data-testid="host"><PlayerDock showEmpty={false} highlighted={false} hint="Switch"><div data-testid="player" /></PlayerDock></div>);
+    expect(screen.getByTestId('player-dock').parentElement).toBe(screen.getByTestId('host'));
   });
 
   it('holds the player, with the drop hint over it only while highlighted', () => {

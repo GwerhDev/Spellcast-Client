@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faRightToBracket } from '@fortawesome/free-solid-svg-icons';
 import s from './PlayerDock.module.css';
@@ -23,25 +24,37 @@ interface PlayerDockProps {
 // asked to (showEmpty), as an empty slot to drop one into.
 export const PlayerDock = ({ children, showEmpty, highlighted, hint, onDragEnter, onDragOver, onDragLeave, onDrop }: PlayerDockProps) => {
   const hasPlayer = !!children;
-  if (!hasPlayer && !showEmpty) return null;
+  const dropHandlers = { onDragEnter, onDragOver, onDragLeave, onDrop };
+
+  // The empty slot isn't part of the layout at all: it floats over the bottom of the
+  // window, portaled to <body>, so appearing mid-drag can never resize or add a scrollbar
+  // to anything on the page (the spells being dragged from included).
+  if (!hasPlayer) {
+    if (!showEmpty) return null;
+    return createPortal(
+      <div
+        data-testid="player-dock"
+        className={`${s.floating} ${highlighted ? s.highlighted : ''}`}
+        {...dropHandlers}
+      >
+        <div data-testid="player-dock-empty" className={s.emptyHint}>
+          <FontAwesomeIcon icon={faRightToBracket} rotation={90} />
+          <span>{hint}</span>
+        </div>
+      </div>,
+      document.body,
+    );
+  }
 
   return (
     <div
       data-testid="player-dock"
       // .audioplayer-container keeps the layout's own rules for this bar (globals.css).
-      className={`audioplayer-container ${s.dock} ${hasPlayer ? '' : s.empty} ${highlighted ? s.highlighted : ''}`}
-      onDragEnter={onDragEnter}
-      onDragOver={onDragOver}
-      onDragLeave={onDragLeave}
-      onDrop={onDrop}
+      className={`audioplayer-container ${s.dock} ${highlighted ? s.highlighted : ''}`}
+      {...dropHandlers}
     >
-      {hasPlayer ? children : (
-        <div data-testid="player-dock-empty" className={s.emptyHint}>
-          <FontAwesomeIcon icon={faRightToBracket} rotation={90} />
-          <span>{hint}</span>
-        </div>
-      )}
-      {hasPlayer && highlighted && (
+      {children}
+      {highlighted && (
         <div data-testid="player-dock-overlay" className={s.overlay} aria-hidden="true">
           <FontAwesomeIcon icon={faRightToBracket} rotation={90} />
           <span>{hint}</span>

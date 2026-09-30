@@ -2,21 +2,25 @@
   transition: box-shadow 0.25s ease, border-color 0.25s ease;
 }
 
-/* Nothing loaded: an empty slot the size of the player, rising from the bottom, dashed like
-   the place a dragged card leaves behind. It floats over the bottom of the app instead of
-   taking its own row, so appearing mid-drag never pushes the page (and the card being
-   dragged from it) around. */
-.empty {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
+/* Nothing loaded: an empty slot the size of the player, rising from the bottom of the
+   window, dashed like the place a dragged card leaves behind. Fixed over everything (see
+   PlayerDock), not in the layout's flow. */
+.floating {
+  position: fixed;
+  left: 50%;
+  bottom: 1rem;
+  z-index: 900;
+  width: min(960px, calc(100vw - 2rem));
   min-height: 72px;
+  box-sizing: border-box;
+  translate: -50% 0;
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: 10px;
   border: 1px dashed color-mix(in srgb, var(--color-primary) 55%, transparent);
-  background: color-mix(in srgb, var(--color-primary) 6%, var(--component-background));
+  background: color-mix(in srgb, var(--color-primary) 8%, var(--component-background));
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
   animation: dockRise 0.28s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -39,7 +43,7 @@
     0 0 24px color-mix(in srgb, var(--color-primary) 45%, transparent);
 }
 
-.empty.highlighted {
+.floating.highlighted {
   border-style: solid;
   background: color-mix(in srgb, var(--color-primary) 12%, var(--component-background));
 }
@@ -60,5 +64,5 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .empty { animation: none; }
+  .floating { animation: none; }
 }
