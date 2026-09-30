@@ -331,12 +331,23 @@
   color: var(--color-light-400);
 }
 
+/* The footer's slot is as tall as its tallest content -- the sentence being read, at its
+   line limit -- so switching between that, the title and the hint never changes the
+   altar's height (it's centered, so any change would move everything). Content sits at
+   the top of the slot, right under the stage. */
+.footerSlot {
+  width: 100%;
+  height: calc(0.98rem * 1.4 * 2);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
 /* While playing, the footer is the sentence being read: two lines at most, each new sentence
    fading in. Sized to take the same room as the status + title it replaces. */
 .sentence {
   margin: 0;
   max-width: 560px;
-  min-height: 2.8em;
   padding-inline: 1rem;
   display: flex;
   align-items: center;
@@ -445,4 +456,48 @@
   .dragActive .ring { animation: none; }
   .button { transition: none; }
   .beam { animation: none; }
+}
+
+/* ── Immersive ──
+   The page behind the altar already shows the cover (HomeStage), so the panel is no box of
+   its own: transparent, unclipped, and without its recessed rim, keeping the light-on-cover
+   colors (it's on the cover too) and giving the sentence being read more room. */
+.container.immersive {
+  background: transparent;
+  border-color: transparent;
+  overflow: visible;
+}
+
+.immersive::after {
+  display: none;
+}
+
+/* Still the drop target: its border lights up while something droppable is over it. */
+.container.immersive.dragActive {
+  border-color: var(--color-primary);
+}
+
+.immersive .sentence {
+  width: 100%;
+  max-width: 1100px;
+  box-sizing: border-box;
+  padding-inline: 2rem;
+  /* Over any cover, light or dark: a tight shadow for the edges and a wide one for a halo. */
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85), 0 0 18px rgba(0, 0, 0, 0.6);
+  font-size: 1.3rem;
+  line-height: 1.4;
+}
+
+.immersive .sentenceText {
+  -webkit-line-clamp: 4;
+}
+
+/* Four lines of the immersive sentence: as much as fits without the altar outgrowing its
+   360px (which it keeps with or without a spell). */
+.immersive .footerSlot {
+  height: calc(1.3rem * 1.4 * 4);
+}
+
+.immersive .nowTitle {
+  font-size: 1.25rem;
 }

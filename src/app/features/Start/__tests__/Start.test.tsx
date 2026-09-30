@@ -81,4 +81,10 @@ describe('Start', () => {
     expect(store.getState().spellReader.spellId).toBeNull();
     expect(screen.getByTestId('altar').className).not.toMatch(/dragActive/);
   });
+
+  it('immersive: the title and subtitle step aside, the altar stays (without its own box)', () => {
+    renderWithProviders(<Start immersive />);
+    expect(screen.queryByText('Cast a Spell')).not.toBeInTheDocument();
+    expect(screen.getByTestId('altar').className).toMatch(/immersive/);
+  });
 });

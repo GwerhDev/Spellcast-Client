@@ -44,4 +44,11 @@ describe('AltarPanel', () => {
     expect(onDragEnter).toHaveBeenCalled();
     expect(onDrop).toHaveBeenCalled();
   });
+
+  it('immersive: no box or cover of its own (the page shows it), still lit up for drops', () => {
+    render(panel({ coverUrl: 'blob:cover', immersive: true, highlighted: true }));
+    expect(screen.queryByTestId('altar-cover')).not.toBeInTheDocument();
+    expect(screen.getByTestId('altar').className).toMatch(/immersive/);
+    expect(screen.getByTestId('altar').className).toMatch(/dragActive/);
+  });
 });

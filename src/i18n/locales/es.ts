@@ -86,6 +86,8 @@ export const es: Translations = {
     startReading: 'Leer',
     continueReading: 'Continuar leyendo',
     openInReader: 'Abrir en el lector',
+    // Short form, where space is tight (the altar's actions ring).
+    reader: 'Lector',
     viewFullDetail: 'Ver detalle completo',
     inGrimoire: 'En tu grimorio',
     transcribeToGrimoire: 'Transcribir a tu grimorio',
@@ -225,6 +227,8 @@ export const es: Translations = {
     enterText: 'Ingresa el texto para convertir a voz…',
     previewVoice: 'Vista previa de voz',
     unloadSpell: 'Desmontar spell',
+    // Short form, where space is tight (the altar's actions ring).
+    unload: 'Desmontar',
     mountSpell: 'Montar en el reproductor',
     dropToLoad: 'Suelta un spell aquí para reproducirlo',
     dropToSwitch: 'Suelta para cambiar a este spell',

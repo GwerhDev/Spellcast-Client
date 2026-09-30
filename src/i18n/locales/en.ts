@@ -84,6 +84,8 @@ export const en = {
     startReading: 'Read',
     continueReading: 'Continue Reading',
     openInReader: 'Open in the reader',
+    // Short form, where space is tight (the altar's actions ring).
+    reader: 'Reader',
     viewFullDetail: 'View full detail',
     inGrimoire: 'In your grimoire',
     transcribeToGrimoire: 'Transcribe to your grimoire',
@@ -223,6 +225,8 @@ export const en = {
     enterText: 'Enter text to convert to speech…',
     previewVoice: 'Preview voice',
     unloadSpell: 'Unload spell',
+    // Short form, where space is tight (the altar's actions ring).
+    unload: 'Unload',
     mountSpell: 'Load into the player',
     dropToLoad: 'Drop a spell here to play it',
     dropToSwitch: 'Drop to switch to this spell',

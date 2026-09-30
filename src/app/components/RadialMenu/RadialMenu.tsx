@@ -8,6 +8,8 @@ export interface RadialMenuItem {
   label: string;
   icon: IconDefinition;
   onSelect: () => void;
+  // A destructive option (e.g. delete): turns red instead of the accent on hover.
+  danger?: boolean;
 }
 
 interface RadialMenuProps {
@@ -62,7 +64,7 @@ export const RadialMenu = ({ open, items, onClose, radius = 110, startAngle = 16
             role="menuitem"
             tabIndex={open ? 0 : -1}
             data-testid={`radial-menu-item-${item.id}`}
-            className={s.item}
+            className={`${s.item} ${item.danger ? s.itemDanger : ''}`}
             style={{ '--x': `${x}px`, '--y': `${y}px`, '--i': i } as React.CSSProperties}
             onClick={() => { onClose(); item.onSelect(); }}
           >

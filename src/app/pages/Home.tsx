@@ -1,10 +1,8 @@
 import { PageTransition } from '../components/PageTransition';
-import { Start } from '../components/Start';
-import { LastSpells } from '../components/LastSpells';
+import { HomeStage } from '../features/HomeStage';
 
 export const Home = () => (
   <PageTransition className="dashboard-sections">
-    <Start />
-    <LastSpells />
+    <HomeStage />
   </PageTransition>
 );

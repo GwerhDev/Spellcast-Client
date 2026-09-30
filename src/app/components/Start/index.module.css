@@ -10,7 +10,9 @@
   gap: 1rem;
   width: 100%;
   height: 100%;
-  max-width: 800px;
+  /* The same width with or without a spell loaded (see .immersive): the altar, which is
+     also the drop target, never resizes as one loads. */
+  max-width: 1200px;
   padding-bottom: 1rem;
   display: flex;
   text-align: center;
@@ -46,11 +48,26 @@
 
 .optionContainer {
   width: 100%;
-  /* Fits the Read panel with a spell loaded (cover, waveform, title), so the empty state
-     already takes that height and loading a spell doesn't shift the page. */
-  min-height: 280px;
+  /* Fits the altar with a spell loaded (waveform, the sentence being read), so the empty
+     state already takes that height and the drop target keeps its size as one loads. */
+  min-height: 360px;
   display: flex;
   flex-direction: column;
+}
+
+/* Immersive (a spell loaded, its cover behind the page): Start takes the room it has and
+   centers the altar in it, which is then the whole scene. */
+.immersive {
+  flex: 1;
+  align-items: center;
+  min-height: min(560px, 70vh);
+}
+
+.immersive .createContainer,
+.immersive .body {
+  height: auto;
+  flex: 1;
+  justify-content: center;
 }
 
 @media (max-width: 768px) {

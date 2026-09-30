@@ -65,6 +65,18 @@
   outline: none;
 }
 
+.itemDanger:hover .itemIcon,
+.itemDanger:focus-visible .itemIcon {
+  background: color-mix(in srgb, var(--color-danger) 70%, var(--component-background));
+  border-color: var(--color-danger);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--color-danger) 55%, transparent);
+}
+
+.itemDanger:hover .itemLabel,
+.itemDanger:focus-visible .itemLabel {
+  color: var(--color-danger);
+}
+
 .itemLabel {
   font-size: 0.72rem;
   font-weight: 600;

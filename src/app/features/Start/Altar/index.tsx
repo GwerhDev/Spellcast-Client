@@ -23,6 +23,10 @@ interface AltarProps {
   // The Spellcast button's menu: Start owns the Write/Import modals these open.
   onWrite: () => void;
   onImport: () => void;
+  // The page shows the loaded spell's cover behind the altar (see AltarPanel's `immersive`).
+  immersive?: boolean;
+  // The pointer is resting (see HomeStage): the immersive actions step aside.
+  idle?: boolean;
 }
 
 const isSpellFile = (file: File) => file.name.toLowerCase().endsWith('.spell');
@@ -39,7 +43,7 @@ const GLOW_RANGE = 420;
 // dropping a .spell file from the computer, which is first imported into the browser.
 // With nothing loaded the button shows the Spellcast mark and opens a menu floating around
 // it (Write, Import, Editor); once something is loaded, that spell's cover fills the panel.
-export const Altar = ({ onWrite, onImport }: AltarProps) => {
+export const Altar = ({ onWrite, onImport, immersive = false, idle = false }: AltarProps) => {
   const { t } = useLanguage();
   const { readSpell, unloadSpell, togglePlayback } = usePlaySpell();
   const { importFile } = useSpellImport();
@@ -53,6 +57,9 @@ export const Altar = ({ onWrite, onImport }: AltarProps) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuId = useId();
   const closeMenu = useCallback(() => setMenuOpen(false), []);
+  const actionsMenuId = useId();
+  // The actions ring stays put: nothing (Escape, a click elsewhere, a pick) closes it.
+  const keepActions = useCallback(() => {}, []);
   // What's being dragged over the panel, if anything droppable: a spell from the grimoire
   // or files from the computer.
   const [spellDragActive, setSpellDragActive] = useState(false);
@@ -224,11 +231,28 @@ export const Altar = ({ onWrite, onImport }: AltarProps) => {
     void openSpellFiles(Array.from(e.dataTransfer.files));
   };
 
+  // Immersive, the loaded spell's actions ring the center like the Spellcast button's menu
+  // does -- above it, clear of the sentence below -- instead of sitting in the corners, with
+  // that menu's own Write and Import first (the Spellcast button isn't shown with a spell).
+  // Short labels, so the ring stays tight around the center.
+  const ringActions = immersive && hasSpell && !dropping;
+  const actionItems: RadialMenuItem[] = [
+    { id: 'write', label: t.start.writeTab, icon: faPen, onSelect: onWrite },
+    { id: 'import', label: t.start.importTab, icon: faUpload, onSelect: onImport },
+    { id: 'reader', label: t.spell.reader, icon: faBookOpenReader, onSelect: () => navigate(`/spell/${spellId}/reader`) },
+    ...(inGrimoire ? [
+      { id: 'edit', label: t.nav.editor, icon: faWandMagicSparkles, onSelect: () => navigate(`/editor/${spellId}`, { state: { from: location.pathname } }) },
+      { id: 'delete', label: t.common.delete, icon: faTrash, onSelect: () => setShowDeleteModal(true), danger: true },
+    ] : []),
+    { id: 'unload', label: t.player.unload, icon: faEject, onSelect: unloadSpell },
+  ];
+
   const hintText = importing ? t.start.readImporting : dropping ? t.start.readDropRelease : t.start.readDropHint;
 
   return (
     <AltarPanel
       coverUrl={coverUrl}
+      immersive={immersive}
       highlighted={dropping}
       menuOpen={showMenu}
       panelRef={panelRef}
@@ -238,10 +262,10 @@ export const Altar = ({ onWrite, onImport }: AltarProps) => {
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      leftCorner={hasSpell && !dropping && (
+      leftCorner={hasSpell && !dropping && !immersive && (
         <AltarCornerButton data-testid="altar-unload" icon={faEject} title={t.player.unloadSpell} onClick={unloadSpell} disabled={importing} />
       )}
-      rightCorner={hasSpell && !dropping && (
+      rightCorner={hasSpell && !dropping && !immersive && (
         <>
           <AltarCornerButton data-testid="altar-open-reader" icon={faBookOpenReader} title={t.spell.openInReader} onClick={() => navigate(`/spell/${spellId}/reader`)} />
           {inGrimoire && (
@@ -257,7 +281,19 @@ export const Altar = ({ onWrite, onImport }: AltarProps) => {
           )}
         </>
       )}
-      stageOverlay={<RadialMenu id={menuId} open={showMenu} items={menuItems} onClose={closeMenu} anchorRef={centerRef} />}
+      stageOverlay={ringActions ? (
+        <RadialMenu
+          id={actionsMenuId}
+          open={!idle && !importing}
+          items={actionItems}
+          onClose={keepActions}
+          radius={125}
+          startAngle={185}
+          endAngle={355}
+        />
+      ) : (
+        <RadialMenu id={menuId} open={showMenu} items={menuItems} onClose={closeMenu} anchorRef={centerRef} />
+      )}
       center={showWaveform ? <AltarWave active={isPlaying} /> : (
         <PlayButton
           size="lg"

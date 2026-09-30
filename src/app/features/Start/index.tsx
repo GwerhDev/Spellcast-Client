@@ -8,7 +8,15 @@ import { useDispatch } from 'react-redux';
 import { resetSpellState } from '../../../store/spellSlice';
 import { useLanguage } from '../../../i18n';
 
-export const Start = () => {
+interface StartProps {
+  // A spell is loaded and the page shows its cover behind the altar (see HomeStage): the
+  // title and subtitle step aside and the altar takes the room, centered.
+  immersive?: boolean;
+  // The pointer is resting: the altar's immersive actions step aside.
+  idle?: boolean;
+}
+
+export const Start = ({ immersive = false, idle = false }: StartProps) => {
   // Write and Import open from the Spellcast button's menu (see Altar), as modals.
   const [modal, setModal] = useState<'write' | 'import' | null>(null);
   const dispatch = useDispatch();
@@ -22,14 +30,14 @@ export const Start = () => {
   };
 
   return (
-    <div data-testid="start" className={s.container}>
+    <div data-testid="start" className={`${s.container} ${immersive ? s.immersive : ''}`}>
       <div className={s.createContainer}>
-        <h1 className="featured-glow">{t.start.castSpell}</h1>
+        {!immersive && <h1 className="featured-glow">{t.start.castSpell}</h1>}
         <div data-testid="start-body" className={s.body}>
-          <p>{t.start.readSubtitle}</p>
+          {!immersive && <p>{t.start.readSubtitle}</p>}
 
           <div className={s.optionContainer}>
-            <Altar onWrite={() => setModal('write')} onImport={() => setModal('import')} />
+            <Altar onWrite={() => setModal('write')} onImport={() => setModal('import')} immersive={immersive} idle={idle} />
           </div>
         </div>
       </div>

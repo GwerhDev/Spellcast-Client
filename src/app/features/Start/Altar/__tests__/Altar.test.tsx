@@ -436,6 +436,68 @@ describe('Altar', () => {
     });
   });
 
+  describe('immersive: the loaded spell\'s actions ring the center', () => {
+    const loaded = () => {
+      const store = makeStore();
+      store.dispatch({ type: 'session/setSession', payload: { logged: true, userData: { id: 'user-1', loader: false } } });
+      store.dispatch(setSpellFile({ id: 'spell-1', title: 'Spell one', userId: 'user-1' }));
+      return store;
+    };
+    const ringOpen = () => screen.getByTestId('radial-menu').getAttribute('aria-hidden') === 'false';
+
+    it('shows them around the center instead of in the corners, always open', () => {
+      renderWithProviders(<Read immersive />, { store: loaded() });
+      expect(screen.queryByTestId('altar-unload')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('altar-open-reader')).not.toBeInTheDocument();
+      expect(ringOpen()).toBe(true);
+      // Write and Import first, the spell's own actions, and unloading it last.
+      const order = Array.from(screen.getByTestId('radial-menu').querySelectorAll('[data-testid^="radial-menu-item-"]'))
+        .map(el => el.getAttribute('data-testid')!.replace('radial-menu-item-', ''));
+      expect(order).toEqual(['write', 'import', 'reader', 'edit', 'delete', 'unload']);
+      // Escape doesn't close it.
+      fireEvent.keyDown(document, { key: 'Escape' });
+      expect(ringOpen()).toBe(true);
+    });
+
+    it('Write and Import open their modals through Start, like the Spellcast button\'s menu', () => {
+      const onWrite = vi.fn();
+      const onImport = vi.fn();
+      renderWithProviders(<Read immersive onWrite={onWrite} onImport={onImport} />, { store: loaded() });
+      fireEvent.click(screen.getByTestId('radial-menu-item-write'));
+      fireEvent.click(screen.getByTestId('radial-menu-item-import'));
+      expect(onWrite).toHaveBeenCalled();
+      expect(onImport).toHaveBeenCalled();
+      expect(ringOpen()).toBe(true);
+    });
+
+    it('steps aside while the pointer rests', () => {
+      const store = loaded();
+      const { rerender } = renderWithProviders(<Read immersive />, { store });
+      rerender(<Read immersive idle />);
+      expect(ringOpen()).toBe(false);
+    });
+
+    it('unload and delete work from the ring', async () => {
+      const store = loaded();
+      renderWithProviders(<Read immersive />, { store });
+      fireEvent.click(screen.getByTestId('radial-menu-item-delete'));
+      expect(screen.getByTestId('delete-confirm-confirm-btn')).toBeInTheDocument();
+      fireEvent.click(screen.getByTestId('delete-confirm-cancel-btn'));
+      fireEvent.click(screen.getByTestId('radial-menu-item-unload'));
+      expect(store.getState().spellReader.spellId).toBeNull();
+    });
+
+    it("offers no edit/delete for a spell outside the caster's grimoire", () => {
+      const store = makeStore();
+      store.dispatch({ type: 'session/setSession', payload: { logged: true, userData: { id: 'user-1', loader: false } } });
+      store.dispatch(setSpellFile({ id: 'spell-1', title: 'Spell one', userId: 'user-2' }));
+      renderWithProviders(<Read immersive />, { store });
+      expect(screen.getByTestId('radial-menu-item-reader')).toBeInTheDocument();
+      expect(screen.queryByTestId('radial-menu-item-edit')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('radial-menu-item-delete')).not.toBeInTheDocument();
+    });
+  });
+
   describe('dropping .spell files from the computer', () => {
     it('imports .spell files dropped on it (stored in the browser) and starts reading the first', async () => {
       mockGetSpellById.mockResolvedValue({ id: 'imported-1', title: 'Imported', createdAt: new Date(), userId: undefined });
