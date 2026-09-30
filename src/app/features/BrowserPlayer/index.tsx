@@ -511,7 +511,19 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
       case 'RESUME_REQUESTED': {
         if (playing || awaitingStartRef.current) return;
         if (event.type === 'HEADSET_PLAY') dispatch(addSignalNotice({ message: t.player.playedFromHeadset }));
-        if (sents.length === 0 || idx < 0 || idx >= sents.length) { dispatch(play()); return; }
+        if (sents.length === 0 || idx < 0 || idx >= sents.length) {
+          dispatch(play());
+          // Nothing to speak here. While the pages are still being read that's expected:
+          // the content effect speaks them once they arrive. On a loaded page it means the
+          // page has no text (a cover or an illustration), so move on to the next one --
+          // otherwise the player would sit on it "playing" with nothing to say or end.
+          if (latestRef.current.isLoaded) {
+            if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
+            silentAudioRef.current?.play().catch(() => {});
+            startSpeakingCurrentSentence();
+          }
+          return;
+        }
         if (isNetworkVoice()) {
           // Nothing to resume() reliably -- speak the current sentence and let the voice's
           // own onstart confirm (see UTTERANCE_STARTED).
