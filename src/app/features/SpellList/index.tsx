@@ -9,6 +9,7 @@ import { DeleteConfirmModal } from '../../components/Modals/DeleteConfirmModal';
 import { useAppSelector } from '../../../store/hooks';
 import { Spell } from '../../../interfaces';
 import { SpellCard } from '../../components/Cards/SpellCard';
+import { SpellDetailModal } from '../../components/Modals/SpellDetailModal';
 import { EmptyState } from '../../components/EmptyState';
 import { useCoverFrame3DSection } from '../../../hooks/useCoverFrame3DSection';
 // import { useSpellExport } from '../../../hooks/useSpellExport'; // .spell export: future
@@ -35,6 +36,8 @@ interface SpellListProps {
 
 export const SpellList: React.FC<SpellListProps> = ({ query = '', filter = 'local', docFilter = 'all', selectionMode, selectedIds = [], onToggleSelect, onSelectableIdsChange }) => {
   const navigate = useNavigate();
+  // A card click opens the spell's detail in a modal (the same one the player's cover opens).
+  const [detailSpellId, setDetailSpellId] = useState<string | null>(null);
   const location = useLocation();
   const { t } = useLanguage();
   const dispatch = useDispatch();
@@ -184,7 +187,7 @@ export const SpellList: React.FC<SpellListProps> = ({ query = '', filter = 'loca
               <SpellCard
                 key={doc.id}
                 doc={doc}
-                onClick={() => navigate(`/spell/${doc.id}`)}
+                onClick={() => setDetailSpellId(doc.id)}
                 onEdit={(e) => { e.stopPropagation(); navigate(`/editor/${doc.id}`, { state: { from: location.pathname } }); }}
                 onDelete={(e) => openDeleteModal(doc.id, doc.title, e)}
                 // onExport={(e) => { e.stopPropagation(); openExportModal({ id: doc.id, title: doc.title }); }} // .spell export: future
@@ -211,6 +214,7 @@ export const SpellList: React.FC<SpellListProps> = ({ query = '', filter = 'loca
           message={t.spell.deleteConfirm.replace('{title}', selectedDoc.title)}
         />
       )}
+      <SpellDetailModal spellId={detailSpellId} show={detailSpellId !== null} onClose={() => setDetailSpellId(null)} />
       {/* .spell export: future — re-enable the useSpellExport() hook above and this block.
       {exportTarget && (
         <SpellExportModal

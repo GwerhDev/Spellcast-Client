@@ -68,6 +68,17 @@
   transition: transform 0.25s ease;
 }
 
+/* The loaded spell's waveform, large and bare (no disc). Display only, not a control. */
+.wave {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 112px;
+  height: 112px;
+  opacity: 0.9;
+  filter: drop-shadow(0 0 14px color-mix(in srgb, var(--color-primary) 45%, transparent));
+}
+
 .dragActive .button {
   transform: scale(1.1);
 }
@@ -190,8 +201,20 @@
   left: 0.6rem;
 }
 
-.container .cornerRight {
+/* The loaded spell's actions (reader, edit, delete), stacked down the right corner. The
+   stack is what's positioned; its buttons flow inside it. */
+.container .cornerStack {
+  position: absolute;
+  top: 0.6rem;
   right: 0.6rem;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.container .cornerStack .cornerButton {
+  position: static;
 }
 
 /* Over the cover: a dark translucent chip with light icon, readable over any artwork. */
@@ -206,6 +229,13 @@
 .hasCover .cornerButton:focus-visible {
   color: #fff;
   border-color: rgba(242, 242, 242, 0.45);
+}
+
+/* Delete turns to the danger tone on hover, with or without a cover behind it. */
+.container .cornerButton.cornerDanger:hover,
+.container .cornerButton.cornerDanger:focus-visible {
+  color: var(--color-danger);
+  border-color: color-mix(in srgb, var(--color-danger) 55%, transparent);
 }
 
 /* The Spellcast mark drawn as a mask in the button's own text color, so it follows the

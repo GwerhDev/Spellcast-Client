@@ -14,7 +14,7 @@ import { CustomModal } from './CustomModal';
 import { PrimaryButton } from '../Buttons/PrimaryButton';
 import { SecondaryButton } from '../Buttons/SecondaryButton';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faScroll, faWandMagicSparkles, faTrash } from '@fortawesome/free-solid-svg-icons';
+import { faBookOpenReader, faScroll, faWandMagicSparkles, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { Tag } from '../Tag/Tag';
 import { useLanguage } from '../../../i18n';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
@@ -153,13 +153,9 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
               </div>
             </div>
             <div className={s.actions}>
-              <PrimaryButton data-testid="spell-detail-modal-continue-btn" icon={faScroll} onClick={handleRead}>
-                {currentPage > 0 ? t.spell.continueReading : t.spell.startReading}
-              </PrimaryButton>
+              <PrimaryButton data-testid="spell-detail-modal-continue-btn" icon={faBookOpenReader} onClick={handleRead}>{t.spell.openInReader}</PrimaryButton>
               <SecondaryButton data-testid="spell-detail-modal-edit-btn" icon={faWandMagicSparkles} onClick={handleEdit}>{t.spell.editSpell}</SecondaryButton>
-              <PrimaryButton data-testid="spell-detail-modal-delete-btn" variant="danger" icon={faTrash} onClick={() => setShowDeleteModal(true)}>
-                {t.common.delete}
-              </PrimaryButton>
+              <PrimaryButton data-testid="spell-detail-modal-delete-btn" variant="danger" icon={faTrash} onClick={() => setShowDeleteModal(true)}>{t.common.delete}</PrimaryButton>
             </div>
           </div>
         )}

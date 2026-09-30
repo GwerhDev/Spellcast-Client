@@ -21,7 +21,7 @@ import { EmptyState } from '../../components/EmptyState';
 // import { SpellExportModal } from '../../components/Modals/SpellExportModal'; // .spell export: future
 import { Tag } from '../../components/Tag/Tag';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faScroll, faWandMagicSparkles, faArrowLeft, faTrash, faTriangleExclamation } from '@fortawesome/free-solid-svg-icons';
+import { faBookOpenReader, faScroll, faWandMagicSparkles, faArrowLeft, faTrash, faTriangleExclamation } from '@fortawesome/free-solid-svg-icons';
 import { useLanguage } from '../../../i18n';
 // import { useSpellExport } from '../../../hooks/useSpellExport'; // .spell export: future
 
@@ -216,9 +216,7 @@ export const SpellDetail: React.FC = () => {
           </div>
         </div>
         <div className={s.actions}>
-          <PrimaryButton data-testid="spell-detail-continue-btn" icon={faScroll} onClick={currentPage > 0 ? handleContinueReading : handlePlay}>
-            {currentPage > 0 ? t.spell.continueReading : t.spell.startReading}
-          </PrimaryButton>
+          <PrimaryButton data-testid="spell-detail-continue-btn" icon={faBookOpenReader} onClick={currentPage > 0 ? handleContinueReading : handlePlay}>{t.spell.openInReader}</PrimaryButton>
           <SecondaryButton data-testid="spell-detail-edit-btn" icon={faWandMagicSparkles} onClick={handleEdit}>{t.spell.editSpell}</SecondaryButton>
           {/* .spell export: future
           <SecondaryButton data-testid="spell-detail-export-btn" icon={faFileExport} onClick={() => openExportModal({ id: doc.id, title: doc.title })}>{t.spell.exportSpell}</SecondaryButton>

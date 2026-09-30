@@ -1,19 +1,20 @@
 .waveform {
   display: inline-flex;
-  gap: 2px;
+  gap: var(--wf-gap, 2px);
   align-items: center;
   height: calc(var(--wf-height) + 4px);
 }
 
 .bar {
-  width: 2.5px;
+  width: var(--wf-bar-width, 2.5px);
   background: var(--wf-color);
   border-radius: 2px;
   transition: height 0.3s ease;
 }
 
 .idle .bar {
-  height: 2px;
+  /* A flat line at rest; proportional so a large waveform doesn't shrink to dots. */
+  height: max(2px, calc(var(--wf-height) * 0.12));
 }
 
 .active .bar0 {

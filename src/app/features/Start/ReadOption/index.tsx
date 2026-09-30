@@ -4,13 +4,15 @@ import { Waveform } from '../../../components/Waveform/Waveform';
 import spellcastLogo from '../../../../assets/spellcast-logo.svg';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useCallback, useId, useRef, useState } from 'react';
-import { faBookOpenReader, faEject, faFeatherPointed, faHandPointer, faPen, faSpinner, faUpload } from '@fortawesome/free-solid-svg-icons';
-import { useNavigate } from 'react-router-dom';
+import { faBookOpenReader, faEject, faFeatherPointed, faHandPointer, faPen, faSpinner, faTrash, faUpload, faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { IconButton } from '../../../components/Buttons/IconButton';
 import { RadialMenu, type RadialMenuItem } from '../../../components/RadialMenu/RadialMenu';
+import { DeleteConfirmModal } from '../../../components/Modals/DeleteConfirmModal';
 import { useAppDispatch, useAppSelector } from '../../../../store/hooks';
 import { addApiResponse } from '../../../../store/apiResponsesSlice';
-import { getSpellById } from '../../../../db';
+import { deleteSpellFromDB, getSpellById } from '../../../../db';
+import { invalidateSpellList } from '../../../../store/spellReaderSlice';
 import { useSpellImport } from '../../../../hooks/useSpellImport';
 import { usePlaySpell } from '../../../../hooks/usePlaySpell';
 import { useSpellCoverUrl } from '../../../../hooks/useSpellCoverUrl';
@@ -44,6 +46,7 @@ export const ReadOption = ({ dragActive, onWrite, onImport }: ReadOptionProps) =
   const { importFile } = useSpellImport();
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
   const buttonRef = useRef<HTMLDivElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuId = useId();
@@ -52,6 +55,7 @@ export const ReadOption = ({ dragActive, onWrite, onImport }: ReadOptionProps) =
   // tracked by Start as `dragActive`).
   const [fileDragActive, setFileDragActive] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const { spellId, spellTitle, currentPage, totalPages, isLoaded } = useAppSelector(state => state.spellReader);
   const userId = useAppSelector(state => state.session.userData?.id);
   const audioPlaying = useAppSelector(state => state.audioPlayer.isPlaying);
@@ -67,6 +71,10 @@ export const ReadOption = ({ dragActive, onWrite, onImport }: ReadOptionProps) =
   // closes it along with that button.
   const showMenu = menuOpen && showBrand;
   const showNowReading = hasSpell && !!spellTitle && !dropping && !importing;
+  // With a spell loaded, the center shows the audio waveform (animated while reading, flat
+  // while paused) instead of the play/pause button -- display only, playback is driven from
+  // the player. A drag or an import brings the button back as the drop target.
+  const showWaveform = hasSpell && !dropping && !importing;
 
   const menuItems: RadialMenuItem[] = [
     { id: 'write', label: t.start.writeTab, icon: faPen, onSelect: onWrite },
@@ -94,6 +102,16 @@ export const ReadOption = ({ dragActive, onWrite, onImport }: ReadOptionProps) =
     } finally {
       setImporting(false);
     }
+  };
+
+  // Deleting the spell that's loaded here also unloads it, so the panel doesn't keep playing
+  // a spell that no longer exists.
+  const handleDeleteConfirm = async () => {
+    if (!spellId) return;
+    await deleteSpellFromDB(spellId, userId);
+    unloadSpell();
+    dispatch(invalidateSpellList());
+    setShowDeleteModal(false);
   };
 
   const handleFileDragOver = (e: React.DragEvent) => {
@@ -141,43 +159,65 @@ export const ReadOption = ({ dragActive, onWrite, onImport }: ReadOptionProps) =
         />
       )}
       {hasSpell && !dropping && (
-        <IconButton
-          data-testid="read-option-open-reader"
-          icon={faBookOpenReader}
-          title={t.start.readOpenReader}
-          className={`${s.cornerButton} ${s.cornerRight}`}
-          onClick={() => navigate(`/spell/${spellId}/reader`)}
-        />
+        <div data-testid="read-option-actions" className={s.cornerStack}>
+          <IconButton
+            data-testid="read-option-open-reader"
+            icon={faBookOpenReader}
+            title={t.spell.openInReader}
+            className={s.cornerButton}
+            onClick={() => navigate(`/spell/${spellId}/reader`)}
+          />
+          <IconButton
+            data-testid="read-option-edit"
+            icon={faWandMagicSparkles}
+            title={t.spell.editSpell}
+            className={s.cornerButton}
+            onClick={() => navigate(`/editor/${spellId}`, { state: { from: location.pathname } })}
+          />
+          <IconButton
+            data-testid="read-option-delete"
+            icon={faTrash}
+            title={t.common.delete}
+            className={`${s.cornerButton} ${s.cornerDanger}`}
+            onClick={() => setShowDeleteModal(true)}
+            disabled={importing}
+          />
+        </div>
       )}
       <div className={s.stage}>
         <span className={s.ring} aria-hidden="true" />
         <span className={`${s.ring} ${s.ringOuter}`} aria-hidden="true" />
         <RadialMenu id={menuId} open={showMenu} items={menuItems} onClose={closeMenu} anchorRef={buttonRef} />
         <div ref={buttonRef} className={s.button}>
-          <PlayButton
-            size="lg"
-            isPlaying={isPlaying}
-            active={dropping || showMenu}
-            onClick={showBrand ? () => setMenuOpen(open => !open) : togglePlayback}
-            title={showBrand ? t.start.readMenu : undefined}
-            hasPopup={showBrand ? 'menu' : undefined}
-            expanded={showMenu}
-            controls={menuId}
-            icon={showBrand ? (
-              <span
-                data-testid="read-option-brand-icon"
-                className={s.brandIcon}
-                style={{ maskImage: brandMask, WebkitMaskImage: brandMask }}
-                aria-hidden="true"
-              />
-            ) : undefined}
-          />
+          {showWaveform ? (
+            <div data-testid="read-option-wave" className={s.wave} aria-hidden="true">
+              <Waveform active={isPlaying} bars={5} height={64} barWidth={9} gap={7} />
+            </div>
+          ) : (
+            <PlayButton
+              size="lg"
+              isPlaying={isPlaying}
+              active={dropping || showMenu}
+              onClick={showBrand ? () => setMenuOpen(open => !open) : togglePlayback}
+              title={showBrand ? t.start.readMenu : undefined}
+              hasPopup={showBrand ? 'menu' : undefined}
+              expanded={showMenu}
+              controls={menuId}
+              icon={showBrand ? (
+                <span
+                  data-testid="read-option-brand-icon"
+                  className={s.brandIcon}
+                  style={{ maskImage: brandMask, WebkitMaskImage: brandMask }}
+                  aria-hidden="true"
+                />
+              ) : undefined}
+            />
+          )}
         </div>
       </div>
       {showNowReading ? (
         <div data-testid="read-option-now" className={s.nowReading}>
           <span className={s.nowStatus}>
-            <Waveform active={isPlaying} bars={3} height={10} />
             <span>{isPlaying ? t.start.readNowPlaying : t.start.readPaused}</span>
             {isLoaded && (
               <>
@@ -194,6 +234,13 @@ export const ReadOption = ({ dragActive, onWrite, onImport }: ReadOptionProps) =
           <span>{importing ? t.start.readImporting : dropping ? t.start.readDropRelease : t.start.readDropHint}</span>
         </p>
       )}
+      <DeleteConfirmModal
+        show={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={handleDeleteConfirm}
+        title={t.spell.deleteTitle}
+        message={t.spell.deleteConfirm.replace('{title}', spellTitle ?? '')}
+      />
     </div>
   );
 };

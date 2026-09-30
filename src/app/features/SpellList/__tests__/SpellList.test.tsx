@@ -1,9 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { screen } from '@testing-library/react';
+import { screen, fireEvent } from '@testing-library/react';
 import { renderWithProviders, makeStore } from '../../../../test/renderWithProviders';
 import { SpellList } from '../index';
 import * as db from '../../../../db';
 import * as originalPdfsDb from '../../../../db/originalPdfs';
+
+// The detail modal loads the spell on its own; a stub is enough to see which spell a card opened.
+vi.mock('../../../components/Modals/SpellDetailModal', () => ({
+  SpellDetailModal: ({ spellId, show }: { spellId: string | null; show: boolean }) =>
+    show ? <div data-testid="spell-detail-modal-stub">{spellId}</div> : null,
+}));
 
 const mockDoc = {
   id: 'doc-1',
@@ -86,5 +92,13 @@ describe('SpellList', () => {
       await screen.findByTestId('spell-card-doc-1');
       expect(onSelectableIdsChange).toHaveBeenLastCalledWith(['doc-1']);
     });
+  });
+
+  it('opens the spell detail modal when a card is clicked, instead of navigating', async () => {
+    vi.spyOn(db, 'getSpellsFromDB').mockResolvedValue([mockDoc] as never);
+    renderWithProviders(<SpellList />, { store: loggedStore() });
+    expect(screen.queryByTestId('spell-detail-modal-stub')).not.toBeInTheDocument();
+    fireEvent.click(await screen.findByTestId('spell-card-doc-1'));
+    expect(screen.getByTestId('spell-detail-modal-stub')).toHaveTextContent('doc-1');
   });
 });

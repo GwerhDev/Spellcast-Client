@@ -8,11 +8,13 @@ import { Routes, Route } from 'react-router-dom';
 import { ReadOption } from '../index';
 
 const mockGetSpellById = vi.fn();
+const mockDeleteSpellFromDB = vi.fn();
 vi.mock('../../../../../db', () => ({
   getSpellById: (...args: unknown[]) => mockGetSpellById(...args),
   // Covers are read through getSpellById here, so each test's own spell (and timing) applies.
   getSpellCover: (...args: unknown[]) => Promise.resolve(mockGetSpellById(...args)).then((d) => (d as { cover?: Blob } | null | undefined)?.cover ?? null),
   getCachedSpellCover: () => undefined,
+  deleteSpellFromDB: (...args: unknown[]) => mockDeleteSpellFromDB(...args),
 }));
 
 const mockImportFile = vi.fn();
@@ -27,6 +29,7 @@ const fileDrag = (files: File[]) => ({ dataTransfer: { types: ['Files'], files, 
 beforeEach(() => {
   mockGetSpellById.mockReset().mockResolvedValue(undefined);
   mockImportFile.mockReset().mockResolvedValue('imported-1');
+  mockDeleteSpellFromDB.mockReset().mockResolvedValue(undefined);
   URL.createObjectURL = vi.fn(() => 'blob:cover');
   URL.revokeObjectURL = vi.fn();
 });
@@ -105,16 +108,37 @@ describe('ReadOption', () => {
     expect(screen.getByTestId('play-button')).not.toHaveAttribute('title');
   });
 
-  it('shows the loaded spell and toggles playback from the button', () => {
+  it('shows the loaded spell with a display-only waveform instead of the play button', () => {
     const store = makeStore();
     store.dispatch(setSpellFile({ id: 'spell-1', title: 'Spell one' }));
     renderWithProviders(<Read />, { store });
     expect(screen.getByTestId('read-option-title')).toHaveTextContent('Spell one');
     expect(screen.queryByTestId('read-option-hint')).not.toBeInTheDocument();
     expect(screen.queryByTestId('read-option-brand-icon')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('play-button')).not.toBeInTheDocument();
+    const wave = screen.getByTestId('read-option-wave');
+    expect(wave.tagName).not.toBe('BUTTON');
     const before = store.getState().browserPlayer.toggleSeq;
-    fireEvent.click(screen.getByTestId('play-button'));
-    expect(store.getState().browserPlayer.toggleSeq).toBe(before + 1);
+    fireEvent.click(wave);
+    expect(store.getState().browserPlayer.toggleSeq).toBe(before);
+  });
+
+  it('animates the waveform only while reading', () => {
+    const store = makeStore();
+    store.dispatch(setSpellFile({ id: 'spell-1', title: 'Spell one' }));
+    renderWithProviders(<Read />, { store });
+    const wave = () => screen.getByTestId('read-option-wave').querySelector('[data-testid="waveform"]')!;
+    expect(wave().className).toMatch(/idle/);
+    act(() => { store.dispatch(play()); });
+    expect(wave().className).toMatch(/active/);
+  });
+
+  it('brings the play button back as the drop target while a spell is dragged over a loaded one', () => {
+    const store = makeStore();
+    store.dispatch(setSpellFile({ id: 'spell-1', title: 'Spell one' }));
+    renderWithProviders(<Read dragActive />, { store });
+    expect(screen.queryByTestId('read-option-wave')).not.toBeInTheDocument();
+    expect(screen.getByTestId('play-button')).toBeInTheDocument();
   });
 
   it('fills the panel with the loaded spell cover, when it has one', async () => {
@@ -192,6 +216,42 @@ describe('ReadOption', () => {
       );
       fireEvent.click(screen.getByTestId('read-option-open-reader'));
       expect(screen.getByTestId('reader-route')).toBeInTheDocument();
+    });
+  });
+
+  describe("the loaded spell's edit and delete shortcuts", () => {
+    const loaded = () => {
+      const store = makeStore();
+      store.dispatch(setSpellFile({ id: 'spell-1', title: 'Spell one' }));
+      return store;
+    };
+
+    it('are not shown with nothing loaded', () => {
+      renderWithProviders(<Read />);
+      expect(screen.queryByTestId('read-option-edit')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('read-option-delete')).not.toBeInTheDocument();
+    });
+
+    it('edit opens the loaded spell in the editor', () => {
+      renderWithProviders(
+        <Routes>
+          <Route path="/" element={<Read />} />
+          <Route path="/editor/:id" element={<div data-testid="editor-route" />} />
+        </Routes>,
+        { store: loaded() },
+      );
+      fireEvent.click(screen.getByTestId('read-option-edit'));
+      expect(screen.getByTestId('editor-route')).toBeInTheDocument();
+    });
+
+    it('delete asks first, then deletes the spell and unloads it', async () => {
+      const store = loaded();
+      renderWithProviders(<Read />, { store });
+      fireEvent.click(screen.getByTestId('read-option-delete'));
+      expect(mockDeleteSpellFromDB).not.toHaveBeenCalled();
+      fireEvent.click(screen.getByTestId('delete-confirm-confirm-btn'));
+      await waitFor(() => expect(store.getState().spellReader.spellId).toBeNull());
+      expect(mockDeleteSpellFromDB).toHaveBeenCalledWith('spell-1', undefined);
     });
   });
 

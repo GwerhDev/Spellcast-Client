@@ -8,6 +8,7 @@ import { useAppSelector, useAppDispatch } from '../../../store/hooks';
 import { invalidateSpellList } from '../../../store/spellReaderSlice';
 import { Spell } from '../../../interfaces';
 import { SpellCard } from '../../components/Cards/SpellCard';
+import { SpellDetailModal } from '../../components/Modals/SpellDetailModal';
 import { resolveCoverFrameId, getCoverFrameCorners } from '../../../utils/coverFrame';
 import { useCoverFrame3DSection } from '../../../hooks/useCoverFrame3DSection';
 // import { useSpellExport } from '../../../hooks/useSpellExport'; // .spell export: future
@@ -38,6 +39,8 @@ export const LastSpells: React.FC = () => {
   const sliderRef = useRef<HTMLDivElement>(null);
   const carouselWrapperRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  // A card click opens the spell's detail in a modal (the same one the player's cover opens).
+  const [detailSpellId, setDetailSpellId] = useState<string | null>(null);
   const location = useLocation();
   const dispatch = useAppDispatch();
   const { playSpell } = usePlaySpell();
@@ -178,7 +181,7 @@ export const LastSpells: React.FC = () => {
                   doc={doc}
                   isActive={activeDocId === doc.id && (readerLoaded || audioPlaying || browserPlaying)}
                   isPlaying={activeDocId === doc.id && (audioPlaying || browserPlaying)}
-                  onClick={() => navigate(`/spell/${doc.id}`)}
+                  onClick={() => setDetailSpellId(doc.id)}
                   onEdit={(e) => { e.stopPropagation(); navigate(`/editor/${doc.id}`, { state: { from: location.pathname } }); }}
                   onDelete={(e) => openDeleteModal(doc.id, doc.title, e)}
                   // onExport={(e) => { e.stopPropagation(); openExportModal({ id: doc.id, title: doc.title }); }} // .spell export: future
@@ -209,6 +212,7 @@ export const LastSpells: React.FC = () => {
           message={t.spell.deleteConfirm.replace('{title}', selectedDoc.title)}
         />
       )}
+      <SpellDetailModal spellId={detailSpellId} show={detailSpellId !== null} onClose={() => setDetailSpellId(null)} />
       {/* .spell export: future — re-enable the useSpellExport() hook above and this block.
       {exportTarget && (
         <SpellExportModal
