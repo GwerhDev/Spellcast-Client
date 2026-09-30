@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
+import { MotionGlobalConfig } from 'framer-motion';
 import { CoverFlight } from '../CoverFlight';
 import { liveRect } from '../flightRect';
 
@@ -9,9 +10,9 @@ const to = { top: 200, left: 400, width: 150, height: 206 };
 describe('CoverFlight', () => {
   it('draws the image over the page (portaled to body)', () => {
     render(<div data-testid="host"><CoverFlight src="blob:cover" from={from} target={() => to} onDone={vi.fn()} /></div>);
-    const img = screen.getByTestId('cover-flight');
-    expect(img.parentElement).toBe(document.body);
-    expect(img).toHaveAttribute('src', 'blob:cover');
+    const flight = screen.getByTestId('cover-flight');
+    expect(flight.parentElement).toBe(document.body);
+    expect(screen.getByTestId('cover-flight-front')).toHaveAttribute('src', 'blob:cover');
   });
 
   it('reports when it has arrived', async () => {
@@ -29,6 +30,37 @@ describe('CoverFlight', () => {
     await waitFor(() => expect(onDone).toHaveBeenCalled());
     // Read at takeoff, on arrival (moved: a follow-up leg), and on arriving again.
     expect(target.mock.calls.length).toBeGreaterThanOrEqual(3);
+  });
+});
+
+describe('CoverFlight spinning on arrival', () => {
+  it('has the app mark on its back', () => {
+    render(<CoverFlight src="blob:cover" from={from} target={() => to} spin onDone={vi.fn()} />);
+    expect(screen.getByTestId('cover-flight-back')).toBeInTheDocument();
+  });
+
+  // The turn is a leg of its own once it has landed: done only after it, and only once.
+  // Animations are skipped in tests (they'd all finish at once), so this one runs them for
+  // real, to see the turn happen between landing and reporting it's done.
+  it('turns over once it has landed, then reports it has arrived', async () => {
+    MotionGlobalConfig.skipAnimations = false;
+    try {
+      const onDone = vi.fn();
+      render(<CoverFlight src="blob:cover" from={from} target={() => to} lift spin onDone={onDone} />);
+      await waitFor(() => expect(screen.getByTestId('cover-flight')).toHaveAttribute('data-leg', 'spin'), { timeout: 3000 });
+      expect(onDone).not.toHaveBeenCalled();
+      await waitFor(() => expect(onDone).toHaveBeenCalledTimes(1), { timeout: 3000 });
+    } finally {
+      MotionGlobalConfig.skipAnimations = true;
+    }
+  });
+
+  it('flies straight in without spinning when not asked to', async () => {
+    const onDone = vi.fn();
+    const target = vi.fn(() => to);
+    render(<CoverFlight src="blob:cover" from={from} target={target} onDone={onDone} />);
+    await waitFor(() => expect(onDone).toHaveBeenCalledTimes(1));
+    expect(target).toHaveBeenCalledTimes(2);
   });
 });
 

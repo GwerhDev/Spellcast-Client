@@ -87,7 +87,7 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
   // which stays hidden until it lands; closing flies it back and only then closes. From
   // anywhere else (the player's cover), the modal just opens.
   const coverSlotRef = useRef<HTMLDivElement>(null);
-  const flightImageRef = useRef<HTMLImageElement>(null);
+  const flightImageRef = useRef<HTMLDivElement>(null);
   const [flight, setFlight] = useState<Flight | null>(null);
   const [leaving, setLeaving] = useState(false);
   const flownIn = useRef(false);
@@ -366,6 +366,8 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
           from={flight.from}
           target={flightTarget}
           lift={flight.direction === 'in'}
+          // Arriving in the modal it turns over once, showing the app's mark on its back.
+          spin={flight.direction === 'in'}
           onDone={handleFlightDone}
         />
       )}
