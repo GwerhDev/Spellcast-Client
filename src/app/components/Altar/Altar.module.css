@@ -1,5 +1,6 @@
 /* The altar: Start's central panel, where a spell is placed to be read. The whole panel is
-   the drop target, and its border lights up while something droppable is over it. */
+   the drop target; a spell over it shows as the beam and the button pulling it in (not as
+   a lit border). */
 .container {
   position: relative;
   isolation: isolate;
@@ -33,11 +34,6 @@
    without a spell, so loading one never moves the page. */
 .container.hasCover {
   padding-block: 1rem 1.75rem;
-}
-
-.container.dragActive {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 20px color-mix(in srgb, var(--color-primary) 45%, transparent);
 }
 
 .stage {
@@ -93,10 +89,12 @@
   filter: drop-shadow(0 0 calc(4px + var(--proximity, 0) * 22px) color-mix(in srgb, var(--color-primary) 70%, transparent));
 }
 
-/* A beam of light from a spell dragged over the altar onto the button (variables set from
-   the Altar feature). The element starts at the button's center and runs out to the pointer,
-   rotated toward it: narrow and bright at the pointer, opening into a soft cone as wide as
-   the button where it lands, with light flowing along it toward the button. */
+/* A tractor beam out of the altar toward a spell dragged over it (variables set from the
+   Altar feature): it leaves the button's center narrow and opens into a wide cone where the
+   spell is, with rings of light rising along it toward the altar, as if pulling the spell
+   in. The element starts at the button's center and runs out to the pointer, rotated toward
+   it; the cone's shape is clipped on .beamCore and softened here (the blur applies to the
+   clipped result, so the edges fade instead of cutting). */
 .beam,
 .spark {
   position: absolute;
@@ -110,18 +108,34 @@
 
 .beam {
   width: var(--beam-length, 0px);
-  height: 120px;
+  height: 200px;
   transform-origin: 0 50%;
-  translate: var(--beam-x, 0px) calc(var(--beam-y, 0px) - 60px);
+  translate: var(--beam-x, 0px) calc(var(--beam-y, 0px) - 100px);
   rotate: var(--beam-angle, 0deg);
-  clip-path: polygon(0 0, 100% 47%, 100% 53%, 0 100%);
-  background:
-    repeating-linear-gradient(to left, transparent 0 18px, color-mix(in srgb, #fff 18%, transparent) 18px 26px),
-    linear-gradient(to left, color-mix(in srgb, var(--color-primary) 85%, #fff) 0%, color-mix(in srgb, var(--color-primary) 35%, transparent) 55%, transparent 100%);
-  background-size: 52px 100%, 100% 100%;
-  filter: blur(5px);
+  filter: blur(6px);
   transition: opacity 0.35s ease;
-  animation: beamFlow 0.7s linear infinite;
+}
+
+/* The cone: brightest where it leaves the altar, fading toward the spell and toward its
+   own sides (the mask), with a hot core along its axis and rings of light rising in it. */
+.beamCore {
+  position: absolute;
+  inset: 0;
+  clip-path: polygon(0 45%, 100% 0, 100% 100%, 0 55%);
+  background:
+    linear-gradient(to bottom, transparent 42%, rgba(255, 255, 255, 0.55) 50%, transparent 58%),
+    repeating-linear-gradient(to right, transparent 0 24px, rgba(255, 255, 255, 0.28) 24px 36px),
+    linear-gradient(to right, color-mix(in srgb, var(--color-primary) 55%, #fff) 0%, color-mix(in srgb, var(--color-primary) 85%, transparent) 30%, color-mix(in srgb, var(--color-primary) 30%, transparent) 100%);
+  background-size: 100% 100%, 60px 100%, 100% 100%;
+  -webkit-mask-image:
+    linear-gradient(to bottom, transparent 0%, #000 30%, #000 70%, transparent 100%),
+    linear-gradient(to right, #000 70%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(to bottom, transparent 0%, #000 30%, #000 70%, transparent 100%),
+    linear-gradient(to right, #000 70%, transparent 100%);
+  mask-composite: intersect;
+  animation: beamFlow 0.9s linear infinite;
 }
 
 /* Where the beam starts: a point of light riding the pointer. */
@@ -134,10 +148,10 @@
   transition: opacity 0.35s ease;
 }
 
-/* The stripes travel from the pointer end toward the button. */
+/* The rings of light travel from the spell's end toward the altar. */
 @keyframes beamFlow {
-  from { background-position: 0 0, 0 0; }
-  to { background-position: -52px 0, 0 0; }
+  from { background-position: 0 0, 0 0, 0 0; }
+  to { background-position: 0 0, -60px 0, 0 0; }
 }
 
 .dragActive .ring {
@@ -335,6 +349,19 @@
    line limit -- so switching between that, the title and the hint never changes the
    altar's height (it's centered, so any change would move everything). Content sits at
    the top of the slot, right under the stage. */
+.centerSwap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* The footer's content keeps the slot's width, top-aligned (see .footerSlot). */
+.footerSwap {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
 .footerSlot {
   width: 100%;
   height: calc(0.98rem * 1.4 * 2);
@@ -455,7 +482,23 @@
   .ring,
   .dragActive .ring { animation: none; }
   .button { transition: none; }
-  .beam { animation: none; }
+  .beamCore { animation: none; }
+}
+
+/* Summoning: a spell is loading onto the altar -- the rings pulse inward, like the pull of
+   a dragged spell, until its pages are read. */
+.summoning .ring {
+  border-color: var(--color-primary);
+  opacity: 1;
+  animation: ringPull 1.2s ease-out infinite;
+}
+
+.summoning .ringOuter {
+  animation-delay: -0.6s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .summoning .ring { animation: none; }
 }
 
 /* ── Immersive ──
@@ -470,11 +513,6 @@
 
 .immersive::after {
   display: none;
-}
-
-/* Still the drop target: its border lights up while something droppable is over it. */
-.container.immersive.dragActive {
-  border-color: var(--color-primary);
 }
 
 .immersive .sentence {

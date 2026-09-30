@@ -149,3 +149,8 @@ if (!('mediaSession' in navigator)) {
     configurable: true,
   });
 }
+
+// Animations run instantly in tests: an exit animation (AnimatePresence) would otherwise
+// keep a removed element in the DOM until it finishes, and nothing here drives real frames.
+import { MotionGlobalConfig } from 'framer-motion';
+MotionGlobalConfig.skipAnimations = true;

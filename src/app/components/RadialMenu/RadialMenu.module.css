@@ -38,6 +38,15 @@
   transform: translate(-50%, -50%) translate(var(--x), var(--y)) scale(1);
 }
 
+/* A menu that appears already open (e.g. the altar's actions as a spell loads) still flies
+   out from the center, instead of just being there. */
+@starting-style {
+  .open .item {
+    opacity: 0;
+    transform: translate(-50%, -50%) translate(0, 0) scale(0.4);
+  }
+}
+
 .itemIcon {
   display: flex;
   align-items: center;

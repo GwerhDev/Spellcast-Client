@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import s from './HomeStage.module.css';
 
 // Quoted: blob: URLs can contain characters an unquoted url() rejects.
@@ -21,12 +22,23 @@ interface HomeStageProps {
 // over it in its own scroller, so the cover always fills the page, edge to edge.
 export const HomeStage = ({ coverUrl, idle, main, secondary }: HomeStageProps) => (
   <div data-testid="home-stage" className={`${s.stage} ${coverUrl ? s.immersive : ''}`}>
-    {coverUrl && (
-      <div className={s.backdrop} aria-hidden="true">
-        <div data-testid="home-stage-cover" className={s.cover} style={{ backgroundImage: cssUrl(coverUrl) }} />
-        <div className={s.glow} style={{ backgroundImage: cssUrl(coverUrl) }} />
-      </div>
-    )}
+    {/* Fades in as a spell loads and out as it's unloaded (or crossfades to the next). */}
+    <AnimatePresence>
+      {coverUrl && (
+        <motion.div
+          key={coverUrl}
+          className={s.backdrop}
+          aria-hidden="true"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.7, ease: 'easeInOut' }}
+        >
+          <div data-testid="home-stage-cover" className={s.cover} style={{ backgroundImage: cssUrl(coverUrl) }} />
+          <div className={s.glow} style={{ backgroundImage: cssUrl(coverUrl) }} />
+        </motion.div>
+      )}
+    </AnimatePresence>
     <div data-testid="home-stage-scroller" className={s.scroller}>
       {main}
       <div

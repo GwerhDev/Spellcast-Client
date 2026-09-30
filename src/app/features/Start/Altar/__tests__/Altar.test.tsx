@@ -145,12 +145,14 @@ describe('Altar', () => {
     });
   });
 
-  it('turns back into a play button while a spell is dragged over', () => {
+  // The center and footer swap one out, then the next in (see AltarPanel): the new one is
+  // awaited, not expected in the same instant.
+  it('turns back into a play button while a spell is dragged over', async () => {
     renderWithProviders(<Read />);
     dragSpellOver();
-    expect(screen.getByTestId('altar-hint')).toHaveTextContent('Drop it');
-    expect(screen.queryByTestId('altar-brand-icon')).not.toBeInTheDocument();
-    expect(screen.getByTestId('play-button')).not.toHaveAttribute('title');
+    expect(await screen.findByTestId('altar-hint')).toHaveTextContent('Drop it');
+    await waitFor(() => expect(screen.queryByTestId('altar-brand-icon')).not.toBeInTheDocument());
+    expect(await screen.findByTestId('play-button')).not.toHaveAttribute('title');
   });
 
   it('shows the loaded spell with a display-only waveform instead of the play button', () => {
@@ -177,22 +179,22 @@ describe('Altar', () => {
       return store;
     };
 
-    it('replaces the status and title while playing, and they come back when paused', () => {
+    it('replaces the status and title while playing, and they come back when paused', async () => {
       const store = loadedWith(['The first sentence.', 'The second one.']);
       renderWithProviders(<Read />, { store });
       expect(screen.getByTestId('altar-title')).toHaveTextContent('Spell one');
       expect(screen.queryByTestId('altar-sentence')).not.toBeInTheDocument();
 
       act(() => { store.dispatch(play()); });
-      expect(screen.getByTestId('altar-sentence')).toHaveTextContent('The first sentence.');
+      expect(await screen.findByTestId('altar-sentence')).toHaveTextContent('The first sentence.');
       expect(screen.queryByTestId('altar-title')).not.toBeInTheDocument();
 
       act(() => { store.dispatch(setCurrentSentenceIndex(1)); });
       expect(screen.getByTestId('altar-sentence')).toHaveTextContent('The second one.');
 
       act(() => { store.dispatch(pause()); });
+      expect(await screen.findByTestId('altar-title')).toHaveTextContent('Spell one');
       expect(screen.queryByTestId('altar-sentence')).not.toBeInTheDocument();
-      expect(screen.getByTestId('altar-title')).toHaveTextContent('Spell one');
     });
 
     it("follows a provider voice's timeline by its playback time", () => {
@@ -225,13 +227,13 @@ describe('Altar', () => {
     expect(wave().className).toMatch(/active/);
   });
 
-  it('brings the play button back as the drop target while a spell is dragged over a loaded one', () => {
+  it('brings the play button back as the drop target while a spell is dragged over a loaded one', async () => {
     const store = makeStore();
     store.dispatch(setSpellFile({ id: 'spell-1', title: 'Spell one' }));
     renderWithProviders(<Read />, { store });
     dragSpellOver();
+    expect(await screen.findByTestId('play-button')).toBeInTheDocument();
     expect(screen.queryByTestId('altar-wave')).not.toBeInTheDocument();
-    expect(screen.getByTestId('play-button')).toBeInTheDocument();
   });
 
   it('fills the panel with the loaded spell cover, when it has one', async () => {
@@ -560,13 +562,13 @@ describe('Altar', () => {
       expect(screen.queryByTestId('altar-unload')).not.toBeInTheDocument();
     });
 
-    it('takes the spell out of the player, back to the empty Read tab', () => {
+    it('takes the spell out of the player, back to the empty Read tab', async () => {
       const store = makeStore();
       store.dispatch(setSpellFile({ id: 'spell-1', title: 'Spell one' }));
       renderWithProviders(<Read />, { store });
       fireEvent.click(screen.getByTestId('altar-unload'));
       expect(store.getState().spellReader.spellId).toBeNull();
-      expect(screen.getByTestId('altar-brand-icon')).toBeInTheDocument();
+      expect(await screen.findByTestId('altar-brand-icon')).toBeInTheDocument();
       expect(screen.queryByTestId('altar-unload')).not.toBeInTheDocument();
     });
   });

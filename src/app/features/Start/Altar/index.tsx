@@ -3,6 +3,7 @@ import { AltarPanel } from '../../../components/Altar/AltarPanel';
 import { AltarBrandIcon, AltarCornerButton, AltarHint, AltarNowReading, AltarSentence, AltarWave } from '../../../components/Altar/AltarParts';
 import { activeSentenceIndex } from '../../../../utils/activeSentence';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { faBookOpenReader, faEject, faFeatherPointed, faPen, faTrash, faUpload, faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { RadialMenu, type RadialMenuItem } from '../../../components/RadialMenu/RadialMenu';
@@ -281,19 +282,36 @@ export const Altar = ({ onWrite, onImport, immersive = false, idle = false }: Al
           )}
         </>
       )}
-      stageOverlay={ringActions ? (
-        <RadialMenu
-          id={actionsMenuId}
-          open={!idle && !importing}
-          items={actionItems}
-          onClose={keepActions}
-          radius={125}
-          startAngle={185}
-          endAngle={355}
-        />
-      ) : (
-        <RadialMenu id={menuId} open={showMenu} items={menuItems} onClose={closeMenu} anchorRef={centerRef} />
+      stageOverlay={(
+        <>
+          {!ringActions && <RadialMenu id={menuId} open={showMenu} items={menuItems} onClose={closeMenu} anchorRef={centerRef} />}
+          {/* The ring unfolds as a spell loads (see RadialMenu's entry) and folds away,
+              fading into the center, as it's unloaded. */}
+          <AnimatePresence>
+            {ringActions && (
+              <motion.div
+                key="actions-ring"
+                style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
+                exit={{ opacity: 0, scale: 0.6 }}
+                transition={{ duration: 0.3, ease: 'easeIn' }}
+              >
+                <RadialMenu
+                  id={actionsMenuId}
+                  open={!idle && !importing}
+                  items={actionItems}
+                  onClose={keepActions}
+                  radius={125}
+                  startAngle={185}
+                  endAngle={355}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </>
       )}
+      summoning={hasSpell && !isLoaded && !dropping && !importing}
+      centerKey={showWaveform ? 'wave' : showBrand ? 'brand' : 'play'}
+      footerKey={showSentence ? 'sentence' : showNowReading ? 'now' : 'hint'}
       center={showWaveform ? <AltarWave active={isPlaying} /> : (
         <PlayButton
           size="lg"

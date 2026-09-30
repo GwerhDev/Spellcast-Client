@@ -1,5 +1,6 @@
 import s from '../../components/Start/index.module.css';
 import { useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { WriteOption } from './WriteOption';
 import { CustomModal } from '../../components/Modals/CustomModal';
 import { ImportOption } from './ImportOption';
@@ -15,6 +16,15 @@ interface StartProps {
   // The pointer is resting: the altar's immersive actions step aside.
   idle?: boolean;
 }
+
+// Title and subtitle folding away as the altar goes immersive, and back when it doesn't.
+const fold = {
+  initial: { opacity: 0, height: 0 },
+  animate: { opacity: 1, height: 'auto' },
+  exit: { opacity: 0, height: 0 },
+  transition: { duration: 0.4, ease: 'easeInOut' },
+  style: { overflow: 'hidden' },
+} as const;
 
 export const Start = ({ immersive = false, idle = false }: StartProps) => {
   // Write and Import open from the Spellcast button's menu (see Altar), as modals.
@@ -32,9 +42,22 @@ export const Start = ({ immersive = false, idle = false }: StartProps) => {
   return (
     <div data-testid="start" className={`${s.container} ${immersive ? s.immersive : ''}`}>
       <div className={s.createContainer}>
-        {!immersive && <h1 className="featured-glow">{t.start.castSpell}</h1>}
+        {/* Folding away (and back) instead of vanishing, so the altar glides into place. */}
+        <AnimatePresence initial={false}>
+          {!immersive && (
+            <motion.div key="title" {...fold}>
+              <h1 className="featured-glow">{t.start.castSpell}</h1>
+            </motion.div>
+          )}
+        </AnimatePresence>
         <div data-testid="start-body" className={s.body}>
-          {!immersive && <p>{t.start.readSubtitle}</p>}
+          <AnimatePresence initial={false}>
+            {!immersive && (
+              <motion.div key="subtitle" {...fold}>
+                <p>{t.start.readSubtitle}</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           <div className={s.optionContainer}>
             <Altar onWrite={() => setModal('write')} onImport={() => setModal('import')} immersive={immersive} idle={idle} />
