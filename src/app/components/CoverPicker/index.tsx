@@ -1,7 +1,7 @@
 import s from './index.module.css';
 import React, { useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faImage, faUpload, faFileImport } from '@fortawesome/free-solid-svg-icons';
+import { faImage, faUpload, faFileImport, faSpinner } from '@fortawesome/free-solid-svg-icons';
 import { SecondaryButton } from '../Buttons/SecondaryButton';
 import { useLanguage } from '../../../i18n';
 
@@ -16,9 +16,12 @@ interface CoverPickerProps {
   // Omitted entirely when there is no PDF to render a page from (e.g. editing a spell
   // that wasn't imported from a PDF, or one whose original PDF was never kept).
   onUseFirstPage?: () => void;
+  // A new cover being saved: a spinner over the preview (showing the new image when there's
+  // one to show already), and no other change until it's done.
+  busy?: boolean;
 }
 
-export const CoverPicker: React.FC<CoverPickerProps> = ({ coverUrl, onUploadImage, onUseFirstPage }) => {
+export const CoverPicker: React.FC<CoverPickerProps> = ({ coverUrl, onUploadImage, onUseFirstPage, busy = false }) => {
   const { t } = useLanguage();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -30,11 +33,16 @@ export const CoverPicker: React.FC<CoverPickerProps> = ({ coverUrl, onUploadImag
 
   return (
     <div className={s.container} data-testid="cover-picker">
-      <div className={s.preview}>
+      <div className={s.preview} aria-busy={busy || undefined}>
         {coverUrl
           ? <img src={coverUrl} alt="" className={s.coverImage} />
           : <FontAwesomeIcon icon={faImage} className={s.coverFallback} />
         }
+        {busy && (
+          <span data-testid="cover-picker-saving" className={s.saving}>
+            <FontAwesomeIcon icon={faSpinner} spin />
+          </span>
+        )}
       </div>
       <div className={s.actions}>
         <SecondaryButton
@@ -42,6 +50,7 @@ export const CoverPicker: React.FC<CoverPickerProps> = ({ coverUrl, onUploadImag
           className={s.actionBtn}
           icon={faUpload}
           onClick={() => fileInputRef.current?.click()}
+          disabled={busy}
         >
           {t.spell.coverUploadImage}
         </SecondaryButton>
@@ -58,6 +67,7 @@ export const CoverPicker: React.FC<CoverPickerProps> = ({ coverUrl, onUploadImag
             className={s.actionBtn}
             icon={faFileImport}
             onClick={onUseFirstPage}
+            disabled={busy}
           >
             {t.spell.coverUseFirstPage}
           </SecondaryButton>

@@ -73,4 +73,28 @@ describe('CoverFrameOptions', () => {
       expect(onPick).toHaveBeenCalledWith('other');
     });
   });
+
+  describe('while a pick saves', () => {
+    it('shows a spinner where the picked option\'s check goes, and no other check', () => {
+      renderModal({ selectedId: 'gilded', pending: { id: 'other' } });
+      expect(screen.getByTestId('cover-frame-option-other-saving')).toBeInTheDocument();
+      expect(isMarkedSelected(screen.getByTestId('cover-frame-option-other'))).toBe(true);
+      expect(isMarkedSelected(screen.getByTestId('cover-frame-option-gilded'))).toBe(false);
+    });
+
+    it('works for Default too (its pick is undefined)', () => {
+      renderModal({ selectedId: 'gilded', pending: { id: undefined } });
+      expect(screen.getByTestId('cover-frame-option-default-saving')).toBeInTheDocument();
+    });
+
+    it('disables every option until it is done', () => {
+      const onPick = vi.fn();
+      renderModal({ selectedId: undefined, pending: { id: null }, onPick });
+      ['default', 'none', 'gilded', 'other'].forEach(id => {
+        expect(screen.getByTestId(`cover-frame-option-${id}`)).toBeDisabled();
+      });
+      fireEvent.click(screen.getByTestId('cover-frame-option-gilded'));
+      expect(onPick).not.toHaveBeenCalled();
+    });
+  });
 });

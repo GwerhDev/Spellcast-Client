@@ -53,4 +53,17 @@ describe('CoverPicker', () => {
       expect(onUseFirstPage).toHaveBeenCalledTimes(1);
     });
   });
+
+  it('while a new cover saves: a spinner over the preview (the new image), and no other change', () => {
+    const { container } = renderPicker({ coverUrl: 'blob:new-cover', busy: true, onUseFirstPage: vi.fn() });
+    expect(screen.getByTestId('cover-picker-saving')).toBeInTheDocument();
+    expect(container.querySelector('img')).toHaveAttribute('src', 'blob:new-cover');
+    expect(screen.getByTestId('cover-picker-upload-btn')).toBeDisabled();
+    expect(screen.getByTestId('cover-picker-use-first-page-btn')).toBeDisabled();
+  });
+
+  it('shows no spinner when not saving', () => {
+    renderPicker({ coverUrl: 'blob:cover' });
+    expect(screen.queryByTestId('cover-picker-saving')).not.toBeInTheDocument();
+  });
 });

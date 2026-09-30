@@ -50,8 +50,12 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showCoverModal, setShowCoverModal] = useState(false);
-  // A cover or frame change being saved: the cover modal shows a loader meanwhile.
+  // A new cover image being saved (a loader over the cover modal), or a frame pick being
+  // saved (a spinner on that option, the rest disabled).
   const [savingCover, setSavingCover] = useState(false);
+  // An uploaded image, shown in the cover preview right away while it saves.
+  const [pendingCoverUrl, setPendingCoverUrl] = useState<string | null>(null);
+  const [pendingFrame, setPendingFrame] = useState<{ id: string | null | undefined } | null>(null);
   const coverEditor = useSpellCoverEditor(spellId);
   // TCORE-90: the original PDF no longer lives on the Spell record -- its existence is
   // looked up in the dedicated store instead of reading a `pdf` field.
@@ -114,13 +118,15 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
     navigate(`/editor/${spellId}`, { state: { from: location.pathname } });
   };
 
-  // Cover and frame changes save right away, with a loader while they do. A new cover is
-  // read back (it rewrites page 1 too); a frame is one field, applied here as it is.
-  const saveCoverChange = async (change: () => Promise<void>, reload: boolean) => {
+  // A new cover saves right away, with a loader while it does, and is read back (it
+  // rewrites page 1 too).
+  const saveCover = async (change: () => Promise<void>, preview?: Blob) => {
     setSavingCover(true);
+    const previewUrl = preview ? URL.createObjectURL(preview) : null;
+    setPendingCoverUrl(previewUrl);
     try {
       await change();
-      if (reload && spellId && userData?.id) {
+      if (spellId && userData?.id) {
         const spell = await getSpellById(spellId, userData.id);
         if (spell) setDoc(spell);
       }
@@ -128,14 +134,23 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
       console.error('Failed to update the cover:', error);
     } finally {
       setSavingCover(false);
+      setPendingCoverUrl(null);
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
     }
   };
 
-  const handlePickFrame = (coverFrameId: string | null | undefined) =>
-    void saveCoverChange(async () => {
+  // A frame is one field: saved with a spinner on the picked option, then applied here as is.
+  const handlePickFrame = async (coverFrameId: string | null | undefined) => {
+    setPendingFrame({ id: coverFrameId });
+    try {
       await coverEditor.setFrame(coverFrameId);
       setDoc(current => (current ? { ...current, coverFrameId } : current));
-    }, false);
+    } catch (error) {
+      console.error('Failed to update the cover frame:', error);
+    } finally {
+      setPendingFrame(null);
+    }
+  };
 
   const handleDeleteConfirm = async () => {
     if (!spellId || !userData?.id) return;
@@ -260,13 +275,14 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
       <SpellCoverModal
         show={showCoverModal}
         onClose={() => setShowCoverModal(false)}
-        coverUrl={coverUrl}
-        busy={savingCover}
-        onUploadImage={(file) => void saveCoverChange(() => coverEditor.setCoverFromImage(file), true)}
-        onUseFirstPage={hasPdf ? () => void saveCoverChange(coverEditor.setCoverFromPdf, true) : undefined}
+        coverUrl={pendingCoverUrl ?? coverUrl}
+        savingCover={savingCover}
+        onUploadImage={(file) => void saveCover(() => coverEditor.setCoverFromImage(file), file)}
+        onUseFirstPage={hasPdf ? () => void saveCover(coverEditor.setCoverFromPdf) : undefined}
         frames={ownedCoverFrames}
         frameId={doc?.coverFrameId}
-        onPickFrame={handlePickFrame}
+        onPickFrame={(id) => void handlePickFrame(id)}
+        pendingFrame={pendingFrame}
       />
       <DeleteConfirmModal
         show={showDeleteModal}

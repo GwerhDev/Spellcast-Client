@@ -118,16 +118,19 @@ describe('SpellDetailModal', () => {
       expect(read.mock.calls.length).toBe(reads);
     });
 
-    it('shows a loader while the change is being saved', async () => {
+    it('while a frame saves, shows a spinner on that option and disables the others', async () => {
       vi.spyOn(db, 'getSpellById').mockResolvedValue(mockDoc as never);
       let finish: () => void = () => {};
       vi.spyOn(db, 'updateSpellCoverFrame').mockReturnValue(new Promise<void>(resolve => { finish = resolve; }));
       renderWithProviders(<SpellDetailModal spellId="doc-1" show onClose={vi.fn()} />, { store: loggedStore() });
       fireEvent.click(await screen.findByTestId('spell-detail-modal-edit-cover-btn'));
       fireEvent.click(screen.getByTestId('cover-frame-option-none'));
-      expect(await screen.findByTestId('spell-cover-modal-busy')).toBeInTheDocument();
-      await act(async () => { finish(); });
+      expect(await screen.findByTestId('cover-frame-option-none-saving')).toBeInTheDocument();
+      expect(screen.getByTestId('cover-frame-option-default')).toBeDisabled();
       expect(screen.queryByTestId('spell-cover-modal-busy')).not.toBeInTheDocument();
+      await act(async () => { finish(); });
+      expect(screen.queryByTestId('cover-frame-option-none-saving')).not.toBeInTheDocument();
+      expect(screen.getByTestId('cover-frame-option-default')).not.toBeDisabled();
     });
   });
 

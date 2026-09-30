@@ -6,6 +6,7 @@
 
 .preview {
   /* Portrait, like the cover it previews. */
+  position: relative;
   width: 64px;
   height: 88px;
   flex-shrink: 0;
@@ -22,6 +23,18 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+/* Saving a new cover: a spinner over the preview, dimming it a little. */
+.saving {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  color: #fff;
+  background: rgba(8, 10, 14, 0.45);
 }
 
 .coverFallback {
