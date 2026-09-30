@@ -12,6 +12,7 @@ import { setAutoPlayOnLoad, resetBrowserPlayer } from '../../../store/browserPla
 import { setAutoPlayOnLoad as setAudioAutoPlayOnLoad } from '../../../store/audioPlayerSlice';
 import { invalidateSpellList, resetSpellReader } from '../../../store/spellReaderSlice';
 import { CustomModal } from './CustomModal';
+import { Spinner } from '../Spinner';
 import { PrimaryButton } from '../Buttons/PrimaryButton';
 import { SecondaryButton } from '../Buttons/SecondaryButton';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -42,9 +43,16 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
   // looked up in the dedicated store instead of reading a `pdf` field.
   const [hasPdf, setHasPdf] = useState(false);
 
+  // Every open starts clean: closing (or switching to another spell) drops what the last
+  // one showed, so it never flashes the previous spell while the next loads, and a read
+  // still in flight for a spell no longer shown is ignored.
   useEffect(() => {
+    setDoc(null);
+    setShowDeleteModal(false);
     if (!spellId || !userData?.id || !show) return;
-    getSpellById(spellId, userData.id).then(setDoc);
+    let cancelled = false;
+    getSpellById(spellId, userData.id).then(spell => { if (!cancelled) setDoc(spell ?? null); });
+    return () => { cancelled = true; };
   }, [spellId, userData?.id, show]);
 
   useEffect(() => {
@@ -102,7 +110,9 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
     <>
       <CustomModal show={show} onClose={onClose} title="" compact>
         {!doc ? (
-          <div className={s.loading}>{t.common.loading}</div>
+          <div data-testid="spell-detail-modal-loading" className={s.loading}>
+            <Spinner isLoading message={t.common.loading} />
+          </div>
         ) : (
           <div className={s.content}>
             <div className={s.header}>

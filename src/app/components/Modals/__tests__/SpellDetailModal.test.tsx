@@ -68,6 +68,26 @@ describe('SpellDetailModal', () => {
     expect(screen.queryByTestId('spell-detail-modal-delete-btn')).not.toBeInTheDocument();
   });
 
+  it('shows the loader while the spell is being read', () => {
+    vi.spyOn(db, 'getSpellById').mockReturnValue(new Promise(() => {}));
+    renderWithProviders(<SpellDetailModal spellId="doc-1" show onClose={vi.fn()} />, { store: loggedStore() });
+    expect(screen.getByTestId('spell-detail-modal-loading')).toBeInTheDocument();
+    expect(screen.getByTestId('spinner-logo')).toBeInTheDocument();
+  });
+
+  it('starts clean when reopened: never shows the previous spell while the next one loads', async () => {
+    const getSpell = vi.spyOn(db, 'getSpellById').mockResolvedValue(mockDoc as never);
+    const store = loggedStore();
+    const { rerender } = renderWithProviders(<SpellDetailModal spellId="doc-1" show onClose={vi.fn()} />, { store });
+    expect(await screen.findByTestId('spell-detail-modal-title-link')).toHaveTextContent('My Book');
+
+    rerender(<SpellDetailModal spellId="doc-1" show={false} onClose={vi.fn()} />);
+    getSpell.mockReturnValue(new Promise(() => {}));
+    rerender(<SpellDetailModal spellId="doc-2" show onClose={vi.fn()} />);
+    expect(screen.getByTestId('spell-detail-modal-loading')).toBeInTheDocument();
+    expect(screen.queryByTestId('spell-detail-modal-title-link')).not.toBeInTheDocument();
+  });
+
   it('renders nothing when show is false', () => {
     renderWithProviders(<SpellDetailModal spellId="doc-1" show={false} onClose={vi.fn()} />, { store: loggedStore() });
     expect(screen.queryByTestId('spell-detail-modal-continue-btn')).not.toBeInTheDocument();

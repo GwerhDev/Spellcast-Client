@@ -1,6 +1,8 @@
 .loading {
-  padding: 2rem;
-  text-align: center;
+  /* The spinner fills this box (it's absolutely positioned), sized close to the loaded
+     content's own height so the modal doesn't jump when it arrives. */
+  position: relative;
+  min-height: 200px;
   color: var(--text-2);
   font-size: 0.9rem;
 }
