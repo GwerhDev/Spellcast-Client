@@ -224,6 +224,8 @@ export const en = {
     previewVoice: 'Preview voice',
     unloadSpell: 'Unload spell',
     mountSpell: 'Load into the player',
+    dropToLoad: 'Drop a spell here to play it',
+    dropToSwitch: 'Drop to switch to this spell',
     browserVoices: 'Browser Voices',
     providerVoices: 'Provider Voices',
     browserVoicesDesc: 'These voices are provided by your browser.',

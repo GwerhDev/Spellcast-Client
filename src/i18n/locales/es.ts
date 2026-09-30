@@ -226,6 +226,8 @@ export const es: Translations = {
     previewVoice: 'Vista previa de voz',
     unloadSpell: 'Desmontar spell',
     mountSpell: 'Montar en el reproductor',
+    dropToLoad: 'Suelta un spell aquí para reproducirlo',
+    dropToSwitch: 'Suelta para cambiar a este spell',
     browserVoices: 'Voces del navegador',
     providerVoices: 'Voces de proveedores',
     browserVoicesDesc: 'Estas voces las proporciona tu navegador.',

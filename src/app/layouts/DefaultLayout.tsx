@@ -6,6 +6,7 @@ import { LogoutModal } from '../components/Modals/LogoutModal';
 import { AudioPlayer } from '../features/AudioPlayer';
 import { SpellProcessor } from '../features/SpellProcessor';
 import { BrowserPlayer } from '../features/BrowserPlayer';
+import { PlayerDock } from '../features/PlayerDock';
 import { RootState } from 'store/index';
 import { useSelector } from 'react-redux';
 import { SearcherModal } from '../components/Modals/SearcherModal';
@@ -146,15 +147,16 @@ export default function DefaultLayout() {
               </Suspense>
             )}
           </div>
-          {activeSpellId && (
-            <div className="audioplayer-container">
-              {selectedVoice.type === 'browser'
-                // Keyed by spell: each spell gets a fresh player instance, as it did when the
-                // player only mounted once that spell's pages were loaded.
-                ? <BrowserPlayer key={activeSpellId} showVoiceSelectorModal={setIsVoiceSelectorOpen} showPlayerConfigModal={setIsPlayerSettingsOpen} />
-                : <AudioPlayer key={activeSpellId} showVoiceSelectorModal={setIsVoiceSelectorOpen} showPlayerConfigModal={setIsPlayerSettingsOpen} />}
-            </div>
-          )}
+          {/* The player's bar, also a drop target for spells: dropping one loads it (or
+              switches to it), and with nothing loaded the bar appears while a spell is dragged
+              near the bottom. */}
+          <PlayerDock>
+            {activeSpellId && (selectedVoice.type === 'browser'
+              // Keyed by spell: each spell gets a fresh player instance, as it did when the
+              // player only mounted once that spell's pages were loaded.
+              ? <BrowserPlayer key={activeSpellId} showVoiceSelectorModal={setIsVoiceSelectorOpen} showPlayerConfigModal={setIsPlayerSettingsOpen} />
+              : <AudioPlayer key={activeSpellId} showVoiceSelectorModal={setIsVoiceSelectorOpen} showPlayerConfigModal={setIsPlayerSettingsOpen} />)}
+          </PlayerDock>
           <LogoutModal />
           <AttentionGuardModal show={showAttentionGuard} onContinue={handleAttentionGuardContinue} />
         </motion.div>
