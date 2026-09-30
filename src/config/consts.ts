@@ -8,7 +8,7 @@ import {
 // real, always-audible HTMLMediaElement anchor: Chromium doesn't reliably
 // adopt a page's own navigator.mediaSession (metadata + action handlers) as
 // the OS-facing widget until SOME real <audio>/<video> element on the page is
-// genuinely playing. speechSynthesis alone isn't an HTMLMediaElement, and AI
+// genuinely playing. speechSynthesis alone isn't an HTMLMediaElement, and provider-voice
 // audio synthesis has a real network/synthesis round-trip before its own
 // <audio> element starts playing -- during that window nothing was actually
 // "playing" from the browser's point of view, so the OS widget wouldn't sync

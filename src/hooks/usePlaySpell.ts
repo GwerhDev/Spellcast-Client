@@ -52,7 +52,7 @@ export const usePlaySpell = () => {
   const readSpell = (spell: Spell) => {
     if (!isLoaded(spell)) { loadAndPlay(spell); return; }
     if (audioPlaying || browserPlaying) return;
-    // The browser player's resume is a no-op if it's already playing; the AI player only
+    // The browser player's resume is a no-op if it's already playing; the provider voice player only
     // has a toggle, which is safe here because it was just checked to be paused.
     if (selectedVoiceType !== 'browser') dispatch(requestAudioTogglePlay());
     else dispatch(requestResume());

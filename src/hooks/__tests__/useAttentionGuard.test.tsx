@@ -141,7 +141,7 @@ describe('useAttentionGuard', () => {
       expect(store.getState().browserPlayer.isPlaying).toBe(false);
     });
 
-    it('toggles the AI audio player when that is the selected voice type', async () => {
+    it('toggles the provider voice player when that is the selected voice type', async () => {
       const store = makeStore();
       store.dispatch(setSelectedVoice({ type: 'ai', value: 'some-voice' }));
       store.dispatch(setShowAttentionGuard(true));

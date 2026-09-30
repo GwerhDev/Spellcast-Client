@@ -80,7 +80,7 @@ describe('usePlaySpell', () => {
       expect(store.getState().browserPlayer.toggleSeq).toBe(toggleSeq);
     });
 
-    it('resumes the paused AI player with its toggle', () => {
+    it('resumes the paused provider voice player with its toggle', () => {
       const { store, result, rerender } = loaded();
       act(() => { store.dispatch(setSelectedVoice({ value: 'v', type: 'ai' })); });
       rerender();

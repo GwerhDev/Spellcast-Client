@@ -128,7 +128,7 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
   const volumeSliderRef = useRef<HTMLDivElement>(null);
   const volumeButtonRef = useRef<HTMLButtonElement>(null);
   // Real, always-audible anchor kept in sync with intent (wantsToPlayRef),
-  // NOT with Redux's isPlaying -- isPlaying is silenced during the AI
+  // NOT with Redux's isPlaying -- isPlaying is silenced during the provider voice's
   // synthesis fetch, which is exactly the window this anchor needs to cover.
   // See SILENT_AUDIO_SRC for why this exists at all (Chromium media-session
   // OS-widget adoption needs a real playing element, not just correct
@@ -514,7 +514,7 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
     // effect below, so a fresh autoplay-triggered mount doesn't fetch/play
     // through THIS path before the cover has settled either.
     if (autoPlayOnLoad && !coverSettled) return;
-    // Switching AI voice mid-read: stop the previous voice's audio and restart the
+    // Switching provider voice mid-read: stop the previous voice's audio and restart the
     // current page from the top with the new one (fetchAndPlay already checks the
     // per-voice cache before synthesizing, and preserves play/pause via `isPlaying`).
     if (audioRef.current) {

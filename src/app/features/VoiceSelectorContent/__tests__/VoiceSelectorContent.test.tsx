@@ -30,7 +30,7 @@ describe('VoiceSelectorContent', () => {
     expect(screen.getAllByText(/browser/i).length).toBeGreaterThan(0);
   });
 
-  it('lists AI voices from the active credential', () => {
+  it('lists provider voices from the active credential', () => {
     renderWithProviders(<VoiceSelectorContent onClose={() => {}} />, {
       preloadedState: {
         ...aiVoiceState,

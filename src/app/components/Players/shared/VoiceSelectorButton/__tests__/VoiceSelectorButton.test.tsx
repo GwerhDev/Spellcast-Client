@@ -7,7 +7,7 @@ import { VoiceSelectorButton } from '../VoiceSelectorButton';
 // tests cover both branches to guard the Phase 3a consolidation of what used to be two
 // near-duplicate components.
 describe('VoiceSelectorButton', () => {
-  it('shows the AI voice label with primary tone when selectedVoice.type is "ai"', () => {
+  it('shows the provider voice label with primary tone when selectedVoice.type is "ai"', () => {
     renderWithProviders(<VoiceSelectorButton onClick={vi.fn()} />, {
       preloadedState: { voice: { selectedVoice: { value: 'en-US-JennyNeural', type: 'ai' }, voices: [] } },
     });

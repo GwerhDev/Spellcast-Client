@@ -77,10 +77,10 @@ const baseState = {
 };
 
 describe('AudioPlayer silent anchor', () => {
-  it('starts a real, always-audible silent anchor element the instant playback is intended, before the AI synthesis fetch resolves', async () => {
+  it('starts a real, always-audible silent anchor element the instant playback is intended, before the provider voice synthesis fetch resolves', async () => {
     // Chromium doesn't reliably adopt a page's navigator.mediaSession as the
     // OS-facing widget until some real HTMLMediaElement is genuinely
-    // playing. AI audio synthesis has a real network round-trip before its
+    // playing. Provider voice synthesis has a real network round-trip before its
     // OWN <audio> element starts playing -- during that window, metadata was
     // already set correctly in JS, but nothing was actually audible yet, so
     // the OS widget didn't sync (observed: title/artist blank in the widget
@@ -100,7 +100,7 @@ describe('AudioPlayer silent anchor', () => {
     await waitFor(() => expect(textToSpeechServiceMock).toHaveBeenCalledTimes(1));
 
     // The real synthesis fetch is STILL pending -- nothing about the actual
-    // AI audio could possibly be playing yet.
+    // provider voice audio could possibly be playing yet.
     const anchor = screen.getByTestId('audio-player-silent-anchor') as HTMLAudioElement;
     expect(playSpy.mock.instances).toContain(anchor);
 

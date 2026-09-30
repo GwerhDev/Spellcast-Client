@@ -9,7 +9,7 @@ export type CredentialError = 'quota' | 'auth' | 'unknown';
 
 interface VoiceSelectorButtonProps {
   onClick: () => void;
-  // Only ever set by AudioPlayer (its voices carry AI credentials that can fail);
+  // Only ever set by AudioPlayer (its voices carry provider credentials that can fail);
   // BrowserPlayer never passes it, which naturally falls back to the plain-voice-label
   // rendering below — no branching needed per player type.
   credentialError?: CredentialError | null;

@@ -8,7 +8,7 @@ import type { TTSAttrs, TTSSegment, TextRun, DocumentBlock } from '../types'
  * _build_char_info() apply this same regex to a whole paragraph's *merged* inline text (not
  * per text node) — Tiptap represents any inline mark spanning only part of a sentence (bold,
  * a `tts` mark on one character) as multiple adjacent text nodes, so splitting node-by-node
- * would fragment normal sentences instead of matching the AI-voice `timeline`'s entries to
+ * would fragment normal sentences instead of matching the provider-voice `timeline`'s entries to
  * this function's indices. Splits after .!? that is not followed by another dot, then trims.
  */
 function splitSentences(text: string): string[] {
