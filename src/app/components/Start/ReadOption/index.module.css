@@ -72,7 +72,7 @@
 .button {
   position: relative;
   z-index: 1;
-  transition: transform 0.25s ease;
+  transition: transform 0.25s ease, filter 0.2s ease;
 }
 
 /* The loaded spell's waveform, large and bare (no disc). Display only, not a control. */
@@ -88,6 +88,55 @@
 
 .dragActive .button {
   transform: scale(1.1);
+  /* Brighter the closer the spell gets (--proximity, 0..1). */
+  filter: drop-shadow(0 0 calc(4px + var(--proximity, 0) * 22px) color-mix(in srgb, var(--color-primary) 70%, transparent));
+}
+
+/* A beam of light from a spell dragged over Start onto the button (variables set from
+   ReadOption). The element starts at the button's center and runs out to the pointer,
+   rotated toward it: narrow and bright at the pointer, opening into a soft cone as wide as
+   the button where it lands, with light flowing along it toward the button. */
+.beam,
+.spark {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: var(--beam-opacity, 0);
+  mix-blend-mode: screen;
+}
+
+.beam {
+  width: var(--beam-length, 0px);
+  height: 120px;
+  transform-origin: 0 50%;
+  translate: var(--beam-x, 0px) calc(var(--beam-y, 0px) - 60px);
+  rotate: var(--beam-angle, 0deg);
+  clip-path: polygon(0 0, 100% 47%, 100% 53%, 0 100%);
+  background:
+    repeating-linear-gradient(to left, transparent 0 18px, color-mix(in srgb, #fff 18%, transparent) 18px 26px),
+    linear-gradient(to left, color-mix(in srgb, var(--color-primary) 85%, #fff) 0%, color-mix(in srgb, var(--color-primary) 35%, transparent) 55%, transparent 100%);
+  background-size: 52px 100%, 100% 100%;
+  filter: blur(5px);
+  transition: opacity 0.35s ease;
+  animation: beamFlow 0.7s linear infinite;
+}
+
+/* Where the beam starts: a point of light riding the pointer. */
+.spark {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  translate: calc(var(--spark-x, 0px) - 11px) calc(var(--spark-y, 0px) - 11px);
+  background: radial-gradient(circle, #fff 0%, color-mix(in srgb, var(--color-primary) 80%, transparent) 40%, transparent 72%);
+  transition: opacity 0.35s ease;
+}
+
+/* The stripes travel from the pointer end toward the button. */
+@keyframes beamFlow {
+  from { background-position: 0 0, 0 0; }
+  to { background-position: -52px 0, 0 0; }
 }
 
 .dragActive .ring {
@@ -361,4 +410,5 @@
   .ring,
   .dragActive .ring { animation: none; }
   .button { transition: none; }
+  .beam { animation: none; }
 }

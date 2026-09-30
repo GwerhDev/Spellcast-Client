@@ -3,7 +3,7 @@ import { PlayButton } from '../../../components/PlayButton/PlayButton';
 import { Waveform } from '../../../components/Waveform/Waveform';
 import spellcastLogo from '../../../../assets/spellcast-logo.svg';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { useCallback, useId, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { faBookOpenReader, faEject, faFeatherPointed, faHandPointer, faPen, faSpinner, faTrash, faUpload, faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { IconButton } from '../../../components/Buttons/IconButton';
@@ -17,6 +17,7 @@ import { useSpellImport } from '../../../../hooks/useSpellImport';
 import { usePlaySpell } from '../../../../hooks/usePlaySpell';
 import { useSpellCoverUrl } from '../../../../hooks/useSpellCoverUrl';
 import { isInCasterGrimoire } from '../../../../utils/grimoire';
+import { useDragPointer } from '../../../../hooks/useDragPointer';
 import { useLanguage } from '../../../../i18n';
 
 interface ReadOptionProps {
@@ -36,6 +37,10 @@ const brandMask = cssUrl(spellcastLogo);
 const isSpellFile = (file: File) => file.name.toLowerCase().endsWith('.spell');
 const isFileDrag = (e: React.DragEvent) => Array.from(e.dataTransfer.types).includes('Files');
 
+// While a spell is dragged over Start, the button glows brighter the closer it gets
+// (within GLOW_RANGE px of its center).
+const GLOW_RANGE = 420;
+
 // Start's central control: the player's own PlayButton as the drop target. Dropping a spell
 // starts reading it; so does dropping a .spell file from the computer, which is first
 // imported into the browser. With nothing loaded the button shows the Spellcast mark and
@@ -49,6 +54,8 @@ export const ReadOption = ({ dragActive, onWrite, onImport }: ReadOptionProps) =
   const navigate = useNavigate();
   const location = useLocation();
   const buttonRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuId = useId();
   const closeMenu = useCallback(() => setMenuOpen(false), []);
@@ -117,6 +124,39 @@ export const ReadOption = ({ dragActive, onWrite, onImport }: ReadOptionProps) =
     setShowDeleteModal(false);
   };
 
+  // A dragged spell's pointer, as CSS variables on the panel (no re-render per move): a
+  // beam of light from the pointer onto the button, anchored at the button's center and
+  // reaching out to the pointer (--beam-x/-y, --beam-length, --beam-angle), with a spark
+  // at the pointer end (--spark-x/-y). The button stays put and glows brighter as the
+  // spell nears (--proximity, 0..1, on the stage). Cleared when the drag ends, so the beam
+  // fades out where it was.
+  useDragPointer(dragActive, (x, y) => {
+    const container = containerRef.current;
+    const stage = stageRef.current;
+    if (!container || !stage) return;
+    const box = container.getBoundingClientRect();
+    const rect = stage.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const dx = x - cx;
+    const dy = y - cy;
+    const distance = Math.hypot(dx, dy);
+    container.style.setProperty('--beam-x', `${(cx - box.left).toFixed(1)}px`);
+    container.style.setProperty('--beam-y', `${(cy - box.top).toFixed(1)}px`);
+    container.style.setProperty('--beam-length', `${distance.toFixed(1)}px`);
+    container.style.setProperty('--beam-angle', `${(Math.atan2(dy, dx) * 180 / Math.PI).toFixed(1)}deg`);
+    container.style.setProperty('--spark-x', `${(x - box.left).toFixed(1)}px`);
+    container.style.setProperty('--spark-y', `${(y - box.top).toFixed(1)}px`);
+    container.style.setProperty('--beam-opacity', '1');
+    stage.style.setProperty('--proximity', Math.max(0, 1 - distance / GLOW_RANGE).toFixed(2));
+  });
+
+  useEffect(() => {
+    if (dragActive) return;
+    containerRef.current?.style.removeProperty('--beam-opacity');
+    stageRef.current?.style.removeProperty('--proximity');
+  }, [dragActive]);
+
   const handleFileDragOver = (e: React.DragEvent) => {
     if (!isFileDrag(e)) return;
     e.preventDefault();
@@ -139,6 +179,7 @@ export const ReadOption = ({ dragActive, onWrite, onImport }: ReadOptionProps) =
 
   return (
     <div
+      ref={containerRef}
       data-testid="read-option"
       className={`${s.container} ${dropping ? s.dragActive : ''} ${coverUrl ? s.hasCover : s.noCover} ${showMenu ? s.menuOpen : ''}`}
       onDragOver={handleFileDragOver}
@@ -161,6 +202,8 @@ export const ReadOption = ({ dragActive, onWrite, onImport }: ReadOptionProps) =
           disabled={importing}
         />
       )}
+      <span data-testid="read-option-beam" className={s.beam} aria-hidden="true" />
+      <span className={s.spark} aria-hidden="true" />
       {hasSpell && !dropping && (
         <div data-testid="read-option-actions" className={s.cornerStack}>
           <IconButton
@@ -191,7 +234,7 @@ export const ReadOption = ({ dragActive, onWrite, onImport }: ReadOptionProps) =
           )}
         </div>
       )}
-      <div className={s.stage}>
+      <div ref={stageRef} data-testid="read-option-stage" className={s.stage}>
         <span className={s.ring} aria-hidden="true" />
         <span className={`${s.ring} ${s.ringOuter}`} aria-hidden="true" />
         <RadialMenu id={menuId} open={showMenu} items={menuItems} onClose={closeMenu} anchorRef={buttonRef} />

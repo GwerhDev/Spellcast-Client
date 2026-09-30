@@ -101,6 +101,34 @@ describe('ReadOption', () => {
     });
   });
 
+  describe('the beam of light from a dragged spell onto the button', () => {
+    const dragOver = (x: number, y: number) =>
+      document.dispatchEvent(new MouseEvent('dragover', { clientX: x, clientY: y }));
+
+    it('runs from the pointer to the button while a spell is dragged over Start; the button stays put', async () => {
+      const { rerender } = renderWithProviders(<Read dragActive />);
+      const panel = screen.getByTestId('read-option');
+      const stage = screen.getByTestId('read-option-stage');
+      // jsdom lays everything out at (0, 0): the pointer is straight below the button.
+      dragOver(0, 100);
+      await waitFor(() => expect(panel.style.getPropertyValue('--beam-length')).toBe('100.0px'));
+      expect(panel.style.getPropertyValue('--beam-angle')).toBe('90.0deg');
+      expect(panel.style.getPropertyValue('--spark-y')).toBe('100.0px');
+      expect(panel.style.getPropertyValue('--beam-opacity')).toBe('1');
+      expect(Number(stage.style.getPropertyValue('--proximity'))).toBeGreaterThan(0);
+      rerender(<Read dragActive={false} />);
+      expect(panel.style.getPropertyValue('--beam-opacity')).toBe('');
+      expect(stage.style.getPropertyValue('--proximity')).toBe('');
+    });
+
+    it('stays hidden when nothing is being dragged over', async () => {
+      renderWithProviders(<Read />);
+      dragOver(0, 100);
+      await new Promise(r => setTimeout(r, 40));
+      expect(screen.getByTestId('read-option').style.getPropertyValue('--beam-opacity')).toBe('');
+    });
+  });
+
   it('turns back into a play button while a spell is dragged over', () => {
     renderWithProviders(<Read dragActive />);
     expect(screen.getByTestId('read-option-hint')).toHaveTextContent('Drop it');

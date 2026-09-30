@@ -1,5 +1,6 @@
 import s from './SpellCard.module.css';
 import { SPELL_DRAG_TYPE } from '../../../config/consts';
+import { DragTether } from '../DragTether/DragTether';
 import React, { useMemo, useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -86,8 +87,10 @@ export const SpellCard = ({ doc, isActive, isPlaying, onClick, onDelete, onEdit,
 
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
-  // While this card is being dragged it keeps its place as an empty placeholder.
+  // While this card is being dragged it keeps its place as an empty placeholder, tied to
+  // the pointer by a thread from that place (its center, in viewport coordinates).
   const [dragging, setDragging] = useState(false);
+  const [dragOrigin, setDragOrigin] = useState<{ x: number; y: number } | null>(null);
   // The frame scheduled to switch to the placeholder; a drag that ends before it runs must
   // cancel it, or it would turn the placeholder on after the drag is already over.
   const dragFrameRef = useRef<number | null>(null);
@@ -165,11 +168,14 @@ export const SpellCard = ({ doc, isActive, isPlaying, onClick, onDelete, onEdit,
       onDragStart={e => {
         e.dataTransfer.setData(SPELL_DRAG_TYPE, doc.id);
         e.dataTransfer.effectAllowed = 'copy';
+        const rect = e.currentTarget.getBoundingClientRect();
+        const origin = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
         // The browser snapshots the drag image right after this handler; switching to the
         // placeholder on the next frame keeps the real card as what follows the cursor.
         dragFrameRef.current = requestAnimationFrame(() => {
           dragFrameRef.current = null;
           setDragging(true);
+          setDragOrigin(origin);
         });
       }}
       onDragEnd={() => {
@@ -178,6 +184,7 @@ export const SpellCard = ({ doc, isActive, isPlaying, onClick, onDelete, onEdit,
           dragFrameRef.current = null;
         }
         setDragging(false);
+        setDragOrigin(null);
       }}
     >
       {/* TCORE-123 follow-up: everything that needs to respect .card's own rounded
@@ -307,9 +314,12 @@ export const SpellCard = ({ doc, isActive, isPlaying, onClick, onDelete, onEdit,
           overhangs its own single edge independently, with no shared bounding box). */}
       {dragging && (
         <div className={s.dragPlaceholder} data-testid={`spell-card-placeholder-${doc.id}`} aria-hidden="true">
+          <span className={s.dragRipple} />
+          <span className={`${s.dragRipple} ${s.dragRippleLate}`} />
           <FontAwesomeIcon icon={faScroll} />
         </div>
       )}
+      {dragOrigin && <DragTether origin={dragOrigin} />}
       {hasCoverFrame && !dragging && (
         // z-index only set here, inline, for the 3D branch -- see .coverFrameSlot's own
         // CSS comment for why 2D CoverFrameCorners needs to stay at z-index:auto (matches

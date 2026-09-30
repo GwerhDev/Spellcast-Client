@@ -1,0 +1,64 @@
+.tether {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 1000;
+  pointer-events: none;
+  overflow: visible;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.visible {
+  opacity: 1;
+}
+
+.thread,
+.glow {
+  fill: none;
+  stroke-linecap: round;
+}
+
+/* The thread itself: dashes flowing from the origin toward the pointer. */
+.thread {
+  stroke-width: 2;
+  stroke-dasharray: 10 8;
+  animation: flow 0.6s linear infinite;
+}
+
+/* A soft halo under it, so it reads as light rather than a plain line. */
+.glow {
+  stroke-width: 7;
+  opacity: 0.35;
+  filter: blur(4px);
+}
+
+/* Where the item was pulled from: a point that keeps pulsing while it's away. */
+.anchor {
+  fill: var(--color-primary);
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: anchorPulse 1.2s ease-in-out infinite;
+}
+
+.tip {
+  fill: #fff;
+  filter: drop-shadow(0 0 6px var(--color-primary));
+}
+
+@keyframes flow {
+  to { stroke-dashoffset: -18; }
+}
+
+@keyframes anchorPulse {
+  0%, 100% { transform: scale(1); opacity: 0.9; }
+  50% { transform: scale(1.8); opacity: 0.35; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .thread,
+  .anchor {
+    animation: none;
+  }
+}

@@ -62,6 +62,15 @@ describe('SpellCard', () => {
       expect(screen.queryByTestId('spell-card-placeholder-doc-1')).not.toBeInTheDocument();
     });
 
+    it('ties itself to the pointer with a thread from its place while dragged, gone on dragend', async () => {
+      renderCard();
+      const card = screen.getByTestId('spell-card-doc-1');
+      fireEvent.dragStart(card, { dataTransfer: { setData: vi.fn(), effectAllowed: '' } });
+      expect(await screen.findByTestId('drag-tether')).toBeInTheDocument();
+      fireEvent.dragEnd(card);
+      expect(screen.queryByTestId('drag-tether')).not.toBeInTheDocument();
+    });
+
     it('does not leave the placeholder behind when the drag ends before the next frame', async () => {
       renderCard();
       const card = screen.getByTestId('spell-card-doc-1');

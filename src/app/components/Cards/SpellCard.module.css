@@ -49,6 +49,36 @@
   pointer-events: none;
 }
 
+/* Rings rippling out of the empty place while its spell is away, where DragTether's
+   thread starts: the place still "calls" the spell back. Two, offset by half a cycle. */
+.dragRipple {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 56px;
+  height: 56px;
+  margin: -28px 0 0 -28px;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 60%, transparent);
+  animation: dragRipple 1.6s ease-out infinite;
+}
+
+.dragRippleLate {
+  animation-delay: -0.8s;
+}
+
+@keyframes dragRipple {
+  from { transform: scale(0.4); opacity: 0.9; }
+  to { transform: scale(2.2); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dragRipple {
+    animation: none;
+    opacity: 0.4;
+  }
+}
+
 .card:hover {
   border-color: color-mix(in srgb, var(--color-primary) 45%, transparent);
   box-shadow: 0 0 16px rgba(115, 165, 204, 0.12);
