@@ -373,6 +373,81 @@ describe('db/index.ts CRUD', () => {
     });
   });
 
+  describe('cover frames in their own database (backward compatible)', () => {
+    const openSpells = () => new Promise<IDBDatabase>((resolve, reject) => {
+      const req = indexedDB.open(DB_NAME, DB_VERSION);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+    // The spell record exactly as stored, bypassing the overlays getSpellById applies.
+    const rawSpell = async (id: string) => {
+      const db = await openSpells();
+      return new Promise<Record<string, unknown>>((resolve, reject) => {
+        const req = db.transaction(SPELLS_STORE_NAME, 'readonly').objectStore(SPELLS_STORE_NAME).get(id);
+        req.onsuccess = () => { resolve(req.result); db.close(); };
+        req.onerror = () => reject(req.error);
+      });
+    };
+    // A spell whose frame was picked before this database existed: embedded on the record.
+    const embedFrame = async (id: string, coverFrameId: string | null) => {
+      const record = await rawSpell(id);
+      const db = await openSpells();
+      await new Promise<void>((resolve, reject) => {
+        const tx = db.transaction(SPELLS_STORE_NAME, 'readwrite');
+        tx.objectStore(SPELLS_STORE_NAME).put({ ...record, coverFrameId });
+        tx.oncomplete = () => { db.close(); resolve(); };
+        tx.onerror = () => reject(tx.error);
+      });
+    };
+
+    it('a frame pick is read back everywhere, without rewriting the spell record', async () => {
+      const { saveSpellToDB, updateSpellCoverFrame, getSpellById, getSpellsFromDB } = await importDb();
+      const id = await saveSpellToDB(seedSpell({ userId: 'user-1' }));
+      const before = await rawSpell(id);
+      await updateSpellCoverFrame(id, 'user-1', 'grimoire');
+      expect((await getSpellById(id, 'user-1'))?.coverFrameId).toBe('grimoire');
+      expect((await getSpellsFromDB('user-1'))[0].coverFrameId).toBe('grimoire');
+      expect(await rawSpell(id)).toEqual(before);
+    });
+
+    it('a frame picked before (embedded on the record) keeps showing until it changes', async () => {
+      const { saveSpellToDB, updateSpellCoverFrame, getSpellById } = await importDb();
+      const id = await saveSpellToDB(seedSpell({ userId: 'user-1' }));
+      await embedFrame(id, 'grimoire');
+      expect((await getSpellById(id, 'user-1'))?.coverFrameId).toBe('grimoire');
+      await updateSpellCoverFrame(id, 'user-1', null);
+      expect((await getSpellById(id, 'user-1'))?.coverFrameId).toBeNull();
+    });
+
+    it('going back to the default (undefined) overrides an embedded pick too', async () => {
+      const { saveSpellToDB, updateSpellCoverFrame, getSpellById } = await importDb();
+      const id = await saveSpellToDB(seedSpell({ userId: 'user-1' }));
+      await embedFrame(id, 'grimoire');
+      await updateSpellCoverFrame(id, 'user-1', undefined);
+      expect((await getSpellById(id, 'user-1'))?.coverFrameId).toBeUndefined();
+    });
+
+    it("refuses a pick for someone else's spell", async () => {
+      const { saveSpellToDB, updateSpellCoverFrame } = await importDb();
+      const id = await saveSpellToDB(seedSpell({ userId: 'user-1' }));
+      await expect(updateSpellCoverFrame(id, 'user-2', 'grimoire')).rejects.toThrow();
+    });
+
+    it('deleting a spell, or clearing all data, removes its stored frame', async () => {
+      const { saveSpellToDB, updateSpellCoverFrame, deleteSpellFromDB, clearAllData } = await importDb();
+      const { getStoredCoverFrame, getAllStoredCoverFrames } = await import('../spellCoverFrames');
+      const id = await saveSpellToDB(seedSpell({ userId: 'user-1' }));
+      await updateSpellCoverFrame(id, 'user-1', 'grimoire');
+      await deleteSpellFromDB(id, 'user-1');
+      expect(await getStoredCoverFrame(id)).toBeUndefined();
+
+      const other = await saveSpellToDB(seedSpell({ userId: 'user-1' }));
+      await updateSpellCoverFrame(other, 'user-1', 'grimoire');
+      await clearAllData();
+      expect((await getAllStoredCoverFrames()).size).toBe(0);
+    });
+  });
+
   describe('covers kept in memory', () => {
     it('is unknown until the spell has been read, then known (cover or none) without another read', async () => {
       const { saveSpellToDB, getSpellsFromDB, getCachedSpellCover } = await importDb();

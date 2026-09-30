@@ -4,6 +4,7 @@ import { setOriginalPdf, deleteOriginalPdf } from "./originalPdfs";
 import { clearSpellAudioCache } from "./audioCache";
 import { sameUser } from "../utils/grimoire";
 import { getStoredProgress, getAllStoredProgress, setStoredProgress, setStoredProgressMany, deleteStoredProgress, clearStoredProgress } from "./spellProgress";
+import { getStoredCoverFrame, getAllStoredCoverFrames, setStoredCoverFrame, deleteStoredCoverFrame, clearStoredCoverFrames, type CoverFrameRecord } from "./spellCoverFrames";
 
 // The pre-rename (TCORE-78) store name, frozen on purpose: it names whatever a
 // browser already has on disk from before this migration shipped, so it must never
@@ -18,6 +19,12 @@ const MIGRATION_COMPLETE_KEY = 'spellcast:migration:documentsToSpells:complete';
 // update. A failed progress read never fails the spell read: the embedded value stands.
 const withStoredProgress = <T extends Spell>(spell: T, record: { userId: string | undefined; progress: SpellProgress } | undefined): T =>
   record && sameUser(record.userId, spell.userId) ? { ...spell, progress: record.progress } : spell;
+
+// Same for the cover frame pick (db/spellCoverFrames.ts): a stored record, when there is one
+// for the same user, wins over the frame embedded on the spell -- including its explicit
+// undefined ("follow the default"), which is a choice, not a missing value.
+const withStoredCoverFrame = <T extends Spell>(spell: T, record: CoverFrameRecord | undefined): T =>
+  record && sameUser(record.userId, spell.userId) ? { ...spell, coverFrameId: record.coverFrameId } : spell;
 
 // Where a spell starts: what a new spell is saved with, and what a reset writes back.
 export const initialSpellProgress = (): SpellProgress => ({
@@ -65,6 +72,9 @@ export const clearAllData = async (): Promise<void> => {
   // Best-effort: with the spells gone, leftover progress records are unreachable anyway.
   await clearStoredProgress().catch((err) => {
     console.error('[IndexedDB] Failed to clear reading progress:', err);
+  });
+  await clearStoredCoverFrames().catch((err) => {
+    console.error('[IndexedDB] Failed to clear cover frames:', err);
   });
 };
 
@@ -407,12 +417,13 @@ const readSpellsFromStore = async (userId: string | undefined): Promise<Spell[]>
 };
 
 export const getSpellsFromDB = async (userId: string | undefined): Promise<Spell[]> => {
-  const [spells, stored] = await Promise.all([
+  const [spells, stored, frames] = await Promise.all([
     readSpellsFromStore(userId),
     getAllStoredProgress().catch(() => new Map()),
+    getAllStoredCoverFrames().catch(() => new Map<string, CoverFrameRecord>()),
   ]);
   spells.forEach(rememberCover);
-  return spells.map(spell => withStoredProgress(spell, stored.get(spell.id)));
+  return spells.map(spell => withStoredCoverFrame(withStoredProgress(spell, stored.get(spell.id)), frames.get(spell.id)));
 };
 
 // Covers kept in memory as spells are read (the Last Spells / Grimoire listing reads them
@@ -465,10 +476,11 @@ export const getSpellById = (id: string, userId: string | undefined): Promise<Sp
     read = Promise.all([
       readSpellFromStore(id, userId),
       getStoredProgress(id).catch(() => undefined),
-    ]).then(([spell, stored]) => {
+      getStoredCoverFrame(id).catch(() => undefined),
+    ]).then(([spell, stored, frame]) => {
       if (!spell) return undefined;
       rememberCover(spell);
-      return withStoredProgress(spell, stored);
+      return withStoredCoverFrame(withStoredProgress(spell, stored), frame);
     });
     inFlightSpellReads.set(key, read);
     const forget = () => { if (inFlightSpellReads.get(key) === read) inFlightSpellReads.delete(key); };
@@ -544,6 +556,9 @@ export const deleteSpellFromDB = async (id: string, userId: string | undefined):
   // Same reasoning: a deleted spell's reading position is unreachable, just leftover data.
   await deleteStoredProgress(id).catch((err) => {
     console.error(`[IndexedDB] Failed to delete reading progress for removed spell "${id}":`, err);
+  });
+  await deleteStoredCoverFrame(id).catch((err) => {
+    console.error(`[IndexedDB] Failed to delete the cover frame of removed spell "${id}":`, err);
   });
 };
 
@@ -720,36 +735,19 @@ export const updateSpellMetadata = async (
   });
 };
 
-// TCORE-123: dedicated, single-field update -- same shape as updateSpellProgress, kept
-// separate from updateSpellContent/updateSpellFull's full-record writes so picking a cover
-// frame (from the spell's detail) can never race the autosave timer into clobbering
-// an in-flight title/pagesContent edit. Accepts all three of Spell.coverFrameId's states: a
-// frame id (this spell's own explicit pick), null (explicitly "no frame", overriding the
-// global default), or undefined (clears any override, going back to following the global
-// default) -- IndexedDB preserves an explicit `undefined` property value via structured
-// clone (unlike JSON.stringify, which would drop it), so this reads back exactly as "never
-// chosen" would.
+// TCORE-123: picking a spell's cover frame. Writes only to the cover frame database
+// (db/spellCoverFrames.ts), never the spell record: it no longer reads and rewrites the whole
+// spell (its pages and images) for one field, which made picking a frame slow on big spells
+// -- and, as before, can't race the editor's autosave into clobbering an in-flight edit.
+// Accepts all three of Spell.coverFrameId's states: a frame id (this spell's own explicit
+// pick), null (explicitly "no frame", overriding the global default), or undefined (back to
+// following the global default). The embedded coverFrameId is left untouched, as the
+// fallback for anything still reading an older copy of the record.
 export const updateSpellCoverFrame = async (
   id: string,
   userId: string,
   coverFrameId: string | null | undefined
 ): Promise<void> => {
-  const db = await openDB();
-  const transaction = db.transaction(SPELLS_STORE_NAME, 'readwrite');
-  const store = transaction.objectStore(SPELLS_STORE_NAME);
-
-  return new Promise((resolve, reject) => {
-    const getRequest = store.get(id);
-    getRequest.onsuccess = () => {
-      const spell = getRequest.result as Spell | undefined;
-      if (spell && sameUser(spell.userId, userId)) {
-        const putRequest = store.put({ ...spell, coverFrameId });
-        putRequest.onsuccess = () => resolve();
-        putRequest.onerror = (e) => reject((e.target as IDBRequest).error);
-      } else {
-        reject(new Error('Spell not found or user mismatch.'));
-      }
-    };
-    getRequest.onerror = (e) => reject((e.target as IDBRequest).error);
-  });
+  if (!(await spellBelongsToUser(id, userId))) throw new Error('Spell not found or user mismatch.');
+  await setStoredCoverFrame(id, userId, coverFrameId);
 };

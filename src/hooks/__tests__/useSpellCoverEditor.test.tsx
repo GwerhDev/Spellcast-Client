@@ -18,13 +18,14 @@ const setup = () => {
 describe('useSpellCoverEditor', () => {
   beforeEach(() => { vi.restoreAllMocks(); });
 
-  it('saves a frame pick and refreshes the lists', async () => {
+  it('saves a frame pick and announces it to the views, without refetching the lists', async () => {
     const save = vi.spyOn(db, 'updateSpellCoverFrame').mockResolvedValue(undefined);
     const { store, editor } = setup();
     const before = store.getState().spellReader.listVersion;
     await act(async () => { await editor.setFrame('grimoire'); });
     expect(save).toHaveBeenCalledWith('doc-1', 'user-1', 'grimoire');
-    expect(store.getState().spellReader.listVersion).toBe(before + 1);
+    expect(store.getState().spellReader.coverFrameChange).toMatchObject({ spellId: 'doc-1', coverFrameId: 'grimoire' });
+    expect(store.getState().spellReader.listVersion).toBe(before);
   });
 
   it("a new cover also replaces page 1's cover, and refreshes the reader and the lists", async () => {

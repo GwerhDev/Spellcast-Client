@@ -4,7 +4,7 @@ import type { JSONContent } from '../magictext';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { getSpellById, updateSpellCoverFrame, updateSpellFull } from '../db';
 import { getOriginalPdf } from '../db/originalPdfs';
-import { invalidateContent, invalidateSpellList } from '../store/spellReaderSlice';
+import { coverFrameChanged, invalidateContent, invalidateSpellList } from '../store/spellReaderSlice';
 import { applyCoverToPage1, blobToDataUrl, downscaleImageBlob, renderPageToCover } from '../utils/pdfUtils';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
@@ -17,11 +17,12 @@ export const useSpellCoverEditor = (spellId: string | null) => {
   const userId = useAppSelector(state => state.session.userData?.id);
 
   // Mirrors Spell.coverFrameId's three states: a frame id, null (explicitly none) or
-  // undefined (back to following the caster's default).
+  // undefined (back to following the caster's default). A small write of its own, and the
+  // views showing this spell update it in place -- no list reads its spells again.
   const setFrame = async (coverFrameId: string | null | undefined) => {
     if (!spellId || !userId) return;
     await updateSpellCoverFrame(spellId, userId, coverFrameId);
-    dispatch(invalidateSpellList());
+    dispatch(coverFrameChanged({ spellId, coverFrameId }));
   };
 
   const applyCover = async (blob: Blob) => {

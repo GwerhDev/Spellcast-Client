@@ -32,7 +32,7 @@ export const SpellList: React.FC<SpellListProps> = ({ query = '', filter = 'loca
   const [detailSpellId, setDetailSpellId] = useState<string | null>(null);
   const { t } = useLanguage();
   const { userData, logged } = useAppSelector(state => state.session);
-  const { spellId: activeDocId, listVersion } = useAppSelector(state => state.spellReader);
+  const { spellId: activeDocId, listVersion, coverFrameChange } = useAppSelector(state => state.spellReader);
   const uploadQueue = useAppSelector(state => state.spellUpload.queue);
   const audioPlaying = useAppSelector(state => state.audioPlayer.isPlaying);
   const browserPlaying = useAppSelector(state => state.browserPlayer.isPlaying);
@@ -65,6 +65,13 @@ export const SpellList: React.FC<SpellListProps> = ({ query = '', filter = 'loca
     if (filter !== 'cloud') fetchLocal();
     //eslint-disable-next-line
   }, [userData.id, filter, listVersion]);
+
+  // A cover frame picked from the detail: applied to that card in place, no refetch.
+  useEffect(() => {
+    if (!coverFrameChange) return;
+    const { spellId: changedId, coverFrameId } = coverFrameChange;
+    setDocuments(prev => prev.map(doc => (doc.id === changedId ? { ...doc, coverFrameId } : doc)));
+  }, [coverFrameChange]);
 
   const q = query.trim().toLowerCase();
   const byQuery = q ? documents.filter(d => d.title.toLowerCase().includes(q)) : documents;

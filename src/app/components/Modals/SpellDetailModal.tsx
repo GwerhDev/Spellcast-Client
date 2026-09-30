@@ -50,6 +50,8 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showCoverModal, setShowCoverModal] = useState(false);
+  // A cover or frame change being saved: the cover modal shows a loader meanwhile.
+  const [savingCover, setSavingCover] = useState(false);
   const coverEditor = useSpellCoverEditor(spellId);
   // TCORE-90: the original PDF no longer lives on the Spell record -- its existence is
   // looked up in the dedicated store instead of reading a `pdf` field.
@@ -112,18 +114,28 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
     navigate(`/editor/${spellId}`, { state: { from: location.pathname } });
   };
 
-  // Cover and frame changes save right away; the spell is read again so this modal shows
-  // them too (the lists refresh on their own).
-  const withReload = (change: () => Promise<void>) => async () => {
+  // Cover and frame changes save right away, with a loader while they do. A new cover is
+  // read back (it rewrites page 1 too); a frame is one field, applied here as it is.
+  const saveCoverChange = async (change: () => Promise<void>, reload: boolean) => {
+    setSavingCover(true);
     try {
       await change();
+      if (reload && spellId && userData?.id) {
+        const spell = await getSpellById(spellId, userData.id);
+        if (spell) setDoc(spell);
+      }
     } catch (error) {
       console.error('Failed to update the cover:', error);
+    } finally {
+      setSavingCover(false);
     }
-    if (!spellId || !userData?.id) return;
-    const spell = await getSpellById(spellId, userData.id);
-    if (spell) setDoc(spell);
   };
+
+  const handlePickFrame = (coverFrameId: string | null | undefined) =>
+    void saveCoverChange(async () => {
+      await coverEditor.setFrame(coverFrameId);
+      setDoc(current => (current ? { ...current, coverFrameId } : current));
+    }, false);
 
   const handleDeleteConfirm = async () => {
     if (!spellId || !userData?.id) return;
@@ -249,11 +261,12 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
         show={showCoverModal}
         onClose={() => setShowCoverModal(false)}
         coverUrl={coverUrl}
-        onUploadImage={(file) => void withReload(() => coverEditor.setCoverFromImage(file))()}
-        onUseFirstPage={hasPdf ? () => void withReload(coverEditor.setCoverFromPdf)() : undefined}
+        busy={savingCover}
+        onUploadImage={(file) => void saveCoverChange(() => coverEditor.setCoverFromImage(file), true)}
+        onUseFirstPage={hasPdf ? () => void saveCoverChange(coverEditor.setCoverFromPdf, true) : undefined}
         frames={ownedCoverFrames}
         frameId={doc?.coverFrameId}
-        onPickFrame={(id) => void withReload(() => coverEditor.setFrame(id))()}
+        onPickFrame={handlePickFrame}
       />
       <DeleteConfirmModal
         show={showDeleteModal}

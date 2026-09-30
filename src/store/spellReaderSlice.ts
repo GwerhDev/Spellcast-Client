@@ -25,6 +25,9 @@ interface SpellReaderState {
   activitySeq: number;
   contentVersion: number;
   listVersion: number;
+  // The last cover frame picked for a spell: views showing that spell update it in place
+  // (see coverFrameChanged) instead of every list reading every spell again for one field.
+  coverFrameChange?: { seq: number; spellId: string; coverFrameId: string | null | undefined } | null;
 }
 
 const initialState: SpellReaderState = {
@@ -50,6 +53,7 @@ const initialState: SpellReaderState = {
   activitySeq: 0,
   contentVersion: 0,
   listVersion: 0,
+  coverFrameChange: null,
   progress: {
     currentPage: 1,
     pagesProgress: [],
@@ -124,6 +128,7 @@ const spellReaderSlice = createSlice({
         attentionGuardEnabled: state.attentionGuardEnabled,
         attentionGuardInterval: state.attentionGuardInterval,
         listVersion: state.listVersion,
+        coverFrameChange: state.coverFrameChange,
         contentVersion: state.contentVersion,
       };
     },
@@ -160,6 +165,9 @@ const spellReaderSlice = createSlice({
     invalidateSpellList(state) {
       state.listVersion += 1;
     },
+    coverFrameChanged(state, action: PayloadAction<{ spellId: string; coverFrameId: string | null | undefined }>) {
+      state.coverFrameChange = { seq: (state.coverFrameChange?.seq ?? 0) + 1, ...action.payload };
+    },
   },
 });
 
@@ -185,6 +193,7 @@ export const {
   recordReaderActivity,
   invalidateContent,
   invalidateSpellList,
+  coverFrameChanged,
 } = spellReaderSlice.actions;
 
 export default spellReaderSlice.reducer;

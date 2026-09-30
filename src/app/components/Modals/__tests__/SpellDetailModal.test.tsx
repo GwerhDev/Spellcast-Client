@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { screen, fireEvent, waitFor } from '@testing-library/react';
+import { screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { renderWithProviders, makeStore } from '../../../../test/renderWithProviders';
 import { Routes, Route } from 'react-router-dom';
 import { SpellDetailModal } from '../SpellDetailModal';
@@ -105,16 +105,29 @@ describe('SpellDetailModal', () => {
       expect(screen.queryByTestId('spell-detail-modal-edit-cover-btn')).not.toBeInTheDocument();
     });
 
-    it('picking a frame saves it and shows it', async () => {
-      vi.spyOn(db, 'getSpellById').mockResolvedValue(mockDoc as never);
+    it('picking a frame saves it and shows it, without reading the spell again', async () => {
+      const read = vi.spyOn(db, 'getSpellById').mockResolvedValue(mockDoc as never);
       const save = vi.spyOn(db, 'updateSpellCoverFrame').mockResolvedValue(undefined);
       const store = loggedStore();
       renderWithProviders(<SpellDetailModal spellId="doc-1" show onClose={vi.fn()} />, { store });
       fireEvent.click(await screen.findByTestId('spell-detail-modal-edit-cover-btn'));
-      vi.mocked(db.getSpellById).mockResolvedValue({ ...mockDoc, coverFrameId: null } as never);
+      const reads = read.mock.calls.length;
       fireEvent.click(screen.getByTestId('cover-frame-option-none'));
       await waitFor(() => expect(save).toHaveBeenCalledWith('doc-1', 'user-1', null));
       await waitFor(() => expect(screen.getByTestId('cover-frame-option-none').className).toMatch(/optionSelected/));
+      expect(read.mock.calls.length).toBe(reads);
+    });
+
+    it('shows a loader while the change is being saved', async () => {
+      vi.spyOn(db, 'getSpellById').mockResolvedValue(mockDoc as never);
+      let finish: () => void = () => {};
+      vi.spyOn(db, 'updateSpellCoverFrame').mockReturnValue(new Promise<void>(resolve => { finish = resolve; }));
+      renderWithProviders(<SpellDetailModal spellId="doc-1" show onClose={vi.fn()} />, { store: loggedStore() });
+      fireEvent.click(await screen.findByTestId('spell-detail-modal-edit-cover-btn'));
+      fireEvent.click(screen.getByTestId('cover-frame-option-none'));
+      expect(await screen.findByTestId('spell-cover-modal-busy')).toBeInTheDocument();
+      await act(async () => { finish(); });
+      expect(screen.queryByTestId('spell-cover-modal-busy')).not.toBeInTheDocument();
     });
   });
 

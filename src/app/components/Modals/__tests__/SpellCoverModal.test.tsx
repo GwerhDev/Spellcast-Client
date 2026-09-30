@@ -45,4 +45,16 @@ describe('SpellCoverModal', () => {
     renderModal({ onUseFirstPage: vi.fn() });
     expect(screen.getByTestId('cover-picker-use-first-page-btn')).toBeInTheDocument();
   });
+
+  it('covers the options with a loader while busy', () => {
+    const { rerender } = renderModal();
+    expect(screen.queryByTestId('spell-cover-modal-busy')).not.toBeInTheDocument();
+    rerender(
+      <LanguageProvider>
+        <SpellCoverModal show onClose={vi.fn()} coverUrl={null} onUploadImage={vi.fn()} frames={[]} frameId={undefined} onPickFrame={vi.fn()} busy />
+      </LanguageProvider>
+    );
+    expect(screen.getByTestId('spell-cover-modal-busy')).toBeInTheDocument();
+    expect(screen.getByTestId('spell-cover-modal')).toHaveAttribute('aria-busy', 'true');
+  });
 });

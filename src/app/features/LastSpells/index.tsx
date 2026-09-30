@@ -14,7 +14,7 @@ import { IconButton } from '../../components/Buttons/IconButton';
 
 export const LastSpells: React.FC = () => {
   const { userData } = useAppSelector((state) => state.session);
-  const { spellId: activeDocId, currentPage: activeCurrentPage, listVersion } = useAppSelector((state) => state.spellReader);
+  const { spellId: activeDocId, currentPage: activeCurrentPage, listVersion, coverFrameChange } = useAppSelector((state) => state.spellReader);
   const uploadQueue = useAppSelector((state) => state.spellUpload.queue);
   const audioPlaying = useAppSelector((state) => state.audioPlayer.isPlaying);
   const browserPlaying = useAppSelector((state) => state.browserPlayer.isPlaying);
@@ -68,6 +68,13 @@ export const LastSpells: React.FC = () => {
     fetchSpells();
     //eslint-disable-next-line
   }, [userData.id, listVersion]);
+
+  // A cover frame picked from the detail: applied to that card in place, no refetch.
+  useEffect(() => {
+    if (!coverFrameChange) return;
+    const { spellId: changedId, coverFrameId } = coverFrameChange;
+    setDocuments(prev => prev.map(doc => (doc.id === changedId ? { ...doc, coverFrameId } : doc)));
+  }, [coverFrameChange]);
 
   useEffect(() => {
     const el = sliderRef.current;

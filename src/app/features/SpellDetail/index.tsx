@@ -42,7 +42,7 @@ export const SpellDetail: React.FC = () => {
   const location = useLocation();
   const { userData, logged } = useAppSelector((state) => state.session);
   const { t } = useLanguage();
-  const { spellId: currentPlayingId, currentPage: readerCurrentPage } = useAppSelector((state) => state.spellReader);
+  const { spellId: currentPlayingId, currentPage: readerCurrentPage, coverFrameChange } = useAppSelector((state) => state.spellReader);
   const deleteSpells = useDeleteSpells();
   const [doc, setDoc] = useState<Awaited<ReturnType<typeof getSpellById>> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -93,6 +93,12 @@ export const SpellDetail: React.FC = () => {
     if (!doc?.id) { setHasPdf(false); return; }
     hasOriginalPdf(doc.id).then(setHasPdf);
   }, [doc?.id]);
+
+  // A cover frame picked for this spell elsewhere (e.g. the detail modal): applied in place.
+  useEffect(() => {
+    if (!coverFrameChange || coverFrameChange.spellId !== id) return;
+    setDoc(current => (current ? { ...current, coverFrameId: coverFrameChange.coverFrameId } : current));
+  }, [coverFrameChange, id]);
 
   // Only navigation: playback stays exactly as it is (the reader keeps a loaded spell
   // playing or paused, and doesn't start one that wasn't).
