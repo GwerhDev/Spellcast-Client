@@ -1,11 +1,3 @@
 .container {
   composes: base from './buttonBase.module.css';
-  color: var(--color-light-200);
-  background-color: transparent;
-  border: solid 2px var(--color-light-200);
-}
-
-.container:hover {
-  color: var(--color-dark-100);
-  background-color: var(--color-light-200);
 }

@@ -28,7 +28,7 @@ export const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({ show, on
         <p>{message}</p>
         <div className={s.buttons}>
           <SecondaryButton data-testid="delete-confirm-cancel-btn" onClick={onClose}>{t.common.cancel}</SecondaryButton>
-          <PrimaryButton data-testid="delete-confirm-confirm-btn" onClick={onConfirm} className={s.deleteButton}>{confirmText ?? t.common.delete}</PrimaryButton>
+          <PrimaryButton data-testid="delete-confirm-confirm-btn" onClick={onConfirm} variant="danger">{confirmText ?? t.common.delete}</PrimaryButton>
         </div>
       </div>
     </CustomModal>

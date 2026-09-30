@@ -10,11 +10,3 @@
   gap: 1rem;
 }
 
-.deleteButton {
-  background-color: var(--color-danger);
-  color: white;
-}
-
-.deleteButton:hover {
-  background-color: var(--color-danger-dark);
-}

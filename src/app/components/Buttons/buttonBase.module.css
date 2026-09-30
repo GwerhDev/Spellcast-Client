@@ -1,14 +1,35 @@
-/* Shared base layout for PrimaryButton/SecondaryButton/TertiaryButton/ActionButton —
-   deduplicates the near-identical rules each of the four independently redeclared.
-   IconButton is intentionally excluded: it's auto-sized (icon-only), not full-width like
-   these four, so it doesn't share this shape. */
+/* Shared base for PrimaryButton/SecondaryButton/TertiaryButton/ActionButton: every text
+   button is the same chip (translucent surface, hairline border, pill shape, accent on
+   hover) -- the look of Start's Read panel corner buttons. Variants only change the hover
+   tone (danger, accent). IconButton is intentionally excluded: it's auto-sized
+   (icon-only), not full-width like these four, so it doesn't share this shape. */
 .base {
   width: 100%;
   max-width: 500px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: .5rem;
+  gap: 0.55rem;
+  padding: 0.55rem 1.1rem;
   text-wrap: nowrap;
-  border-radius: var(--size-4);
+  border-radius: 999px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--color-light-300);
+  background: color-mix(in srgb, var(--component-background) 70%, transparent);
+  border: 1px solid var(--line);
+  cursor: pointer;
+  transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+}
+
+.base:hover:not(:disabled),
+.base:focus-visible {
+  color: var(--color-primary);
+  border-color: color-mix(in srgb, var(--color-primary) 55%, transparent);
+  outline: none;
+}
+
+.base:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }

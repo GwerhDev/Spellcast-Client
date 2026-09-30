@@ -1,36 +1,45 @@
 .container {
   composes: base from './buttonBase.module.css';
-  font-weight: 600;
-  transition-duration: .4s;
-  color: var(--app-white);
-  background: var(--color-primary);
 }
 
-.container:hover {
-  color: var(--app-white);
-  background: var(--color-primary-accent);
+/* The main action: the same chip, with the primary color on its border and text (the
+   surface stays the chip's). `button.` raises these above the composed .base, whose equal
+   specificity would otherwise leave the winner to CSS Modules' bundle order. */
+button.container {
+  color: var(--color-primary);
+  border-color: color-mix(in srgb, var(--color-primary) 60%, transparent);
 }
 
-.container:disabled:hover {
-  background-color: var(--color-light-300);
+button.container:hover:not(:disabled),
+button.container:focus-visible {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 12%, var(--component-background));
 }
 
-.danger {
-  background: transparent;
-  border: solid 2px var(--color-light-200);
-  color: var(--color-light-200);
+/* Variants: danger is the plain neutral chip turning red on hover (destructive actions
+   shouldn't read as the main one); accent is the same idea in bronze. Chained with
+   button.container so they outrank its own rules. */
+button.container.danger {
+  color: var(--color-light-300);
+  border-color: var(--line);
 }
 
-.danger:hover {
-  background: var(--color-danger);
-  border-color: var(--color-danger);
-  color: var(--app-white);
+button.container.danger:hover:not(:disabled),
+button.container.danger:focus-visible {
+  color: var(--color-danger);
+  background: color-mix(in srgb, var(--component-background) 70%, transparent);
+  border-color: color-mix(in srgb, var(--color-danger) 55%, transparent);
 }
 
-.accent {
-  background: var(--color-accent-bronze);
+button.container.accent {
+  color: var(--color-accent-bronze-hover);
+  border-color: color-mix(in srgb, var(--color-accent-bronze) 60%, transparent);
 }
 
-.accent:hover {
-  background: var(--color-accent-bronze-hover);
+button.container.accent:hover:not(:disabled),
+button.container.accent:focus-visible {
+  color: var(--color-accent-bronze-hover);
+  border-color: var(--color-accent-bronze);
+  background: color-mix(in srgb, var(--color-accent-bronze) 12%, var(--component-background));
 }

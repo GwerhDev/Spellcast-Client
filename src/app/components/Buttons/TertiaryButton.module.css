@@ -1,16 +1,3 @@
 .container {
   composes: base from './buttonBase.module.css';
-  font-weight: 600;
-  transition-duration: .4s;
-  color: var(--text-color);
-  background: var(--component-background);
-}
-
-.container:hover {
-  color: var(--color-light-100);
-  background: var(--color-primary);
-}
-
-.container:disabled:hover {
-  background-color: var(--color-light-300);
 }
