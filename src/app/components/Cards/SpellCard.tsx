@@ -2,21 +2,14 @@ import s from './SpellCard.module.css';
 import { SPELL_DRAG_TYPE } from '../../../config/consts';
 import { DragTether } from '../DragTether/DragTether';
 import React, { useMemo, useEffect, useState, useRef } from 'react';
-import { createPortal } from 'react-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faScroll, faTrash, faPen, faEllipsisVertical, faHourglassHalf, faCheck, faFileExport, faImage } from '@fortawesome/free-solid-svg-icons';
+import { faScroll, faHourglassHalf, faCheck } from '@fortawesome/free-solid-svg-icons';
 import { Spell } from '../../../interfaces';
-import { useLanguage } from '../../../i18n';
-import { Tag } from '../Tag/Tag';
 import { Waveform } from '../Waveform/Waveform';
-import { PlayButton } from '../PlayButton/PlayButton';
 import { useAppSelector } from '../../../store/hooks';
 import { resolveCoverFrameId, getCoverFrameStyle, getCoverFrameCorners, getCoverFrame3D } from '../../../utils/coverFrame';
 import { CoverFrameCorners } from '../CoverFrameCorners';
 import { VIEW_MARGIN_X, VIEW_MARGIN_Y } from '../Cover3D/constants';
-import { coverFrames } from '../../../config/assets';
-import { CoverFramePickerModal } from '../Modals/CoverFramePickerModal';
-import { updateSpellCoverFrame } from '../../../db';
 
 // TCORE-124: three/@react-three/fiber/@react-three/drei are only downloaded once a card
 // actually renders this (i.e. show3D is true for it) -- lazy so SpellCard, used on nearly
@@ -40,13 +33,11 @@ interface UploadJob {
 
 interface SpellCardProps {
   doc: Spell;
+  // This card's spell is the one loaded in the player (playing or paused).
   isActive?: boolean;
   isPlaying?: boolean;
+  // Opens the spell's detail, where its actions (read, edit, delete, cover) live.
   onClick: () => void;
-  onDelete: (e: React.MouseEvent) => void;
-  onEdit: (e: React.MouseEvent) => void;
-  onExport?: (e: React.MouseEvent) => void;
-  onPlay?: (e: React.MouseEvent) => void;
   uploadJob?: UploadJob | null;
   selectionMode?: boolean;
   selected?: boolean;
@@ -60,20 +51,18 @@ interface SpellCardProps {
   show3D?: boolean;
 }
 
-export const SpellCard = ({ doc, isActive, isPlaying, onClick, onDelete, onEdit, onExport, onPlay, uploadJob, selectionMode, selected, onToggleSelect, show3D }: SpellCardProps) => {
-  const { t } = useLanguage();
+// A spell in a grid: just its cover, which glows on hover. Clicking opens its detail; the
+// only thing drawn over the cover is the reading indicator, while it's the loaded spell.
+export const SpellCard = ({ doc, isActive, isPlaying, onClick, uploadJob, selectionMode, selected, onToggleSelect, show3D }: SpellCardProps) => {
   const totalPages = useMemo(() => {
     if (!doc.pagesContent) return null;
     try { return JSON.parse(doc.pagesContent).length; } catch { return null; }
   }, [doc.pagesContent]);
 
-  // TCORE-123: this spell's own pick, falling back to the global default when unset.
-  // Mirrored into local state (like coverUrl below) so picking a new frame from this card's
-  // own context menu updates immediately without the parent (SpellList/LastSpells) having
-  // to refetch its whole `documents` list just for this one field.
-  const { activeCoverFrameId, unlockedIds } = useAppSelector(state => state.casterInventory);
-  const [coverFrameId, setCoverFrameId] = useState(doc.coverFrameId);
-  useEffect(() => { setCoverFrameId(doc.coverFrameId); }, [doc.coverFrameId]);
+  // TCORE-123: this spell's own pick, falling back to the global default when unset. The
+  // pick itself is made from the spell's detail, which refreshes the lists after saving.
+  const { activeCoverFrameId } = useAppSelector(state => state.casterInventory);
+  const coverFrameId = doc.coverFrameId;
   const resolvedCoverFrameId = resolveCoverFrameId(coverFrameId, activeCoverFrameId);
   const coverFrameStyle = getCoverFrameStyle(resolvedCoverFrameId);
   const coverFrameCorners = getCoverFrameCorners(resolvedCoverFrameId);
@@ -82,11 +71,8 @@ export const SpellCard = ({ doc, isActive, isPlaying, onClick, onDelete, onEdit,
   // show3D is false AND when this resolved frame has no 3D geometry at all, so a frame
   // without a 3D asset yet still falls back to the plain 2D corners even with 3D enabled.
   const coverFrame3D = show3D ? getCoverFrame3D(resolvedCoverFrameId) : null;
-  const ownedCoverFrames = useMemo(() => coverFrames.filter(b => unlockedIds.includes(b.id)), [unlockedIds]);
-  const [showCoverFrameModal, setShowCoverFrameModal] = useState(false);
 
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
-  const [menuOpen, setMenuOpen] = useState(false);
   // While this card is being dragged it keeps its place as an empty placeholder, tied to
   // the pointer by a thread from that place (its center, in viewport coordinates).
   const [dragging, setDragging] = useState(false);
@@ -94,9 +80,6 @@ export const SpellCard = ({ doc, isActive, isPlaying, onClick, onDelete, onEdit,
   // The frame scheduled to switch to the placeholder; a drag that ends before it runs must
   // cancel it, or it would turn the placeholder on after the drag is already over.
   const dragFrameRef = useRef<number | null>(null);
-  const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
-  const btnRef = useRef<HTMLButtonElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!doc.cover) return;
@@ -104,28 +87,6 @@ export const SpellCard = ({ doc, isActive, isPlaying, onClick, onDelete, onEdit,
     setCoverUrl(url);
     return () => URL.revokeObjectURL(url);
   }, [doc.cover]);
-
-  useEffect(() => {
-    if (!menuOpen) return;
-    const handler = (e: MouseEvent) => {
-      if (
-        menuRef.current && !menuRef.current.contains(e.target as Node) &&
-        btnRef.current && !btnRef.current.contains(e.target as Node)
-      ) {
-        setMenuOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [menuOpen]);
-
-  const openMenu = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!btnRef.current) return;
-    const rect = btnRef.current.getBoundingClientRect();
-    setMenuPos({ top: rect.bottom + 4, left: rect.left });
-    setMenuOpen(o => !o);
-  };
 
   const currentPage = doc.progress?.currentPage ?? 0;
   const progressPct = (totalPages && currentPage > 0)
@@ -137,29 +98,15 @@ export const SpellCard = ({ doc, isActive, isPlaying, onClick, onDelete, onEdit,
     onClick();
   };
 
-  // TCORE-123: `pick` mirrors Spell.coverFrameId's own three states -- undefined clears
-  // this spell's override (back to following the global default), null explicitly opts
-  // this spell out of one, and a frame id is this spell's own explicit pick. Applied
-  // optimistically to local state immediately, then persisted -- reverted only if the
-  // write itself fails, so a slow IndexedDB write never leaves the picker feeling stuck.
-  const handleCoverFramePick = async (pick: string | null | undefined) => {
-    setShowCoverFrameModal(false);
-    const previous = coverFrameId;
-    setCoverFrameId(pick);
-    try {
-      await updateSpellCoverFrame(doc.id, doc.userId!, pick);
-    } catch (err) {
-      console.error('Failed to save cover frame:', err);
-      setCoverFrameId(previous);
-    }
-  };
-
   const hasCoverFrame = !!(coverUrl && coverFrameCorners);
 
   return (
     <>
     <div
       data-testid={`spell-card-${doc.id}`}
+      // The cover is all a pointer device sees of it: its title as the tooltip and name.
+      title={doc.title}
+      aria-label={doc.title}
       className={`${s.card} ${isActive ? s.cardActive : ''} ${selected ? s.cardSelected : ''} ${hasCoverFrame ? s.cardSquared : ''} ${dragging ? s.cardDragging : ''}`}
       onClick={handleClick}
       // Draggable onto a drop target that reads spells (e.g. Start's "Read" tab), which gets
@@ -201,48 +148,9 @@ export const SpellCard = ({ doc, isActive, isPlaying, onClick, onDelete, onEdit,
             </span>
           </div>
         )}
-        <div className={`${s.actions} ${menuOpen ? s.actionsVisible : ''}`}>
-          <button ref={btnRef} data-testid={`spell-card-menu-btn-${doc.id}`} className={s.menuButton} onClick={openMenu}>
-            <FontAwesomeIcon icon={faEllipsisVertical} />
-          </button>
-        </div>
-        {menuOpen && createPortal(
-          <div
-            ref={menuRef}
-            className={s.contextMenu}
-            style={{ top: menuPos.top, left: menuPos.left }}
-          >
-            <button className={s.menuItem} onClick={(e) => { e.stopPropagation(); setMenuOpen(false); onEdit(e); }}>
-              <FontAwesomeIcon icon={faPen} />
-              {t.common.edit}
-            </button>
-            {onExport && (
-              <button data-testid={`spell-card-export-${doc.id}`} className={s.menuItem} onClick={(e) => { e.stopPropagation(); setMenuOpen(false); onExport(e); }}>
-                <FontAwesomeIcon icon={faFileExport} />
-                {t.spell.exportSpell}
-              </button>
-            )}
-            {/* TCORE-123: always shown, regardless of ownership -- the picker itself lists
-                whatever IS owned (including "no frame owned yet" as an empty state), rather
-                than this menu item deciding upfront whether there's anything to pick. */}
-            <button data-testid={`spell-card-cover-frame-${doc.id}`} className={s.menuItem} onClick={(e) => { e.stopPropagation(); setMenuOpen(false); setShowCoverFrameModal(true); }}>
-              <FontAwesomeIcon icon={faImage} />
-              {t.spell.coverFrameLabel}
-            </button>
-            <button data-testid={`spell-card-delete-${doc.id}`} className={`${s.menuItem} ${s.menuItemDanger}`} onClick={(e) => { e.stopPropagation(); setMenuOpen(false); onDelete(e); }}>
-              <FontAwesomeIcon icon={faTrash} />
-              {t.common.delete}
-            </button>
-          </div>,
-          document.body
-        )}
-        {onPlay && !selectionMode && (
-          <div className={`${s.playAction} ${isPlaying ? s.playActionPlaying : isActive ? s.playActionActive : ''}`}>
-            <PlayButton
-              size="sm"
-              isPlaying={!!isPlaying}
-              onClick={(e) => { e.stopPropagation(); onPlay(e); }}
-            />
+        {isActive && !selectionMode && (
+          <div data-testid={`spell-card-now-${doc.id}`} className={s.nowIndicator} aria-hidden="true">
+            <Waveform active={!!isPlaying} bars={4} height={14} color="white" />
           </div>
         )}
         <div className={s.coverWrapper}>
@@ -259,10 +167,6 @@ export const SpellCard = ({ doc, isActive, isPlaying, onClick, onDelete, onEdit,
               : <img src={coverUrl} alt={doc.title} className={s.cover} style={coverFrameStyle} draggable={false} />)
             : <div className={s.iconWrapper}><FontAwesomeIcon icon={faScroll} className={s.icon} /></div>
           }
-          <div className={s.coverTags}>
-            {isPlaying && <Tag tone="live" size="sm" dot>{t.spell.reading}</Tag>}
-            {isActive && !isPlaying && <Tag tone="primary" size="sm">{t.spell.reading}</Tag>}
-          </div>
           {uploadJob && (
             <div className={s.uploadOverlay}>
               {uploadJob.status === 'processing' ? (
@@ -283,7 +187,6 @@ export const SpellCard = ({ doc, isActive, isPlaying, onClick, onDelete, onEdit,
         <div className={s.footer}>
           <div className={s.titleRow}>
             <span className={s.title}>{doc.title}</span>
-            {isPlaying && <Waveform active bars={3} height={10} />}
           </div>
           {progressPct !== null ? (
             <div className={s.progressBar}>
@@ -324,7 +227,7 @@ export const SpellCard = ({ doc, isActive, isPlaying, onClick, onDelete, onEdit,
         // z-index only set here, inline, for the 3D branch -- see .coverFrameSlot's own
         // CSS comment for why 2D CoverFrameCorners needs to stay at z-index:auto (matches
         // production) while CoverFrame3DView's own larger ornaments need to yield to
-        // .actions/.playAction/.uploadOverlay/.footer.
+        // .nowIndicator/.uploadOverlay/.footer.
         <div className={s.coverFrameSlot} style={coverFrame3D ? ({ '--cover-frame-3d-margin-x': `${VIEW_MARGIN_X}px`, '--cover-frame-3d-margin-y': `${VIEW_MARGIN_Y}px`, zIndex: 1 } as React.CSSProperties) : undefined}>
           {coverFrame3D
             ? (
@@ -336,13 +239,6 @@ export const SpellCard = ({ doc, isActive, isPlaying, onClick, onDelete, onEdit,
         </div>
       )}
     </div>
-    <CoverFramePickerModal
-      show={showCoverFrameModal}
-      onClose={() => setShowCoverFrameModal(false)}
-      borders={ownedCoverFrames}
-      selectedId={coverFrameId}
-      onPick={handleCoverFramePick}
-    />
     </>
   );
 };

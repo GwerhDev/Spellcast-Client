@@ -2,23 +2,14 @@ import s from './index.module.css';
 import grid from '../../components/SpellGrid/index.module.css';
 import React, { useEffect, useRef, useState } from 'react';
 import { getSpellsFromDB } from '../../../db';
-import { useDeleteSpells } from '../../../hooks/useDeleteSpells';
 import { getAllOriginalPdfIds } from '../../../db/originalPdfs';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { DeleteConfirmModal } from '../../components/Modals/DeleteConfirmModal';
-// import { SpellExportModal } from '../../components/Modals/SpellExportModal'; // .spell export: future
 import { useAppSelector } from '../../../store/hooks';
 import { Spell } from '../../../interfaces';
 import { SpellCard } from '../../components/Cards/SpellCard';
 import { SpellDetailModal } from '../../components/Modals/SpellDetailModal';
 import { EmptyState } from '../../components/EmptyState';
 import { useCoverFrame3DSection } from '../../../hooks/useCoverFrame3DSection';
-// import { useSpellExport } from '../../../hooks/useSpellExport'; // .spell export: future
 import { faScroll, faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
-import { useDispatch } from 'react-redux';
-import { setAutoPlayOnLoad, resetBrowserPlayer, requestTogglePlay } from '../../../store/browserPlayerSlice';
-import { setAutoPlayOnLoad as setAudioAutoPlayOnLoad, resetAudioPlayer, requestTogglePlay as requestAudioTogglePlay } from '../../../store/audioPlayerSlice';
-import { setSpellFile, setSpellInfo, resetSpellReader } from '../../../store/spellReaderSlice';
 import { useLanguage } from '../../../i18n';
 import { useInfiniteList } from '../../../hooks/useInfiniteList';
 
@@ -36,50 +27,21 @@ interface SpellListProps {
 }
 
 export const SpellList: React.FC<SpellListProps> = ({ query = '', filter = 'local', docFilter = 'all', selectionMode, selectedIds = [], onToggleSelect, onSelectableIdsChange }) => {
-  const navigate = useNavigate();
-  const deleteSpells = useDeleteSpells();
-  // A card click opens the spell's detail in a modal (the same one the player's cover opens).
+  // A card click opens the spell's detail in a modal (the same one the player's cover
+  // opens), where all of its actions live.
   const [detailSpellId, setDetailSpellId] = useState<string | null>(null);
-  const location = useLocation();
   const { t } = useLanguage();
-  const dispatch = useDispatch();
   const { userData, logged } = useAppSelector(state => state.session);
-  const { spellId: activeDocId, isLoaded: readerLoaded, listVersion } = useAppSelector(state => state.spellReader);
+  const { spellId: activeDocId, listVersion } = useAppSelector(state => state.spellReader);
   const uploadQueue = useAppSelector(state => state.spellUpload.queue);
   const audioPlaying = useAppSelector(state => state.audioPlayer.isPlaying);
   const browserPlaying = useAppSelector(state => state.browserPlayer.isPlaying);
-  const selectedVoiceType = useAppSelector(state => state.voice.selectedVoice.type);
   const [documents, setDocuments] = useState<Spell[]>([]);
   // TCORE-90: which spells have an original PDF stored, fetched once per list load (a
   // single batch read) instead of reading a `pdf` field off each Spell record.
   const [pdfIds, setPdfIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [selectedDoc, setSelectedDoc] = useState<{ id: string, title: string } | null>(null);
   const sectionRef = useRef<HTMLDivElement>(null);
-  // .spell export UI is hidden for now (not ready to ship this phase) — kept wired but
-  // commented out so it's a one-line re-enable later. See openExportModal below and the
-  // SpellExportModal render at the bottom of this file.
-  // const { exportTarget, openExportModal, closeExportModal, handleExport, isExporting } = useSpellExport();
-
-  const handlePlay = (doc: Spell) => {
-    if (activeDocId === doc.id && (readerLoaded || audioPlaying || browserPlaying)) {
-      if (selectedVoiceType !== 'browser') {
-        dispatch(requestAudioTogglePlay());
-      } else {
-        dispatch(requestTogglePlay());
-      }
-      return;
-    }
-    const totalPages = doc.pagesContent ? (() => { try { return JSON.parse(doc.pagesContent!).length; } catch { return 1; } })() : 1;
-    dispatch(resetSpellReader());
-    dispatch(resetBrowserPlayer());
-    dispatch(resetAudioPlayer());
-    dispatch(setAutoPlayOnLoad(true));
-    dispatch(setAudioAutoPlayOnLoad(true));
-    dispatch(setSpellFile({ id: doc.id, title: doc.title, userId: doc.userId, progress: doc.progress }));
-    dispatch(setSpellInfo({ totalPages }));
-  };
 
   const fetchLocal = async () => {
     if (!logged) { setIsLoading(false); return; }
@@ -101,30 +63,6 @@ export const SpellList: React.FC<SpellListProps> = ({ query = '', filter = 'loca
     if (filter !== 'cloud') fetchLocal();
     //eslint-disable-next-line
   }, [userData.id, filter, listVersion]);
-
-  const openDeleteModal = (id: string, title: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setSelectedDoc({ id, title });
-    setShowDeleteModal(true);
-  };
-
-  const closeDeleteModal = () => {
-    setSelectedDoc(null);
-    setShowDeleteModal(false);
-  };
-
-  const handleDeleteConfirm = async () => {
-    if (selectedDoc && userData?.id) {
-      try {
-        // Unloads it too if it's the spell in the player, and refreshes every list.
-        await deleteSpells([selectedDoc.id]);
-      } catch (error) {
-        console.error('Failed to delete spell:', error);
-      } finally {
-        closeDeleteModal();
-      }
-    }
-  };
 
   const q = query.trim().toLowerCase();
   const byQuery = q ? documents.filter(d => d.title.toLowerCase().includes(q)) : documents;
@@ -189,12 +127,8 @@ export const SpellList: React.FC<SpellListProps> = ({ query = '', filter = 'loca
                 key={doc.id}
                 doc={doc}
                 onClick={() => setDetailSpellId(doc.id)}
-                onEdit={(e) => { e.stopPropagation(); navigate(`/editor/${doc.id}`, { state: { from: location.pathname } }); }}
-                onDelete={(e) => openDeleteModal(doc.id, doc.title, e)}
-                // onExport={(e) => { e.stopPropagation(); openExportModal({ id: doc.id, title: doc.title }); }} // .spell export: future
-                isActive={activeDocId === doc.id && (readerLoaded || audioPlaying || browserPlaying)}
+                isActive={activeDocId === doc.id}
                 isPlaying={activeDocId === doc.id && (audioPlaying || browserPlaying)}
-                onPlay={() => handlePlay(doc)}
                 uploadJob={uploadJob}
                 selectionMode={selectionMode}
                 selected={selectedIds.includes(doc.id)}
@@ -206,26 +140,7 @@ export const SpellList: React.FC<SpellListProps> = ({ query = '', filter = 'loca
         </div>
         {hasMore && <div ref={sentinelRef} data-testid="spell-list-sentinel" className={grid.sentinel} />}
       </div>
-      {selectedDoc && (
-        <DeleteConfirmModal
-          show={showDeleteModal}
-          onClose={closeDeleteModal}
-          onConfirm={handleDeleteConfirm}
-          title={t.spell.deleteTitle}
-          message={t.spell.deleteConfirm.replace('{title}', selectedDoc.title)}
-        />
-      )}
       <SpellDetailModal spellId={detailSpellId} show={detailSpellId !== null} onClose={() => setDetailSpellId(null)} />
-      {/* .spell export: future — re-enable the useSpellExport() hook above and this block.
-      {exportTarget && (
-        <SpellExportModal
-          show={!!exportTarget}
-          title={exportTarget.title}
-          isExporting={isExporting}
-          onClose={closeExportModal}
-          onExport={handleExport}
-        />
-      )} */}
     </>
   );
 };

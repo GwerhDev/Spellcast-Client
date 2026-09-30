@@ -42,31 +42,35 @@
   width: 100%;
 }
 
+/* A card's hover glow (and a cover frame's overhanging corners) reach past the card itself,
+   but a scroller clips everything outside its own box on both axes -- there's no clipping
+   only the scroll axis. So the scroller itself is made bigger than the cards by
+   --card-glow-room on every side (padding), and pulled back by the same amount (negative
+   margin) so the cards stay exactly where they were: the glow is drawn inside the padding,
+   which the scroller doesn't clip. */
 .slider {
+  --card-glow-room: 1.75rem;
   display: flex;
   flex-direction: row;
   gap: 1rem;
+  padding: var(--card-glow-room);
+  margin: calc(-1 * var(--card-glow-room));
+  /* The extra room overlaps whatever sits around the carousel (e.g. the header's
+     Grimoire link): only the cards themselves take clicks. */
+  pointer-events: none;
   overflow-x: auto;
   /* Explicit, not left to default: overflow-x: auto alone computes overflow-y as auto too
      (there's no such thing as a scroller clipping only one axis per the CSS spec) -- without
-     this, .sliderFramed's own extra padding below is just enough extra height to trigger a
-     visible vertical scrollbar on the carousel itself, which is not wanted here at all. */
+     this, the glow room's padding is enough extra height to trigger a visible vertical
+     scrollbar on the carousel itself, which is not wanted here at all. */
   overflow-y: hidden;
   min-width: 0;
-  padding-bottom: 0.5rem;
   scroll-behavior: smooth;
   scrollbar-width: none;
 }
 
-/* TCORE-123 follow-up: a cover frame's corner plates overhang each SpellCard's own edge by
-   CORNER_OVERHANG (see CoverFrameCorners.tsx) -- without this padding those corners get cut
-   off top/bottom by this scroller's own box, and the first/last card's corners get cut off
-   left/right by it too. Applied only when a visible card actually resolves to a frame (see
-   hasVisibleCoverFrame in index.tsx) -- otherwise it's dead space above the cards for
-   nothing. GrimoireLanding's grid doesn't need this at all -- it doesn't scroll, so it
-   never sets overflow in the first place. */
-.sliderFramed {
-  padding-block: .3rem;
+.slider > * {
+  pointer-events: auto;
 }
 
 .slider::-webkit-scrollbar {

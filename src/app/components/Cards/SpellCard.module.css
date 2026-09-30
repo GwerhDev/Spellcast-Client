@@ -1,14 +1,14 @@
 .card {
   position: relative;
   /* TCORE-124: an explicit z-index (any value) on a position: relative element creates its
-     own stacking context -- without this, .card's interactive overlays (.playAction,
-     .actions, .uploadOverlay, all z-index 2-4) were only competing with each other WITHIN
+     own stacking context -- without this, .card's overlays (.nowIndicator, .uploadOverlay,
+     the selection checkbox, z-index 2-4) were only competing with each other WITHIN
      an implicit context that itself sat at the SAME level as .app-viewer's other direct
      children -- including CoverFrame3DRoot's shared canvas (z-index: 1, mounted way up in
      DefaultLayout, see that component's own comment). Their z-index numbers being higher
      than 1 didn't help: comparing z-index only makes sense between siblings of the SAME
      stacking context, and .card had none of its own, so the canvas (later in the DOM within
-     its own context) could still paint over a card's hover controls. Isolating .card here
+     its own context) could still paint over a card's overlays. Isolating .card here
      means everything inside it now stacks purely against its OTHER children, never against
      anything outside the card -- the shared 3D canvas included. */
   z-index: 0;
@@ -79,9 +79,17 @@
   }
 }
 
+.card {
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+/* Hover is only a glow: the card shows nothing else over its cover. */
 .card:hover {
-  border-color: color-mix(in srgb, var(--color-primary) 45%, transparent);
-  box-shadow: 0 0 16px rgba(115, 165, 204, 0.12);
+  border-color: color-mix(in srgb, var(--color-primary) 70%, transparent);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--color-primary) 35%, transparent),
+    0 0 18px color-mix(in srgb, var(--color-primary) 45%, transparent),
+    0 0 42px color-mix(in srgb, var(--color-primary) 18%, transparent);
 }
 
 .cardClip {
@@ -105,112 +113,21 @@
   border-color: var(--color-primary) !important;
 }
 
-.coverTags {
+/* While this is the loaded spell: the reading indicator (the same bars as the altar),
+   animated while it plays and flat while paused. Not a control -- clicks go to the card. */
+.nowIndicator {
   position: absolute;
-  bottom: 6px;
-  left: 6px;
-  right: 6px;
-  z-index: 3;
-  display: flex;
-  gap: 4px;
-  flex-wrap: wrap;
-  pointer-events: none;
-}
-
-.playAction {
-  position: absolute;
-  top: 0.5rem;
-  left: 0.5rem;
+  top: 0.45rem;
+  left: 0.45rem;
   z-index: 2;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s ease;
-}
-
-.card:hover .playAction,
-.playActionPlaying,
-.playActionActive {
-  opacity: 1;
-  pointer-events: all;
-}
-
-.actions {
-  position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  display: flex;
-  gap: 0.25rem;
-  z-index: 2;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s ease;
-}
-
-.card:hover .actions {
-  opacity: 1;
-  pointer-events: all;
-}
-
-.actionsVisible {
-  opacity: 1 !important;
-  pointer-events: all !important;
-}
-
-.menuButton {
-  background: none;
-  border: none;
-  cursor: pointer;
-  line-height: 1;
-  padding: 0;
-  padding-inline: .6rem;
-  aspect-ratio: 1;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  border-radius: 100%;
-  backdrop-filter: blur(1px);
-  background: rgba(255, 255, 255, 0.238);
-  transition: color 0.2s ease, background 0.2s ease;
-  color: var(--app-white);
-}
-
-.menuButton:hover {
-  color: var(--app-white);
-  backdrop-filter: blur(2px);
-  background: rgba(255, 255, 255, 0.356);
-}
-
-.contextMenu {
-  position: fixed;
-  background: var(--surface-overlay);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  overflow: hidden;
-  min-width: 130px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
-  z-index: 10;
-}
-
-.menuItem {
-  width: 100%;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  background: none;
-  border: none;
-  color: var(--color-light-100);
-  font-size: 0.78rem;
-  cursor: pointer;
-  text-align: left;
-  transition: background 0.15s ease, color 0.15s ease;
-}
-
-.menuItem:hover {
-  background: var(--color-primary);
-}
-
-.menuItemDanger:hover {
-  color: var(--color-danger-100);
+  padding: 0.3rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(8, 10, 14, 0.55);
+  border: 1px solid rgba(242, 242, 242, 0.18);
+  backdrop-filter: blur(4px);
+  pointer-events: none;
 }
 
 .cardSelected {
@@ -256,8 +173,8 @@
    plates and medallions are free to overhang past that box's edge.
 
    No z-index in the base rule -- follow-up fix: an earlier pass here gave this an
-   unconditional z-index: 1 (to keep .cardClip's interactive overlays -- .playAction/
-   .actions at 2, .uploadOverlay at 3, .footer's hover-reveal at 4 -- on top of the 3D case,
+   unconditional z-index: 1 (to keep .cardClip's overlays -- .nowIndicator at 2,
+   .uploadOverlay at 3, the selection checkbox at 4 -- on top of the 3D case,
    CoverFrame3DView), but that also applies to plain 2D CoverFrameCorners, which regressed
    production's actual look: with NO z-index of its own, this slot (a later DOM sibling of
    .cardClip, inside .card's own isolated stacking context, see that rule's comment) wins
@@ -331,29 +248,13 @@
   to { transform: rotate(360deg); }
 }
 
-.coverWrapper::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.45);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s ease;
-}
-
-.card:hover .coverWrapper::after {
-  opacity: 1;
-}
-
 /* TCORE-123 follow-up: each CoverFrameCorners piece (a corner plate or medallion) is a
    fixed-size image anchored to its own corner/edge of .coverFrameSlot -- a box positioned
    to match .coverWrapper exactly (see .coverFrameSlot's own comment) but living outside
    .cardClip so these pieces can overhang the card's edge instead of being clipped by it.
    They never need to stretch or crop to the cover's aspect ratio (that's the whole point,
-   see CoverFrame's own comment in config/assets/types.ts). Deliberately NOT dimmed by
-   .card's hover scrim (.coverWrapper::after, below) -- the frame is bolted-on hardware, not
-   part of the cover art the scrim is meant to darken, so it stays crisp above it at all
-   times instead of fading down together with the cover. */
+   see CoverFrame's own comment in config/assets/types.ts). Above the cover at all times:
+   the frame is bolted-on hardware, not part of the cover art. */
 .coverFrameOverlay {
   z-index: 5;
 }
@@ -433,63 +334,12 @@
   color: var(--color-light-400);
 }
 
-/* ── Hover-reveal footer ──
-   On pointer devices the info footer isn't part of the card's layout at all: the card is
-   only its cover, and the footer slides up over the bottom of it on hover, so a grid of
-   spells reads as artwork first. Scoped to `hover: hover` on purpose -- a touch device has
-   no hover to reveal it with, so it keeps the original always-visible, in-flow footer
-   rather than being left with untitled covers. */
+/* ── Footer ──
+   On pointer devices the card is only its cover (its title is the tooltip, see SpellCard),
+   so the footer isn't shown at all. A touch device has no hover and no tooltip, so it keeps
+   the in-flow footer rather than being left with untitled covers. */
 @media (hover: hover) {
   .footer {
-    position: absolute;
-    inset: auto 0 0 0;
-    z-index: 4;
-    /* Extra top padding gives the gradient room to fade out before the text starts. */
-    padding-top: 1.75rem;
-    /* Its own scrim, on top of .coverWrapper::after's flat hover dim -- cover art is
-       arbitrary, so the text needs a guaranteed dark backdrop of its own. */
-    background: linear-gradient(to top, rgba(0, 0, 0, 0.92) 30%, rgba(0, 0, 0, 0.55) 72%, transparent);
-    opacity: 0;
-    transform: translateY(100%);
-    transition: opacity 0.2s ease, transform 0.24s cubic-bezier(0.22, 1, 0.36, 1);
-  }
-
-  .card:hover .footer,
-  .card:focus-within .footer {
-    opacity: 1;
-    transform: translateY(0);
-  }
-
-  /* Fixed light values rather than the themed text tokens: this text always sits on the
-     dark scrim above, in both the light and dark themes. */
-  .footer .title {
-    color: var(--app-white);
-  }
-
-  .footer .date,
-  .footer .progress {
-    color: rgba(255, 255, 255, 0.72);
-  }
-
-  .footer .progressBar {
-    background: rgba(255, 255, 255, 0.25);
-  }
-
-  /* The status tag and the footer share the bottom of the cover -- the footer takes that
-     space over on hover, and already carries the same signal (waveform + progress). */
-  .coverTags {
-    transition: opacity 0.2s ease;
-  }
-
-  .card:hover .coverTags,
-  .card:focus-within .coverTags {
-    opacity: 0;
-  }
-}
-
-@media (hover: hover) and (prefers-reduced-motion: reduce) {
-  .footer {
-    transform: none;
-    transition: opacity 0.2s ease;
+    display: none;
   }
 }
