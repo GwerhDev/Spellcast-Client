@@ -102,7 +102,10 @@ describe('SpellDetail', () => {
 
   it('shows the word count and estimated listening time from the pages', async () => {
     const words = Array.from({ length: 320 }, () => 'word').join(' ');
-    vi.spyOn(db, 'getSpellById').mockResolvedValue({ ...mockDoc, pagesContent: JSON.stringify([`<p>${words}</p>`]) } as never);
+    vi.spyOn(db, 'getSpellById').mockResolvedValue({
+      ...mockDoc,
+      pagesContent: JSON.stringify([{ type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: words }] }] }]),
+    } as never);
     renderDetail();
     await screen.findByTestId('spell-detail-title');
     expect(screen.getByTestId('spell-detail-words')).toHaveTextContent('320');

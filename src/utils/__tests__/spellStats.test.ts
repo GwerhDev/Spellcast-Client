@@ -1,14 +1,40 @@
 import { describe, it, expect } from 'vitest';
 import { countSpellWords, estimateListeningMinutes, WORDS_PER_MINUTE } from '../spellStats';
 
+// Pages as the app stores them: one Tiptap document per page.
+const doc = (...content: object[]) => ({ type: 'doc', content });
+const paragraph = (...content: object[]) => ({ type: 'paragraph', content });
+const text = (value: string, marks?: object[]) => ({ type: 'text', text: value, ...(marks ? { marks } : {}) });
+
 describe('countSpellWords', () => {
-  it('counts the words of every page, ignoring markup and entities', () => {
-    const pages = ['<p>The first&nbsp;page.</p>', '<h1>Two</h1><p>more <strong>words</strong> here</p>', '<img src="data:image/png;base64,AAAA" />'];
+  it('counts the text nodes of every Tiptap page', () => {
+    const pages = [
+      doc(paragraph(text('The first page.'))),
+      doc({ type: 'heading', attrs: { level: 1 }, content: [text('Two')] }, paragraph(text('more words here'))),
+      doc({ type: 'image', attrs: { src: 'data:image/png;base64,AAAA' } }),
+    ];
     expect(countSpellWords(JSON.stringify(pages))).toBe(7);
   });
 
+  it('keeps a word split by marks as one word, and separates blocks and hard breaks', () => {
+    const pages = [
+      doc(
+        paragraph(text('spell'), text('book', [{ type: 'bold' }]), { type: 'hardBreak' }, text('next')),
+        { type: 'bulletList', content: [
+          { type: 'listItem', content: [paragraph(text('one'))] },
+          { type: 'listItem', content: [paragraph(text('two'))] },
+        ] },
+      ),
+    ];
+    expect(countSpellWords(JSON.stringify(pages))).toBe(4);
+  });
+
+  it('still reads a page stored as an HTML string, ignoring markup and entities', () => {
+    expect(countSpellWords(JSON.stringify(['<p>The first&nbsp;page.</p>']))).toBe(3);
+  });
+
   it('ignores punctuation-only tokens', () => {
-    expect(countSpellWords(JSON.stringify(['<p>Hello — world !</p>']))).toBe(2);
+    expect(countSpellWords(JSON.stringify([doc(paragraph(text('Hello — world !')))]))).toBe(2);
   });
 
   it('is null for missing or unreadable pages', () => {
