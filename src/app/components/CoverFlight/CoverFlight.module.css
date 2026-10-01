@@ -12,13 +12,31 @@
   inset: 0;
   width: 100%;
   height: 100%;
-  border-radius: 8px;
+  /* The card's own radius, so both faces match the cover it leaves and lands on. */
+  border-radius: .2rem;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45), 0 0 24px color-mix(in srgb, var(--color-primary) 25%, transparent);
 }
 
+/* The front face holds the cover and its frame; the frame's corner pieces overhang its
+   edge, as on the card. */
 .front {
+  overflow: visible;
+}
+
+/* A frame's corner plates are square hardware: a framed cover has square corners, as on
+   the card -- on both faces, so its back doesn't turn up rounder than its front. */
+.framed {
+  border-radius: 0;
+}
+
+.frontImage {
+  display: block;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  border-radius: inherit;
   object-fit: cover;
   object-position: top;
 }

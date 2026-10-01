@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, type Transition } from 'framer-motion';
 import spellcastLogo from '../../../assets/spellcast-logo.svg';
+import { getCoverFrameCorners, getCoverFrameStyle } from '../../../utils/coverFrame';
+import { CoverFrameCorners } from '../CoverFrameCorners';
 import s from './CoverFlight.module.css';
 import type { FlightRect } from './flightRect';
 
@@ -9,6 +11,9 @@ export type { FlightRect } from './flightRect';
 
 interface CoverFlightProps {
   src: string;
+  // The cover's frame (already resolved: the spell's own pick or the default), flying with
+  // it -- the same border and corner pieces the card and the modal show. None: bare cover.
+  frameId?: string | null;
   from: FlightRect;
   // Where it lands, read when it's needed: at takeoff, and again on arrival -- if the
   // destination moved meanwhile (the modal settling as its content loads), the image
@@ -42,7 +47,9 @@ const moved = (a: FlightRect, b: FlightRect) =>
 // modal, and back), drawn over everything while the real ones hide: the cover seems to
 // travel from one to the other instead of one disappearing and the other appearing. It's a
 // card with two faces: the cover in front and the app's mark on its back, seen when it spins.
-export const CoverFlight = ({ src, from, target, lift = false, spin = false, onDone, imageRef }: CoverFlightProps) => {
+export const CoverFlight = ({ src, frameId = null, from, target, lift = false, spin = false, onDone, imageRef }: CoverFlightProps) => {
+  const frameStyle = getCoverFrameStyle(frameId);
+  const frameCorners = getCoverFrameCorners(frameId);
   const [dest, setDest] = useState<FlightRect>(() => target() ?? from);
   // The first leg (with the lift), a short follow-up after the destination moved, and the
   // turn over the landing spot.
@@ -101,8 +108,13 @@ export const CoverFlight = ({ src, from, target, lift = false, spin = false, onD
       transition={transition}
       onAnimationComplete={handleComplete}
     >
-      <img data-testid="cover-flight-front" src={src} alt="" className={`${s.face} ${s.front}`} />
-      <div data-testid="cover-flight-back" className={`${s.face} ${s.back}`}>
+      {/* The front: the cover in its frame. One face, so the frame turns with the cover and
+          hides with it while the back shows. */}
+      <div data-testid="cover-flight-front" className={`${s.face} ${s.front} ${frameCorners ? s.framed : ''}`}>
+        <img src={src} alt="" className={s.frontImage} style={frameStyle} />
+        {frameCorners && <CoverFrameCorners config={frameCorners} />}
+      </div>
+      <div data-testid="cover-flight-back" className={`${s.face} ${s.back} ${frameCorners ? s.framed : ''}`}>
         <span className={s.mark} style={{ maskImage: brandMask, WebkitMaskImage: brandMask }} />
       </div>
     </motion.div>,

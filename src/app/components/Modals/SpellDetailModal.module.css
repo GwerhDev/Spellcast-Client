@@ -1,8 +1,6 @@
 .loading {
-  /* The spinner fills this box (it's absolutely positioned), sized close to the loaded
-     content's own height so the modal doesn't jump when it arrives. */
+  /* The spinner fills this box (it's absolutely positioned): the info column's place. */
   position: relative;
-  min-height: 200px;
   color: var(--text-2);
   font-size: 0.9rem;
 }
@@ -17,7 +15,10 @@
 .header {
   display: flex;
   gap: 1.25rem;
-  align-items: flex-start;
+  align-items: stretch;
+  /* Always as tall as the cover: the modal has one size, loading or loaded, short or long
+     details -- what's longer scrolls in the info column. */
+  height: 206px;
 }
 
 .coverWrap {
@@ -79,15 +80,20 @@
   height: 206px;
   object-fit: cover;
   object-position: top;
-  border-radius: 8px;
+  border-radius: .2rem;
   border: 1px solid var(--line);
   display: block;
+}
+
+/* Square under a frame's corner plates, as on the card. */
+.coverSquared {
+  border-radius: 0;
 }
 
 .coverPlaceholder {
   width: 150px;
   height: 206px;
-  border-radius: 8px;
+  border-radius: .2rem;
   border: 1px solid var(--line);
   background: var(--surface-raised);
   display: flex;
@@ -100,9 +106,13 @@
 .info {
   flex: 1;
   min-width: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
+  overflow-y: auto;
+  /* Room for the scrollbar, and the edit chips' focus rings, inside the column. */
+  padding-right: 0.25rem;
 }
 
 .title {

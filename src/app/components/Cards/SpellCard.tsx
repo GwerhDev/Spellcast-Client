@@ -38,7 +38,7 @@ interface SpellCardProps {
   isPlaying?: boolean;
   // Opens the spell's detail, where its actions (read, edit, delete, cover) live. With a
   // cover, it comes with the cover's place on screen and image, for the cover to fly from.
-  onClick: (origin?: { rect: { top: number; left: number; width: number; height: number }; coverUrl: string; element: HTMLElement }) => void;
+  onClick: (origin?: { rect: { top: number; left: number; width: number; height: number }; coverUrl: string; element: HTMLElement; coverFrameId: string | null }) => void;
   // This card's cover has lifted off into its open detail: its place stays, empty.
   lifted?: boolean;
   uploadJob?: UploadJob | null;
@@ -102,7 +102,7 @@ export const SpellCard = ({ doc, isActive, isPlaying, onClick, lifted = false, u
     if (selectionMode) { onToggleSelect?.(); return; }
     const el = coverRef.current;
     const box = el?.getBoundingClientRect();
-    onClick(coverUrl && el && box ? { rect: { top: box.top, left: box.left, width: box.width, height: box.height }, coverUrl, element: el } : undefined);
+    onClick(coverUrl && el && box ? { rect: { top: box.top, left: box.left, width: box.width, height: box.height }, coverUrl, element: el, coverFrameId: resolvedCoverFrameId } : undefined);
   };
 
   const hasCoverFrame = !!(coverUrl && coverFrameCorners);

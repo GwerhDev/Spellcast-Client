@@ -12,7 +12,19 @@ describe('CoverFlight', () => {
     render(<div data-testid="host"><CoverFlight src="blob:cover" from={from} target={() => to} onDone={vi.fn()} /></div>);
     const flight = screen.getByTestId('cover-flight');
     expect(flight.parentElement).toBe(document.body);
-    expect(screen.getByTestId('cover-flight-front')).toHaveAttribute('src', 'blob:cover');
+    expect(screen.getByTestId('cover-flight-front').querySelector('img')).toHaveAttribute('src', 'blob:cover');
+  });
+
+  it('carries the cover\'s frame on its front face, corners included', () => {
+    render(<CoverFlight src="blob:cover" frameId="grimoire" from={from} target={() => to} onDone={vi.fn()} />);
+    const front = screen.getByTestId('cover-flight-front');
+    expect(front.querySelectorAll('[data-testid="cover-frame-corner"]').length).toBeGreaterThan(0);
+    expect(front.className).toMatch(/framed/);
+  });
+
+  it('flies bare without a frame', () => {
+    render(<CoverFlight src="blob:cover" frameId={null} from={from} target={() => to} onDone={vi.fn()} />);
+    expect(screen.queryByTestId('cover-frame-corner')).not.toBeInTheDocument();
   });
 
   it('reports when it has arrived', async () => {

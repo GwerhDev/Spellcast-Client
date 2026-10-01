@@ -36,6 +36,8 @@ export interface SpellDetailOrigin {
   // The card's cover element, measured again when flying back: the page under the modal
   // may have moved meanwhile (e.g. loading the spell turns the home page immersive).
   element?: HTMLElement | null;
+  // The frame the card shows (resolved), so it flies in with the cover.
+  coverFrameId?: string | null;
 }
 
 interface SpellDetailModalProps {
@@ -48,6 +50,7 @@ interface SpellDetailModalProps {
 interface Flight {
   from: FlightRect;
   src: string;
+  frameId: string | null;
   direction: 'in' | 'out';
 }
 
@@ -101,7 +104,7 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
     if (!show) { flownIn.current = false; setFlight(null); setLeaving(false); return; }
     if (!flies || !origin || flownIn.current || !coverSlotRef.current) return;
     flownIn.current = true;
-    setFlight({ from: origin.rect, src: origin.coverUrl, direction: 'in' });
+    setFlight({ from: origin.rect, src: origin.coverUrl, frameId: origin.coverFrameId ?? null, direction: 'in' });
   }, [show, flies, origin]);
 
   const flightTarget = () => {
@@ -118,7 +121,8 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
     setLeaving(true);
     // Still flying in: turn back from where the image is right now, not from the slot.
     const from = flight?.direction === 'in' && flightImageRef.current ? rectOf(flightImageRef.current) : rectOf(coverSlotRef.current);
-    setFlight({ from, src: coverUrl ?? origin.coverUrl, direction: 'out' });
+    // Back with the frame it has now: it may have been changed while the modal was open.
+    setFlight({ from, src: coverUrl ?? origin.coverUrl, frameId: doc ? resolveCoverFrameId(doc.coverFrameId, activeCoverFrameId) : origin.coverFrameId ?? null, direction: 'out' });
   };
 
   const handleFlightDone = () => {
@@ -233,30 +237,33 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
   return (
     <>
       <CustomModal show={show} onClose={requestClose} title="" compact motion={flies ? (leaving ? 'leave' : 'enter') : undefined}>
-        {!doc && flies && origin ? (
-          // Still reading the spell, opened from a card: the card's cover is already here --
-          // it's what flies in, and it stays once landed -- and only the details wait on the
-          // spinner.
+        {!doc ? (
+          // Still reading the spell: the modal already has its final size -- the header is as
+          // tall as the cover, and the actions row is here with what needs no spell read
+          // (Edit/Delete join it in the same row) -- so nothing moves when the details arrive.
+          // Opened from a card, its cover is already here too: it's what flies in, and it
+          // stays once landed.
           <div className={s.content}>
             <div className={s.header}>
               <div ref={coverSlotRef} data-testid="spell-detail-modal-cover" className={`${s.coverWrap} ${flight ? s.coverAway : ''}`}>
-                <img src={origin.coverUrl} alt="" className={s.cover} />
+                {origin
+                  ? <img src={origin.coverUrl} alt="" className={`${s.cover} ${getCoverFrameCorners(origin.coverFrameId ?? null) ? s.coverSquared : ''}`} />
+                  : <div className={s.coverPlaceholder}><FontAwesomeIcon icon={faScroll} /></div>}
               </div>
               <div data-testid="spell-detail-modal-loading" className={`${s.info} ${s.loading}`}>
                 <Spinner isLoading message={t.common.loading} />
               </div>
             </div>
-          </div>
-        ) : !doc ? (
-          <div data-testid="spell-detail-modal-loading" className={s.loading}>
-            <Spinner isLoading message={t.common.loading} />
+            <div className={s.actions}>
+              <PrimaryButton data-testid="spell-detail-modal-continue-btn" icon={faBookOpenReader} onClick={handleRead}>{t.spell.openInReader}</PrimaryButton>
+            </div>
           </div>
         ) : (
           <div className={s.content}>
             <div className={s.header}>
               <div ref={coverSlotRef} data-testid="spell-detail-modal-cover" className={`${s.coverWrap} ${flight ? s.coverAway : ''}`}>
                 {shownCoverUrl
-                  ? <img src={shownCoverUrl} alt={doc.title} className={s.cover} style={getCoverFrameStyle(resolvedCoverFrameId)} />
+                  ? <img src={shownCoverUrl} alt={doc.title} className={`${s.cover} ${coverFrameCorners ? s.coverSquared : ''}`} style={getCoverFrameStyle(resolvedCoverFrameId)} />
                   : <div className={s.coverPlaceholder}><FontAwesomeIcon icon={faScroll} /></div>
                 }
                 {shownCoverUrl && coverFrameCorners && <CoverFrameCorners config={coverFrameCorners} />}
@@ -363,6 +370,7 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
           key={flight.direction}
           imageRef={flightImageRef}
           src={flight.src}
+          frameId={flight.frameId}
           from={flight.from}
           target={flightTarget}
           lift={flight.direction === 'in'}
