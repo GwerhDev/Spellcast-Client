@@ -216,3 +216,8 @@
 .dismissBtn:hover {
   color: var(--text-color);
 }
+
+/* Only there to stop the dismiss click from opening the spell: no box of its own. */
+.jobDismiss {
+  display: contents;
+}

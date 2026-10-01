@@ -59,13 +59,16 @@ const JobRow: React.FC<{ job: SpellUploadJob }> = ({ job }) => {
         )}
       </div>
       {(job.status === 'done' || job.status === 'error') && (
-        <IconButton
-          data-testid={`dismiss-job-${job.id}`}
-          icon={faXmark}
-          variant="transparent"
-          onClick={() => dispatch(dismissUpload(job.id))}
-          title={t.common.close}
-        />
+        // Kept from reaching the row: clicking the row opens the spell, this only dismisses it.
+        <span className={s.jobDismiss} onClick={e => e.stopPropagation()}>
+          <IconButton
+            data-testid={`dismiss-job-${job.id}`}
+            icon={faXmark}
+            variant="transparent"
+            onClick={() => dispatch(dismissUpload(job.id))}
+            title={t.common.close}
+          />
+        </span>
       )}
     </div>
   );
