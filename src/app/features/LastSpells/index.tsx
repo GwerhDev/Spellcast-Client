@@ -133,7 +133,7 @@ export const LastSpells: React.FC = () => {
       key: 'see-all',
       node: (
         <div className={s.seeAllCard} data-testid="last-spells-see-all" onClick={() => navigate('/grimoire')}>
-          <FontAwesomeIcon icon={faArrowRight} />
+          <FontAwesomeIcon icon={faBuildingColumns} />
           <span>{t.nav.grimoire}</span>
         </div>
       ),
