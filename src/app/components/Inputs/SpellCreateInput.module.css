@@ -43,20 +43,15 @@
   border-bottom: 1px solid var(--color-button-primary);
 }
 
+/* Read-only: the title comes from the file, so it's text, not something to click. */
 .title:read-only {
   border: none;
   outline: none;
-  cursor: pointer;
+  cursor: default;
   overflow: hidden;
   font-weight: bold;
   text-overflow: ellipsis;
   font-family: var(--font-editor);
-}
-
-.title:read-only:hover {
-  border: none;
-  border-radius: .5rem;
-  background: var(--background-color-dark-transparency);
 }
 
 .continueButton {

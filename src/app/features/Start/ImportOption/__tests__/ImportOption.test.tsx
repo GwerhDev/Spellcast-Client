@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { screen, fireEvent, waitFor } from '@testing-library/react';
+import { screen, fireEvent, waitFor, act } from '@testing-library/react';
+import { setUploadDone } from '../../../../../store/spellUploadSlice';
 import { renderWithProviders } from '../../../../../test/renderWithProviders';
 import { ImportOption } from '../index';
 
@@ -72,6 +73,40 @@ describe('ImportOption', () => {
 
     renderWithProviders(<ImportOption />, { store });
     expect(screen.getByTestId('import-option-dropzone')).toBeInTheDocument();
+  });
+
+  describe('several files', () => {
+    const pickTwo = async () => {
+      const result = renderWithProviders(<ImportOption />, { preloadedState: loggedInState });
+      selectFiles([pdfFile('one.pdf')]);
+      await screen.findByTestId('import-option-files');
+      selectFiles([pdfFile('two.pdf')]);
+      await waitFor(() => expect(screen.getAllByTestId('spell-create-input')).toHaveLength(2));
+      return result;
+    };
+
+    it('offers adding more files before creating them all', async () => {
+      await pickTwo();
+      const addMore = screen.getByTestId('import-option-add-more');
+      const createAll = screen.getByTestId('import-option-create-all');
+      expect(addMore.compareDocumentPosition(createAll) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    });
+
+    it('creating them all keeps every file listed while they are created, one job each', async () => {
+      const { store } = await pickTwo();
+      fireEvent.click(screen.getByTestId('import-option-create-all'));
+      await waitFor(() => expect(store.getState().spellUpload.queue).toHaveLength(2));
+      expect(screen.getAllByTestId('spell-create-input')).toHaveLength(2);
+    });
+
+    it('once all are created, offers importing another file', async () => {
+      const { store } = await pickTwo();
+      fireEvent.click(screen.getByTestId('import-option-create-all'));
+      await waitFor(() => expect(store.getState().spellUpload.queue).toHaveLength(2));
+      act(() => { store.getState().spellUpload.queue.forEach((job: { id: string }) => store.dispatch(setUploadDone({ id: job.id, resultDocId: `spell-${job.id}` }))); });
+      fireEvent.click(await screen.findByTestId('import-option-import-new'));
+      expect(screen.getByTestId('import-option-dropzone')).toBeInTheDocument();
+    });
   });
 });
 

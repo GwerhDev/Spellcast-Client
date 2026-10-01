@@ -2,15 +2,15 @@ import s from '../../../components/Start/ImportOption/index.module.css';
 import * as pdfjsLib from 'pdfjs-dist';
 import workerSrc from 'pdfjs-dist/build/pdf.worker?url';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { faPlus, faUpload } from '@fortawesome/free-solid-svg-icons';
+import { faFileImport, faPlus, faUpload } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { RootState } from '../../../../store';
 import { resetSpellState, setSpellDetails } from '../../../../store/spellSlice';
-import { enqueueUpload } from '../../../../store/spellUploadSlice';
 import { useAppSelector } from '../../../../store/hooks';
 import { SpellCreateInput } from '../../../components/Inputs/SpellCreateInput';
+import { SecondaryButton } from '../../../components/Buttons/SecondaryButton';
 import { useLanguage } from '../../../../i18n';
 import { useSpellImport } from '../../../../hooks/useSpellImport';
 
@@ -141,18 +141,10 @@ export const ImportOption: React.FC = () => {
     setCreateAllTriggered(false);
   };
 
+  // Every card creates its own spell, the first one included: they all stay listed with
+  // their own progress until done, each with its own "save original" choice.
   const handleCreateAll = () => {
     if (!userData?.id) return;
-    if (spell.isLoaded && spell.fileContent && pendingFiles.length > 0) {
-      dispatch(enqueueUpload({
-        id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-        title: spell.title || t.spell.untitled,
-        fileContent: spell.fileContent,
-        saveOriginal: true,
-        userId: userData.id,
-      }));
-      dispatch(resetSpellState());
-    }
     setCreateAllTriggered(true);
   };
 
@@ -169,9 +161,11 @@ export const ImportOption: React.FC = () => {
         <SpellCreateInput
           spell={spell}
           onRemove={() => dispatch(resetSpellState())}
+          autoCreate={createAllTriggered}
           onDone={(resultDocId) => {
             setDoneCount(prev => prev + 1);
-            if (resultDocId) navigate(`/spell/${resultDocId}`);
+            // On its own, the new spell opens; created along with others, it stays listed.
+            if (resultDocId && !createAllTriggered) navigate(`/spell/${resultDocId}`);
           }}
         />
       )}
@@ -184,11 +178,6 @@ export const ImportOption: React.FC = () => {
           onDone={() => setDoneCount(prev => prev + 1)}
         />
       ))}
-      {!createAllTriggered && !allDone && hasMultiple && (
-        <button className={s.createAllBtn} onClick={handleCreateAll}>
-          {t.editor.createAll}
-        </button>
-      )}
       {!createAllTriggered && !allDone && (
         <>
           <input
@@ -200,16 +189,17 @@ export const ImportOption: React.FC = () => {
             onChange={handleFileChange}
             data-testid="import-option-file-input"
           />
-          <button className={s.addMoreBtn} onClick={() => addMoreInputRef.current?.click()}>
+          <button data-testid="import-option-add-more" className={s.addMoreBtn} onClick={() => addMoreInputRef.current?.click()}>
             <FontAwesomeIcon icon={faPlus} />
             {t.start.addMore}
           </button>
         </>
       )}
+      {!createAllTriggered && !allDone && hasMultiple && (
+        <SecondaryButton data-testid="import-option-create-all" className={s.fullWidthBtn} icon={faUpload} text={t.editor.createAll} onClick={handleCreateAll} />
+      )}
       {allDone && (
-        <p className={s.resetPdf} onClick={resetAll}>
-          {t.start.orImportNew}
-        </p>
+        <SecondaryButton data-testid="import-option-import-new" className={s.fullWidthBtn} icon={faFileImport} text={t.start.orImportNew} onClick={resetAll} />
       )}
     </div>
   ) : (
