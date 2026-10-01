@@ -1,6 +1,6 @@
 import s from './SpellDetailModal.module.css';
 import React, { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { useAppSelector } from '../../../store/hooks';
 import { getSpellById } from '../../../db';
@@ -47,7 +47,6 @@ interface SpellDetailModalProps {
 
 export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, show, onClose, origin = null }) => {
   const navigate = useNavigate();
-  const location = useLocation();
   const dispatch = useDispatch();
   const { t } = useLanguage();
   const { userData } = useAppSelector(state => state.session);
@@ -136,7 +135,7 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
 
   const handleEdit = () => {
     onClose();
-    navigate(`/editor/${spellId}`, { state: { from: location.pathname } });
+    navigate(`/editor/${spellId}`);
   };
 
   // A new cover saves right away, with a loader while it does, and is read back (it

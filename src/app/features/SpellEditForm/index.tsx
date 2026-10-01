@@ -1,6 +1,6 @@
 import s from '../../components/SpellEditForm/index.module.css';
 import React, { useEffect, useRef, useState } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import type { JSONContent } from '../../../magictext';
 import { useDispatch } from 'react-redux';
 import { useAppSelector } from '../../../store/hooks';
@@ -30,6 +30,7 @@ import { SpellMetadataFields } from '../../components/SpellMetadataFields';
 import { EmptyState } from '../../components/EmptyState';
 import type { TTSPlayPayload } from '../../../magictext/types';
 import { useLanguage } from '../../../i18n';
+import { useGoBack } from '../../../hooks/useGoBack';
 
 const emptyContent: JSONContent = {
   type: 'doc',
@@ -40,8 +41,10 @@ type SaveStatus = 'idle' | 'saving' | 'saved';
 
 export const SpellEditForm: React.FC = () => {
   const { id, page } = useParams<{ id: string, page?: string }>();
-  const navigate = useNavigate();
-  const location = useLocation();
+  // Back where it was opened from; opened directly, to the spell's page -- or the editor,
+  // when there's no spell to go back to.
+  const goBack = useGoBack(`/spell/${id}`);
+  const goBackFromMissing = useGoBack('/editor');
   const dispatch = useDispatch();
   const { userData, logged } = useAppSelector((state) => state.session);
   const { t } = useLanguage();
@@ -409,7 +412,7 @@ export const SpellEditForm: React.FC = () => {
   if (error) return (
     <div data-testid="spell-edit-form-error" className={s.container}>
       <div className={s.pageInfoContainer}>
-        <IconButton data-testid="spell-edit-form-error-back-btn" icon={faArrowLeft} className={s.backButton} variant='transparent' title={t.common.back} onClick={() => navigate('/editor')} />
+        <IconButton data-testid="spell-edit-form-error-back-btn" icon={faArrowLeft} className={s.backButton} variant='transparent' title={t.common.back} onClick={goBackFromMissing} />
       </div>
       <EmptyState icon={faTriangleExclamation} message={error} />
     </div>
@@ -418,7 +421,7 @@ export const SpellEditForm: React.FC = () => {
   return (
     <div data-testid="spell-edit-form" className={s.container}>
       <div className={s.pageInfoContainer}>
-        <IconButton icon={faArrowLeft} className={s.backButton} variant='transparent' title={t.common.back} onClick={() => navigate((location.state as { from?: string })?.from ?? `/spell/${id}`)} />
+        <IconButton icon={faArrowLeft} className={s.backButton} variant='transparent' title={t.common.back} onClick={goBack} />
         <span className={s.titleContainer}>
           <input
             data-testid="spell-edit-title-input"

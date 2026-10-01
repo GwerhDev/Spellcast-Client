@@ -23,6 +23,7 @@ import { resetSpellReader } from '../../../store/spellReaderSlice';
 import { textToSpeechService } from '../../../services/tts';
 import { renderPageToCover, extractPdfPages, injectCoverIntoPages, emptyPageContent, blobToDataUrl, extractPdfMetadata, applyCoverToPage1, downscaleImageBlob } from '../../../utils/pdfUtils';
 import { useLanguage } from '../../../i18n';
+import { useGoBack } from '../../../hooks/useGoBack';
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
 const emptyContent: JSONContent = emptyPageContent;
@@ -31,6 +32,7 @@ export const SpellCreateForm: React.FC = () => {
   const spell = useSelector((state: RootState) => state.spell);
   const { userData, logged } = useAppSelector((state: RootState) => state.session);
   const navigate = useNavigate();
+  const goBack = useGoBack('/editor');
   const { t } = useLanguage();
   const dispatch = useDispatch();
   const [spellTitle, setSpellTitle] = useState(spell.title || '');
@@ -325,7 +327,7 @@ export const SpellCreateForm: React.FC = () => {
   return (
     <div data-testid="spell-create-form" className={s.container}>
       <div className={s.pageInfoContainer}>
-        <IconButton icon={faArrowLeft} className={s.backButton} variant='transparent' title={t.common.back} onClick={() => navigate(-1)} />
+        <IconButton icon={faArrowLeft} className={s.backButton} variant='transparent' title={t.common.back} onClick={goBack} />
         <span className={s.titleContainer}>
           <input
             data-testid="spell-title-input"

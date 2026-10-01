@@ -15,11 +15,13 @@ import { EmptyState } from '../../components/EmptyState';
 import { useLanguage } from '../../../i18n';
 import { useInfiniteList } from '../../../hooks/useInfiniteList';
 import { useCoverFrame3DSection } from '../../../hooks/useCoverFrame3DSection';
+import { useGoBack } from '../../../hooks/useGoBack';
 
 type EditorFilter = 'all' | 'local' | 'cloud';
 
 export const EditorSelectLanding = () => {
   const navigate = useNavigate();
+  const goBack = useGoBack('/editor');
   const location = useLocation();
   const { userData } = useAppSelector((state) => state.session);
   const { listVersion } = useAppSelector((state) => state.spellReader);
@@ -102,7 +104,7 @@ export const EditorSelectLanding = () => {
   return (
     <div data-testid="editor-select" className={s.panel}>
       <div className={s.panelHeader}>
-        <IconButton icon={faArrowLeft} variant="transparent" onClick={() => navigate('/editor')} title={t.common.back} />
+        <IconButton icon={faArrowLeft} variant="transparent" onClick={goBack} title={t.common.back} />
       </div>
 
       <div className={s.sectionHeader}>

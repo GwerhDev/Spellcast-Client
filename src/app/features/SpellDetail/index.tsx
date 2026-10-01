@@ -1,6 +1,6 @@
 import s from '../../components/SpellDetail/index.module.css';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useAppSelector } from '../../../store/hooks';
 import { getSpellById } from '../../../db';
 import { useDeleteSpells } from '../../../hooks/useDeleteSpells';
@@ -23,6 +23,7 @@ import { GrimoireStatus } from '../../components/GrimoireStatus/GrimoireStatus';
 import { countSpellWords, estimateListeningMinutes } from '../../../utils/spellStats';
 import { isInCasterGrimoire } from '../../../utils/grimoire';
 import { useLanguage } from '../../../i18n';
+import { useGoBack } from '../../../hooks/useGoBack';
 // import { useSpellExport } from '../../../hooks/useSpellExport'; // .spell export: future
 
 // TCORE-124: same lazy boundary as SpellCard/EditorPickerCard's own -- see SpellCard's own
@@ -39,7 +40,7 @@ const COVER_RADIUS = 6;
 export const SpellDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const location = useLocation();
+  const goBack = useGoBack();
   const { userData, logged } = useAppSelector((state) => state.session);
   const { t } = useLanguage();
   const { spellId: currentPlayingId, currentPage: readerCurrentPage, coverFrameChange } = useAppSelector((state) => state.spellReader);
@@ -103,7 +104,7 @@ export const SpellDetail: React.FC = () => {
   // Only navigation: playback stays exactly as it is (the reader keeps a loaded spell
   // playing or paused, and doesn't start one that wasn't).
   const handleOpenReader = () => navigate(`/spell/${id}/reader`);
-  const handleEdit = () => navigate(`/editor/${id}`, { state: { from: location.pathname } });
+  const handleEdit = () => navigate(`/editor/${id}`);
 
   const handleDeleteConfirm = async () => {
     if (!id || !userData?.id) return;
@@ -126,7 +127,7 @@ export const SpellDetail: React.FC = () => {
   if (error || !doc) return (
     <div className={s.container}>
       <div className={s.pageInfoContainer}>
-        <IconButton data-testid="spell-detail-error-back-btn" className={s.backButton} icon={faArrowLeft} variant="transparent" onClick={() => navigate("/")} />
+        <IconButton data-testid="spell-detail-error-back-btn" className={s.backButton} icon={faArrowLeft} variant="transparent" title={t.common.back} onClick={goBack} />
       </div>
       <EmptyState testId="spell-detail-error" icon={faTriangleExclamation} message={error || t.spell.notFound} />
     </div>
@@ -155,7 +156,7 @@ export const SpellDetail: React.FC = () => {
   return (
     <div data-testid="spell-detail" className={s.container}>
       <div className={s.pageInfoContainer}>
-        <IconButton className={s.backButton} icon={faArrowLeft} variant="transparent" onClick={() => navigate("/")} />
+        <IconButton className={s.backButton} icon={faArrowLeft} variant="transparent" title={t.common.back} onClick={goBack} />
       </div>
       <div className={s.detailsContainer}>
         <div className={s.header} ref={headerRef}>

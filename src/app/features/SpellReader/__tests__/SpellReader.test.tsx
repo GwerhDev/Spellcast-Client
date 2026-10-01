@@ -45,7 +45,9 @@ describe('SpellReader', () => {
     expect(screen.getByTestId('mock-spell-detail-modal')).toHaveTextContent('doc-1');
   });
 
-  it('its back button goes home, not to the spell\'s detail page', () => {
+  // Back where it was opened from is covered by useGoBack's own tests (it needs the real
+  // browser history); here, opened directly, there's nowhere in the app to go back to.
+  it('its back button goes home when the reader was opened directly', () => {
     const store = makeStore();
     store.dispatch(setSpellFile({ id: 'doc-1', title: 'Test Spell' }));
     store.dispatch(setSpellLoaded(true));

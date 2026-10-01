@@ -5,7 +5,7 @@ import { activeSentenceIndex } from '../../../../utils/activeSentence';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { faBookOpenReader, faEject, faFeatherPointed, faPen, faTrash, faUpload, faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { RadialMenu, type RadialMenuItem } from '../../../components/RadialMenu/RadialMenu';
 import { DeleteConfirmModal } from '../../../components/Modals/DeleteConfirmModal';
 import { useAppDispatch, useAppSelector } from '../../../../store/hooks';
@@ -51,7 +51,6 @@ export const Altar = ({ onWrite, onImport, immersive = false, idle = false }: Al
   const deleteSpells = useDeleteSpells();
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const location = useLocation();
   const centerRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
@@ -242,7 +241,7 @@ export const Altar = ({ onWrite, onImport, immersive = false, idle = false }: Al
     { id: 'import', label: t.start.importTab, icon: faUpload, onSelect: onImport },
     { id: 'reader', label: t.spell.reader, icon: faBookOpenReader, onSelect: () => navigate(`/spell/${spellId}/reader`) },
     ...(inGrimoire ? [
-      { id: 'edit', label: t.nav.editor, icon: faWandMagicSparkles, onSelect: () => navigate(`/editor/${spellId}`, { state: { from: location.pathname } }) },
+      { id: 'edit', label: t.nav.editor, icon: faWandMagicSparkles, onSelect: () => navigate(`/editor/${spellId}`) },
       { id: 'delete', label: t.common.delete, icon: faTrash, onSelect: () => setShowDeleteModal(true), danger: true },
     ] : []),
     { id: 'unload', label: t.player.unload, icon: faEject, onSelect: () => unloadSpell() },
@@ -275,7 +274,7 @@ export const Altar = ({ onWrite, onImport, immersive = false, idle = false }: Al
                 data-testid="altar-edit"
                 icon={faWandMagicSparkles}
                 title={t.spell.editSpell}
-                onClick={() => navigate(`/editor/${spellId}`, { state: { from: location.pathname } })}
+                onClick={() => navigate(`/editor/${spellId}`)}
               />
               <AltarCornerButton data-testid="altar-delete" icon={faTrash} title={t.common.delete} danger onClick={() => setShowDeleteModal(true)} disabled={importing} />
             </>

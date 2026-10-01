@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useZoom } from '../../../hooks/useZoom';
+import { useGoBack } from '../../../hooks/useGoBack';
 import { ZoomOverlay } from '../../components/Zoom/ZoomOverlay';
 import { useDispatch, useSelector } from 'react-redux';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -45,6 +46,7 @@ const safeParseJSON = (str: string): JSONContent => {
 export const SpellReader = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const goBack = useGoBack();
   const { t, language } = useLanguage();
   const {
     currentPage, totalPages, currentPageText, spellTitle, spellId,
@@ -322,9 +324,9 @@ export const SpellReader = () => {
       )}
       <div className={`${s.pageInfoContainer} reader-top-bar`}>
         <span className={s.headerControls}>
-          {/* Back home, not to the spell's detail page: the reader is reached from home (the altar,
-              the detail modal), so that's where leaving it returns. */}
-          <IconButton data-testid="spell-reader-back-btn" variant='transparent' icon={faArrowLeft} title={t.common.back} onClick={() => navigate('/')} />
+          {/* Back where the reader was opened from (the spell's page, home...), or home when
+              it was opened directly. */}
+          <IconButton data-testid="spell-reader-back-btn" variant='transparent' icon={faArrowLeft} title={t.common.back} onClick={goBack} />
           {isLoaded && <SearcherButton />}
         </span>
         <div className={s.titleContainer}>

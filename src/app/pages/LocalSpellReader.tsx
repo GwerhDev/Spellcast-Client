@@ -1,6 +1,6 @@
 import s from '../components/SpellReader/index.module.css';
 import React, { useEffect, useRef, useState } from 'react';
-import { useParams, useLocation, useNavigate } from 'react-router-dom';
+import { useParams, useLocation } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { getSpellById } from '../../db';
 import { useAppSelector } from '../../store/hooks';
@@ -13,11 +13,12 @@ import { EmptyState } from '../components/EmptyState';
 import { IconButton } from '../components/Buttons/IconButton';
 import { faArrowLeft, faTriangleExclamation } from '@fortawesome/free-solid-svg-icons';
 import { useLanguage } from '../../i18n';
+import { useGoBack } from '../../hooks/useGoBack';
 
 export const LocalSpellReader: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const location = useLocation();
-  const navigate = useNavigate();
+  const goBack = useGoBack();
   const dispatch = useDispatch();
   const [isLoading, setIsLoading] = useState(true);
   const { t } = useLanguage();
@@ -96,7 +97,7 @@ export const LocalSpellReader: React.FC = () => {
   if (error) return (
     <div className={s.pdfReaderContainer}>
       <div className={s.pageInfoContainer}>
-        <IconButton data-testid="local-spell-reader-error-back-btn" icon={faArrowLeft} variant='transparent' title={t.common.back} onClick={() => navigate(-1)} />
+        <IconButton data-testid="local-spell-reader-error-back-btn" icon={faArrowLeft} variant='transparent' title={t.common.back} onClick={goBack} />
       </div>
       <EmptyState testId="local-spell-reader-error" icon={faTriangleExclamation} message={error} />
     </div>

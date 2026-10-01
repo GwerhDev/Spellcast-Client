@@ -1,10 +1,10 @@
-import { useNavigate } from 'react-router-dom';
 import { PageTransition } from '../components/PageTransition';
 import { BrowserStorage } from '../components/BrowserStorage/BrowserStorage';
 import { IconButton } from '../components/Buttons/IconButton';
 import { faArrowLeft } from '@fortawesome/free-solid-svg-icons';
 import { useLanguage } from '../../i18n';
 import s from './UserPage.module.css';
+import { useGoBack } from '../../hooks/useGoBack';
 
 // TCORE-107 follow-up: this page's own title/subtitle heading is dropped -- it's now
 // redundant with CasterLayout's persistent tab bar, which every /caster/* route renders
@@ -16,13 +16,14 @@ import s from './UserPage.module.css';
 // Storage is a flat item within Settings, TCORE-109) -- without it there'd be no way back
 // except the browser's own back button.
 export const StorageLocal = () => {
-  const navigate = useNavigate();
+  // Back where it was opened from, or up to '/caster/settings/storage' when opened directly.
+  const goBack = useGoBack('/caster/settings/storage');
   const { t } = useLanguage();
 
   return (
     <PageTransition>
       <div className={s.pageInfoContainer}>
-        <IconButton icon={faArrowLeft} className={s.backButton} variant="transparent" title={t.common.back} onClick={() => navigate('/caster/settings/storage')} />
+        <IconButton icon={faArrowLeft} className={s.backButton} variant="transparent" title={t.common.back} onClick={goBack} />
       </div>
       <BrowserStorage />
     </PageTransition>
