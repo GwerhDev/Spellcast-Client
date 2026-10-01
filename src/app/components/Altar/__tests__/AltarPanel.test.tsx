@@ -51,4 +51,13 @@ describe('AltarPanel', () => {
     expect(screen.getByTestId('altar').className).toMatch(/immersive/);
     expect(screen.getByTestId('altar').className).toMatch(/dragActive/);
   });
+
+  // The light-on-cover colors are for over a cover: with none behind, on a light theme
+  // they'd be light text on a light page.
+  it('immersive without a cover keeps the page\'s own colors', () => {
+    render(panel({ coverUrl: null, immersive: true }));
+    expect(screen.getByTestId('altar').className).toMatch(/immersive/);
+    expect(screen.getByTestId('altar').className).toMatch(/noCover/);
+    expect(screen.getByTestId('altar').className).not.toMatch(/hasCover/);
+  });
 });

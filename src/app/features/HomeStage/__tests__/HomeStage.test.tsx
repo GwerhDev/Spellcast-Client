@@ -47,4 +47,3 @@ describe('HomeStage (feature)', () => {
     expect(screen.queryByTestId('home-stage-cover')).not.toBeInTheDocument();
   });
 });
-

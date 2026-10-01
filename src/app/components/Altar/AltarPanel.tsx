@@ -52,7 +52,7 @@ export const AltarPanel = ({
   <div
     ref={panelRef}
     data-testid="altar"
-    className={`${s.container} ${highlighted ? s.dragActive : ''} ${immersive ? `${s.hasCover} ${s.immersive}` : coverUrl ? s.hasCover : s.noCover} ${menuOpen ? s.menuOpen : ''} ${summoning ? s.summoning : ''}`}
+    className={`${s.container} ${highlighted ? s.dragActive : ''} ${immersive ? s.immersive : ''} ${coverUrl ? s.hasCover : s.noCover} ${menuOpen ? s.menuOpen : ''} ${summoning ? s.summoning : ''}`}
     onDragEnter={onDragEnter}
     onDragOver={onDragOver}
     onDragLeave={onDragLeave}

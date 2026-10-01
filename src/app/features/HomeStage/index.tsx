@@ -5,7 +5,7 @@ import { useAppSelector } from '../../../store/hooks';
 import { useSpellCoverUrl } from '../../../hooks/useSpellCoverUrl';
 import { usePointerIdle } from '../../../hooks/usePointerIdle';
 
-// How long the pointer rests before Last Spells steps aside, with a spell's cover on stage.
+// How long the pointer rests before Last Spells steps aside, with a spell loaded.
 export const HOME_IDLE_MS = 3000;
 
 // The home page: Start's altar as the scene, Last Spells below it. With a spell loaded, the

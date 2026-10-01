@@ -502,13 +502,16 @@
 }
 
 /* ── Immersive ──
-   The page behind the altar already shows the cover (HomeStage), so the panel is no box of
-   its own: transparent, unclipped, and without its recessed rim, keeping the light-on-cover
-   colors (it's on the cover too) and giving the sentence being read more room. */
+   A spell is loaded and the page is its scene (HomeStage), so the panel is no box of its
+   own: transparent, unclipped, and without its recessed rim, giving the sentence being read
+   more room. With a cover the page shows it behind, and the panel keeps the light-on-cover
+   colors (hasCover); without one it keeps the page's own (noCover). The same padding either
+   way, so a cover arriving never moves the altar. */
 .container.immersive {
   background: transparent;
   border-color: transparent;
   overflow: visible;
+  padding-block: 1rem 1.75rem;
 }
 
 .immersive::after {
@@ -520,10 +523,13 @@
   max-width: 1100px;
   box-sizing: border-box;
   padding-inline: 2rem;
-  /* Over any cover, light or dark: a tight shadow for the edges and a wide one for a halo. */
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85), 0 0 18px rgba(0, 0, 0, 0.6);
   font-size: 1.3rem;
   line-height: 1.4;
+}
+
+/* Over any cover, light or dark: a tight shadow for the edges and a wide one for a halo. */
+.hasCover.immersive .sentence {
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85), 0 0 18px rgba(0, 0, 0, 0.6);
 }
 
 .immersive .sentenceText {
