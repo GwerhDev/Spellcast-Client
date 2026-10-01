@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { MotionGlobalConfig } from 'framer-motion';
 import { CoverFlight } from '../CoverFlight';
-import { liveRect } from '../flightRect';
+import { liveRect } from '../../Flight/flightRect';
 
 const from = { top: 500, left: 100, width: 160, height: 240 };
 const to = { top: 200, left: 400, width: 150, height: 206 };

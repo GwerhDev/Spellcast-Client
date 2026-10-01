@@ -190,7 +190,7 @@ describe('SpellDetailModal', () => {
   });
 
   describe('metadata section', () => {
-    it('shows description/author/language/tags when the spell has them', async () => {
+    it('shows description and author, but leaves language and tags to the full detail page', async () => {
       vi.spyOn(db, 'getSpellById').mockResolvedValue({
         ...mockDoc,
         description: 'A tale of dragons',
@@ -203,9 +203,8 @@ describe('SpellDetailModal', () => {
       expect(await screen.findByTestId('spell-detail-modal-metadata')).toBeInTheDocument();
       expect(screen.getByTestId('spell-detail-modal-description')).toHaveTextContent('A tale of dragons');
       expect(screen.getByTestId('spell-detail-modal-author')).toHaveTextContent('Jane Doe');
-      expect(screen.getByTestId('spell-detail-modal-language')).toHaveTextContent('en');
-      expect(screen.getByTestId('spell-detail-modal-tags')).toHaveTextContent('fantasy');
-      expect(screen.getByTestId('spell-detail-modal-tags')).toHaveTextContent('adventure');
+      expect(screen.queryByTestId('spell-detail-modal-language')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('spell-detail-modal-tags')).not.toBeInTheDocument();
     });
 
     it('omits the metadata section entirely when the spell has none of these fields', async () => {

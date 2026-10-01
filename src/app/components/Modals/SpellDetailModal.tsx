@@ -1,5 +1,5 @@
 import s from './SpellDetailModal.module.css';
-import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { useAppSelector } from '../../../store/hooks';
@@ -26,16 +26,14 @@ import { Tag } from '../Tag/Tag';
 import { useLanguage } from '../../../i18n';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
 import { CoverFlight } from '../CoverFlight/CoverFlight';
-import { liveRect, rectOf, type FlightRect } from '../CoverFlight/flightRect';
+import { useFlightTransition, type FlightOrigin } from '../Flight/useFlightTransition';
 
 // Where the modal was opened from, when that was a spell card: its cover's place on screen
 // and image, so the cover can fly from the card into the modal (and back when closing).
-export interface SpellDetailOrigin {
-  rect: FlightRect;
+// The card's element is measured again when flying back: the page under the modal may have
+// moved meanwhile (e.g. loading the spell turns the home page immersive).
+export interface SpellDetailOrigin extends FlightOrigin {
   coverUrl: string;
-  // The card's cover element, measured again when flying back: the page under the modal
-  // may have moved meanwhile (e.g. loading the spell turns the home page immersive).
-  element?: HTMLElement | null;
   // The frame the card shows (resolved), so it flies in with the cover.
   coverFrameId?: string | null;
 }
@@ -46,16 +44,6 @@ interface SpellDetailModalProps {
   onClose: () => void;
   origin?: SpellDetailOrigin | null;
 }
-
-interface Flight {
-  from: FlightRect;
-  src: string;
-  frameId: string | null;
-  direction: 'in' | 'out';
-}
-
-const prefersReducedMotion = () =>
-  typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
 export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, show, onClose, origin = null }) => {
   const navigate = useNavigate();
@@ -86,50 +74,9 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
   // looked up in the dedicated store instead of reading a `pdf` field.
   const [hasPdf, setHasPdf] = useState(false);
 
-  // Opened from a card: its cover lifts off the card and flies into this modal's cover slot,
-  // which stays hidden until it lands; closing flies it back and only then closes. From
-  // anywhere else (the player's cover), the modal just opens.
-  const coverSlotRef = useRef<HTMLDivElement>(null);
-  const flightImageRef = useRef<HTMLDivElement>(null);
-  const [flight, setFlight] = useState<Flight | null>(null);
-  const [leaving, setLeaving] = useState(false);
-  const flownIn = useRef(false);
-  const flies = !!origin && !prefersReducedMotion();
-
-  // Takes off right away, without waiting for the spell to be read (a big one takes a
-  // while): the card already handed over its cover, and the slot it lands in is there from
-  // the first render, sized like the loaded one. If the modal settles as the rest arrives,
-  // the flight follows the slot there.
-  useLayoutEffect(() => {
-    if (!show) { flownIn.current = false; setFlight(null); setLeaving(false); return; }
-    if (!flies || !origin || flownIn.current || !coverSlotRef.current) return;
-    flownIn.current = true;
-    setFlight({ from: origin.rect, src: origin.coverUrl, frameId: origin.coverFrameId ?? null, direction: 'in' });
-  }, [show, flies, origin]);
-
-  const flightTarget = () => {
-    if (flight?.direction === 'out') {
-      // Where the card is now, not where it was when clicked; that rect if it's gone.
-      return liveRect(origin?.element, origin?.rect ?? null);
-    }
-    return coverSlotRef.current ? rectOf(coverSlotRef.current) : null;
-  };
-
-  const requestClose = () => {
-    if (leaving) return;
-    if (!flies || !origin || !coverSlotRef.current) { onClose(); return; }
-    setLeaving(true);
-    // Still flying in: turn back from where the image is right now, not from the slot.
-    const from = flight?.direction === 'in' && flightImageRef.current ? rectOf(flightImageRef.current) : rectOf(coverSlotRef.current);
-    // Back with the frame it has now: it may have been changed while the modal was open.
-    setFlight({ from, src: coverUrl ?? origin.coverUrl, frameId: doc ? resolveCoverFrameId(doc.coverFrameId, activeCoverFrameId) : origin.coverFrameId ?? null, direction: 'out' });
-  };
-
-  const handleFlightDone = () => {
-    const direction = flight?.direction;
-    setFlight(null);
-    if (direction === 'out') onClose();
-  };
+  // Opened from a card: its cover flies from the card into this modal's cover slot, and
+  // back when closing. From anywhere else (the player's cover), the modal just opens.
+  const { slotRef: coverSlotRef, leg, requestClose, modalMotion, flightProps } = useFlightTransition({ show, origin, onClose });
 
   // Every open starts clean: closing (or switching to another spell) drops what the last
   // one showed, so it never flashes the previous spell while the next loads, and a read
@@ -236,7 +183,7 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
 
   return (
     <>
-      <CustomModal show={show} onClose={requestClose} title="" compact motion={flies ? (leaving ? 'leave' : 'enter') : undefined}>
+      <CustomModal show={show} onClose={requestClose} title="" compact motion={modalMotion}>
         {!doc ? (
           // Still reading the spell: the modal already has its final size -- the header is as
           // tall as the cover, and the actions row is here with what needs no spell read
@@ -245,7 +192,7 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
           // stays once landed.
           <div className={s.content}>
             <div className={s.header}>
-              <div ref={coverSlotRef} data-testid="spell-detail-modal-cover" className={`${s.coverWrap} ${flight ? s.coverAway : ''}`}>
+              <div ref={coverSlotRef} data-testid="spell-detail-modal-cover" className={`${s.coverWrap} ${leg ? s.coverAway : ''}`}>
                 {origin
                   ? <img src={origin.coverUrl} alt="" className={`${s.cover} ${getCoverFrameCorners(origin.coverFrameId ?? null) ? s.coverSquared : ''}`} />
                   : <div className={s.coverPlaceholder}><FontAwesomeIcon icon={faScroll} /></div>}
@@ -261,7 +208,7 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
         ) : (
           <div className={s.content}>
             <div className={s.header}>
-              <div ref={coverSlotRef} data-testid="spell-detail-modal-cover" className={`${s.coverWrap} ${flight ? s.coverAway : ''}`}>
+              <div ref={coverSlotRef} data-testid="spell-detail-modal-cover" className={`${s.coverWrap} ${leg ? s.coverAway : ''}`}>
                 {shownCoverUrl
                   ? <img src={shownCoverUrl} alt={doc.title} className={`${s.cover} ${coverFrameCorners ? s.coverSquared : ''}`} style={getCoverFrameStyle(resolvedCoverFrameId)} />
                   : <div className={s.coverPlaceholder}><FontAwesomeIcon icon={faScroll} /></div>
@@ -330,25 +277,12 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
                 {currentPage > 0 && pagesCount && (
                   <p className={s.progressText}>{t.spell.page} {currentPage} {t.spell.of} {pagesCount}</p>
                 )}
-                {(doc.description || doc.language || doc.tags?.length) ? (
+                {/* Language and tags are left to the spell's full detail page. */}
+                {doc.description && (
                   <div className={s.metadata} data-testid="spell-detail-modal-metadata">
-                    {doc.description && (
-                      <p className={s.metadataDescription} data-testid="spell-detail-modal-description">{doc.description}</p>
-                    )}
-                    {doc.language && (
-                      <div className={s.metadataRow}>
-                        <span data-testid="spell-detail-modal-language">
-                          <strong>{t.spell.languageLabel}:</strong> {doc.language}
-                        </span>
-                      </div>
-                    )}
-                    {!!doc.tags?.length && (
-                      <div className={s.metadataTags} data-testid="spell-detail-modal-tags">
-                        {doc.tags.map((tag) => <Tag key={tag} tone="default" size="sm">{tag}</Tag>)}
-                      </div>
-                    )}
+                    <p className={s.metadataDescription} data-testid="spell-detail-modal-description">{doc.description}</p>
                   </div>
-                ) : null}
+                )}
               </div>
             </div>
             <div className={s.actions}>
@@ -363,20 +297,17 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
           </div>
         )}
       </CustomModal>
-      {flight && (
+      {leg && flightProps && origin && (
         <CoverFlight
           // A new flight per leg: closing while the cover is still flying in turns it back
           // from where it is, instead of finishing the way in first.
-          key={flight.direction}
-          imageRef={flightImageRef}
-          src={flight.src}
-          frameId={flight.frameId}
-          from={flight.from}
-          target={flightTarget}
-          lift={flight.direction === 'in'}
+          key={leg.direction}
+          {...flightProps}
+          // Back with the cover and frame it has now: they may have been changed meanwhile.
+          src={leg.direction === 'out' ? coverUrl ?? origin.coverUrl : origin.coverUrl}
+          frameId={leg.direction === 'out' && doc ? resolvedCoverFrameId : origin.coverFrameId ?? null}
           // Arriving in the modal it turns over once, showing the app's mark on its back.
-          spin={flight.direction === 'in'}
-          onDone={handleFlightDone}
+          spin={leg.direction === 'in'}
         />
       )}
       <SpellCoverModal

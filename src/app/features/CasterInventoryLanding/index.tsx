@@ -4,6 +4,7 @@ import { EmptyState } from '../../components/EmptyState';
 import { InventoryBag, type BagItem } from '../../components/Inventory/InventoryBag';
 import { ItemDetailModal } from '../../components/Inventory/ItemDetailModal';
 import { BagFilterTabs, type BagFilterTab } from '../../components/Inventory/BagFilterTabs';
+import type { FlightOrigin } from '../../components/Flight/useFlightTransition';
 import { useAppSelector, useAppDispatch } from '../../../store/hooks';
 import { setActiveSoundBg, setActivePageBg, setActiveCompanion, setActiveCoverFrame } from '../../../store/casterInventorySlice';
 import { soundBackgrounds, pageBackgrounds, companions, coverFrames, type Asset, type AssetCategory } from '../../../config/assets';
@@ -18,6 +19,7 @@ export const CasterInventoryLanding = () => {
   const { t } = useLanguage();
   const { unlockedIds, activeSoundBgId, activePageBgId, activeCompanionId, activeCoverFrameId } = useAppSelector(state => state.casterInventory);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedOrigin, setSelectedOrigin] = useState<FlightOrigin | null>(null);
   const [filter, setFilter] = useState<'all' | AssetCategory>('all');
 
   const filterTabs: BagFilterTab[] = [
@@ -65,7 +67,8 @@ export const CasterInventoryLanding = () => {
       {owned.length > 0 ? (
         <InventoryBag
           items={items}
-          onSelect={asset => setSelectedId(asset.id)}
+          onSelect={(asset, origin) => { setSelectedId(asset.id); setSelectedOrigin(origin); }}
+          liftedId={selectedId}
           tabs={<BagFilterTabs tabs={filterTabs} active={filter} onChange={id => setFilter(id as 'all' | AssetCategory)} />}
         />
       ) : (
@@ -76,6 +79,7 @@ export const CasterInventoryLanding = () => {
         isActive={!!selected?.isActive}
         canDeactivate={selected?.asset.category !== 'page-background'}
         onToggleActive={handleToggleActive}
+        openedFrom={selectedOrigin}
         onClose={() => setSelectedId(null)}
       />
     </div>

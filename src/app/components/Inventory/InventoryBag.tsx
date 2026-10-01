@@ -4,6 +4,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheck } from '@fortawesome/free-solid-svg-icons';
 import type { Asset } from '../../../config/assets';
 import { useLanguage, assetName } from '../../../i18n';
+import { rectOf } from '../Flight/flightRect';
+import type { FlightOrigin } from '../Flight/useFlightTransition';
 import { ItemThumbnail } from './ItemThumbnail';
 import s from './Inventory.module.css';
 
@@ -14,7 +16,10 @@ export interface BagItem {
 
 interface InventoryBagProps {
   items: BagItem[];
-  onSelect: (asset: Asset) => void;
+  // With the slot's place on screen, so the item can fly from it into its details.
+  onSelect: (asset: Asset, origin: FlightOrigin) => void;
+  // The item whose details are open, flown out of its slot: its place stays, empty.
+  liftedId?: string | null;
   // Rendered attached to the bag's right edge (e.g. BagFilterTabs).
   tabs?: ReactNode;
 }
@@ -34,7 +39,7 @@ interface PopoverState {
 // The Caster's bag: owned items laid out in fixed slots like an RPG inventory, padded with
 // empty slots. Hovering (or focusing) a slot shows a small popover; clicking asks the
 // parent to open the item's details.
-export const InventoryBag = ({ items, onSelect, tabs }: InventoryBagProps) => {
+export const InventoryBag = ({ items, onSelect, liftedId = null, tabs }: InventoryBagProps) => {
   const { t } = useLanguage();
   const [popover, setPopover] = useState<PopoverState | null>(null);
   const bagRef = useRef<HTMLDivElement>(null);
@@ -67,13 +72,13 @@ export const InventoryBag = ({ items, onSelect, tabs }: InventoryBagProps) => {
             key={item.asset.id}
             type="button"
             data-testid={`bag-slot-${item.asset.id}`}
-            className={`${s.slot} ${s.slotFilled} ${item.isActive ? s.slotActive : ''}`}
+            className={`${s.slot} ${s.slotFilled} ${item.isActive ? s.slotActive : ''} ${liftedId === item.asset.id ? s.slotLifted : ''}`}
             aria-label={assetName(t, item.asset)}
             onMouseEnter={e => show(item, e.currentTarget)}
             onMouseLeave={hide}
             onFocus={e => show(item, e.currentTarget)}
             onBlur={hide}
-            onClick={() => { hide(); onSelect(item.asset); }}
+            onClick={e => { hide(); onSelect(item.asset, { rect: rectOf(e.currentTarget), element: e.currentTarget }); }}
           >
             <ItemThumbnail asset={item.asset} />
             {item.isActive && (

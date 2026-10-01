@@ -5,6 +5,8 @@ import { useLanguage, assetName, assetDescription, assetTag } from '../../../i18
 import { CustomModal } from '../Modals/CustomModal';
 import { PrimaryButton } from '../Buttons/PrimaryButton';
 import { SecondaryButton } from '../Buttons/SecondaryButton';
+import { Flight } from '../Flight/Flight';
+import { useFlightTransition, type FlightOrigin } from '../Flight/useFlightTransition';
 import { ItemThumbnail } from './ItemThumbnail';
 import s from './Inventory.module.css';
 
@@ -16,10 +18,13 @@ interface ItemDetailModalProps {
   canDeactivate: boolean;
   onToggleActive: (asset: Asset) => void;
   onClose: () => void;
+  // The bag slot it was opened from: the item flies from it into the preview, and back.
+  openedFrom?: FlightOrigin | null;
 }
 
-export const ItemDetailModal = ({ asset, isActive, canDeactivate, onToggleActive, onClose }: ItemDetailModalProps) => {
+export const ItemDetailModal = ({ asset, isActive, canDeactivate, onToggleActive, onClose, openedFrom = null }: ItemDetailModalProps) => {
   const { t } = useLanguage();
+  const { slotRef, leg, requestClose, modalMotion, flightProps } = useFlightTransition({ show: !!asset, origin: openedFrom, onClose });
   if (!asset) return null;
 
   const origin = {
@@ -29,9 +34,10 @@ export const ItemDetailModal = ({ asset, isActive, canDeactivate, onToggleActive
   }[asset.unlockMethod];
 
   return (
-    <CustomModal show title={assetName(t, asset)} onClose={onClose} compact>
+    <>
+    <CustomModal show title={assetName(t, asset)} onClose={requestClose} compact motion={modalMotion}>
       <div data-testid="item-detail" className={s.detail}>
-        <div className={s.detailPreview}>
+        <div ref={slotRef} data-testid="item-detail-preview" className={`${s.detailPreview} ${leg ? s.detailPreviewAway : ''}`}>
           <ItemThumbnail asset={asset} size="detail" />
         </div>
         <div className={s.detailInfo}>
@@ -63,5 +69,12 @@ export const ItemDetailModal = ({ asset, isActive, canDeactivate, onToggleActive
         </div>
       </div>
     </CustomModal>
+    {leg && flightProps && (
+      // No turn on arrival: it just lands in the preview.
+      <Flight key={leg.direction} {...flightProps} radius="8px" testId="item-flight">
+        <ItemThumbnail asset={asset} size="detail" />
+      </Flight>
+    )}
+    </>
   );
 };

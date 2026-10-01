@@ -44,13 +44,19 @@ describe('InventoryBag', () => {
     expect(screen.getByTestId('bag-popover')).toHaveTextContent(pageBackgrounds[0].name);
   });
 
-  it('calls onSelect with the asset on click and closes the popover', () => {
+  it('leaves the slot of the item whose details are open empty', () => {
+    renderWithProviders(<InventoryBag items={items} onSelect={vi.fn()} liftedId={soundBackgrounds[0].id} />);
+    expect(screen.getByTestId(`bag-slot-${soundBackgrounds[0].id}`).className).toMatch(/slotLifted/);
+    expect(screen.getByTestId(`bag-slot-${pageBackgrounds[0].id}`).className).not.toMatch(/slotLifted/);
+  });
+
+  it('calls onSelect with the asset and the slot it was picked from, and closes the popover', () => {
     const onSelect = vi.fn();
     renderWithProviders(<InventoryBag items={items} onSelect={onSelect} />);
     const slot = screen.getByTestId(`bag-slot-${soundBackgrounds[0].id}`);
     fireEvent.mouseEnter(slot);
     fireEvent.click(slot);
-    expect(onSelect).toHaveBeenCalledWith(soundBackgrounds[0]);
+    expect(onSelect).toHaveBeenCalledWith(soundBackgrounds[0], expect.objectContaining({ element: slot, rect: expect.any(Object) }));
     expect(screen.queryByTestId('bag-popover')).not.toBeInTheDocument();
   });
 });

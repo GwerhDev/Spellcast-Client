@@ -1,4 +1,4 @@
-// A place on screen, in viewport coordinates: where a flying cover starts or lands.
+// A place on screen, in viewport coordinates: where something flying starts or lands.
 export interface FlightRect {
   top: number;
   left: number;

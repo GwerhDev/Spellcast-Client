@@ -44,6 +44,11 @@
   border-color: color-mix(in srgb, var(--color-primary) 60%, transparent);
 }
 
+/* Its item is out in its detail: the slot shows empty until it flies back. */
+.slotLifted > * {
+  visibility: hidden;
+}
+
 .slotActiveMark {
   position: absolute;
   top: 3px;
@@ -213,6 +218,11 @@
     flex-basis: auto;
     width: 100%;
   }
+}
+
+/* Hidden while the item flies in or back (see Flight). */
+.detailPreviewAway {
+  visibility: hidden;
 }
 
 .detailInfo {
