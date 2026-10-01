@@ -37,6 +37,16 @@ describe('LastSpells', () => {
     expect(skeletons.length).toBe(7);
   });
 
+  // A row of its own for the skeletons spread out a second time when the spells arrived.
+  it('fills the loading row with the spells, instead of putting up another one', async () => {
+    vi.spyOn(db, 'getSpellsFromDB').mockResolvedValue([mockDoc] as never);
+    renderWithProviders(<LastSpells />, { store: loggedStore() });
+    const row = screen.getByTestId('last-spells');
+    expect(screen.getAllByTestId('skeleton-card')).toHaveLength(7);
+    await screen.findByTestId('spell-card-doc-1');
+    expect(screen.getByTestId('last-spells')).toBe(row);
+  });
+
   it('renders nothing when there are no documents', async () => {
     vi.spyOn(db, 'getSpellsFromDB').mockResolvedValue([]);
     const { container } = renderWithProviders(<LastSpells />, { store: loggedStore() });

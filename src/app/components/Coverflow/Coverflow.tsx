@@ -125,6 +125,11 @@ export const Coverflow = ({ items, renderEmpty, itemWidth, slots = 7, interactiv
   const [pos, setPos] = useState(0);
   // Only the first cards spread out from the center; later ones come in from the edge.
   const spreading = useRef(true);
+  // Where the row was last drawn: a card showing up while it stays put is new content in
+  // that place (the items arriving, or changing), and fades in right there instead.
+  const drawnAt = useRef(pos);
+  const turning = drawnAt.current !== pos;
+  useEffect(() => { drawnAt.current = pos; }, [pos]);
   const active = mod(pos, size);
   const canMove = interactive && items.length > 1;
 
@@ -221,7 +226,7 @@ export const Coverflow = ({ items, renderEmpty, itemWidth, slots = 7, interactiv
             const behind = Math.abs(offset) > layout.front;
             const enterFrom = spreading.current
               ? { ...placeAt(layout, 0), scale: 0.6, opacity: 0 }
-              : { ...placeAt(layout, offset + Math.sign(offset)), opacity: 0 };
+              : { ...placeAt(layout, turning ? offset + Math.sign(offset) : offset), opacity: 0 };
             return (
               <motion.div
                 key={key}

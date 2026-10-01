@@ -95,23 +95,11 @@ export const LastSpells: React.FC = () => {
     next: t.common.next,
   };
 
-  // Loading, the row is already there, in skeletons, spreading out the same way the spells
-  // then do.
-  if (isLoading) return (
-    <div className={s.container}>
-      <Coverflow
-        testId="last-spells-loading"
-        items={[]}
-        slots={SLOTS}
-        itemWidth="var(--spell-card-width)"
-        interactive={false}
-        renderEmpty={() => <SkeletonCard />}
-      />
-    </div>
-  );
-  if (documents.length === 0) return null;
+  if (!isLoading && documents.length === 0) return null;
 
-  const items: CoverflowItem[] = visible.map((doc) => {
+  // Loading, the row is already there, in skeletons: the same row the spells then fill in
+  // place, so it spreads out once instead of again when they arrive.
+  const items: CoverflowItem[] = isLoading ? [] : visible.map((doc) => {
     const uploadJob = uploadQueue.find(j => j.targetDocId === doc.id && (j.status === 'queued' || j.status === 'processing')) ?? null;
     return {
       key: doc.id,
@@ -129,7 +117,7 @@ export const LastSpells: React.FC = () => {
       ),
     };
   });
-  if (hasMore) {
+  if (!isLoading && hasMore) {
     items.push({
       key: 'see-all',
       node: ({ front }) => (
@@ -163,9 +151,10 @@ export const LastSpells: React.FC = () => {
             testId="last-spells"
             items={items}
             slots={SLOTS}
-        itemWidth="var(--spell-card-width)"
+            itemWidth="var(--spell-card-width)"
+            interactive={!isLoading}
             labels={coverflowLabels}
-            renderEmpty={(key) => <EmptySpellCard testId={`last-spells-${key}`} />}
+            renderEmpty={(key) => (isLoading ? <SkeletonCard /> : <EmptySpellCard testId={`last-spells-${key}`} />)}
           />
         </div>
       </div>

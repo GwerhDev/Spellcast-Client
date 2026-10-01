@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, act, cleanup } from '@testing-library/react';
+import { MotionGlobalConfig } from 'framer-motion';
 import { Coverflow } from '../Coverflow';
 
 const card = (id: string, onClick = vi.fn()) => ({ key: id, node: <button data-testid={`card-${id}`} onClick={onClick}>{id}</button> });
@@ -21,6 +22,22 @@ const centered = async () => {
 };
 
 describe('Coverflow', () => {
+  // Items arriving into a row that's already there (loaded after its skeletons) fill their
+  // places where they are: coming in from the edge read as the row spreading out again.
+  it('fades items arriving without a turn in at their own place, not from the edge', async () => {
+    const { rerender } = render(<Coverflow itemWidth="160px" slots={5} items={[]} renderEmpty={empty} labels={labels} />);
+    await waitFor(() => expect(screen.getAllByTestId('coverflow-place')).toHaveLength(5));
+    MotionGlobalConfig.skipAnimations = false;
+    try {
+      rerender(<Coverflow itemWidth="160px" slots={5} items={[card('a'), card('b')]} renderEmpty={empty} labels={labels} />);
+      const b = screen.getByTestId('card-b').parentElement!;
+      expect(b.getAttribute('data-offset')).toBe('1');
+      expect(b.style.transform).toContain('translateX(106%)');
+    } finally {
+      MotionGlobalConfig.skipAnimations = true;
+    }
+  });
+
   it('always shows every place, filling the ones without an item', async () => {
     render(<Coverflow itemWidth="160px" slots={5} items={[card('a'), card('b')]} renderEmpty={empty} labels={labels} />);
     expect(screen.getAllByTestId('coverflow-place')).toHaveLength(5);
