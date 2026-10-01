@@ -1,4 +1,4 @@
-import { PlayButton } from '../../../components/PlayButton/PlayButton';
+import { PlayButton, PlayButtonShape } from '../../../components/PlayButton/PlayButton';
 import { AltarPanel } from '../../../components/Altar/AltarPanel';
 import { AltarBrandIcon, AltarCornerButton, AltarHint, AltarNowReading, AltarSentence, AltarWave } from '../../../components/Altar/AltarParts';
 import { activeSentenceIndex } from '../../../../utils/activeSentence';
@@ -46,7 +46,7 @@ const GLOW_RANGE = 420;
 // it (Write, Import, Editor); once something is loaded, that spell's cover fills the panel.
 export const Altar = ({ onWrite, onImport, immersive = false, idle = false }: AltarProps) => {
   const { t } = useLanguage();
-  const { readSpell, unloadSpell, togglePlayback } = usePlaySpell();
+  const { readSpell, unloadSpell } = usePlaySpell();
   const { importFile } = useSpellImport();
   const deleteSpells = useDeleteSpells();
   const dispatch = useAppDispatch();
@@ -312,18 +312,22 @@ export const Altar = ({ onWrite, onImport, immersive = false, idle = false }: Al
       summoning={hasSpell && !isLoaded && !dropping && !importing}
       centerKey={showWaveform ? 'wave' : showBrand ? 'brand' : 'play'}
       footerKey={showSentence ? 'sentence' : showNowReading ? 'now' : 'hint'}
-      center={showWaveform ? <AltarWave active={isPlaying} /> : (
+      center={showWaveform ? <AltarWave active={isPlaying} /> : showBrand ? (
         <PlayButton
           size="lg"
-          isPlaying={isPlaying}
-          active={dropping || showMenu}
-          onClick={showBrand ? () => setMenuOpen(open => !open) : togglePlayback}
-          title={showBrand ? t.start.readMenu : undefined}
-          hasPopup={showBrand ? 'menu' : undefined}
+          isPlaying={false}
+          active={showMenu}
+          onClick={() => setMenuOpen(open => !open)}
+          title={t.start.readMenu}
+          hasPopup="menu"
           expanded={showMenu}
           controls={menuId}
-          icon={showBrand ? <AltarBrandIcon /> : undefined}
+          icon={<AltarBrandIcon />}
         />
+      ) : (
+        // As a drop target (or while importing) it's only the play button's look: always
+        // the play mark, whatever the loaded spell is doing, and nothing to click.
+        <PlayButtonShape size="lg" active={dropping} />
       )}
       footer={showSentence ? (
         <AltarSentence text={currentSentence!} sentenceKey={`${currentPage}-${sentenceIndex}`} />

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { PlayButton } from '../PlayButton';
+import { PlayButton, PlayButtonShape } from '../PlayButton';
 
 describe('PlayButton', () => {
   it('calls onClick', () => {
@@ -36,5 +36,16 @@ describe('PlayButton', () => {
     const button = screen.getByTestId('play-button');
     expect(button).not.toHaveAttribute('aria-haspopup');
     expect(button).not.toHaveAttribute('aria-expanded');
+  });
+});
+
+describe('PlayButtonShape', () => {
+  it('is only the look: the play mark, not a button', () => {
+    render(<PlayButtonShape size="lg" active />);
+    const shape = screen.getByTestId('play-button-shape');
+    expect(shape.tagName).toBe('SPAN');
+    expect(shape).toHaveAttribute('aria-hidden', 'true');
+    expect(shape.querySelector('[data-icon="play"]')).toBeInTheDocument();
+    expect(screen.queryByRole('button')).not.toBeInTheDocument();
   });
 });

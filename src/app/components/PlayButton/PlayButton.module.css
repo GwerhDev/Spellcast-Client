@@ -25,6 +25,11 @@
   transition: box-shadow 0.7s ease-in-out;
 }
 
+/* Only the look (PlayButtonShape): nothing to click. */
+.shape {
+  cursor: inherit;
+}
+
 /* sizes */
 .lg { width: 96px; height: 96px; font-size: 34px; }
 .md { width: 48px; height: 48px; font-size: 18px; }

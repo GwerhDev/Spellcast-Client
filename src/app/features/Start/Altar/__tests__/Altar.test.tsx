@@ -152,7 +152,8 @@ describe('Altar', () => {
     dragSpellOver();
     expect(await screen.findByTestId('altar-hint')).toHaveTextContent('Drop it');
     await waitFor(() => expect(screen.queryByTestId('altar-brand-icon')).not.toBeInTheDocument());
-    expect(await screen.findByTestId('play-button')).not.toHaveAttribute('title');
+    expect(await screen.findByTestId('play-button-shape')).toBeInTheDocument();
+    expect(screen.queryByTestId('play-button')).not.toBeInTheDocument();
   });
 
   it('shows the loaded spell with a display-only waveform instead of the play button', () => {
@@ -232,8 +233,23 @@ describe('Altar', () => {
     store.dispatch(setSpellFile({ id: 'spell-1', title: 'Spell one' }));
     renderWithProviders(<Read />, { store });
     dragSpellOver();
-    expect(await screen.findByTestId('play-button')).toBeInTheDocument();
+    expect(await screen.findByTestId('play-button-shape')).toBeInTheDocument();
     expect(screen.queryByTestId('altar-wave')).not.toBeInTheDocument();
+  });
+
+  it('as the drop target it always shows play, even while the loaded spell plays, and clicking it does nothing', async () => {
+    const store = makeStore();
+    store.dispatch(setSpellFile({ id: 'spell-1', title: 'Spell one' }));
+    store.dispatch(play());
+    renderWithProviders(<Read />, { store });
+    dragSpellOver();
+    const shape = await screen.findByTestId('play-button-shape');
+    expect(shape.querySelector('[data-icon="play"]')).toBeInTheDocument();
+    expect(shape.querySelector('[data-icon="pause"]')).not.toBeInTheDocument();
+    const before = store.getState().browserPlayer.toggleSeq;
+    fireEvent.click(shape);
+    expect(store.getState().browserPlayer.toggleSeq).toBe(before);
+    expect(store.getState().browserPlayer.isPlaying).toBe(true);
   });
 
   it('fills the panel with the loaded spell cover, when it has one', async () => {

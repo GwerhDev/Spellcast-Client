@@ -41,3 +41,20 @@ export const PlayButton: React.FC<PlayButtonProps> = ({ isPlaying, onClick, disa
     <span className={s.sheen} aria-hidden="true" />
   </button>
 );
+
+interface PlayButtonShapeProps {
+  size?: 'sm' | 'md' | 'lg';
+  // The playing glow, e.g. a drop target reacting to something dragged over it.
+  active?: boolean;
+}
+
+// The play button's look without being one: always the play mark, whatever is playing, and
+// nothing to click or focus (e.g. the altar's drop target while a spell is dragged).
+export const PlayButtonShape: React.FC<PlayButtonShapeProps> = ({ size = 'md', active }) => (
+  <span data-testid="play-button-shape" className={`${s.btn} ${s.shape} ${s[size]} ${active ? s.playing : ''}`} aria-hidden="true">
+    <span className={s.icon}>
+      <FontAwesomeIcon icon={faPlay} />
+    </span>
+    <span className={s.sheen} aria-hidden="true" />
+  </span>
+);
