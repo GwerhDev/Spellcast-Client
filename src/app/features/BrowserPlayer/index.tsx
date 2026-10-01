@@ -868,6 +868,18 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
     window.speechSynthesis?.cancel();
   }, []);
 
+  // Unloading silences it right away, before it unmounts: the player's bar animates out
+  // with this player still inside it, and it would keep speaking until that ends. Each spell
+  // gets its own player (keyed by spell in the layout), so its spellId only goes back to
+  // null when its spell is unloaded or deleted.
+  useEffect(() => {
+    if (spellId) return;
+    clearFreezeNudgeTimer();
+    activeUtteranceRef.current = null;
+    window.speechSynthesis?.cancel();
+    silentAudioRef.current?.pause();
+  }, [spellId]);
+
   // Routed through the queue like everything else (VISIBILITY_CHECK case in
   // handleEvent above) rather than checking the engine here directly -- this
   // listener only ever decides WHEN to check, never touches speechSynthesis

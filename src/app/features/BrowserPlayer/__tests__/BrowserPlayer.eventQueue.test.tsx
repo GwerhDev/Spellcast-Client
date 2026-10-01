@@ -2,7 +2,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { screen, act, fireEvent } from '@testing-library/react';
 import { renderWithProviders } from '../../../../test/renderWithProviders';
 import { BrowserPlayer } from '../index';
-import { setSpellLoaded } from '../../../../store/spellReaderSlice';
+import { setSpellLoaded, resetSpellReader } from '../../../../store/spellReaderSlice';
+import { resetBrowserPlayer } from '../../../../store/browserPlayerSlice';
 
 vi.mock('../../../../db', () => ({
   getSpellById: vi.fn().mockResolvedValue(null),
@@ -369,5 +370,29 @@ describe('BrowserPlayer single event queue (TCORE-81)', () => {
     await act(async () => { await Promise.resolve(); await Promise.resolve(); await vi.advanceTimersByTimeAsync(0); });
     expect(mockSpeechSynthesis.speak).toHaveBeenCalledTimes(1);
     expect((mockSpeechSynthesis.speak.mock.calls[0][0] as SpeechSynthesisUtterance).text).toBe('Sentence one.');
+  });
+
+  // The player's bar animates out with this player still inside it after its spell is
+  // unloaded; it must go quiet right away, not when it finally unmounts.
+  it('stops speaking as soon as its spell is unloaded, while still mounted', async () => {
+    const { store, unmount } = renderWithProviders(
+      <BrowserPlayer showVoiceSelectorModal={vi.fn()} showPlayerConfigModal={vi.fn()} />,
+      { preloadedState: baseState }
+    );
+    await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+    expect(mockSpeechSynthesis.speak).toHaveBeenCalled();
+    const cancelsBefore = mockSpeechSynthesis.cancel.mock.calls.length;
+
+    // As unloadSpell does it: the players reset first (so nothing reads as "playing"
+    // anymore), then the reader -- no event left that would cancel the engine on its own.
+    await act(async () => {
+      store.dispatch(resetBrowserPlayer());
+      store.dispatch(resetSpellReader());
+      await Promise.resolve();
+    });
+
+    expect(screen.getByTestId('browser-player')).toBeInTheDocument();
+    expect(mockSpeechSynthesis.cancel.mock.calls.length).toBeGreaterThan(cancelsBefore);
+    unmount();
   });
 });
