@@ -35,7 +35,7 @@ import { SpellDetailModal } from '../../components/Modals/SpellDetailModal';
 import { addSignalNotice } from '../../../store/signalSlice';
 import { SILENT_AUDIO_SRC } from '../../../config/consts';
 import { makeSilentWav } from '../../../utils/silentAudio';
-import { splitIntoSpeechChunks } from '../../../utils/speechChunks';
+import { splitIntoSpeechChunks, speechChunkBudget } from '../../../utils/speechChunks';
 
 // SILENT_AUDIO_SRC is 0.1s long, which Chromium treats as a one-shot sound rather than a
 // player, so the tab never got a controllable media session and headset presses went to
@@ -358,7 +358,10 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
     if (v) utterance.voice = v;
     utterance.volume = vol * mv;
 
-    utterance.onend = () => enqueue({ type: 'SENTENCE_ENDED', utterance });
+    utterance.onend = () => {
+      timePace(utterance);
+      enqueue({ type: 'SENTENCE_ENDED', utterance });
+    };
     utterance.onerror = (e) => {
       if (e.error === 'interrupted' || e.error === 'canceled') return; // superseded by a newer speak()/cancel() -- that event owns what happens next
       if (e.error === 'text-too-long') {
@@ -373,7 +376,10 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
       enqueue({ type: 'SENTENCE_ENDED', utterance }); // treat unknown engine errors as "done with this sentence"
     };
 
-    utterance.onstart = () => enqueue({ type: 'UTTERANCE_STARTED', utterance });
+    utterance.onstart = () => {
+      utteranceStartRef.current = { utterance, at: performance.now() };
+      enqueue({ type: 'UTTERANCE_STARTED', utterance });
+    };
     window.speechSynthesis.speak(utterance);
     armFreezeNudgeTimer(); // clock starts over for THIS utterance
   };
@@ -385,6 +391,31 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
   // SENTENCE_ENDED handler speaks the next piece before moving on to the next sentence.
   // Rebuilt every time a sentence starts, so nothing of an earlier one is ever left in it.
   const pendingChunksRef = useRef<string[]>([]);
+
+  // How fast the voice in use actually speaks (characters a second), timed on every piece
+  // it finishes saying -- from its own start to its own end -- so the next pieces are sized
+  // to take about the same time with any voice (speechChunkBudget). Starts over with
+  // another voice. Only measures; it never decides playback.
+  const paceRef = useRef<{ voiceKey: string; charsPerSecond: number } | null>(null);
+  const utteranceStartRef = useRef<{ utterance: SpeechSynthesisUtterance; at: number } | null>(null);
+  const currentVoiceKey = () => {
+    const v = latestRef.current.voice;
+    return v ? v.voiceURI || v.name : 'default';
+  };
+  const timePace = (utterance: SpeechSynthesisUtterance) => {
+    const started = utteranceStartRef.current;
+    // Only a piece heard from start to end: not one cut short, nor too short to time well.
+    if (!started || started.utterance !== utterance || activeUtteranceRef.current !== utterance) return;
+    const seconds = (performance.now() - started.at) / 1000;
+    if (seconds < 1.5 || utterance.text.length < 20) return;
+    const measured = utterance.text.length / seconds;
+    const voiceKey = currentVoiceKey();
+    const previous = paceRef.current?.voiceKey === voiceKey ? paceRef.current.charsPerSecond : null;
+    // Smoothed, so one odd sentence doesn't swing the size of the next pieces.
+    paceRef.current = { voiceKey, charsPerSecond: previous === null ? measured : (previous + measured) / 2 };
+  };
+  const chunkBudget = () =>
+    speechChunkBudget(paceRef.current?.voiceKey === currentVoiceKey() ? paceRef.current.charsPerSecond : undefined);
 
   // Awaits the engine's own onpause/onresume event -- not a guessed delay for
   // HOW LONG the engine needs, so the queue runner genuinely knows the
@@ -471,7 +502,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
       dispatch(setCurrentSentenceIndex(0));
       return;
     }
-    const [first, ...rest] = splitIntoSpeechChunks(sents[idx]);
+    const [first, ...rest] = splitIntoSpeechChunks(sents[idx], chunkBudget());
     pendingChunksRef.current = rest;
     engineSpeakSentence(first ?? sents[idx]);
   };

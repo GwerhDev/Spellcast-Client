@@ -1,8 +1,9 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, onTestFinished } from 'vitest';
 import { act } from '@testing-library/react';
 import { renderWithProviders } from '../../../../test/renderWithProviders';
 import { BrowserPlayer } from '../index';
 import { SpellProcessor } from '../../SpellProcessor';
+import { speechChunkBudget } from '../../../../utils/speechChunks';
 
 // A long sentence is spoken as a few shorter utterances, so Chrome's ~15s continuous-speech
 // freeze never comes (nor the nudge that cut a word in half to prevent it). With
@@ -109,7 +110,9 @@ describe('BrowserPlayer reading a long sentence', () => {
     }
     expect(pieces.length).toBeGreaterThan(1);
     expect(pieces.join(' ')).toBe(longSentence);
-    pieces.forEach(piece => expect(piece.split(' ').length).toBeLessThanOrEqual(28));
+    // Before the voice has been timed (the engine here never says when it starts), each
+    // piece is sized for a slow voice.
+    pieces.forEach(piece => expect(piece.length).toBeLessThanOrEqual(speechChunkBudget()));
     expect(activeUtterance?.text).toBe('Next one.');
     expect(store.getState().spellReader.currentSentenceIndex).toBe(1);
   });
@@ -122,4 +125,34 @@ describe('BrowserPlayer reading a long sentence', () => {
     await endSentence();
     expect(activeUtterance?.text).toBe('Another.');
   });
+
+  // Sized from how fast the voice in use actually speaks: timed on each piece it says from
+  // its own start to its own end.
+  it('sizes the next pieces from the voice\'s measured pace', async () => {
+    let now = 0;
+    const clock = vi.spyOn(performance, 'now').mockImplementation(() => now);
+    onTestFinished(() => clock.mockRestore());
+    const second = Array.from({ length: 60 }, (_, i) => `next${i + 1}`).join(' ') + '.';
+    pages = [textPage(`${longSentence} ${second}`)];
+    const { store } = renderWithProviders(<Reader />, { preloadedState: stateFor({ autoPlayOnLoad: true, totalPages: 1 }) as never });
+    await settle();
+
+    // A fast voice: every piece of the first sentence said in 2s.
+    const sayFast = async () => {
+      const u = activeUtterance as unknown as { onstart?: () => void; onend?: () => void };
+      await act(async () => { u.onstart?.(); });
+      now += 2000;
+      await act(async () => { u.onend?.(); });
+      await settle();
+    };
+    const firstPieces: string[] = [];
+    while (store.getState().spellReader.currentSentenceIndex === 0) {
+      firstPieces.push(activeUtterance!.text);
+      await sayFast();
+    }
+    expect(firstPieces.every(piece => piece.length <= speechChunkBudget())).toBe(true);
+    // The next sentence comes in bigger pieces, as fast a voice keeps them well under the freeze.
+    expect(activeUtterance!.text.length).toBeGreaterThan(speechChunkBudget());
+  });
 });
+
