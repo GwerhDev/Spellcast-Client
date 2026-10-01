@@ -109,7 +109,7 @@ describe('LastSpells', () => {
   });
 
   it('a spell in the front row opens; one behind it is brought to the center first', async () => {
-    const older = (id: string, ago: number) => ({ ...mockDoc, id, title: id, createdAt: new Date(Date.now() - ago).toISOString() });
+    const older = (id: string, ago: number) => ({ ...mockDoc, id, title: id, createdAt: new Date(new Date(mockDoc.createdAt).getTime() - ago).toISOString() });
     vi.spyOn(db, 'getSpellsFromDB').mockResolvedValue([mockDoc, older('doc-2', 1000), older('doc-3', 2000)] as never);
     renderWithProviders(<LastSpells />, { store: loggedStore() });
     // doc-3 is two places out, behind the front row.

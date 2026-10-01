@@ -67,6 +67,14 @@ describe('splitIntoSpeechChunks', () => {
     expect(first.endsWith('w14,')).toBe(true);
   });
 
+  it('a dash standing between two words is a clause break too', () => {
+    const ws = words(40).split(' ');
+    ws.splice(10, 0, '-');
+    ws[13] += ',';
+    const [first] = splitIntoSpeechChunks(ws.join(' '), 80);
+    expect(first.endsWith('w10 -')).toBe(true);
+  });
+
   it('with no punctuation at all, cuts between two words', () => {
     const chunks = splitIntoSpeechChunks(words(40), 80);
     expect(chunks.every(chunk => /^w\d+( w\d+)*$/.test(chunk))).toBe(true);

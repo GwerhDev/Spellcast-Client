@@ -20,7 +20,7 @@ export const MAX_CHUNK_CHARS = 220;
 const MIN_SHARE = 0.3;
 
 // Where to cut, best first: the end of a clause, then of a phrase.
-const STRONG_BREAK = /[;:—–]$|\s-$/;
+const STRONG_BREAK = /[;:—–]$|^-$/;
 const SOFT_BREAK = /[,)\]]$/;
 
 // The size of a piece, in characters, for a voice speaking this many characters a second.
