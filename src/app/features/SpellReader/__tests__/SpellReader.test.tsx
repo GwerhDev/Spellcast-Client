@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { screen, fireEvent } from '@testing-library/react';
 import { renderWithProviders, makeStore } from '../../../../test/renderWithProviders';
 import { SpellReader } from '../index';
+import { Routes, Route } from 'react-router-dom';
 import { setSpellFile, setSpellLoaded } from '../../../../store/spellReaderSlice';
 
 // MagicTextEditor / TTSSpellReader use browser APIs not available in jsdom
@@ -42,6 +43,23 @@ describe('SpellReader', () => {
     expect(screen.queryByTestId('mock-spell-detail-modal')).not.toBeInTheDocument();
     fireEvent.click(screen.getByTestId('spell-reader-info-btn'));
     expect(screen.getByTestId('mock-spell-detail-modal')).toHaveTextContent('doc-1');
+  });
+
+  it('its back button goes home, not to the spell\'s detail page', () => {
+    const store = makeStore();
+    store.dispatch(setSpellFile({ id: 'doc-1', title: 'Test Spell' }));
+    store.dispatch(setSpellLoaded(true));
+    renderWithProviders(
+      <Routes>
+        <Route path="/" element={<div data-testid="home-page" />} />
+        <Route path="/spell/:id" element={<div data-testid="spell-page" />} />
+        <Route path="/spell/:id/reader" element={<SpellReader />} />
+      </Routes>,
+      { store, initialPath: '/spell/doc-1/reader' },
+    );
+    fireEvent.click(screen.getByTestId('spell-reader-back-btn'));
+    expect(screen.getByTestId('home-page')).toBeInTheDocument();
+    expect(screen.queryByTestId('spell-page')).not.toBeInTheDocument();
   });
 
   describe('sharing a quote (TCORE-98)', () => {

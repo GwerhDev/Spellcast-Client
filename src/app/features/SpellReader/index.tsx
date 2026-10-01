@@ -322,7 +322,9 @@ export const SpellReader = () => {
       )}
       <div className={`${s.pageInfoContainer} reader-top-bar`}>
         <span className={s.headerControls}>
-          <IconButton variant='transparent' icon={faArrowLeft} title={t.common.back} onClick={() => spellId ? navigate(`/spell/${spellId}`) : navigate(-1)} />
+          {/* Back home, not to the spell's detail page: the reader is reached from home (the altar,
+              the detail modal), so that's where leaving it returns. */}
+          <IconButton data-testid="spell-reader-back-btn" variant='transparent' icon={faArrowLeft} title={t.common.back} onClick={() => navigate('/')} />
           {isLoaded && <SearcherButton />}
         </span>
         <div className={s.titleContainer}>
