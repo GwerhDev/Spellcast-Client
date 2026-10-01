@@ -4,14 +4,12 @@ import { AltarBrandIcon, AltarCornerButton, AltarHint, AltarNowReading, AltarSen
 import { activeSentenceIndex } from '../../../../utils/activeSentence';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { faBookOpenReader, faEject, faFeatherPointed, faPen, faScroll, faTrash, faUpload, faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons';
+import { faBookOpenReader, faEject, faFeatherPointed, faPen, faScroll, faUpload, faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons';
 import { useNavigate } from 'react-router-dom';
 import { RadialMenu, type RadialMenuItem } from '../../../components/RadialMenu/RadialMenu';
-import { DeleteConfirmModal } from '../../../components/Modals/DeleteConfirmModal';
 import { useAppDispatch, useAppSelector } from '../../../../store/hooks';
 import { addApiResponse } from '../../../../store/apiResponsesSlice';
 import { getSpellById } from '../../../../db';
-import { useDeleteSpells } from '../../../../hooks/useDeleteSpells';
 import { useSpellImport } from '../../../../hooks/useSpellImport';
 import { usePlaySpell } from '../../../../hooks/usePlaySpell';
 import { useSpellCoverUrl } from '../../../../hooks/useSpellCoverUrl';
@@ -48,7 +46,6 @@ export const Altar = ({ onWrite, onImport, immersive = false, idle = false }: Al
   const { t } = useLanguage();
   const { readSpell, unloadSpell } = usePlaySpell();
   const { importFile } = useSpellImport();
-  const deleteSpells = useDeleteSpells();
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const centerRef = useRef<HTMLDivElement>(null);
@@ -65,7 +62,6 @@ export const Altar = ({ onWrite, onImport, immersive = false, idle = false }: Al
   const [spellDragActive, setSpellDragActive] = useState(false);
   const [fileDragActive, setFileDragActive] = useState(false);
   const [importing, setImporting] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const { spellId, spellTitle, spellUserId, currentPage, totalPages, isLoaded, sentences, currentSentenceIndex } = useAppSelector(state => state.spellReader);
   const voiceType = useAppSelector(state => state.voice.selectedVoice.type);
   const { timeline: providerTimeline, currentTime: providerCurrentTime } = useAppSelector(state => state.audioPlayer);
@@ -74,7 +70,8 @@ export const Altar = ({ onWrite, onImport, immersive = false, idle = false }: Al
   const browserPlaying = useAppSelector(state => state.browserPlayer.isPlaying);
   const isPlaying = audioPlaying || browserPlaying;
   const hasSpell = !!spellId;
-  // Edit and delete are only offered for the caster's own transcriptions.
+  // Edit is only offered for the caster's own transcriptions; deleting is left to the
+  // spell's own page.
   const inGrimoire = hasSpell && isInCasterGrimoire(spellUserId, userId);
   const coverUrl = useSpellCoverUrl(spellId, userId);
   // Nothing loaded and nothing being dragged: the button shows the Spellcast mark and opens
@@ -133,13 +130,6 @@ export const Altar = ({ onWrite, onImport, immersive = false, idle = false }: Al
     } catch (error) {
       console.error('Failed to load dropped spell:', error);
     }
-  };
-
-  // The spell deleted here is the loaded one, so this also unloads it.
-  const handleDeleteConfirm = async () => {
-    if (!spellId) return;
-    await deleteSpells([spellId]);
-    setShowDeleteModal(false);
   };
 
   // A dragged spell's pointer, as CSS variables on the panel (no re-render per move): a
@@ -243,7 +233,6 @@ export const Altar = ({ onWrite, onImport, immersive = false, idle = false }: Al
     { id: 'reader', label: t.spell.reader, icon: faBookOpenReader, onSelect: () => navigate(`/spell/${spellId}/reader`) },
     ...(inGrimoire ? [
       { id: 'edit', label: t.nav.editor, icon: faWandMagicSparkles, onSelect: () => navigate(`/editor/${spellId}`) },
-      { id: 'delete', label: t.common.delete, icon: faTrash, onSelect: () => setShowDeleteModal(true), danger: true },
     ] : []),
     { id: 'unload', label: t.player.unload, icon: faEject, onSelect: () => unloadSpell() },
   ];
@@ -270,15 +259,12 @@ export const Altar = ({ onWrite, onImport, immersive = false, idle = false }: Al
         <>
           <AltarCornerButton data-testid="altar-open-reader" icon={faBookOpenReader} title={t.spell.openInReader} onClick={() => navigate(`/spell/${spellId}/reader`)} />
           {inGrimoire && (
-            <>
-              <AltarCornerButton
-                data-testid="altar-edit"
-                icon={faWandMagicSparkles}
-                title={t.spell.editSpell}
-                onClick={() => navigate(`/editor/${spellId}`)}
-              />
-              <AltarCornerButton data-testid="altar-delete" icon={faTrash} title={t.common.delete} danger onClick={() => setShowDeleteModal(true)} disabled={importing} />
-            </>
+            <AltarCornerButton
+              data-testid="altar-edit"
+              icon={faWandMagicSparkles}
+              title={t.spell.editSpell}
+              onClick={() => navigate(`/editor/${spellId}`)}
+            />
           )}
         </>
       )}
@@ -341,13 +327,6 @@ export const Altar = ({ onWrite, onImport, immersive = false, idle = false }: Al
         <AltarHint text={hintText} busy={importing} hidden={showMenu} />
       )}
     >
-      <DeleteConfirmModal
-        show={showDeleteModal}
-        onClose={() => setShowDeleteModal(false)}
-        onConfirm={handleDeleteConfirm}
-        title={t.spell.deleteTitle}
-        message={t.spell.deleteConfirm.replace('{title}', spellTitle ?? '')}
-      />
     </AltarPanel>
   );
 };

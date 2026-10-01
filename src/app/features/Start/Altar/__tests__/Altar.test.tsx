@@ -331,7 +331,7 @@ describe('Altar', () => {
     });
   });
 
-  describe("the loaded spell's edit and delete shortcuts", () => {
+  describe("the loaded spell's edit shortcut", () => {
     // A caster's own spell by default; `owner` loads someone else's.
     const loaded = (owner = 'user-1') => {
       const store = makeStore();
@@ -340,17 +340,22 @@ describe('Altar', () => {
       return store;
     };
 
-    it('are not shown with nothing loaded', () => {
+    it('is not shown with nothing loaded', () => {
       renderWithProviders(<Read />);
       expect(screen.queryByTestId('altar-edit')).not.toBeInTheDocument();
+    });
+
+    // Deleting is left to the spell's own page.
+    it('offers no delete', () => {
+      renderWithProviders(<Read />, { store: loaded() });
+      expect(screen.getByTestId('altar-edit')).toBeInTheDocument();
       expect(screen.queryByTestId('altar-delete')).not.toBeInTheDocument();
     });
 
-    it("are not shown for a spell outside the caster's grimoire (the reader shortcut still is)", () => {
+    it("is not shown for a spell outside the caster's grimoire (the reader shortcut still is)", () => {
       renderWithProviders(<Read />, { store: loaded('user-2') });
       expect(screen.getByTestId('altar-open-reader')).toBeInTheDocument();
       expect(screen.queryByTestId('altar-edit')).not.toBeInTheDocument();
-      expect(screen.queryByTestId('altar-delete')).not.toBeInTheDocument();
     });
 
     it('edit opens the loaded spell in the editor', () => {
@@ -363,16 +368,6 @@ describe('Altar', () => {
       );
       fireEvent.click(screen.getByTestId('altar-edit'));
       expect(screen.getByTestId('editor-route')).toBeInTheDocument();
-    });
-
-    it('delete asks first, then deletes the spell and unloads it', async () => {
-      const store = loaded();
-      renderWithProviders(<Read />, { store });
-      fireEvent.click(screen.getByTestId('altar-delete'));
-      expect(mockDeleteSpellFromDB).not.toHaveBeenCalled();
-      fireEvent.click(screen.getByTestId('delete-confirm-confirm-btn'));
-      await waitFor(() => expect(store.getState().spellReader.spellId).toBeNull());
-      expect(mockDeleteSpellFromDB).toHaveBeenCalledWith('spell-1', 'user-1');
     });
   });
 
@@ -471,7 +466,7 @@ describe('Altar', () => {
       // The spell's info and Import first (no Write), the spell's own actions, and unloading it last.
       const order = Array.from(screen.getByTestId('radial-menu').querySelectorAll('[data-testid^="radial-menu-item-"]'))
         .map(el => el.getAttribute('data-testid')!.replace('radial-menu-item-', ''));
-      expect(order).toEqual(['info', 'import', 'reader', 'edit', 'delete', 'unload']);
+      expect(order).toEqual(['info', 'import', 'reader', 'edit', 'unload']);
       // Escape doesn't close it.
       fireEvent.keyDown(document, { key: 'Escape' });
       expect(ringOpen()).toBe(true);
@@ -504,17 +499,14 @@ describe('Altar', () => {
       expect(ringOpen()).toBe(false);
     });
 
-    it('unload and delete work from the ring', async () => {
+    it('unload works from the ring', () => {
       const store = loaded();
       renderWithProviders(<Read immersive />, { store });
-      fireEvent.click(screen.getByTestId('radial-menu-item-delete'));
-      expect(screen.getByTestId('delete-confirm-confirm-btn')).toBeInTheDocument();
-      fireEvent.click(screen.getByTestId('delete-confirm-cancel-btn'));
       fireEvent.click(screen.getByTestId('radial-menu-item-unload'));
       expect(store.getState().spellReader.spellId).toBeNull();
     });
 
-    it("offers no edit/delete for a spell outside the caster's grimoire", () => {
+    it("offers no edit for a spell outside the caster's grimoire", () => {
       const store = makeStore();
       store.dispatch({ type: 'session/setSession', payload: { logged: true, userData: { id: 'user-1', loader: false } } });
       store.dispatch(setSpellFile({ id: 'spell-1', title: 'Spell one', userId: 'user-2' }));
