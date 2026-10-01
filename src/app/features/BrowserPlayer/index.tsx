@@ -81,6 +81,7 @@ type EngineEvent =
   | { type: 'VOLUME_DRAG_START' }
   | { type: 'VOLUME_DRAG_END' }
   | { type: 'CONTENT_CHANGED' } // sentence/page/spell changed under us
+  | { type: 'VOICE_CHANGED' } // another voice was picked
   | { type: 'SENTENCE_ENDED'; utterance: SpeechSynthesisUtterance } // the engine's own onend fired
   | { type: 'UTTERANCE_STARTED'; utterance: SpeechSynthesisUtterance } // the engine's own onstart fired
   | { type: 'FREEZE_NUDGE' }
@@ -614,6 +615,9 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
         return;
       }
 
+      // A new voice reads the current sentence again right away, from its start, instead
+      // of waiting for the old voice to finish it: same as the content changing under us.
+      case 'VOICE_CHANGED':
       case 'CONTENT_CHANGED': {
         // Page/sentence/spell changed for a reason OTHER than a sentence
         // finishing on its own (manual page nav, a fresh spell mounting,
@@ -756,6 +760,20 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
     enqueue({ type: 'CONTENT_CHANGED' });
     //eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentSentenceIndex, sentences, isLoaded, currentPage, spellId, autoPlayOnLoad, coverSettled]);
+
+  // Another voice picked: tell the queue (see VOICE_CHANGED), which decides whether there's
+  // a sentence to read again with it. Compared by identity of the voice, not the object --
+  // the voice list re-announcing itself dispatches the same voice again.
+  const voiceKey = voice ? voice.voiceURI || voice.name : null;
+  const previousVoiceKeyRef = useRef(voiceKey);
+  useEffect(() => {
+    if (previousVoiceKeyRef.current === voiceKey) return;
+    const hadVoice = previousVoiceKeyRef.current !== null;
+    previousVoiceKeyRef.current = voiceKey;
+    // The first voice resolved on load isn't a change of voice.
+    if (hadVoice) enqueue({ type: 'VOICE_CHANGED' });
+    //eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [voiceKey]);
 
   const handleTogglePlayPause = () => enqueue({ type: 'TOGGLE_REQUESTED' });
 
