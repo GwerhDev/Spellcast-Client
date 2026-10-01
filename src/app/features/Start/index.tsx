@@ -5,8 +5,6 @@ import { WriteOption } from './WriteOption';
 import { CustomModal } from '../../components/Modals/CustomModal';
 import { ImportOption } from './ImportOption';
 import { Altar } from './Altar';
-import { useDispatch } from 'react-redux';
-import { resetSpellState } from '../../../store/spellSlice';
 import { useLanguage } from '../../../i18n';
 
 interface StartProps {
@@ -29,15 +27,10 @@ const fold = {
 export const Start = ({ immersive = false, idle = false }: StartProps) => {
   // Write and Import open from the Spellcast button's menu (see Altar), as modals.
   const [modal, setModal] = useState<'write' | 'import' | null>(null);
-  const dispatch = useDispatch();
   const { t } = useLanguage();
 
-  // Closing Import drops whatever it had pending (a PDF picked but not created yet), as
-  // leaving its tab used to.
-  const closeModal = () => {
-    if (modal === 'import') dispatch(resetSpellState());
-    setModal(null);
-  };
+  // Closing Import drops whatever it had pending: ImportOption clears it as it unmounts.
+  const closeModal = () => setModal(null);
 
   return (
     <div data-testid="start" className={`${s.container} ${immersive ? s.immersive : ''}`}>

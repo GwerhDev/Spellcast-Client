@@ -1,13 +1,13 @@
 import s from '../../../components/Start/ImportOption/index.module.css';
 import * as pdfjsLib from 'pdfjs-dist';
 import workerSrc from 'pdfjs-dist/build/pdf.worker?url';
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { faPlus, faUpload } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { RootState } from '../../../../store';
-import { resetSpellState, setSpellDetails, setSpellTitle } from '../../../../store/spellSlice';
+import { resetSpellState, setSpellDetails } from '../../../../store/spellSlice';
 import { enqueueUpload } from '../../../../store/spellUploadSlice';
 import { useAppSelector } from '../../../../store/hooks';
 import { SpellCreateInput } from '../../../components/Inputs/SpellCreateInput';
@@ -54,6 +54,11 @@ export const ImportOption: React.FC = () => {
       reader.onerror = reject;
       reader.readAsDataURL(file);
     });
+
+  // A single picked PDF waits in the store (spellSlice) rather than here: leaving -- the
+  // modal closing, or opening the spell just created from it -- drops it, so the next
+  // import starts empty instead of showing this one again.
+  useEffect(() => () => { dispatch(resetSpellState()); }, [dispatch]);
 
   const isSpellFile = (f: File) => f.name.toLowerCase().endsWith('.spell');
 
@@ -123,9 +128,6 @@ export const ImportOption: React.FC = () => {
   const removePending = (index: number) =>
     setPendingFiles(prev => prev.filter((_, i) => i !== index));
 
-  const updatePendingTitle = (index: number, title: string) =>
-    setPendingFiles(prev => prev.map((f, i) => i === index ? { ...f, title } : f));
-
   const hasSingleReduxFile = spell.isLoaded;
   const hasAnyFile = hasSingleReduxFile || pendingFiles.length > 0;
   const hasMultiple = pendingFiles.length > 1 || (pendingFiles.length > 0 && spell.isLoaded);
@@ -166,7 +168,6 @@ export const ImportOption: React.FC = () => {
       {hasSingleReduxFile && (
         <SpellCreateInput
           spell={spell}
-          onTitleChange={(title) => dispatch(setSpellTitle(title))}
           onRemove={() => dispatch(resetSpellState())}
           onDone={(resultDocId) => {
             setDoneCount(prev => prev + 1);
@@ -178,7 +179,6 @@ export const ImportOption: React.FC = () => {
         <SpellCreateInput
           key={i}
           spell={{ ...f, currentPage: 0, isLoaded: true }}
-          onTitleChange={(title) => updatePendingTitle(i, title)}
           onRemove={() => removePending(i)}
           autoCreate={createAllTriggered}
           onDone={() => setDoneCount(prev => prev + 1)}

@@ -4,7 +4,6 @@ import { renderWithProviders } from '../../../../test/renderWithProviders';
 import { Start } from '../index';
 import { SPELL_DRAG_TYPE } from '../../../../config/consts';
 import type { Spell } from '../../../../interfaces';
-import { setSpellDetails } from '../../../../store/spellSlice';
 
 // ImportOption uses pdfjs-dist (DOMMatrix not in jsdom)
 vi.mock('../ImportOption', () => ({
@@ -60,15 +59,6 @@ describe('Start', () => {
     fireEvent.click(screen.getByTestId('play-button'));
     fireEvent.click(screen.getByTestId('radial-menu-item-import'));
     expect(screen.getByTestId('start-import-modal')).toBeInTheDocument();
-  });
-
-  it('closing Import drops whatever it had pending', () => {
-    const { store } = renderWithProviders(<Start />);
-    fireEvent.click(screen.getByTestId('play-button'));
-    fireEvent.click(screen.getByTestId('radial-menu-item-import'));
-    act(() => { store.dispatch(setSpellDetails({ fileContent: 'x', size: 1, type: 'pdf', title: 'Pending', totalPages: 1 })); });
-    fireEvent.click(screen.getByTestId('custom-modal-close'));
-    expect(store.getState().spell.isLoaded).toBe(false);
   });
 
   // The altar is the drop target: the rest of the section doesn't take spells.

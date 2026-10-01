@@ -10,15 +10,13 @@ import { useLanguage } from '../../../i18n';
 
 interface SpellCreateInputProps {
   spell: SpellState;
-  onTitleChange: (title: string) => void;
   onRemove?: () => void;
   onDone?: (resultDocId?: string) => void;
   autoCreate?: boolean;
 }
 
 export const SpellCreateInput = (props: SpellCreateInputProps) => {
-  const { spell, onTitleChange, onRemove, onDone, autoCreate } = props;
-  const [editTitle, setEditTitle] = useState(false);
+  const { spell, onRemove, onDone, autoCreate } = props;
   const [saveOriginal, setSaveOriginal] = useState(true);
   const [jobId, setJobId] = useState<string | null>(null);
   const { t } = useLanguage();
@@ -27,9 +25,6 @@ export const SpellCreateInput = (props: SpellCreateInputProps) => {
   const job = useAppSelector(state => jobId ? state.spellUpload.queue.find(j => j.id === jobId) : null);
   const onDoneRef = useRef(onDone);
   onDoneRef.current = onDone;
-  // Mirrors SpellCreateForm's titleEditedByUserRef: lets SpellUploadWorker know whether
-  // it's safe to prefer the PDF's own embedded title over this filename-derived one.
-  const titleEditedRef = useRef(false);
 
   useEffect(() => {
     if (autoCreate && !jobId) handleCreate();
@@ -69,7 +64,6 @@ export const SpellCreateInput = (props: SpellCreateInputProps) => {
     dispatch(enqueueUpload({
       id,
       title: spell.title || t.spell.untitled,
-      titleWasEdited: titleEditedRef.current,
       fileContent: spell.fileContent,
       saveOriginal,
       userId: userData.id,
@@ -86,15 +80,15 @@ export const SpellCreateInput = (props: SpellCreateInputProps) => {
   return (
     <div data-testid="spell-create-input" className={`${s.container} ${isActive ? s.containerActive : ''}`}>
       <FontAwesomeIcon size="2x" icon={getFileTypeIcon(spell.type)} />
-      <div className={s.metadata} onMouseLeave={() => setEditTitle(false)}>
+      <div className={s.metadata}>
+        {/* Not renamed here: the title comes from the file (the PDF's own, when it has
+            one), and is edited afterwards from the spell itself. */}
         <input
           data-testid="spell-create-input-title"
           placeholder={t.spell.titleInputPlaceholder}
-          readOnly={spell.title.length > 0 && !editTitle || !!jobId}
+          readOnly
           className={s.title}
-          onClick={() => { if (!jobId) setEditTitle(true); }}
           value={spell.title}
-          onChange={(e) => { if (!jobId) { titleEditedRef.current = true; onTitleChange(e.target.value); } }}
           type="text"
         />
         <div className={s.metaRow}>

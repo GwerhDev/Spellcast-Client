@@ -58,4 +58,20 @@ describe('ImportOption', () => {
     await waitFor(() => expect(importFileMock).toHaveBeenCalledWith(expect.objectContaining({ name: 'book.spell' })));
     expect(await screen.findByTestId('import-option-files')).toBeInTheDocument();
   });
+
+  // Leaving (the modal closing, or the app opening the spell just created) must not leave
+  // the picked PDF behind for the next import.
+  it('drops a picked PDF when it goes away, so the next import starts empty', async () => {
+    const { store, unmount } = renderWithProviders(<ImportOption />, { preloadedState: loggedInState });
+    selectFiles([pdfFile()]);
+    expect(await screen.findByTestId('import-option-files')).toBeInTheDocument();
+    expect(store.getState().spell.isLoaded).toBe(true);
+
+    unmount();
+    expect(store.getState().spell.isLoaded).toBe(false);
+
+    renderWithProviders(<ImportOption />, { store });
+    expect(screen.getByTestId('import-option-dropzone')).toBeInTheDocument();
+  });
 });
+
