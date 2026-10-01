@@ -950,7 +950,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
               </div>
             )}
             <VoiceSelectorButton onClick={() => showVoiceSelectorModal(true)} />
-            <UnloadSpellButton onClick={unloadSpell} title={t.player.unloadSpell} />
+            <UnloadSpellButton onClick={() => unloadSpell()} title={t.player.unloadSpell} />
           </section>
 
           <PlaybackControls

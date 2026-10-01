@@ -1,5 +1,5 @@
 import s from '../components/SpellReader/index.module.css';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { getSpellById } from '../../db';
@@ -25,8 +25,21 @@ export const LocalSpellReader: React.FC = () => {
 
   const { userData, logged } = useAppSelector((state) => state.session);
   const { spellId } = useAppSelector((state) => state.spellReader);
+  // The spell the player had on the last pass, to tell this reader's own spell being
+  // unloaded apart from any other change.
+  const previousSpellId = useRef(spellId);
 
   useEffect(() => {
+    const unloadedHere = !!id && previousSpellId.current === id && spellId === null;
+    previousSpellId.current = spellId;
+    // This reader's spell was just taken out of the player: that's leaving it (unloading
+    // from here goes to the spell's page), not a reason to load it right back. Navigations
+    // run as a transition, so this reader can still be here for a moment when it happens.
+    if (unloadedHere) return;
+
+    // A load still in flight when this reader goes away (or its spell changes) is dropped,
+    // instead of putting its spell back in the player afterwards.
+    let cancelled = false;
     const loadSpell = async () => {
       if (!id) { setError('No document ID provided.'); setIsLoading(false); return; }
       if (!logged) { setError('You must be logged in to view this document.'); setIsLoading(false); return; }
@@ -55,6 +68,7 @@ export const LocalSpellReader: React.FC = () => {
         dispatch(setSpellLoaded(false));
 
         const doc = await getSpellById(id, userData.id);
+        if (cancelled) return;
         if (!doc) { setError('Spell not found.'); setIsLoading(false); return; }
 
         const totalPages = doc.pagesContent
@@ -66,6 +80,7 @@ export const LocalSpellReader: React.FC = () => {
         dispatch(setHasInitialPageSet(true));
         setIsLoading(false);
       } catch (err) {
+        if (cancelled) return;
         console.error('Failed to load local spell:', err);
         setError('Failed to load spell.');
         setIsLoading(false);
@@ -73,6 +88,7 @@ export const LocalSpellReader: React.FC = () => {
     };
 
     loadSpell();
+    return () => { cancelled = true; };
     //eslint-disable-next-line
   }, [id, dispatch, spellId, logged, userData.id]);
 

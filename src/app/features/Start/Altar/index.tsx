@@ -245,7 +245,7 @@ export const Altar = ({ onWrite, onImport, immersive = false, idle = false }: Al
       { id: 'edit', label: t.nav.editor, icon: faWandMagicSparkles, onSelect: () => navigate(`/editor/${spellId}`, { state: { from: location.pathname } }) },
       { id: 'delete', label: t.common.delete, icon: faTrash, onSelect: () => setShowDeleteModal(true), danger: true },
     ] : []),
-    { id: 'unload', label: t.player.unload, icon: faEject, onSelect: unloadSpell },
+    { id: 'unload', label: t.player.unload, icon: faEject, onSelect: () => unloadSpell() },
   ];
 
   const hintText = importing ? t.start.readImporting : dropping ? t.start.readDropRelease : t.start.readDropHint;
@@ -264,7 +264,7 @@ export const Altar = ({ onWrite, onImport, immersive = false, idle = false }: Al
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       leftCorner={hasSpell && !dropping && !immersive && (
-        <AltarCornerButton data-testid="altar-unload" icon={faEject} title={t.player.unloadSpell} onClick={unloadSpell} disabled={importing} />
+        <AltarCornerButton data-testid="altar-unload" icon={faEject} title={t.player.unloadSpell} onClick={() => unloadSpell()} disabled={importing} />
       )}
       rightCorner={hasSpell && !dropping && !immersive && (
         <>

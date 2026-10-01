@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { Provider } from 'react-redux';
+import { MemoryRouter, useLocation } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import { makeStore } from '../../test/renderWithProviders';
 import { usePlaySpell } from '../usePlaySpell';
@@ -17,9 +18,20 @@ const spell = {
   pagesContent: JSON.stringify(['a', 'b', 'c']),
 } as Spell;
 
-const setup = (store = makeStore()) => {
-  const wrapper = ({ children }: { children: ReactNode }) => <Provider store={store}>{children}</Provider>;
+const setup = (store = makeStore(), path = '/') => {
+  const wrapper = ({ children }: { children: ReactNode }) => (
+    <Provider store={store}><MemoryRouter initialEntries={[path]}>{children}</MemoryRouter></Provider>
+  );
   return { store, ...renderHook(() => usePlaySpell(), { wrapper }) };
+};
+
+// The hook along with where the app is, to see where unloading leaves it.
+const setupAt = (path: string) => {
+  const store = makeStore();
+  const wrapper = ({ children }: { children: ReactNode }) => (
+    <Provider store={store}><MemoryRouter initialEntries={[path]}>{children}</MemoryRouter></Provider>
+  );
+  return { store, ...renderHook(() => ({ player: usePlaySpell(), location: useLocation() }), { wrapper }) };
 };
 
 describe('usePlaySpell', () => {
@@ -121,5 +133,37 @@ describe('usePlaySpell', () => {
     expect(state.spellReader.isLoaded).toBe(false);
     expect(state.browserPlayer.isPlaying).toBe(false);
     expect(state.audioPlayer.isPlaying).toBe(false);
+  });
+
+  // The reader loads its own spell: unloading there would only load it right back.
+  describe('unloading from the reader', () => {
+    it('in that spell\'s reader, leaves to its detail page before unloading', () => {
+      const { store, result } = setupAt('/spell/spell-1/reader');
+      act(() => result.current.player.mountSpell(spell));
+      act(() => result.current.player.unloadSpell());
+      expect(result.current.location.pathname).toBe('/spell/spell-1');
+      expect(store.getState().spellReader.spellId).toBeNull();
+    });
+
+    it('can leave somewhere else instead (e.g. home)', () => {
+      const { result } = setupAt('/spell/spell-1/reader');
+      act(() => result.current.player.mountSpell(spell));
+      act(() => result.current.player.unloadSpell({ leaveReaderTo: '/' }));
+      expect(result.current.location.pathname).toBe('/');
+    });
+
+    it('stays put anywhere else', () => {
+      const { result } = setupAt('/grimoire');
+      act(() => result.current.player.mountSpell(spell));
+      act(() => result.current.player.unloadSpell());
+      expect(result.current.location.pathname).toBe('/grimoire');
+    });
+
+    it('stays put in another spell\'s reader', () => {
+      const { result } = setupAt('/spell/spell-2/reader');
+      act(() => result.current.player.mountSpell(spell));
+      act(() => result.current.player.unloadSpell());
+      expect(result.current.location.pathname).toBe('/spell/spell-2/reader');
+    });
   });
 });

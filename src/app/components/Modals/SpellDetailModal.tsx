@@ -256,7 +256,7 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
                   canPrevious={mounted && readerLoaded && readerCurrentPage > 1}
                   canNext={mounted && readerLoaded && readerCurrentPage < readerTotalPages}
                   onMount={() => mountSpell(doc)}
-                  onUnmount={unloadSpell}
+                  onUnmount={() => unloadSpell()}
                   onTogglePlay={togglePlayback}
                   onPrevious={() => dispatch(goToPreviousPage())}
                   onNext={() => dispatch(goToNextPage())}

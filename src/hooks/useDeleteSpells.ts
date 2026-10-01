@@ -16,7 +16,8 @@ export const useDeleteSpells = () => {
   return async (ids: string[]): Promise<void> => {
     const results = await Promise.allSettled(ids.map(id => deleteSpellFromDB(id, userId)));
     const deleted = ids.filter((_, i) => results[i].status === 'fulfilled');
-    if (loadedSpellId && deleted.includes(loadedSpellId)) unloadSpell();
+    // Deleted from its own reader: home, since its detail page is gone too.
+    if (loadedSpellId && deleted.includes(loadedSpellId)) unloadSpell({ leaveReaderTo: '/' });
     if (deleted.length > 0) dispatch(invalidateSpellList());
     const failure = results.find((r): r is PromiseRejectedResult => r.status === 'rejected');
     if (failure) throw failure.reason;

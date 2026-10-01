@@ -644,7 +644,7 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
               </div>
             )}
             <VoiceSelectorButton onClick={() => showVoiceSelectorModal(true)} credentialError={credentialError} />
-            <UnloadSpellButton onClick={unloadSpell} title={t.player.unloadSpell} />
+            <UnloadSpellButton onClick={() => unloadSpell()} title={t.player.unloadSpell} />
           </section>
 
           <PlaybackControls

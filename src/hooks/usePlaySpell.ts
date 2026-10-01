@@ -1,4 +1,5 @@
 import { useDispatch } from 'react-redux';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAppSelector } from '../store/hooks';
 import { setAutoPlayOnLoad, resetBrowserPlayer, requestTogglePlay, requestResume } from '../store/browserPlayerSlice';
 import { setAutoPlayOnLoad as setAudioAutoPlayOnLoad, resetAudioPlayer, requestTogglePlay as requestAudioTogglePlay } from '../store/audioPlayerSlice';
@@ -10,6 +11,8 @@ import type { Spell } from '../interfaces';
 // one loaded, toggles play/pause instead of restarting it.
 export const usePlaySpell = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
   const { spellId: activeSpellId, isLoaded: readerLoaded } = useAppSelector(state => state.spellReader);
   const audioPlaying = useAppSelector(state => state.audioPlayer.isPlaying);
   const browserPlaying = useAppSelector(state => state.browserPlayer.isPlaying);
@@ -60,7 +63,15 @@ export const usePlaySpell = () => {
 
   // Takes the loaded spell out of the player: with no spell loaded the persistent player
   // unmounts (and stops), leaving nothing loaded.
-  const unloadSpell = () => {
+  //
+  // In that spell's reader, it leaves the reader first -- the reader loads its spell on its
+  // own, so unloading there would only load it right back. It goes to the spell's detail
+  // page, or to `leaveReaderTo` (e.g. home, when the spell is being deleted), replacing the
+  // reader in the history so going back doesn't reload it either.
+  const unloadSpell = ({ leaveReaderTo }: { leaveReaderTo?: string } = {}) => {
+    if (activeSpellId && pathname === `/spell/${activeSpellId}/reader`) {
+      navigate(leaveReaderTo ?? `/spell/${activeSpellId}`, { replace: true });
+    }
     dispatch(resetBrowserPlayer());
     dispatch(resetAudioPlayer());
     dispatch(resetSpellReader());

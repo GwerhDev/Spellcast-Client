@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { Provider } from 'react-redux';
+import { MemoryRouter, useLocation } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import { makeStore } from '../../test/renderWithProviders';
 import { setSpellFile } from '../../store/spellReaderSlice';
@@ -8,16 +9,18 @@ import { play } from '../../store/browserPlayerSlice';
 import { useDeleteSpells } from '../useDeleteSpells';
 import * as db from '../../db';
 
-const setup = (loadedId?: string) => {
+const setup = (loadedId?: string, path = '/grimoire') => {
   const store = makeStore();
   store.dispatch({ type: 'session/setSession', payload: { logged: true, userData: { id: 'user-1', loader: false } } });
   if (loadedId) {
     store.dispatch(setSpellFile({ id: loadedId, title: 'Loaded', userId: 'user-1' }));
     store.dispatch(play());
   }
-  const wrapper = ({ children }: { children: ReactNode }) => <Provider store={store}>{children}</Provider>;
-  const { result } = renderHook(() => useDeleteSpells(), { wrapper });
-  return { store, deleteSpells: result.current };
+  const wrapper = ({ children }: { children: ReactNode }) => (
+    <Provider store={store}><MemoryRouter initialEntries={[path]}>{children}</MemoryRouter></Provider>
+  );
+  const { result } = renderHook(() => ({ deleteSpells: useDeleteSpells(), location: useLocation() }), { wrapper });
+  return { store, deleteSpells: result.current.deleteSpells, location: () => result.current.location };
 };
 
 describe('useDeleteSpells', () => {
@@ -39,6 +42,14 @@ describe('useDeleteSpells', () => {
     await act(async () => { await deleteSpells(['a']); });
     expect(store.getState().spellReader.spellId).toBeNull();
     expect(store.getState().browserPlayer.isPlaying).toBe(false);
+  });
+
+  it('deleted from its own reader, leaves home (its detail page is gone too)', async () => {
+    vi.spyOn(db, 'deleteSpellFromDB').mockResolvedValue(undefined);
+    const { store, deleteSpells, location } = setup('a', '/spell/a/reader');
+    await act(async () => { await deleteSpells(['a']); });
+    expect(location().pathname).toBe('/');
+    expect(store.getState().spellReader.spellId).toBeNull();
   });
 
   it('keeps the loaded spell when another one is deleted', async () => {
