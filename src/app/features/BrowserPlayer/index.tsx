@@ -35,6 +35,7 @@ import { SpellDetailModal } from '../../components/Modals/SpellDetailModal';
 import { addSignalNotice } from '../../../store/signalSlice';
 import { SILENT_AUDIO_SRC } from '../../../config/consts';
 import { makeSilentWav } from '../../../utils/silentAudio';
+import { splitIntoSpeechChunks } from '../../../utils/speechChunks';
 
 // SILENT_AUDIO_SRC is 0.1s long, which Chromium treats as a one-shot sound rather than a
 // player, so the tab never got a controllable media session and headset presses went to
@@ -364,7 +365,8 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
         const mid = Math.floor(text.length / 2);
         const split = text.lastIndexOf(' ', mid);
         const pivot = split > 0 ? split : mid;
-        pendingSplitRef.current = { remainder: text.slice(pivot).trimStart() };
+        // Still too long for the engine: its second half goes first in line.
+        pendingChunksRef.current = [text.slice(pivot).trimStart(), ...pendingChunksRef.current];
         engineSpeakSentence(text.slice(0, pivot).trimEnd());
         return;
       }
@@ -376,11 +378,13 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
     armFreezeNudgeTimer(); // clock starts over for THIS utterance
   };
 
-  // Set only by the text-too-long split above: the SENTENCE_ENDED handler
-  // checks this to know the utterance that just ended was only the first
-  // half of a sentence, and the real second half still needs to be spoken
-  // before actually advancing to the next sentence index.
-  const pendingSplitRef = useRef<{ remainder: string } | null>(null);
+  // What's left to say of the current sentence. A long sentence is spoken as a few
+  // shorter utterances (see splitIntoSpeechChunks): each one starts Chrome's ~15s
+  // continuous-speech count over, so the freeze -- and the nudge that cuts a word in half
+  // to prevent it -- never comes, and the breaks fall where a reader would breathe. The
+  // SENTENCE_ENDED handler speaks the next piece before moving on to the next sentence.
+  // Rebuilt every time a sentence starts, so nothing of an earlier one is ever left in it.
+  const pendingChunksRef = useRef<string[]>([]);
 
   // Awaits the engine's own onpause/onresume event -- not a guessed delay for
   // HOW LONG the engine needs, so the queue runner genuinely knows the
@@ -467,7 +471,9 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
       dispatch(setCurrentSentenceIndex(0));
       return;
     }
-    engineSpeakSentence(sents[idx]);
+    const [first, ...rest] = splitIntoSpeechChunks(sents[idx]);
+    pendingChunksRef.current = rest;
+    engineSpeakSentence(first ?? sents[idx]);
   };
 
   const startPlayingFromCurrentSentence = (): void => {
@@ -641,14 +647,15 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
         // Ended (or errored) without ever confirming a start -- nothing is playing.
         setAwaitingStart(false);
 
-        if (pendingSplitRef.current) {
-          const { remainder } = pendingSplitRef.current;
-          pendingSplitRef.current = null;
-          engineSpeakSentence(remainder);
+        if (!playing) return; // paused while this sentence was speaking
+
+        // Only a piece of the sentence ended: the next one, before moving on.
+        const next = pendingChunksRef.current.shift();
+        if (next !== undefined) {
+          engineSpeakSentence(next);
           return;
         }
 
-        if (!playing) return; // paused while this sentence was speaking
         dispatch(setCurrentSentenceIndex(idx + 1));
         // The content-tracking effect below reacts to that dispatch by
         // enqueueing CONTENT_CHANGED, which is what actually starts
