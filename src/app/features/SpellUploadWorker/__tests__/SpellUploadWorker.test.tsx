@@ -33,7 +33,9 @@ const getSpellByIdMock = vi.fn<(id: string, userId: string | undefined) => Promi
   () => Promise.resolve({ id: 'target-doc', title: 'Old title', pagesContent: '{}' })
 );
 const deleteSpellFromDBMock = vi.fn<(id: string, userId: string | undefined) => Promise<void>>(() => Promise.resolve());
+const updateSpellMetadataMock = vi.fn<(id: string, userId: string, metadata: Record<string, unknown>) => Promise<void>>(() => Promise.resolve());
 vi.mock('../../../../db', () => ({
+  updateSpellMetadata: (...args: [string, string, Record<string, unknown>]) => updateSpellMetadataMock(...args),
   saveSpellToDB: (...args: [Record<string, unknown>]) => saveSpellToDBMock(...args),
   updateSpellFull: (...args: [string, string, Record<string, unknown>]) => updateSpellFullMock(...args),
   getSpellById: (...args: [string, string | undefined]) => getSpellByIdMock(...args),
@@ -110,6 +112,38 @@ describe('SpellUploadWorker', () => {
     expect(payload).not.toHaveProperty('pdf');
     expect(payload).not.toHaveProperty('originalPdf');
     expect(setOriginalPdfMock).toHaveBeenCalledWith('existing-spell', expect.anything());
+  });
+
+  // "Update from PDF": a spell read again from its own stored PDF, pages and metadata.
+  describe('updating a spell from its stored PDF (refreshFromPdf)', () => {
+    const meta = { title: 'Title From PDF', description: 'A tale of dragons', author: 'Jane Doe', tags: ['fantasy'], language: 'en' };
+    const run = async () => {
+      const store = makeStore();
+      store.dispatch(enqueue({ saveOriginal: true, targetDocId: 'existing-spell', refreshFromPdf: true } as never));
+      renderWithProviders(<SpellUploadWorker />, { store });
+      await waitFor(() => expect(store.getState().spellUpload.queue[0].status).toBe('done'));
+      return store;
+    };
+
+    it('reads its pages again and updates its metadata from the PDF', async () => {
+      extractPdfMetadataMock.mockResolvedValue(meta);
+      await run();
+      expect(updateSpellFullMock).toHaveBeenCalledWith('existing-spell', 'user-1', expect.objectContaining({ title: 'Title From PDF', pagesContent: expect.any(String) }));
+      expect(updateSpellMetadataMock).toHaveBeenCalledWith('existing-spell', 'user-1', meta);
+    });
+
+    it('keeps the spell\'s cover when it has one, and its title when the PDF has none', async () => {
+      getSpellByIdMock.mockResolvedValue({ id: 'existing-spell', title: 'Old title', pagesContent: '{}', cover: new Blob(['cover']) });
+      await run();
+      const updates = updateSpellFullMock.mock.calls[0][2];
+      expect(updates).not.toHaveProperty('cover');
+      expect(updates.title).toBe('Old title');
+    });
+
+    it('does not store the PDF again: it is already the spell\'s own', async () => {
+      await run();
+      expect(setOriginalPdfMock).not.toHaveBeenCalled();
+    });
   });
 
   describe('PDF metadata prefill (TCORE-97 follow-up)', () => {

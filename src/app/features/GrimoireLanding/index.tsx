@@ -14,7 +14,7 @@ import { PrimaryButton } from '../../components/Buttons/PrimaryButton';
 import { SecondaryButton } from '../../components/Buttons/SecondaryButton';
 import { useDeleteSpells } from '../../../hooks/useDeleteSpells';
 import { useAppSelector } from '../../../store/hooks';
-import { useRefreshSpellMetadataFromPdf } from '../../../hooks/useRefreshSpellMetadataFromPdf';
+import { useUpdateSpellsFromPdf } from '../../../hooks/useUpdateSpellsFromPdf';
 
 export const GrimoireLanding = () => {
   const { t } = useLanguage();
@@ -27,8 +27,9 @@ export const GrimoireLanding = () => {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [selectableIds, setSelectableIds] = useState<string[]>([]);
   const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
-  const [showBulkRefreshMetadataModal, setShowBulkRefreshMetadataModal] = useState(false);
-  const { refreshMany, isRefreshing } = useRefreshSpellMetadataFromPdf();
+  const [showUpdateFromPdfModal, setShowUpdateFromPdfModal] = useState(false);
+  const [isQueueingUpdate, setIsQueueingUpdate] = useState(false);
+  const updateFromPdf = useUpdateSpellsFromPdf();
 
   const tabs = [
     { id: 'all',   label: t.common.all,  icon: faLayerGroup },
@@ -74,9 +75,16 @@ export const GrimoireLanding = () => {
     setShowBulkDeleteModal(false);
   };
 
-  const handleBulkRefreshMetadataConfirm = async () => {
-    setShowBulkRefreshMetadataModal(false);
-    await refreshMany(selectedIds);
+  // Each spell is read again from its PDF in the background (see useUpdateSpellsFromPdf):
+  // the selection closes as soon as they're queued, with their cards showing the progress.
+  const handleUpdateFromPdfConfirm = async () => {
+    setShowUpdateFromPdfModal(false);
+    setIsQueueingUpdate(true);
+    try {
+      await updateFromPdf(selectedIds);
+    } finally {
+      setIsQueueingUpdate(false);
+    }
     setSelectedIds([]);
     setSelectionMode(false);
   };
@@ -144,7 +152,7 @@ export const GrimoireLanding = () => {
           </span>
           <button
             data-testid="select-all-btn"
-            className={`${s.selectAllBtn} ${allSelected ? s.selectAllBtnActive : ''}`}
+            className={`${s.bulkBtn} ${allSelected ? s.bulkBtnActive : ''}`}
             disabled={selectableIds.length === 0}
             onClick={toggleSelectAll}
           >
@@ -152,17 +160,17 @@ export const GrimoireLanding = () => {
             {allSelected ? t.grimoire.unselectAll : t.grimoire.selectAll}
           </button>
           <button
-            data-testid="bulk-refresh-metadata-btn"
-            className={`${s.bulkActionBtn} ${s.bulkRefreshBtn}`}
-            disabled={isRefreshing || selectedIds.length === 0}
-            onClick={() => setShowBulkRefreshMetadataModal(true)}
+            data-testid="bulk-update-from-pdf-btn"
+            className={`${s.bulkBtn} ${s.bulkBtnPrimary}`}
+            disabled={isQueueingUpdate || selectedIds.length === 0}
+            onClick={() => setShowUpdateFromPdfModal(true)}
           >
             <FontAwesomeIcon icon={faArrowsRotate} />
-            {t.grimoire.bulkRefreshMetadata}
+            {t.grimoire.updateFromPdf}
           </button>
           <button
             data-testid="bulk-delete-btn"
-            className={`${s.bulkActionBtn} ${s.bulkDeleteBtn}`}
+            className={`${s.bulkBtn} ${s.bulkBtnDanger}`}
             disabled={selectedIds.length === 0}
             onClick={() => setShowBulkDeleteModal(true)}
           >
@@ -182,13 +190,13 @@ export const GrimoireLanding = () => {
         />
       )}
 
-      <CustomModal compact show={showBulkRefreshMetadataModal} onClose={() => setShowBulkRefreshMetadataModal(false)} title={t.grimoire.bulkRefreshMetadataConfirmTitle}>
+      <CustomModal compact show={showUpdateFromPdfModal} onClose={() => setShowUpdateFromPdfModal(false)} title={t.grimoire.updateFromPdfConfirmTitle}>
         <div className={s.bulkModalBody}>
-          <p>{t.grimoire.bulkRefreshMetadataConfirmDesc}</p>
+          <p>{t.grimoire.updateFromPdfConfirmDesc}</p>
           <div className={s.bulkModalActions}>
-            <SecondaryButton onClick={() => setShowBulkRefreshMetadataModal(false)}>{t.common.cancel}</SecondaryButton>
-            <PrimaryButton data-testid="bulk-refresh-metadata-confirm-btn" onClick={handleBulkRefreshMetadataConfirm}>
-              {t.grimoire.bulkRefreshMetadata}
+            <SecondaryButton onClick={() => setShowUpdateFromPdfModal(false)}>{t.common.cancel}</SecondaryButton>
+            <PrimaryButton data-testid="bulk-update-from-pdf-confirm-btn" icon={faArrowsRotate} onClick={handleUpdateFromPdfConfirm}>
+              {t.grimoire.updateFromPdf}
             </PrimaryButton>
           </div>
         </div>

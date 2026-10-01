@@ -1,9 +1,10 @@
 import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
-import { screen, fireEvent, waitFor } from '@testing-library/react';
+import { screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { Routes, Route } from 'react-router-dom';
 import { renderWithProviders, makeStore } from '../../../../test/renderWithProviders';
 import { SpellEditForm } from '../index';
 import { setSession } from '../../../../store/sessionSlice';
+import { invalidateContent } from '../../../../store/spellReaderSlice';
 
 vi.mock('../../../../db', () => ({
   getSpellById: vi.fn(),
@@ -16,9 +17,9 @@ vi.mock('../../../../db/originalPdfs', () => ({
   getOriginalPdf: vi.fn(),
 }));
 
-const refreshOneMock = vi.fn();
-vi.mock('../../../../hooks/useRefreshSpellMetadataFromPdf', () => ({
-  useRefreshSpellMetadataFromPdf: () => ({ refreshOne: refreshOneMock, refreshMany: vi.fn(), isRefreshing: false }),
+const updateFromPdfMock = vi.fn();
+vi.mock('../../../../hooks/useUpdateSpellsFromPdf', () => ({
+  useUpdateSpellsFromPdf: () => updateFromPdfMock,
 }));
 
 vi.mock('../../../../app/components/Editors/SpellEditor', () => ({
@@ -195,71 +196,48 @@ describe('SpellEditForm', () => {
       expect(screen.getByTestId('spell-metadata-refresh-btn')).toBeDisabled();
     });
 
-    it('refresh-from-PDF: confirming applies the returned metadata to the form and reports success', async () => {
+    // "Update from PDF" reads the spell again from its stored PDF -- pages and metadata --
+    // in the background; the form then reloads from what was saved.
+    const confirmUpdateFromPdf = async () => {
+      await screen.findByTestId('spell-edit-form');
+      fireEvent.click(screen.getByTestId('spell-metadata-toggle'));
+      await waitFor(() => expect(screen.getByTestId('spell-metadata-refresh-btn')).not.toBeDisabled());
+      fireEvent.click(screen.getByTestId('spell-metadata-refresh-btn'));
+      fireEvent.click(await screen.findByTestId('refresh-metadata-confirm-btn'));
+    };
+
+    it('update-from-PDF: confirming updates this spell from its PDF, pages and metadata', async () => {
       vi.mocked(hasOriginalPdf).mockResolvedValue(true);
-      refreshOneMock.mockResolvedValue({
-        status: 'updated',
-        metadata: { description: 'From PDF', author: 'PDF Author', tags: ['x', 'y'], language: 'fr' },
-      });
+      updateFromPdfMock.mockResolvedValue({ queued: 1, skipped: 0 });
+      renderForm();
+      await confirmUpdateFromPdf();
+      await waitFor(() => expect(updateFromPdfMock).toHaveBeenCalledWith(['doc-1'], { report: false }));
+    });
+
+    it('update-from-PDF: once it lands, the form shows the spell as read again from the PDF', async () => {
+      vi.mocked(hasOriginalPdf).mockResolvedValue(true);
+      updateFromPdfMock.mockResolvedValue({ queued: 1, skipped: 0 });
       const store = makeStore();
       store.dispatch(setSession({ logged: true, userData: { id: 'user-1', username: 'Test', loader: false } }));
       renderWithProviders(
         <Routes><Route path="/editor/:id" element={<SpellEditForm />} /></Routes>,
         { store, initialPath: '/editor/doc-1' }
       );
-      await screen.findByTestId('spell-edit-form');
-      fireEvent.click(screen.getByTestId('spell-metadata-toggle'));
-      await waitFor(() => expect(screen.getByTestId('spell-metadata-refresh-btn')).not.toBeDisabled());
+      await confirmUpdateFromPdf();
+      await waitFor(() => expect(updateFromPdfMock).toHaveBeenCalled());
 
-      fireEvent.click(screen.getByTestId('spell-metadata-refresh-btn'));
-      fireEvent.click(await screen.findByTestId('refresh-metadata-confirm-btn'));
+      // The worker saves the spell read again from its PDF, and announces new content.
+      vi.mocked(getSpellById).mockResolvedValue({ ...mockDoc, title: 'Title From PDF', description: 'From PDF', author: 'PDF Author' } as never);
+      act(() => { store.dispatch(invalidateContent()); });
 
-      await waitFor(() => expect(refreshOneMock).toHaveBeenCalledWith('doc-1'));
-      expect(screen.getByTestId('spell-metadata-description')).toHaveValue('From PDF');
-      expect(screen.getByTestId('spell-metadata-tags')).toHaveValue('x, y');
-      expect(store.getState().apiResponses.responses).toHaveLength(1);
-      expect(store.getState().apiResponses.responses[0].type).toBe('success');
-      expect(store.getState().spellReader.listVersion).toBe(1);
+      await waitFor(() => expect(screen.getByTestId('spell-metadata-description')).toHaveValue('From PDF'));
+      expect(screen.getByTestId('spell-metadata-author')).toHaveValue('PDF Author');
+      expect(screen.getByTestId('spell-edit-title-input')).toHaveValue('Title From PDF');
     });
 
-    it('refresh-from-PDF: also applies the title when the PDF metadata includes one', async () => {
+    it('update-from-PDF: without a stored PDF, says so and leaves the form alone', async () => {
       vi.mocked(hasOriginalPdf).mockResolvedValue(true);
-      refreshOneMock.mockResolvedValue({
-        status: 'updated',
-        metadata: { title: 'Title From PDF' },
-      });
-      renderForm();
-      await screen.findByTestId('spell-edit-form');
-      fireEvent.click(screen.getByTestId('spell-metadata-toggle'));
-      await waitFor(() => expect(screen.getByTestId('spell-metadata-refresh-btn')).not.toBeDisabled());
-
-      fireEvent.click(screen.getByTestId('spell-metadata-refresh-btn'));
-      fireEvent.click(await screen.findByTestId('refresh-metadata-confirm-btn'));
-
-      await waitFor(() => expect(screen.getByTestId('spell-edit-title-input')).toHaveValue('Title From PDF'));
-    });
-
-    it('refresh-from-PDF: leaves the title alone when the PDF metadata has none', async () => {
-      vi.mocked(hasOriginalPdf).mockResolvedValue(true);
-      refreshOneMock.mockResolvedValue({
-        status: 'updated',
-        metadata: { description: 'A tale' },
-      });
-      renderForm();
-      await screen.findByTestId('spell-edit-form');
-      fireEvent.click(screen.getByTestId('spell-metadata-toggle'));
-      await waitFor(() => expect(screen.getByTestId('spell-metadata-refresh-btn')).not.toBeDisabled());
-
-      fireEvent.click(screen.getByTestId('spell-metadata-refresh-btn'));
-      fireEvent.click(await screen.findByTestId('refresh-metadata-confirm-btn'));
-
-      await waitFor(() => expect(screen.getByTestId('spell-metadata-description')).toHaveValue('A tale'));
-      expect(screen.getByTestId('spell-edit-title-input')).toHaveValue('Test Doc');
-    });
-
-    it('refresh-from-PDF: a skipped result reports it without changing the form fields', async () => {
-      vi.mocked(hasOriginalPdf).mockResolvedValue(true);
-      refreshOneMock.mockResolvedValue({ status: 'skipped' });
+      updateFromPdfMock.mockResolvedValue({ queued: 0, skipped: 1 });
       vi.mocked(getSpellById).mockResolvedValue({ ...mockDoc, author: 'Original Author' } as never);
       const store = makeStore();
       store.dispatch(setSession({ logged: true, userData: { id: 'user-1', username: 'Test', loader: false } }));
@@ -267,17 +245,10 @@ describe('SpellEditForm', () => {
         <Routes><Route path="/editor/:id" element={<SpellEditForm />} /></Routes>,
         { store, initialPath: '/editor/doc-1' }
       );
-      await screen.findByTestId('spell-edit-form');
-      fireEvent.click(screen.getByTestId('spell-metadata-toggle'));
-      await waitFor(() => expect(screen.getByTestId('spell-metadata-refresh-btn')).not.toBeDisabled());
+      await confirmUpdateFromPdf();
 
-      fireEvent.click(screen.getByTestId('spell-metadata-refresh-btn'));
-      fireEvent.click(await screen.findByTestId('refresh-metadata-confirm-btn'));
-
-      await waitFor(() => expect(refreshOneMock).toHaveBeenCalled());
+      await waitFor(() => expect(store.getState().apiResponses.responses.at(-1)?.type).toBe('error'));
       expect(screen.getByTestId('spell-metadata-author')).toHaveValue('Original Author');
-      expect(store.getState().apiResponses.responses[0].type).not.toBe('success');
-      expect(store.getState().spellReader.listVersion).toBe(0);
     });
   });
 

@@ -16,7 +16,7 @@ import { invalidateContent, invalidateSpellList } from '../../../store/spellRead
 import { enqueueUpload } from '../../../store/spellUploadSlice';
 import { addApiResponse } from '../../../store/apiResponsesSlice';
 import { textToSpeechService } from '../../../services/tts';
-import { useRefreshSpellMetadataFromPdf } from '../../../hooks/useRefreshSpellMetadataFromPdf';
+import { useUpdateSpellsFromPdf } from '../../../hooks/useUpdateSpellsFromPdf';
 import { Spinner } from '../../components/Spinner';
 import { PageList } from '../../components/SpellCreateForm/PageList';
 import { SpellEditor, PageMargins } from '../../components/Editors/SpellEditor';
@@ -72,7 +72,7 @@ export const SpellEditForm: React.FC = () => {
   const [metadataExpanded, setMetadataExpanded] = useState(false);
   const [spellHasOriginalPdf, setSpellHasOriginalPdf] = useState(false);
   const [showRefreshMetadataModal, setShowRefreshMetadataModal] = useState(false);
-  const { refreshOne, isRefreshing } = useRefreshSpellMetadataFromPdf();
+  const updateFromPdf = useUpdateSpellsFromPdf();
 
   // TCORE-122: cover preview, loaded from the existing Blob (see `load` below) and
   // replaced whenever the user picks a new one (upload or "use PDF page 1").
@@ -129,6 +129,9 @@ export const SpellEditForm: React.FC = () => {
       const finalPages = pages.length > 0 ? pages : [emptyContent];
       setPagesContent(finalPages);
       if (doc.originalPagesContent) setOriginalPages(JSON.parse(doc.originalPagesContent));
+      // The title too: an update from the PDF may have brought the PDF's own, and the form
+      // saving its old one would undo it.
+      setSpellTitle(doc.title);
       applyMetadataFromDoc(doc);
       // "Replace content" (TCORE-90's import flow) regenerates the cover from the new
       // PDF's page 1 same as SpellCreateForm's import, so re-sync the preview here too.
@@ -374,18 +377,14 @@ export const SpellEditForm: React.FC = () => {
     if (coverBlob) void applyCover(coverBlob);
   };
 
+  // Read again from the stored original PDF -- pages and metadata alike -- by the upload
+  // worker, which shows its progress here; once it's done, contentVersion reloads this form
+  // from the updated spell (see above).
   const handleRefreshMetadataConfirm = async () => {
     setShowRefreshMetadataModal(false);
     if (!id) return;
-    const result = await refreshOne(id);
-    if (result.status === 'updated' && result.metadata) {
-      if (result.metadata.title) setSpellTitle(result.metadata.title);
-      applyMetadataFromDoc(result.metadata);
-      dispatch(invalidateSpellList());
-      dispatch(addApiResponse({ message: t.spell.refreshMetadataSuccess, type: 'success' }));
-    } else {
-      dispatch(addApiResponse({ message: t.spell.refreshMetadataNoPdf, type: 'error' }));
-    }
+    const { queued } = await updateFromPdf([id], { report: false });
+    if (!queued) dispatch(addApiResponse({ message: t.spell.updateFromPdfNoPdf, type: 'error' }));
   };
 
   const handleResetAll = () => {
@@ -469,7 +468,7 @@ export const SpellEditForm: React.FC = () => {
         onLanguageChange={(v) => { setLanguage(v); setHasChanges(true); }}
         onRefreshFromPdf={() => setShowRefreshMetadataModal(true)}
         refreshDisabled={!spellHasOriginalPdf}
-        isRefreshing={isRefreshing}
+        isRefreshing={isProcessingPdf}
       />
 
       <div className={s.editorContainer}>
@@ -536,12 +535,12 @@ export const SpellEditForm: React.FC = () => {
         </div>
       </CustomModal>
 
-      <CustomModal compact show={showRefreshMetadataModal} onClose={() => setShowRefreshMetadataModal(false)} title={t.spell.refreshMetadataConfirmTitle}>
+      <CustomModal compact show={showRefreshMetadataModal} onClose={() => setShowRefreshMetadataModal(false)} title={t.spell.updateFromPdfConfirmTitle}>
         <div className={s.importModalBody}>
-          <p>{t.spell.refreshMetadataConfirmDesc}</p>
+          <p>{t.spell.updateFromPdfConfirmDesc}</p>
           <div className={s.importModalActions}>
             <SecondaryButton onClick={() => setShowRefreshMetadataModal(false)}>{t.common.cancel}</SecondaryButton>
-            <PrimaryButton data-testid="refresh-metadata-confirm-btn" onClick={handleRefreshMetadataConfirm}>{t.spell.refreshMetadataFromPdf}</PrimaryButton>
+            <PrimaryButton data-testid="refresh-metadata-confirm-btn" onClick={handleRefreshMetadataConfirm}>{t.spell.updateFromPdf}</PrimaryButton>
           </div>
         </div>
       </CustomModal>

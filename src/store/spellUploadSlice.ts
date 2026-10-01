@@ -18,6 +18,10 @@ export interface SpellUploadJob {
   coverUrl?: string;
   resultDocId?: string;
   targetDocId?: string;
+  // With targetDocId: an "Update from PDF" of that spell from its own stored original PDF --
+  // its content and its metadata are both read again from the PDF, keeping its cover (and
+  // its title, when the PDF has none).
+  refreshFromPdf?: boolean;
   errorMessage?: string;
 }
 

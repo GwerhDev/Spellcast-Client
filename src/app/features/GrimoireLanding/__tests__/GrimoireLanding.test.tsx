@@ -10,9 +10,9 @@ vi.mock('../../../components/Start/ImportOption', () => ({
   ImportOption: () => null,
 }));
 
-const refreshManyMock = vi.fn();
-vi.mock('../../../../hooks/useRefreshSpellMetadataFromPdf', () => ({
-  useRefreshSpellMetadataFromPdf: () => ({ refreshOne: vi.fn(), refreshMany: refreshManyMock, isRefreshing: false }),
+const updateFromPdfMock = vi.fn();
+vi.mock('../../../../hooks/useUpdateSpellsFromPdf', () => ({
+  useUpdateSpellsFromPdf: () => updateFromPdfMock,
 }));
 
 const mockSpell = {
@@ -98,7 +98,7 @@ describe('GrimoireLanding', () => {
 
       expect(await screen.findByTestId('bulk-bar')).toBeInTheDocument();
       expect(screen.getByTestId('bulk-delete-btn')).toBeDisabled();
-      expect(screen.getByTestId('bulk-refresh-metadata-btn')).toBeDisabled();
+      expect(screen.getByTestId('bulk-update-from-pdf-btn')).toBeDisabled();
     });
 
     it('select-all selects every listed spell; clicking again unselects them', async () => {
@@ -116,9 +116,9 @@ describe('GrimoireLanding', () => {
     });
   });
 
-  describe('bulk "update metadata from PDF" (TCORE-103)', () => {
+  describe('"Update from PDF" for the selected spells', () => {
     beforeEach(() => {
-      vi.mocked(refreshManyMock).mockReset();
+      vi.mocked(updateFromPdfMock).mockReset();
       vi.spyOn(db, 'getSpellsFromDB').mockResolvedValue([mockSpell] as never);
     });
 
@@ -128,20 +128,21 @@ describe('GrimoireLanding', () => {
       fireEvent.click(await screen.findByTestId('spell-card-spell-1'));
     };
 
-    it('shows the bulk refresh-metadata action alongside bulk delete once something is selected', async () => {
+    it('shows it alongside bulk delete once something is selected', async () => {
       await selectFirstSpell();
-      expect(await screen.findByTestId('bulk-refresh-metadata-btn')).toBeInTheDocument();
+      expect(await screen.findByTestId('bulk-update-from-pdf-btn')).toBeInTheDocument();
       expect(screen.getByTestId('bulk-delete-btn')).toBeInTheDocument();
     });
 
-    it('opens a confirm modal, and confirming calls refreshMany with the selected ids then clears the selection', async () => {
-      refreshManyMock.mockResolvedValue({ updated: 1, skipped: 0 });
+    it('asks first, then updates the selected spells from their PDF and clears the selection', async () => {
+      updateFromPdfMock.mockResolvedValue({ queued: 1, skipped: 0 });
       await selectFirstSpell();
 
-      fireEvent.click(await screen.findByTestId('bulk-refresh-metadata-btn'));
-      fireEvent.click(await screen.findByTestId('bulk-refresh-metadata-confirm-btn'));
+      fireEvent.click(await screen.findByTestId('bulk-update-from-pdf-btn'));
+      expect(updateFromPdfMock).not.toHaveBeenCalled();
+      fireEvent.click(await screen.findByTestId('bulk-update-from-pdf-confirm-btn'));
 
-      await waitFor(() => expect(refreshManyMock).toHaveBeenCalledWith(['spell-1']));
+      await waitFor(() => expect(updateFromPdfMock).toHaveBeenCalledWith(['spell-1']));
       await waitFor(() => expect(screen.queryByTestId('bulk-bar')).not.toBeInTheDocument());
     });
   });

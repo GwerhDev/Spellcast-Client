@@ -73,11 +73,11 @@ export const SpellMetadataFields = ({
                 data-testid="spell-metadata-refresh-btn"
                 className={s.refreshBtn}
                 disabled={refreshDisabled || isRefreshing}
-                title={refreshDisabled ? t.spell.refreshMetadataNoPdf : t.spell.refreshMetadataFromPdf}
+                title={refreshDisabled ? t.spell.updateFromPdfNoPdf : t.spell.updateFromPdf}
                 onClick={onRefreshFromPdf}
               >
                 <FontAwesomeIcon icon={faArrowsRotate} />
-                {t.spell.refreshMetadataFromPdf}
+                {t.spell.updateFromPdf}
               </button>
             </div>
           )}
