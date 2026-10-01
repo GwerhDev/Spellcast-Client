@@ -37,4 +37,14 @@ describe('HomeStage (feature)', () => {
     act(() => { window.dispatchEvent(new MouseEvent('mousemove')); });
     expect(screen.getByTestId('home-stage-secondary').className).not.toMatch(/secondaryHidden/);
   });
+
+  // Mounted, a spell always gets the immersive scene: only the backdrop depends on a cover.
+  it('with a loaded spell without a cover: the altar immersive all the same, just no backdrop', () => {
+    const store = makeStore();
+    store.dispatch(setSpellFile({ id: 'spell-1', title: 'Spell one' }));
+    renderWithProviders(<HomeStage />, { store });
+    expect(screen.getByTestId('start-stub')).toHaveAttribute('data-immersive', 'true');
+    expect(screen.queryByTestId('home-stage-cover')).not.toBeInTheDocument();
+  });
 });
+

@@ -8,6 +8,8 @@ const cssUrl = (url: string) => `url("${url}")`;
 interface HomeStageProps {
   // The loaded spell's cover: the whole stage takes it as its backdrop. None: a plain page.
   coverUrl: string | null;
+  // A spell is loaded: the scene is shown on its own (see HomeStage), cover or not.
+  immersive: boolean;
   // The pointer has been left alone: the secondary content steps aside.
   idle: boolean;
   // The scene (the altar) and what sits below it (e.g. Last Spells).
@@ -20,8 +22,8 @@ interface HomeStageProps {
 // secondary content below fades away while the pointer rests, leaving the scene alone.
 // The backdrop is attached to the stage's frame, which doesn't scroll: the content scrolls
 // over it in its own scroller, so the cover always fills the page, edge to edge.
-export const HomeStage = ({ coverUrl, idle, main, secondary }: HomeStageProps) => (
-  <div data-testid="home-stage" className={`${s.stage} ${coverUrl ? s.immersive : ''}`}>
+export const HomeStage = ({ coverUrl, immersive, idle, main, secondary }: HomeStageProps) => (
+  <div data-testid="home-stage" className={`${s.stage} ${immersive ? s.immersive : ''}`}>
     {/* Fades in as a spell loads and out as it's unloaded (or crossfades to the next). */}
     <AnimatePresence>
       {coverUrl && (
@@ -43,8 +45,8 @@ export const HomeStage = ({ coverUrl, idle, main, secondary }: HomeStageProps) =
       {main}
       <div
         data-testid="home-stage-secondary"
-        className={`${s.secondary} ${coverUrl && idle ? s.secondaryHidden : ''}`}
-        aria-hidden={coverUrl && idle ? true : undefined}
+        className={`${s.secondary} ${immersive && idle ? s.secondaryHidden : ''}`}
+        aria-hidden={immersive && idle ? true : undefined}
       >
         {secondary}
       </div>
