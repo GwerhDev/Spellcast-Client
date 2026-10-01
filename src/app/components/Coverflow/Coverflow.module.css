@@ -1,0 +1,63 @@
+/* The arrows sit right at the sides of the row, which is as wide as its cards fanned out
+   (set inline from them), never wider than there's room for. */
+.coverflow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  width: 100%;
+  min-width: 0;
+}
+
+/* Every card sits in the same grid cell, centered: the stage is as tall as the tallest card,
+   and each one is moved out to its place with a transform only. */
+.stage {
+  display: grid;
+  place-items: center;
+  max-width: 100%;
+  min-width: 0;
+  flex-shrink: 1;
+  padding-block: 0.75rem;
+  overflow: hidden;
+  /* A horizontal swipe turns the row (see Coverflow); a vertical one still scrolls the page. */
+  touch-action: pan-y;
+}
+
+.place {
+  grid-area: 1 / 1;
+  position: relative;
+  transform-origin: center;
+  will-change: transform;
+}
+
+/* A card behind the front row only takes the click that brings it to the center. */
+.place:not(.front) {
+  cursor: pointer;
+}
+
+.place:not(.front) > * {
+  pointer-events: none;
+}
+
+.nav {
+  flex-shrink: 0;
+  z-index: 20;
+  width: 2rem;
+  height: 2rem;
+  min-width: 2rem;
+  min-height: 2rem;
+  padding: 0;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 55%, transparent);
+  background: var(--component-background);
+  color: var(--color-primary);
+  font-size: 0.65rem;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.45);
+  transition: background 0.15s, color 0.15s;
+}
+
+.nav:hover {
+  background: var(--color-primary);
+  color: #fff;
+}

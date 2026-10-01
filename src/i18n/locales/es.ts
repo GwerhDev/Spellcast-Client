@@ -12,6 +12,7 @@ export const es: Translations = {
     close: 'Cerrar',
     back: 'Volver',
     next: 'Siguiente',
+    previous: 'Anterior',
     search: 'Buscar',
     settings: 'Configuración',
     edit: 'Editar',

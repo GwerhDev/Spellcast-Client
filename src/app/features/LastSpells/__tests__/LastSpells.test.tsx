@@ -30,11 +30,11 @@ const loggedStore = () => {
 describe('LastSpells', () => {
   beforeEach(() => { vi.restoreAllMocks(); });
 
-  it('shows 5 skeleton cards while loading', () => {
+  it('shows a skeleton in every place of the row while loading', () => {
     vi.spyOn(db, 'getSpellsFromDB').mockReturnValue(new Promise(() => {}));
     renderWithProviders(<LastSpells />, { store: loggedStore() });
     const skeletons = screen.getAllByTestId('skeleton-card');
-    expect(skeletons.length).toBe(5);
+    expect(skeletons.length).toBe(7);
   });
 
   it('renders nothing when there are no documents', async () => {
@@ -89,4 +89,25 @@ describe('LastSpells', () => {
     expect(screen.getAllByTestId('cover-frame-corner').length).toBeGreaterThan(0);
     expect(getSpells.mock.calls.length).toBe(reads);
   });
+
+  it('fills the row with empty spells when there are fewer spells than places', async () => {
+    vi.spyOn(db, 'getSpellsFromDB').mockResolvedValue([mockDoc] as never);
+    renderWithProviders(<LastSpells />, { store: loggedStore() });
+    await screen.findByTestId('spell-card-doc-1');
+    expect(screen.getAllByTestId('last-spells-place')).toHaveLength(7);
+    expect(screen.getAllByTestId(/^last-spells-empty-/)).toHaveLength(6);
+  });
+
+  it('a spell in the front row opens; one behind it is brought to the center first', async () => {
+    const older = (id: string, ago: number) => ({ ...mockDoc, id, title: id, createdAt: new Date(Date.now() - ago).toISOString() });
+    vi.spyOn(db, 'getSpellsFromDB').mockResolvedValue([mockDoc, older('doc-2', 1000), older('doc-3', 2000)] as never);
+    renderWithProviders(<LastSpells />, { store: loggedStore() });
+    // doc-3 is two places out, behind the front row.
+    fireEvent.click(await screen.findByTestId('spell-card-doc-3'));
+    expect(screen.queryByTestId('spell-detail-modal-stub')).not.toBeInTheDocument();
+    // doc-2 sits beside the centered spell, in the front row.
+    fireEvent.click(screen.getByTestId('spell-card-doc-2'));
+    expect(screen.getByTestId('spell-detail-modal-stub')).toHaveTextContent('doc-2');
+  });
 });
+

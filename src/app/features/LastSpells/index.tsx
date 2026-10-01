@@ -1,5 +1,5 @@
 import s from './index.module.css';
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { getSpellsFromDB } from '../../../db';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '../../../store/hooks';
@@ -8,9 +8,25 @@ import { SpellCard } from '../../components/Cards/SpellCard';
 import { SpellDetailModal, type SpellDetailOrigin } from '../../components/Modals/SpellDetailModal';
 import { useCoverFrame3DSection } from '../../../hooks/useCoverFrame3DSection';
 import { useLanguage } from '../../../i18n';
-import { faArrowRight, faBuildingColumns, faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons';
+import { faArrowRight, faBuildingColumns } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { IconButton } from '../../components/Buttons/IconButton';
+import { Coverflow, type CoverflowItem } from '../../components/Coverflow/Coverflow';
+import { EmptySpellCard } from '../../components/Cards/EmptySpellCard';
+
+// The places the row always shows: a spell in the middle and three on each side, filled
+// with empty ones when there are fewer spells.
+const SLOTS = 7;
+
+const SkeletonCard = () => (
+  <div className={s.skeletonCard} data-testid="skeleton-card">
+    <div className={`${s.skeletonCover} ${s.skeletonLine}`} />
+    <div className={s.skeletonFooter}>
+      <div className={`${s.skeletonLine} ${s.skeletonTitle}`} />
+      <div className={`${s.skeletonLine} ${s.skeletonTitleShort}`} />
+      <div className={`${s.skeletonLine} ${s.skeletonDate}`} />
+    </div>
+  </div>
+);
 
 export const LastSpells: React.FC = () => {
   const { userData } = useAppSelector((state) => state.session);
@@ -21,9 +37,6 @@ export const LastSpells: React.FC = () => {
   const { t } = useLanguage();
   const [documents, setDocuments] = useState<Spell[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [canPrev, setCanPrev] = useState(false);
-  const [canNext, setCanNext] = useState(false);
-  const sliderRef = useRef<HTMLDivElement>(null);
   const carouselWrapperRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   // A card click opens the spell's detail in a modal (the same one the player's cover
@@ -36,19 +49,6 @@ export const LastSpells: React.FC = () => {
   // conditions (Mode3D user setting, desktop, !reduced-motion, low-end check, section in
   // viewport).
   const show3D = useCoverFrame3DSection(carouselWrapperRef);
-
-  const updateButtons = useCallback(() => {
-    const el = sliderRef.current;
-    if (!el) return;
-    setCanPrev(el.scrollLeft > 4);
-    setCanNext(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
-  }, []);
-
-  const scroll = (dir: 'prev' | 'next') => {
-    const el = sliderRef.current;
-    if (!el) return;
-    el.scrollBy({ left: dir === 'next' ? 280 : -280, behavior: 'smooth' });
-  };
 
 
   const fetchSpells = async () => {
@@ -78,16 +78,6 @@ export const LastSpells: React.FC = () => {
   }, [coverFrameChange]);
 
   useEffect(() => {
-    const el = sliderRef.current;
-    if (!el) return;
-    updateButtons();
-    el.addEventListener('scroll', updateButtons);
-    const ro = new ResizeObserver(updateButtons);
-    ro.observe(el);
-    return () => { el.removeEventListener('scroll', updateButtons); ro.disconnect(); };
-  }, [documents, updateButtons]);
-
-  useEffect(() => {
     if (!activeDocId || !activeCurrentPage) return;
     setDocuments(prev => prev.map(doc =>
       doc.id === activeDocId
@@ -100,32 +90,60 @@ export const LastSpells: React.FC = () => {
   const visible = documents.slice(0, MAX);
   const hasMore = documents.length > MAX;
 
+  const coverflowLabels = {
+    previous: t.common.previous,
+    next: t.common.next,
+  };
+
+  // Loading, the row is already there, in skeletons, spreading out the same way the spells
+  // then do.
   if (isLoading) return (
     <div className={s.container}>
-      <div className={s.header}>
-        <h2 className={s.title}>{t.nav.lastSpells}</h2>
-      </div>
-      <div className={s.slider}>
-        {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className={s.skeletonCard} data-testid="skeleton-card">
-            <div className={`${s.skeletonCover} ${s.skeletonLine}`} />
-            <div className={s.skeletonFooter}>
-              <div className={`${s.skeletonLine} ${s.skeletonTitle}`} />
-              <div className={`${s.skeletonLine} ${s.skeletonTitleShort}`} />
-              <div className={`${s.skeletonLine} ${s.skeletonDate}`} />
-            </div>
-          </div>
-        ))}
-      </div>
+      <Coverflow
+        testId="last-spells-loading"
+        items={[]}
+        slots={SLOTS}
+        itemWidth="var(--spell-card-width)"
+        interactive={false}
+        renderEmpty={() => <SkeletonCard />}
+      />
     </div>
   );
   if (documents.length === 0) return null;
+
+  const items: CoverflowItem[] = visible.map((doc) => {
+    const uploadJob = uploadQueue.find(j => j.targetDocId === doc.id && (j.status === 'queued' || j.status === 'processing')) ?? null;
+    return {
+      key: doc.id,
+      node: (
+        <SpellCard
+          doc={doc}
+          isActive={activeDocId === doc.id}
+          isPlaying={activeDocId === doc.id && (audioPlaying || browserPlaying)}
+          onClick={(origin) => { setDetailOrigin(origin ?? null); setDetailSpellId(doc.id); }}
+          lifted={detailSpellId === doc.id && !!detailOrigin}
+          uploadJob={uploadJob}
+          show3D={show3D}
+        />
+      ),
+    };
+  });
+  if (hasMore) {
+    items.push({
+      key: 'see-all',
+      node: (
+        <div className={s.seeAllCard} data-testid="last-spells-see-all" onClick={() => navigate('/grimoire')}>
+          <FontAwesomeIcon icon={faArrowRight} />
+          <span>{t.nav.grimoire}</span>
+        </div>
+      ),
+    });
+  }
 
   return (
     <>
       <div className={s.container}>
         <div className={s.header}>
-          <h2 className={s.title}>{t.nav.lastSpells}</h2>
           <span className={s.grimoireLink} onClick={() => navigate('/grimoire')}>
             <FontAwesomeIcon icon={faBuildingColumns} />
             {t.nav.grimoire}
@@ -133,35 +151,14 @@ export const LastSpells: React.FC = () => {
           </span>
         </div>
         <div className={s.carouselWrapper} ref={carouselWrapperRef}>
-          {canPrev && (
-            <IconButton icon={faChevronLeft} variant="transparent" className={`${s.navBtn} ${s.navBtnPrev}`} onClick={() => scroll('prev')} />
-          )}
-          <div className={s.slider} ref={sliderRef}>
-            {visible.map((doc) => {
-              const uploadJob = uploadQueue.find(j => j.targetDocId === doc.id && (j.status === 'queued' || j.status === 'processing')) ?? null;
-              return (
-                <SpellCard
-                  key={doc.id}
-                  doc={doc}
-                  isActive={activeDocId === doc.id}
-                  isPlaying={activeDocId === doc.id && (audioPlaying || browserPlaying)}
-                  onClick={(origin) => { setDetailOrigin(origin ?? null); setDetailSpellId(doc.id); }}
-                  lifted={detailSpellId === doc.id && !!detailOrigin}
-                  uploadJob={uploadJob}
-                  show3D={show3D}
-                />
-              );
-            })}
-            {hasMore && (
-              <div className={s.seeAllCard} onClick={() => navigate('/grimoire')}>
-                <FontAwesomeIcon icon={faArrowRight} />
-                <span>{t.nav.grimoire}</span>
-              </div>
-            )}
-          </div>
-          {canNext && (
-            <IconButton icon={faChevronRight} variant="transparent" className={`${s.navBtn} ${s.navBtnNext}`} onClick={() => scroll('next')} />
-          )}
+          <Coverflow
+            testId="last-spells"
+            items={items}
+            slots={SLOTS}
+        itemWidth="var(--spell-card-width)"
+            labels={coverflowLabels}
+            renderEmpty={(key) => <EmptySpellCard testId={`last-spells-${key}`} />}
+          />
         </div>
       </div>
       <SpellDetailModal spellId={detailSpellId} show={detailSpellId !== null} origin={detailOrigin} onClose={() => { setDetailSpellId(null); setDetailOrigin(null); }} />

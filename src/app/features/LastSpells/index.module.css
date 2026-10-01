@@ -10,14 +10,8 @@
 .header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 1rem;
-}
-
-.title {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: var(--text-color);
 }
 
 .grimoireLink {
@@ -42,81 +36,6 @@
   width: 100%;
 }
 
-/* A card's hover glow (and a cover frame's overhanging corners) reach past the card itself,
-   but a scroller clips everything outside its own box on both axes -- there's no clipping
-   only the scroll axis. So the scroller itself is made bigger than the cards by
-   --card-glow-room on every side (padding), and pulled back by the same amount (negative
-   margin) so the cards stay exactly where they were: the glow is drawn inside the padding,
-   which the scroller doesn't clip. */
-.slider {
-  --card-glow-room: 1.75rem;
-  display: flex;
-  flex-direction: row;
-  gap: 1rem;
-  padding: var(--card-glow-room);
-  margin: calc(-1 * var(--card-glow-room));
-  /* The extra room overlaps whatever sits around the carousel (e.g. the header's
-     Grimoire link): only the cards themselves take clicks. */
-  pointer-events: none;
-  overflow-x: auto;
-  /* Explicit, not left to default: overflow-x: auto alone computes overflow-y as auto too
-     (there's no such thing as a scroller clipping only one axis per the CSS spec) -- without
-     this, the glow room's padding is enough extra height to trigger a visible vertical
-     scrollbar on the carousel itself, which is not wanted here at all. */
-  overflow-y: hidden;
-  min-width: 0;
-  scroll-behavior: smooth;
-  scrollbar-width: none;
-}
-
-.slider > * {
-  pointer-events: auto;
-}
-
-.slider::-webkit-scrollbar {
-  display: none;
-}
-
-/* ── Nav buttons ── */
-.navBtn {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 2;
-  width: 2rem;
-  height: 2rem;
-  min-width: 2rem;
-  min-height: 2rem;
-  padding: 0;
-  box-sizing: border-box;
-  border-radius: 50%;
-  flex-shrink: 0;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: var(--component-background);
-  color: var(--color-light-400);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  font-size: 0.65rem;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
-  transition: color 0.15s, transform 0.2s, box-shadow 0.2s;
-}
-
-.navBtn:hover {
-  background: var(--color-primary);
-  color: #fff;
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
-}
-
-.navBtnPrev {
-  left: 0.25rem;
-}
-
-.navBtnNext {
-  right: 0.25rem;
-}
-
 /* ── See all card ── */
 .seeAllCard {
   width: var(--spell-card-width);
@@ -133,7 +52,8 @@
   color: var(--color-light-400);
   font-size: 0.8rem;
   transition: border-color 0.2s ease, color 0.2s ease;
-  min-height: 160px;
+  height: var(--spell-cover-height);
+  box-sizing: border-box;
 }
 
 .seeAllCard:hover {
@@ -209,11 +129,5 @@
 @media (max-width: 1024px) {
   .container {
     padding-inline: 0;
-  }
-  .navBtnPrev {
-    left: 0.5rem;
-  }
-  .navBtnNext {
-    right: 0.5rem;
   }
 }

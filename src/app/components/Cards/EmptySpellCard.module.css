@@ -1,0 +1,16 @@
+.card {
+  width: var(--spell-card-width);
+  height: var(--spell-cover-height);
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: .2rem;
+  border: 1px dashed color-mix(in srgb, var(--color-primary) 35%, transparent);
+  background: color-mix(in srgb, var(--color-primary) 5%, var(--component-background));
+}
+
+.icon {
+  font-size: 2rem;
+  color: color-mix(in srgb, var(--color-primary) 30%, transparent);
+}
