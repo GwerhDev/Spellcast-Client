@@ -1,7 +1,7 @@
 import s from '../../components/EditorSelectLanding/index.module.css';
 import grid from '../../components/SpellGrid/index.module.css';
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { faArrowLeft, faScroll, faCloud, faFeatherPointed, faHardDrive, faLayerGroup, faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { getSpellsFromDB } from '../../../db';
@@ -22,7 +22,6 @@ type EditorFilter = 'all' | 'local' | 'cloud';
 export const EditorSelectLanding = () => {
   const navigate = useNavigate();
   const goBack = useGoBack('/editor');
-  const location = useLocation();
   const { userData } = useAppSelector((state) => state.session);
   const { listVersion } = useAppSelector((state) => state.spellReader);
   const { t } = useLanguage();
@@ -92,7 +91,7 @@ export const EditorSelectLanding = () => {
           <EditorPickerCard
             key={doc.id}
             doc={doc}
-            onClick={() => navigate(`/editor/${doc.id}`, { state: { from: location.pathname } })}
+            onClick={() => navigate(`/editor/${doc.id}`)}
             show3D={show3D}
           />
         ))}
