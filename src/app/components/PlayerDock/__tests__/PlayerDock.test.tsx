@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { PlayerDock } from '../PlayerDock';
 
 describe('PlayerDock', () => {
@@ -20,7 +20,18 @@ describe('PlayerDock', () => {
 
   it('keeps the loaded player where it is rendered', () => {
     render(<div data-testid="host"><PlayerDock showEmpty={false} highlighted={false} hint="Switch"><div data-testid="player" /></PlayerDock></div>);
-    expect(screen.getByTestId('player-dock').parentElement).toBe(screen.getByTestId('host'));
+    // In the layout's flow, inside the slot that opens its place there.
+    expect(screen.getByTestId('player-dock-slot').parentElement).toBe(screen.getByTestId('host'));
+    expect(screen.getByTestId('player-dock').parentElement).toBe(screen.getByTestId('player-dock-slot'));
+  });
+
+  it('opens its place when a player is loaded, and closes it once unloaded', async () => {
+    const { rerender } = render(<PlayerDock showEmpty={false} highlighted={false} hint="Switch" />);
+    expect(screen.queryByTestId('player-dock-slot')).not.toBeInTheDocument();
+    rerender(<PlayerDock showEmpty={false} highlighted={false} hint="Switch"><div data-testid="player" /></PlayerDock>);
+    expect(screen.getByTestId('player-dock-slot')).toBeInTheDocument();
+    rerender(<PlayerDock showEmpty={false} highlighted={false} hint="Switch" />);
+    await waitFor(() => expect(screen.queryByTestId('player-dock-slot')).not.toBeInTheDocument());
   });
 
   it('holds the player, with the drop hint over it only while highlighted', () => {
