@@ -18,7 +18,10 @@
   min-width: 0;
   flex-shrink: 1;
   padding-block: 0.75rem;
-  overflow: hidden;
+  /* Only the sides are cut (the cards fanned out past the row): a card's glow spills above
+     and below it. clip, unlike hidden, leaves the other axis visible. */
+  overflow-x: clip;
+  overflow-y: visible;
   /* A horizontal swipe turns the row (see Coverflow); a vertical one still scrolls the page. */
   touch-action: pan-y;
 }
