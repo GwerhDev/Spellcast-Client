@@ -11,17 +11,23 @@ interface Props {
   onSentenceClick?: (index: number) => void
 }
 
-/** Render a sentence's inline runs, reproducing bold/italic from the editor. */
+/** Render a sentence's inline runs, reproducing bold/italic and each text's size. */
 function renderRuns(runs: TextRun[] | undefined, fallback: string): ReactNode {
   if (!runs || runs.length === 0) return fallback
   return runs.map((r, i) => {
+    if (r.lineBreak) return <br key={i} />
     let el: ReactNode = r.text
     if (r.bold && r.italic) el = <strong><em>{r.text}</em></strong>
     else if (r.bold) el = <strong>{r.text}</strong>
     else if (r.italic) el = <em>{r.text}</em>
+    if (r.fontSize) el = <span style={{ fontSize: r.fontSize }}>{el}</span>
     return <Fragment key={i}>{el}</Fragment>
   })
 }
+
+/** A block's real space above it (e.g. from a PDF), in place of its own margins. */
+const spacing = (spaceBefore?: number): CSSProperties =>
+  spaceBefore === undefined ? {} : { marginTop: `${spaceBefore}px`, marginBottom: 0 }
 
 /**
  * Read-only document renderer that reproduces the editor's output (paragraphs,
@@ -43,6 +49,8 @@ export function TTSSpellReader({ content, currentSentenceIndex, onSentenceClick 
     const style: CSSProperties = {
       ...(block.textAlign ? { textAlign: block.textAlign as CSSProperties['textAlign'] } : {}),
       ...(block.marginLeft ? { marginLeft: `${block.marginLeft}px` } : {}),
+      ...(block.lineHeight ? { lineHeight: block.lineHeight } : {}),
+      ...spacing(block.spaceBefore),
     }
 
     // Empty block — render a spacer line so vertical rhythm matches the editor.
@@ -70,7 +78,7 @@ export function TTSSpellReader({ content, currentSentenceIndex, onSentenceClick 
           onClick={() => onSentenceClick?.(seg.index)}
           data-sentence-index={seg.index}
         >
-          {renderRuns(seg.runs, seg.text)}{' '}
+          {renderRuns(seg.runs, seg.text)}{seg.spaceAfter === false ? '' : ' '}
         </span>
       )
       if (seg.breakAfter) nodes.push(<br key={`br-${seg.index}`} />)
@@ -90,10 +98,11 @@ export function TTSSpellReader({ content, currentSentenceIndex, onSentenceClick 
               src={block.src}
               alt={block.alt ?? ''}
               title={block.title ?? undefined}
+              style={{ ...(block.width ? { width: `${block.width}px` } : {}), ...spacing(block.spaceBefore) }}
             />
           )
         }
-        if (block.kind === 'rule') return <hr key={`hr-${i}`} className={s.rule} />
+        if (block.kind === 'rule') return <hr key={`hr-${i}`} className={s.rule} style={spacing(block.spaceBefore)} />
         return renderText(block, `b-${i}`)
       })}
     </>

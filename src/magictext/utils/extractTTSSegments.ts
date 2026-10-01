@@ -31,6 +31,10 @@ interface CharInfo {
   tts: TTSAttrs | null
   bold: boolean
   italic: boolean
+  fontSize?: string
+  // A hardBreak: a space for the sentence text (so sentences split the same way), but a
+  // line break where it's drawn.
+  lineBreak?: boolean
 }
 
 /** Flatten a block's inline content into a string plus per-character mark info. */
@@ -44,28 +48,41 @@ function buildCharInfo(node: JSONContent): { fullText: string; chars: CharInfo[]
       const tts = getTTSAttrs(marks)
       const bold = marks.some(m => m.type === 'bold')
       const italic = marks.some(m => m.type === 'italic')
+      const fontSize = marks.find(m => m.type === 'textStyle')?.attrs?.fontSize as string | undefined
       const text = inline.text ?? ''
-      for (let i = 0; i < text.length; i++) chars.push({ tts, bold, italic })
+      for (let i = 0; i < text.length; i++) chars.push({ tts, bold, italic, ...(fontSize ? { fontSize } : {}) })
       fullText += text
     } else if (inline.type === 'hardBreak') {
       hardBreakOffsets.push(fullText.length)
-      chars.push({ tts: null, bold: false, italic: false })
+      chars.push({ tts: null, bold: false, italic: false, lineBreak: true })
       fullText += ' '
     }
   }
   return { fullText, chars, hardBreakOffsets }
 }
 
-/** Group [start, end) of fullText into bold/italic-consistent runs. */
+/** Group [start, end) of fullText into runs of the same bold/italic/size. */
 function buildRuns(fullText: string, chars: CharInfo[], start: number, end: number): TextRun[] {
   const runs: TextRun[] = []
   let i = start
   while (i < end) {
+    if (chars[i]?.lineBreak) {
+      runs.push({ text: '', bold: false, italic: false, lineBreak: true })
+      i++
+      continue
+    }
     const bold = chars[i]?.bold ?? false
     const italic = chars[i]?.italic ?? false
+    const fontSize = chars[i]?.fontSize
     let j = i + 1
-    while (j < end && (chars[j]?.bold ?? false) === bold && (chars[j]?.italic ?? false) === italic) j++
-    runs.push({ text: fullText.slice(i, j), bold, italic })
+    while (
+      j < end
+      && !chars[j]?.lineBreak
+      && (chars[j]?.bold ?? false) === bold
+      && (chars[j]?.italic ?? false) === italic
+      && chars[j]?.fontSize === fontSize
+    ) j++
+    runs.push({ text: fullText.slice(i, j), bold, italic, ...(fontSize ? { fontSize } : {}) })
     i = j
   }
   return runs
@@ -89,7 +106,7 @@ export function extractDocumentBlocks(content: JSONContent | null | undefined): 
 
   const processText = (node: JSONContent, blockType: 'paragraph' | 'heading', headingLevel?: number) => {
     const { fullText, chars, hardBreakOffsets } = buildCharInfo(node)
-    const attrs = node.attrs as { textAlign?: string; marginLeft?: number } | undefined
+    const attrs = node.attrs as { textAlign?: string; marginLeft?: number; spaceBefore?: number | null; lineHeight?: number | null } | undefined
     const segments: TTSSegment[] = []
 
     if (fullText.trim()) {
@@ -112,6 +129,9 @@ export function extractDocumentBlocks(content: JSONContent | null | undefined): 
           : [{ text: sentText, bold: false, italic: false }]
         const nextStart = si < positions.length - 1 ? positions[si + 1].pos : fullText.length
         const breakAfter = hardBreakOffsets.some(h => h >= end && h < nextStart)
+        // Whether the source has a space after it (the next sentence starts right after
+        // otherwise, as in "7." + "415").
+        const spaceAfter = end >= fullText.length || /\s/.test(fullText[end] ?? '')
         segments.push({
           text: sentText,
           index: globalIndex++,
@@ -121,6 +141,7 @@ export function extractDocumentBlocks(content: JSONContent | null | undefined): 
           ...(headingLevel !== undefined ? { headingLevel } : {}),
           runs,
           ...(breakAfter ? { breakAfter: true } : {}),
+          ...(spaceAfter ? {} : { spaceAfter: false }),
         })
       }
     }
@@ -132,6 +153,8 @@ export function extractDocumentBlocks(content: JSONContent | null | undefined): 
       ...(headingLevel !== undefined ? { headingLevel } : {}),
       ...(attrs?.textAlign ? { textAlign: attrs.textAlign } : {}),
       ...(attrs?.marginLeft ? { marginLeft: attrs.marginLeft } : {}),
+      ...(typeof attrs?.spaceBefore === 'number' ? { spaceBefore: attrs.spaceBefore } : {}),
+      ...(attrs?.lineHeight ? { lineHeight: attrs.lineHeight } : {}),
       segments,
     })
     blockIndex++
@@ -143,10 +166,15 @@ export function extractDocumentBlocks(content: JSONContent | null | undefined): 
     } else if (node.type === 'heading') {
       processText(node, 'heading', (node.attrs as { level?: number })?.level ?? 1)
     } else if (node.type === 'image') {
-      const a = (node.attrs ?? {}) as { src?: string; alt?: string | null; title?: string | null }
-      if (a.src) blocks.push({ kind: 'image', src: a.src, alt: a.alt ?? null, title: a.title ?? null })
+      const a = (node.attrs ?? {}) as { src?: string; alt?: string | null; title?: string | null; width?: number | null; spaceBefore?: number | null }
+      if (a.src) blocks.push({
+        kind: 'image', src: a.src, alt: a.alt ?? null, title: a.title ?? null,
+        ...(a.width ? { width: a.width } : {}),
+        ...(typeof a.spaceBefore === 'number' ? { spaceBefore: a.spaceBefore } : {}),
+      })
     } else if (node.type === 'horizontalRule') {
-      blocks.push({ kind: 'rule' })
+      const a = (node.attrs ?? {}) as { spaceBefore?: number | null }
+      blocks.push({ kind: 'rule', ...(typeof a.spaceBefore === 'number' ? { spaceBefore: a.spaceBefore } : {}) })
     } else if (node.content) {
       for (const child of node.content) walk(child)
     }

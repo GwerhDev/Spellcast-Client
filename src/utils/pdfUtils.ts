@@ -481,10 +481,9 @@ export const extractPdfPages = async (
         // which was too big when crossing size boundaries like title → subtitle).
         const threshold = Math.max(Math.min(prevLine.height, currLine.height, capH), avgLineHeight) * 1.5;
         if (yDiff > threshold) {
+          // The gap itself isn't kept as empty lines: each block carries the real space before
+          // it (spaceBefore, below), so it renders the same whatever the editor's line height.
           if (currentParagraph.length > 0) paragraphs.push({ lines: currentParagraph, yTop: currentParagraph[0].y });
-          const numEmpty = Math.floor(yDiff / avgLineHeight) - 1;
-          const gapY = prevLine.y - prevLine.height;
-          for (let k = 0; k < numEmpty; k++) paragraphs.push({ lines: [], yTop: gapY - k * avgLineHeight });
           currentParagraph = [];
           if (currLine.items.length > 0) currentParagraph.push(currLine);
         } else {
@@ -537,19 +536,23 @@ export const extractPdfPages = async (
 
     const pageAttrs = { ...pageDims, marginLeft, marginRight, marginTop, marginBottom };
 
-    // Build content items with Y positions for merged sorting
-    type Item = { yPdf: number; node: JSONContent };
+    // Build content items with their extent on the page (PDF units, y up): sorted by their
+    // top, and each text block given the real space between it and what comes before.
+    type Item = { yPdf: number; bottom: number; node: JSONContent };
     const contentItems: Item[] = [];
+    // A text line's box as CSS lays it out at line height `lh`: ~80% of the font above the
+    // baseline, ~20% below, plus half the extra leading on each side.
+    const fontOf = (line: PdfLine) => line.height || avgLineHeight;
+    const lineTop = (line: PdfLine, lh: number) => line.y + fontOf(line) * (0.8 + (lh - 1) / 2);
+    const lineBottom = (line: PdfLine, lh: number) => line.y - fontOf(line) * (0.2 + (lh - 1) / 2);
+    const toPx = (pt: number) => Math.round(pt * xScale * 10) / 10;
 
     // Paragraph items (skip those whose Y falls within a graphic region — they'll appear in the rendered image)
     for (const p of paragraphs) {
       const inRegion = graphicRegions.some(r => p.yTop >= r.yMin - 5 && p.yTop <= r.yMax + 5);
       if (inRegion) continue;
 
-      if (p.lines.length === 0) {
-        contentItems.push({ yPdf: p.yTop, node: { type: 'paragraph' } });
-        continue;
-      }
+      if (p.lines.length === 0) continue;
 
       const paragraphX = p.lines[0]?.x ?? leftmostX;
       const pMarginLeft = Math.max(0, Math.round((paragraphX - leftmostX) * xScale));
@@ -588,8 +591,19 @@ export const extractPdfPages = async (
             if (numSpaces > 0) contentNodes.push({ type: 'text', text: ' '.repeat(numSpaces) });
           }
         }
+        let previous: TextItem | null = null;
         for (const item of line.items) {
           if (item.str.length === 0) continue;
+          // Pieces of a line drawn apart (another column, a label and its value) come with no
+          // space between them: one is added where the PDF leaves a visible gap.
+          if (previous) {
+            const gap = item.transform[4] - (previous.transform[4] + previous.width);
+            const size = item.height || previous.height || avgLineHeight;
+            if (gap > size * 0.15 && !/\s$/.test(previous.str) && !/^\s/.test(item.str)) {
+              contentNodes.push({ type: 'text', text: ' ' });
+            }
+          }
+          previous = item;
           const textNode: { type: 'text'; text: string; marks?: object[] } = { type: 'text', text: item.str, marks: [] };
           // Strip 6-char subset prefix (e.g. "ABCDEF+BookAntiqua-Bold" → "bookantiqua-bold")
           const normFontName = item.fontName.replace(/^[A-Z]{6}\+/, '').toLowerCase();
@@ -599,6 +613,10 @@ export const extractPdfPages = async (
           const isItalic = /italic|oblique|slant/.test(normFontName) || /italic|oblique/.test(fontFamily);
           if (isBold) textNode.marks!.push({ type: 'bold' });
           if (isItalic) textNode.marks!.push({ type: 'italic' });
+          // Its size, in the same px as the page (pt * 96/72): the text keeps its proportion
+          // to the page instead of taking the editor's default size.
+          const fontPx = toPx(item.height || line.height || avgLineHeight);
+          if (fontPx > 0) textNode.marks!.push({ type: 'textStyle', attrs: { fontSize: `${fontPx}px` } });
           if (textNode.marks?.length === 0) delete textNode.marks;
           contentNodes.push(textNode);
         }
@@ -617,29 +635,65 @@ export const extractPdfPages = async (
       if (pMarginLeft > 0 && !textAlign) attrs = { ...attrs, marginLeft: pMarginLeft };
       if (textAlign) attrs = { ...attrs, textAlign };
 
-      contentItems.push({ yPdf: p.yTop, node: { type: nodeType, attrs, content: contentNodes } });
+      // Its lines as far apart as in the PDF (baseline to baseline over the font size); a
+      // single line gets a plain one.
+      let lineHeight = 1.2;
+      if (p.lines.length > 1) {
+        const steps = p.lines.slice(1).map((l, i) => p.lines[i].y - l.y);
+        const avgStep = steps.reduce((a, b) => a + b, 0) / steps.length;
+        const avgFont = p.lines.reduce((a, l) => a + fontOf(l), 0) / p.lines.length;
+        lineHeight = Math.min(2.5, Math.max(1, Math.round((avgStep / avgFont) * 100) / 100));
+      }
+      attrs = { ...attrs, lineHeight };
+
+      const lastLine = p.lines[p.lines.length - 1];
+      contentItems.push({
+        yPdf: lineTop(p.lines[0], lineHeight),
+        bottom: lineBottom(lastLine, lineHeight),
+        node: { type: nodeType, attrs, content: contentNodes },
+      });
     }
 
     // Horizontal rule items
     for (const y of horizontalRules) {
-      contentItems.push({ yPdf: y, node: { type: 'horizontalRule' } });
+      contentItems.push({ yPdf: y, bottom: y, node: { type: 'horizontalRule' } });
     }
 
     for (const region of topLevelRegions) {
       const src = cropCanvasRegion(pageCanvas, pageViewport, xScale, region.yMin, region.yMax, textRgb);
-      if (src) contentItems.push({ yPdf: region.yMax, node: { type: 'image', attrs: { src, alt: null, title: 'pdf-graphic' } } });
+      if (src) contentItems.push({ yPdf: region.yMax, bottom: region.yMin, node: { type: 'image', attrs: { src, alt: null, title: 'pdf-graphic' } } });
     }
 
     // XObject images — try to get approximate Y from operator list, fallback to bottomY
     const opList = await page.getOperatorList();
     const pageImages = await extractPageImages(page);
-    const imageYs = extractImageYPositions(opList, pageImages.length, pageViewport.height);
+    const imagePlaces = extractImageYPositions(opList, pageImages.length, pageViewport.height);
     for (let i = 0; i < pageImages.length; i++) {
-      contentItems.push({ yPdf: imageYs[i] ?? bottomY - 1, node: { type: 'image', attrs: { src: pageImages[i], alt: null, title: null } } });
+      const place = imagePlaces[i];
+      const y = place?.y ?? bottomY - 1;
+      contentItems.push({
+        yPdf: y + (place?.height ?? 0),
+        bottom: y,
+        // As wide as it's drawn on the page, not its own pixel size.
+        node: { type: 'image', attrs: { src: pageImages[i], alt: null, title: null, ...(place?.width ? { width: Math.round(place.width * xScale) } : {}) } },
+      });
     }
 
     // Sort by Y descending (top → bottom of page)
     contentItems.sort((a, b) => b.yPdf - a.yPdf);
+
+    // Each block's real space before it: from the bottom of what's above to its top (none
+    // for things drawn side by side, which the flow stacks). The page's top margin reaches
+    // the first one.
+    let flowBottom: number | null = null;
+    for (const item of contentItems) {
+      const gap = flowBottom === null ? 0 : Math.max(0, flowBottom - item.yPdf);
+      item.node.attrs = { ...(item.node.attrs ?? {}), spaceBefore: Math.round(gap * xScale) };
+      flowBottom = item.bottom;
+    }
+    if (contentItems.length > 0) {
+      pageAttrs.marginTop = Math.max(0, Math.round((pageViewport.height - contentItems[0].yPdf) * xScale));
+    }
 
     const pageContent: JSONContent = { type: 'doc', attrs: pageAttrs, content: contentItems.map(i => i.node) };
     const finalContent = pageContent.content!.length > 0 ? pageContent : { ...emptyPageContent, attrs: pageAttrs };
@@ -651,28 +705,51 @@ export const extractPdfPages = async (
   return allPagesContent;
 };
 
+// Where each image is drawn: its bottom (y), and how tall and wide (PDF units, y up). An
+// image is painted as the unit square under the current transform -- the page's own
+// transform composed with every one set since, scoped by save/restore -- so that whole
+// transform is tracked, not just the last one set.
+type Matrix = [number, number, number, number, number, number];
+const multiply = (m: Matrix, t: Matrix): Matrix => [
+  m[0] * t[0] + m[2] * t[1],
+  m[1] * t[0] + m[3] * t[1],
+  m[0] * t[2] + m[2] * t[3],
+  m[1] * t[2] + m[3] * t[3],
+  m[0] * t[4] + m[2] * t[5] + m[4],
+  m[1] * t[4] + m[3] * t[5] + m[5],
+];
+
 const extractImageYPositions = (
   opList: { fnArray: number[]; argsArray: unknown[][] },
   count: number,
   pageHeight: number,
-): number[] => {
-  const ys: number[] = [];
-  const paintOp = (pdfjsLib.OPS as Record<string, number>).paintImageXObject;
-  const transformOp = (pdfjsLib.OPS as Record<string, number>).transform;
-  if (!paintOp) return Array(count).fill(0);
+): { y: number; height: number; width: number }[] => {
+  const places: { y: number; height: number; width: number }[] = [];
+  const ops = pdfjsLib.OPS as Record<string, number>;
+  const { paintImageXObject: paintOp, transform: transformOp, save: saveOp, restore: restoreOp } = ops;
+  if (!paintOp) return Array(count).fill({ y: 0, height: 0, width: 0 });
 
-  let lastTranslateY = pageHeight / 2;
+  let ctm: Matrix = [1, 0, 0, 1, 0, 0];
+  const stack: Matrix[] = [];
   for (let i = 0; i < opList.fnArray.length; i++) {
-    if (opList.fnArray[i] === transformOp) {
+    const fn = opList.fnArray[i];
+    if (saveOp !== undefined && fn === saveOp) stack.push(ctm);
+    else if (restoreOp !== undefined && fn === restoreOp) ctm = stack.pop() ?? ctm;
+    else if (fn === transformOp) {
       const args = opList.argsArray[i] as number[];
-      // transform matrix: [a, b, c, d, e, f] — e=translateX, f=translateY
-      if (args.length >= 6) lastTranslateY = args[5];
-    }
-    if (opList.fnArray[i] === paintOp && ys.length < count) {
-      ys.push(lastTranslateY);
+      if (args.length >= 6) ctm = multiply(ctm, args.slice(0, 6) as Matrix);
+    } else if (fn === paintOp && places.length < count) {
+      // The unit square's corners under the transform: its extent on the page.
+      const ys = [ctm[5], ctm[3] + ctm[5], ctm[1] + ctm[5], ctm[1] + ctm[3] + ctm[5]];
+      const xs = [ctm[4], ctm[2] + ctm[4], ctm[0] + ctm[4], ctm[0] + ctm[2] + ctm[4]];
+      places.push({
+        y: Math.min(...ys),
+        height: Math.max(...ys) - Math.min(...ys),
+        width: Math.max(...xs) - Math.min(...xs),
+      });
     }
   }
   // Fill any remaining with fallback
-  while (ys.length < count) ys.push(0);
-  return ys;
+  while (places.length < count) places.push({ y: pageHeight / 2, height: 0, width: 0 });
+  return places;
 };

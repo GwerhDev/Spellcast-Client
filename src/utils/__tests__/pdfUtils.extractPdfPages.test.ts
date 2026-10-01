@@ -5,7 +5,7 @@ import type { TextItem } from 'pdfjs-dist/types/src/display/api';
 // lists for XObject images -- mocked here with known small integers instead of
 // depending on pdf.js's real (larger, version-dependent) enum values.
 vi.mock('pdfjs-dist', () => ({
-  OPS: { transform: 1, paintImageXObject: 2 },
+  OPS: { transform: 1, paintImageXObject: 2, save: 3, restore: 4 },
 }));
 
 const { extractPdfPages } = await import('../pdfUtils');
@@ -149,7 +149,7 @@ describe('extractPdfPages', () => {
 
     const plain = nodes.find((n) => n.text === 'Plain');
     const boldItalic = nodes.find((n) => n.text === ' BoldItalic');
-    expect(plain?.marks).toBeUndefined();
+    expect(plain?.marks?.some((m) => m.type === 'bold' || m.type === 'italic')).toBeFalsy();
     expect(boldItalic?.marks).toEqual(expect.arrayContaining([{ type: 'bold' }, { type: 'italic' }]));
   });
 
@@ -244,5 +244,81 @@ describe('extractPdfPages', () => {
     expect(onProgress).toHaveBeenNthCalledWith(2, 2, 2);
     expect(onPageExtracted).toHaveBeenNthCalledWith(1, 1, pages[0]);
     expect(onPageExtracted).toHaveBeenNthCalledWith(2, 2, pages[1]);
+  });
+
+  // The text keeps its proportion to the page, and its place on it.
+  describe('layout read from the page', () => {
+    const textOf = (node: { content?: { text?: string }[] } | undefined) => (node?.content ?? []).map((c) => c.text ?? '').join('');
+
+    it('gives each text its own size, in the same px as the page (pt * 96/72)', async () => {
+      const items = [mkTextItem('Small print', 50, 380, { height: 9 }), mkTextItem('Big title', 50, 300, { height: 18 })];
+      const [page] = await extractPdfPages(mkPdf([mkPage({ items })]) as never);
+      const sizeOf = (text: string) => page.content!.flatMap((n) => n.content ?? []).find((c) => c.text === text)
+        ?.marks?.find((m) => m.type === 'textStyle')?.attrs?.fontSize;
+      expect(sizeOf('Small print')).toBe('12px');
+      expect(sizeOf('Big title')).toBe('24px');
+    });
+
+    it('keeps a space between pieces of a line drawn apart, like two columns', async () => {
+      const items = [
+        mkTextItem('Datos Médico', 50, 380, { width: 60 }),
+        mkTextItem('Datos Paciente', 200, 380, { width: 70 }),
+      ];
+      const [page] = await extractPdfPages(mkPdf([mkPage({ items })]) as never);
+      expect(textOf(page.content![0] as never)).toBe('Datos Médico Datos Paciente');
+    });
+
+    it('does not add one between pieces that touch', async () => {
+      const items = [mkTextItem('7.415', 50, 380, { width: 30 }), mkTextItem('.604-5', 80, 380, { width: 36 })];
+      const [page] = await extractPdfPages(mkPdf([mkPage({ items })]) as never);
+      expect(textOf(page.content![0] as never)).toBe('7.415.604-5');
+    });
+
+    it('puts the real gap before a block instead of empty lines', async () => {
+      const items = [mkTextItem('First block', 50, 380), mkTextItem('Far below', 50, 200)];
+      const [page] = await extractPdfPages(mkPdf([mkPage({ items })]) as never);
+      const blocks = page.content!;
+      expect(blocks.filter((n) => n.type === 'paragraph' && !n.content?.length)).toHaveLength(0);
+      expect(blocks[0].attrs?.spaceBefore).toBe(0);
+      // Baselines 180pt apart, less the two lines' own height at line height 1.2.
+      const expected = Math.round((180 - 12 * 1.2) * (96 / 72));
+      expect(blocks[1].attrs?.spaceBefore).toBe(expected);
+    });
+
+    it('keeps a block\'s line spacing from the PDF', async () => {
+      const items = [mkTextItem('Line one', 50, 380), mkTextItem('Line two', 50, 362)];
+      const [page] = await extractPdfPages(mkPdf([mkPage({ items })]) as never);
+      // 18pt between baselines over a 12pt font.
+      expect(page.content![0].attrs?.lineHeight).toBe(1.5);
+    });
+
+    it('starts the page where its first block starts', async () => {
+      const items = [mkTextItem('Top line', 50, 350)];
+      const [page] = await extractPdfPages(mkPdf([mkPage({ items, pageHeight: 400 })]) as never);
+      // 400 - (350 + 12 * (0.8 + 0.1)) = 39.2pt from the top.
+      expect(page.attrs?.marginTop).toBe(Math.round(39.2 * (96 / 72)));
+    });
+
+    // As in real PDFs: a page transform flipping y, then the image's own inside save/restore.
+    it('places an image by its whole transform: as wide as it is drawn on the page', async () => {
+      const [page] = await extractPdfPages(mkPdf([mkPage({
+        items: [mkTextItem('Text on the page', 50, 380)],
+        pageWidth: 300,
+        pageHeight: 400,
+        operatorList: {
+          fnArray: [1, 3, 1, 2, 4],
+          argsArray: [
+            [0.5, 0, 0, -0.5, 0, 400], // page: half scale, y flipped
+            [],
+            [120, 0, 0, -120, 300, 200], // the image: 120 units, i.e. 60pt on the page
+            ['img1'],
+            [],
+          ],
+        },
+        imageObjs: { img1: { width: 32, height: 32, data: new Uint8ClampedArray(32 * 32 * 4).fill(128) } },
+      })]) as never);
+      const image = page.content?.find((n) => n.type === 'image' && (n.attrs as { title?: string })?.title === null);
+      expect(image?.attrs?.width).toBe(Math.round(60 * (96 / 72)));
+    });
   });
 });

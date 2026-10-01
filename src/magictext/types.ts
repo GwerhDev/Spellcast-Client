@@ -50,6 +50,10 @@ export interface TextRun {
   text: string
   bold: boolean
   italic: boolean
+  /** The text's own size (a CSS length, e.g. read from a PDF), when it has one. */
+  fontSize?: string
+  /** A line break inside the sentence (a hardBreak in the source), rendered as one. */
+  lineBreak?: boolean
 }
 
 /**
@@ -67,6 +71,11 @@ export interface TTSSegment {
   runs?: TextRun[]
   /** True when a hardBreak node in the source immediately follows this sentence. */
   breakAfter?: boolean
+  /**
+   * False when the source has no space right after this sentence (e.g. "7.415" splits after
+   * "7."): the renderer then joins it to the next one as written, instead of adding a space.
+   */
+  spaceAfter?: boolean
 }
 
 /**
@@ -82,10 +91,13 @@ export type DocumentBlock =
       headingLevel?: number
       textAlign?: string
       marginLeft?: number
+      /** The real space above the block in px (e.g. from a PDF); replaces its margins. */
+      spaceBefore?: number
+      lineHeight?: number
       segments: TTSSegment[]
     }
-  | { kind: 'image'; src: string; alt: string | null; title: string | null }
-  | { kind: 'rule' }
+  | { kind: 'image'; src: string; alt: string | null; title: string | null; width?: number; spaceBefore?: number }
+  | { kind: 'rule'; spaceBefore?: number }
 
 // ── MagicTextEditor props ─────────────────────────────────────────────────────
 
