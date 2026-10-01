@@ -115,8 +115,9 @@ export const LastSpells: React.FC = () => {
     const uploadJob = uploadQueue.find(j => j.targetDocId === doc.id && (j.status === 'queued' || j.status === 'processing')) ?? null;
     return {
       key: doc.id,
-      node: (
+      node: ({ front }) => (
         <SpellCard
+          focusable={front}
           doc={doc}
           isActive={activeDocId === doc.id}
           isPlaying={activeDocId === doc.id && (audioPlaying || browserPlaying)}
@@ -131,8 +132,15 @@ export const LastSpells: React.FC = () => {
   if (hasMore) {
     items.push({
       key: 'see-all',
-      node: (
-        <div className={s.seeAllCard} data-testid="last-spells-see-all" onClick={() => navigate('/grimoire')}>
+      node: ({ front }) => (
+        <div
+          className={s.seeAllCard}
+          data-testid="last-spells-see-all"
+          role="link"
+          tabIndex={front ? 0 : -1}
+          onClick={() => navigate('/grimoire')}
+          onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate('/grimoire'); } }}
+        >
           <FontAwesomeIcon icon={faBuildingColumns} />
           <span>{t.nav.grimoire}</span>
         </div>

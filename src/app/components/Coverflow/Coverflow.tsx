@@ -6,7 +6,10 @@ import s from './Coverflow.module.css';
 
 export interface CoverflowItem {
   key: string;
-  node: ReactNode;
+  // The item, or a function of its place: only the front row is reachable by keyboard
+  // (the cards behind are brought forward with the arrows, or a click), so an item that
+  // can take focus should only do so while `front`.
+  node: ReactNode | ((place: { front: boolean }) => ReactNode);
 }
 
 interface CoverflowProps {
@@ -239,7 +242,9 @@ export const Coverflow = ({ items, renderEmpty, itemWidth, slots = 7, interactiv
                 } : undefined}
                 aria-hidden={behind || undefined}
               >
-                {item ? item.node : renderEmpty(`empty-${index}`)}
+                {item
+                  ? (typeof item.node === 'function' ? item.node({ front: !behind }) : item.node)
+                  : renderEmpty(`empty-${index}`)}
               </motion.div>
             );
           })}

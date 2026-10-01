@@ -91,7 +91,13 @@
 }
 
 /* Hover is only a glow: the card shows nothing else over its cover. */
-.card:hover {
+.card:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 3px;
+}
+
+.card:hover,
+.card:focus-visible {
   border-color: color-mix(in srgb, var(--color-primary) 70%, transparent);
   box-shadow:
     0 0 0 1px color-mix(in srgb, var(--color-primary) 35%, transparent),

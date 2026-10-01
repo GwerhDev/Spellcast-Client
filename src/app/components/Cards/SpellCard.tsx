@@ -41,6 +41,9 @@ interface SpellCardProps {
   onClick: (origin?: { rect: { top: number; left: number; width: number; height: number }; coverUrl: string; element: HTMLElement; coverFrameId: string | null }) => void;
   // This card's cover has lifted off into its open detail: its place stays, empty.
   lifted?: boolean;
+  // In the keyboard's tab order (off for a card that's only shown, e.g. behind a coverflow's
+  // front row, where it's brought forward rather than tabbed to).
+  focusable?: boolean;
   uploadJob?: UploadJob | null;
   selectionMode?: boolean;
   selected?: boolean;
@@ -56,7 +59,7 @@ interface SpellCardProps {
 
 // A spell in a grid: just its cover, which glows on hover. Clicking opens its detail; the
 // only thing drawn over the cover is the reading indicator, while it's the loaded spell.
-export const SpellCard = ({ doc, isActive, isPlaying, onClick, lifted = false, uploadJob, selectionMode, selected, onToggleSelect, show3D }: SpellCardProps) => {
+export const SpellCard = ({ doc, isActive, isPlaying, onClick, lifted = false, focusable = true, uploadJob, selectionMode, selected, onToggleSelect, show3D }: SpellCardProps) => {
   const totalPages = useMemo(() => {
     if (!doc.pagesContent) return null;
     try { return JSON.parse(doc.pagesContent).length; } catch { return null; }
@@ -116,6 +119,16 @@ export const SpellCard = ({ doc, isActive, isPlaying, onClick, lifted = false, u
       aria-label={doc.title}
       className={`${s.card} ${isActive ? s.cardActive : ''} ${selected ? s.cardSelected : ''} ${hasCoverFrame ? s.cardSquared : ''} ${dragging ? s.cardDragging : ''} ${lifted ? s.cardLifted : ''}`}
       onClick={handleClick}
+      // Reachable and opened by keyboard too: Enter or Space acts like a click (opening its
+      // detail, or selecting it in selection mode).
+      role="button"
+      tabIndex={focusable ? 0 : -1}
+      aria-pressed={selectionMode ? !!selected : undefined}
+      onKeyDown={e => {
+        if (e.target !== e.currentTarget || (e.key !== 'Enter' && e.key !== ' ')) return;
+        e.preventDefault();
+        handleClick();
+      }}
       // Draggable onto a drop target that reads spells (e.g. Start's "Read" tab), which gets
       // the spell id under SPELL_DRAG_TYPE. Off in selection mode, where clicks select.
       draggable={!selectionMode}

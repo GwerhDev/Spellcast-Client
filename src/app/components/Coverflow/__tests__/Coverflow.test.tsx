@@ -162,5 +162,22 @@ describe('Coverflow', () => {
       expect(onC).toHaveBeenCalledTimes(1);
     });
   });
+
+  // Only the front row is reachable by keyboard; the cards behind are brought forward with
+  // the arrows (or a click) instead.
+  it('tells each item whether it is in the front row', async () => {
+    const tabbable = (id: string) => ({
+      key: id,
+      node: ({ front }: { front: boolean }) => <button data-testid={`card-${id}`} tabIndex={front ? 0 : -1}>{id}</button>,
+    });
+    render(<Coverflow itemWidth="160px" slots={5} items={['a', 'b', 'c', 'd', 'e'].map(tabbable)} renderEmpty={empty} labels={labels} />);
+    await centered();
+    // Wide layout, five places: a in the center, b and e beside it, c and d behind.
+    expect(screen.getByTestId('card-a')).toHaveAttribute('tabindex', '0');
+    expect(screen.getByTestId('card-b')).toHaveAttribute('tabindex', '0');
+    expect(screen.getByTestId('card-e')).toHaveAttribute('tabindex', '0');
+    expect(screen.getByTestId('card-c')).toHaveAttribute('tabindex', '-1');
+    expect(screen.getByTestId('card-d')).toHaveAttribute('tabindex', '-1');
+  });
 });
 

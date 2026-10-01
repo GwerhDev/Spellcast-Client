@@ -153,4 +153,32 @@ describe('SpellCard', () => {
       expect(screen.queryByTestId('cover-frame-corner')).not.toBeInTheDocument();
     });
   });
+
+  describe('keyboard', () => {
+    it('is reachable by Tab and opens its detail with Enter or Space', () => {
+      const onClick = vi.fn();
+      renderCard({ onClick });
+      const card = screen.getByTestId('spell-card-doc-1');
+      expect(card).toHaveAttribute('tabindex', '0');
+      expect(card).toHaveAttribute('role', 'button');
+
+      fireEvent.keyDown(card, { key: 'Enter' });
+      fireEvent.keyDown(card, { key: ' ' });
+      expect(onClick).toHaveBeenCalledTimes(2);
+    });
+
+    it('selects with Space in selection mode instead of opening', () => {
+      const onClick = vi.fn();
+      const onToggleSelect = vi.fn();
+      renderCard({ onClick, selectionMode: true, onToggleSelect });
+      fireEvent.keyDown(screen.getByTestId('spell-card-doc-1'), { key: ' ' });
+      expect(onToggleSelect).toHaveBeenCalledTimes(1);
+      expect(onClick).not.toHaveBeenCalled();
+    });
+
+    it('stays out of the tab order when it is only shown (focusable off)', () => {
+      renderCard({ focusable: false });
+      expect(screen.getByTestId('spell-card-doc-1')).toHaveAttribute('tabindex', '-1');
+    });
+  });
 });
