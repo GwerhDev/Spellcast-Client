@@ -122,6 +122,7 @@ export const en = {
     exportError: 'Failed to export this spell.',
     importSpell: 'Import .spell',
     importError: 'Failed to import this .spell file.',
+    createError: 'This spell couldn\'t be created. Try again, or remove it.',
     importSuccess: '"{title}" imported.',
     // TCORE-117: specific, actionable messages for a write that failed because the
     // storage quota was hit, distinct from the generic upload/import error above.

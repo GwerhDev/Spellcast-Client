@@ -238,3 +238,9 @@
   color: var(--color-light-400);
   white-space: nowrap;
 }
+
+/* Why creating it failed: shown under the file's details until it's tried again. */
+.error {
+  color: var(--color-danger);
+  font-weight: 500;
+}

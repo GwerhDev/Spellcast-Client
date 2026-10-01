@@ -124,6 +124,7 @@ export const es: Translations = {
     exportError: 'No se pudo exportar este Spell.',
     importSpell: 'Importar .spell',
     importError: 'No se pudo importar este archivo .spell.',
+    createError: 'No se pudo crear este spell. Inténtalo de nuevo o quítalo.',
     // TCORE-117: mensajes específicos y accionables para una escritura que falló por
     // quedarse sin espacio, distintos del error genérico de importación/subida de arriba.
     quotaExceededUpload: 'No hay espacio suficiente para guardar este spell. Libera espacio en Ajustes > Almacenamiento e intenta de nuevo.',

@@ -12,11 +12,13 @@ interface SpellCreateInputProps {
   spell: SpellState;
   onRemove?: () => void;
   onDone?: (resultDocId?: string) => void;
+  // Creating it failed: the card shows why and offers creating it again.
+  onError?: () => void;
   autoCreate?: boolean;
 }
 
 export const SpellCreateInput = (props: SpellCreateInputProps) => {
-  const { spell, onRemove, onDone, autoCreate } = props;
+  const { spell, onRemove, onDone, onError, autoCreate } = props;
   const [saveOriginal, setSaveOriginal] = useState(true);
   const [jobId, setJobId] = useState<string | null>(null);
   const { t } = useLanguage();
@@ -25,6 +27,10 @@ export const SpellCreateInput = (props: SpellCreateInputProps) => {
   const job = useAppSelector(state => jobId ? state.spellUpload.queue.find(j => j.id === jobId) : null);
   const onDoneRef = useRef(onDone);
   onDoneRef.current = onDone;
+  const onErrorRef = useRef(onError);
+  onErrorRef.current = onError;
+  // Why the last attempt failed, shown until the next one starts.
+  const [failure, setFailure] = useState<string | null>(null);
 
   useEffect(() => {
     if (autoCreate && !jobId) handleCreate();
@@ -36,7 +42,9 @@ export const SpellCreateInput = (props: SpellCreateInputProps) => {
     if (job.status === 'done') {
       onDoneRef.current?.(job.resultDocId);
     } else if (job.status === 'error') {
+      setFailure(job.errorMessage || t.spell.createError);
       setJobId(null);
+      onErrorRef.current?.();
     }
     //eslint-disable-next-line
   }, [job?.status]);
@@ -60,6 +68,7 @@ export const SpellCreateInput = (props: SpellCreateInputProps) => {
 
   const handleCreate = () => {
     if (!spell.fileContent || !userData?.id || jobId) return;
+    setFailure(null);
     const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     dispatch(enqueueUpload({
       id,
@@ -96,6 +105,9 @@ export const SpellCreateInput = (props: SpellCreateInputProps) => {
             {formatBytes(spell.size || 0)}
             {spell.totalPages > 0 && ` · ${spell.totalPages} ${spell.totalPages === 1 ? t.spell.pageSingular : t.spell.pagePlural}`}
           </small>
+          {failure && !jobId && (
+            <small data-testid="spell-create-input-error" className={s.error} role="alert">{failure}</small>
+          )}
           {!jobId && (
             <div className={s.toggleGroup}>
               <button
@@ -129,7 +141,7 @@ export const SpellCreateInput = (props: SpellCreateInputProps) => {
               <FontAwesomeIcon icon={faUpload} />
             </button>
             {onRemove && (
-              <button onClick={onRemove} className={s.removeBtn} title={t.common.delete}>
+              <button data-testid="spell-create-input-remove-btn" onClick={onRemove} className={s.removeBtn} title={t.common.delete}>
                 <FontAwesomeIcon icon={faTrash} />
               </button>
             )}

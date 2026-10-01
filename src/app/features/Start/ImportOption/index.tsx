@@ -17,6 +17,9 @@ import { useSpellImport } from '../../../../hooks/useSpellImport';
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
 interface PendingFile {
+  // Its own id, as the card's key: removing one card must not hand its state (a spell
+  // already created, a creation in progress) to the card after it.
+  id: string;
   fileContent: string;
   size: number;
   type: string | undefined;
@@ -29,6 +32,9 @@ export const ImportOption: React.FC = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([]);
   const [createAllTriggered, setCreateAllTriggered] = useState(false);
+  // The files are being created as a batch (Create all was used): none of them opens its
+  // new spell when done, even if one failed and the batch was picked up again.
+  const createdTogether = useRef(false);
   const [doneCount, setDoneCount] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
   const addMoreInputRef = useRef<HTMLInputElement>(null);
@@ -48,7 +54,7 @@ export const ImportOption: React.FC = () => {
           const fileContent = e.target?.result as string;
           const pdfData = atob(fileContent.substring(fileContent.indexOf(',') + 1));
           const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
-          resolve({ fileContent, size: file.size, type: fileType, title: fileName, totalPages: pdf.numPages });
+          resolve({ id: crypto.randomUUID(), fileContent, size: file.size, type: fileType, title: fileName, totalPages: pdf.numPages });
         } catch (err) { reject(err); }
       };
       reader.onerror = reject;
@@ -125,8 +131,12 @@ export const ImportOption: React.FC = () => {
     if (e.dataTransfer.files) handleFiles(e.dataTransfer.files);
   }, [handleFiles]);
 
-  const removePending = (index: number) =>
-    setPendingFiles(prev => prev.filter((_, i) => i !== index));
+  const removePending = (id: string) =>
+    setPendingFiles(prev => prev.filter(f => f.id !== id));
+
+  // One of them failed: the buttons come back, so the failed ones can be created again
+  // (Create all skips the ones already created or still going) or more files added.
+  const handleCardError = () => setCreateAllTriggered(false);
 
   const hasSingleReduxFile = spell.isLoaded;
   const hasAnyFile = hasSingleReduxFile || pendingFiles.length > 0;
@@ -139,12 +149,14 @@ export const ImportOption: React.FC = () => {
     setPendingFiles([]);
     setDoneCount(0);
     setCreateAllTriggered(false);
+    createdTogether.current = false;
   };
 
   // Every card creates its own spell, the first one included: they all stay listed with
   // their own progress until done, each with its own "save original" choice.
   const handleCreateAll = () => {
     if (!userData?.id) return;
+    createdTogether.current = true;
     setCreateAllTriggered(true);
   };
 
@@ -162,19 +174,21 @@ export const ImportOption: React.FC = () => {
           spell={spell}
           onRemove={() => dispatch(resetSpellState())}
           autoCreate={createAllTriggered}
+          onError={handleCardError}
           onDone={(resultDocId) => {
             setDoneCount(prev => prev + 1);
             // On its own, the new spell opens; created along with others, it stays listed.
-            if (resultDocId && !createAllTriggered) navigate(`/spell/${resultDocId}`);
+            if (resultDocId && !createdTogether.current) navigate(`/spell/${resultDocId}`);
           }}
         />
       )}
-      {pendingFiles.map((f, i) => (
+      {pendingFiles.map((f) => (
         <SpellCreateInput
-          key={i}
+          key={f.id}
           spell={{ ...f, currentPage: 0, isLoaded: true }}
-          onRemove={() => removePending(i)}
+          onRemove={() => removePending(f.id)}
           autoCreate={createAllTriggered}
+          onError={handleCardError}
           onDone={() => setDoneCount(prev => prev + 1)}
         />
       ))}
