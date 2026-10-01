@@ -12,13 +12,22 @@ const extractSentencesFromJSON = (text: string): string[] => {
   try {
     const json = JSON.parse(text) as JSONContent;
     const sentences: string[] = [];
-    for (const node of (json.content || [])) {
+    // Containers (a page's columns: see ColumnsExtension) are walked into, in order: the
+    // same reading order the reader and the provider voices' parser walk the page in.
+    const blocks: JSONContent[] = [];
+    const flatten = (nodes: JSONContent[]) => {
+      for (const node of nodes) {
+        if (node.type === 'paragraph' || node.type === 'heading' || node.type === 'image') blocks.push(node);
+        else if (node.content) flatten(node.content);
+      }
+    };
+    flatten(json.content || []);
+    for (const node of blocks) {
       if (node.type === 'image') {
         const alt = (node.attrs as { alt?: string })?.alt;
         if (alt) sentences.push(...alt.split(/(?<=[.!?])(?!\s*\.)\s*/).filter(Boolean));
         continue;
       }
-      if (node.type !== 'paragraph' && node.type !== 'heading') continue;
       const nodeText = (node.content || [])
         .map((c: JSONContent) => {
           if (c.type === 'text') return (c.text as string) || '';

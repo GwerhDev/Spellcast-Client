@@ -88,6 +88,16 @@ function buildRuns(fullText: string, chars: CharInfo[], start: number, end: numb
   return runs
 }
 
+const LAYOUT_ATTRS = ['spaceBefore'] as const
+
+/** A block's PDF layout attrs (see PdfPositionExtension), when it has any. */
+function layoutOf(node: JSONContent): { layout?: Record<string, unknown> } {
+  const attrs = (node.attrs ?? {}) as Record<string, unknown>
+  const layout: Record<string, unknown> = {}
+  for (const key of LAYOUT_ATTRS) if (attrs[key] !== null && attrs[key] !== undefined) layout[key] = attrs[key]
+  return Object.keys(layout).length ? { layout } : {}
+}
+
 /**
  * Parses a Tiptap JSONContent document into an ordered list of document blocks:
  * text blocks (paragraph/heading) carrying their sentence segments + block attrs,
@@ -100,13 +110,15 @@ function buildRuns(fullText: string, chars: CharInfo[], start: number, end: numb
  */
 export function extractDocumentBlocks(content: JSONContent | null | undefined): DocumentBlock[] {
   if (!content) return []
-  const blocks: DocumentBlock[] = []
+  // Where blocks go: the page itself, or the column being walked.
+  let blocks: DocumentBlock[] = []
+  const page = blocks
   let globalIndex = 0
   let blockIndex = 0
 
   const processText = (node: JSONContent, blockType: 'paragraph' | 'heading', headingLevel?: number) => {
     const { fullText, chars, hardBreakOffsets } = buildCharInfo(node)
-    const attrs = node.attrs as { textAlign?: string; marginLeft?: number; spaceBefore?: number | null; lineHeight?: number | null } | undefined
+    const attrs = node.attrs as { textAlign?: string; marginLeft?: number; lineHeight?: number | null } | undefined
     const segments: TTSSegment[] = []
 
     if (fullText.trim()) {
@@ -153,8 +165,8 @@ export function extractDocumentBlocks(content: JSONContent | null | undefined): 
       ...(headingLevel !== undefined ? { headingLevel } : {}),
       ...(attrs?.textAlign ? { textAlign: attrs.textAlign } : {}),
       ...(attrs?.marginLeft ? { marginLeft: attrs.marginLeft } : {}),
-      ...(typeof attrs?.spaceBefore === 'number' ? { spaceBefore: attrs.spaceBefore } : {}),
       ...(attrs?.lineHeight ? { lineHeight: attrs.lineHeight } : {}),
+      ...layoutOf(node),
       segments,
     })
     blockIndex++
@@ -166,22 +178,42 @@ export function extractDocumentBlocks(content: JSONContent | null | undefined): 
     } else if (node.type === 'heading') {
       processText(node, 'heading', (node.attrs as { level?: number })?.level ?? 1)
     } else if (node.type === 'image') {
-      const a = (node.attrs ?? {}) as { src?: string; alt?: string | null; title?: string | null; width?: number | null; spaceBefore?: number | null }
+      const a = (node.attrs ?? {}) as { src?: string; alt?: string | null; title?: string | null; width?: number | null; marginLeft?: number | null }
       if (a.src) blocks.push({
         kind: 'image', src: a.src, alt: a.alt ?? null, title: a.title ?? null,
         ...(a.width ? { width: a.width } : {}),
-        ...(typeof a.spaceBefore === 'number' ? { spaceBefore: a.spaceBefore } : {}),
+        ...(a.marginLeft ? { marginLeft: a.marginLeft } : {}),
+        ...layoutOf(node),
       })
     } else if (node.type === 'horizontalRule') {
-      const a = (node.attrs ?? {}) as { spaceBefore?: number | null }
-      blocks.push({ kind: 'rule', ...(typeof a.spaceBefore === 'number' ? { spaceBefore: a.spaceBefore } : {}) })
+      blocks.push({ kind: 'rule', ...layoutOf(node) })
+    } else if (node.type === 'columns') {
+      // Each column's blocks in turn -- sentence indices running on through them in that
+      // order, the same reading order everything else walks the page in.
+      const columns: { width?: number; blocks: DocumentBlock[] }[] = []
+      const outer = blocks
+      for (const column of node.content ?? []) {
+        blocks = []
+        for (const child of column.content ?? []) walk(child)
+        const width = (column.attrs as { width?: number | null } | undefined)?.width
+        columns.push({ ...(width ? { width } : {}), blocks })
+      }
+      blocks = outer
+      blocks.push({ kind: 'columns', ...layoutOf(node), columns })
+    } else if (node.type === 'box') {
+      const outer = blocks
+      blocks = []
+      for (const child of node.content ?? []) walk(child)
+      const inner = blocks
+      blocks = outer
+      blocks.push({ kind: 'box', ...layoutOf(node), box: (node.attrs ?? {}) as Record<string, unknown>, blocks: inner })
     } else if (node.content) {
       for (const child of node.content) walk(child)
     }
   }
 
   walk(content)
-  return blocks
+  return page
 }
 
 /**
@@ -191,8 +223,13 @@ export function extractDocumentBlocks(content: JSONContent | null | undefined): 
  */
 export function extractTTSSegments(content: JSONContent): TTSSegment[] {
   const result: TTSSegment[] = []
-  for (const block of extractDocumentBlocks(content)) {
-    if (block.kind === 'text') result.push(...block.segments)
+  const collect = (blocks: DocumentBlock[]) => {
+    for (const block of blocks) {
+      if (block.kind === 'text') result.push(...block.segments)
+      else if (block.kind === 'columns') for (const column of block.columns) collect(column.blocks)
+      else if (block.kind === 'box') collect(block.blocks)
+    }
   }
+  collect(extractDocumentBlocks(content))
   return result
 }

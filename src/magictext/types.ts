@@ -91,13 +91,17 @@ export type DocumentBlock =
       headingLevel?: number
       textAlign?: string
       marginLeft?: number
-      /** The real space above the block in px (e.g. from a PDF); replaces its margins. */
-      spaceBefore?: number
       lineHeight?: number
+      /** Its PDF layout attrs (spaceBefore): see PdfPositionExtension. */
+      layout?: Record<string, unknown>
       segments: TTSSegment[]
     }
-  | { kind: 'image'; src: string; alt: string | null; title: string | null; width?: number; spaceBefore?: number }
-  | { kind: 'rule'; spaceBefore?: number }
+  | { kind: 'image'; src: string; alt: string | null; title: string | null; width?: number; marginLeft?: number; layout?: Record<string, unknown> }
+  | { kind: 'rule'; layout?: Record<string, unknown> }
+  /** Columns side by side (see ColumnsExtension): each one's blocks, in reading order. */
+  | { kind: 'columns'; layout?: Record<string, unknown>; columns: { width?: number; blocks: DocumentBlock[] }[] }
+  /** A colored box around blocks (see BoxExtension). */
+  | { kind: 'box'; layout?: Record<string, unknown>; box: Record<string, unknown>; blocks: DocumentBlock[] }
 
 // ── MagicTextEditor props ─────────────────────────────────────────────────────
 

@@ -43,5 +43,32 @@ describe('TTSSpellReader', () => {
     // The break stands where the source has it: right after "Procedimiento".
     expect(p.innerHTML).toMatch(/Procedimiento<br>Folio: 39/);
   });
+
+  it('draws columns side by side, numbering their sentences column by column', () => {
+    const columns = {
+      type: 'columns',
+      content: [
+        { type: 'column', attrs: { width: 200 }, content: [paragraph({}, text('Left one.')), paragraph({}, text('Left two.'))] },
+        { type: 'column', attrs: {}, content: [paragraph({}, text('Right one.'))] },
+      ],
+    };
+    const { container } = render(<TTSSpellReader content={doc(paragraph({}, text('Before.')), columns)} currentSentenceIndex={-1} />);
+    const sentences = Array.from(container.querySelectorAll<HTMLElement>('[data-sentence-index]'))
+      .map(el => [el.dataset.sentenceIndex, el.textContent?.trim()]);
+    expect(sentences).toEqual([['0', 'Before.'], ['1', 'Left one.'], ['2', 'Left two.'], ['3', 'Right one.']]);
+    const [first, second] = Array.from(container.querySelectorAll<HTMLElement>('[class*="column"]')).filter(el => !el.className.includes('columns'));
+    expect(first.style.width).toBe('200px');
+    expect(second.style.flex).toContain('1');
+  });
+
+  it('draws a colored box around its blocks, keeping their sentences in order', () => {
+    const box = { type: 'box', attrs: { background: '#e9e9e9', width: 300 }, content: [paragraph({}, text('Inside.'))] };
+    const { container } = render(<TTSSpellReader content={doc(box, paragraph({}, text('After.')))} currentSentenceIndex={-1} />);
+    const wrapper = container.firstElementChild as HTMLElement;
+    expect(wrapper.style.width).toBe('300px');
+    expect(wrapper.textContent).toContain('Inside.');
+    const indices = Array.from(container.querySelectorAll<HTMLElement>('[data-sentence-index]')).map(el => el.dataset.sentenceIndex);
+    expect(indices).toEqual(['0', '1']);
+  });
 });
 

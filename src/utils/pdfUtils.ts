@@ -466,32 +466,33 @@ export const extractPdfPages = async (
 
     const allLineHeights = lines.map(l => l.height).filter(h => h > 0);
     const avgLineHeight = allLineHeights.reduce((sum, h) => sum + h, 0) / (allLineHeights.length || 1);
-    const paragraphs: { lines: PdfLine[]; yTop: number }[] = [];
 
-    if (lines.length > 0) {
-      let currentParagraph: PdfLine[] = [];
-      if (lines[0].items.length > 0) currentParagraph.push(lines[0]);
-      for (let j = 1; j < lines.length; j++) {
-        const prevLine = lines[j - 1];
-        const currLine = lines[j];
-        const yDiff = prevLine.y - currLine.y;
-        const capH = avgLineHeight * 3;
-        // Use min of adjacent heights so a large heading followed by smaller text still
-        // splits correctly (the old max-based formula required gap > 1.5× the LARGER height,
-        // which was too big when crossing size boundaries like title → subtitle).
-        const threshold = Math.max(Math.min(prevLine.height, currLine.height, capH), avgLineHeight) * 1.5;
-        if (yDiff > threshold) {
-          // The gap itself isn't kept as empty lines: each block carries the real space before
-          // it (spaceBefore, below), so it renders the same whatever the editor's line height.
-          if (currentParagraph.length > 0) paragraphs.push({ lines: currentParagraph, yTop: currentParagraph[0].y });
-          currentParagraph = [];
-          if (currLine.items.length > 0) currentParagraph.push(currLine);
-        } else {
-          if (currLine.items.length > 0) currentParagraph.push(currLine);
+    // Lines into paragraphs: a new one wherever the gap to the previous line is clearly more
+    // than a line's. The gap itself isn't kept as empty lines: each block carries the real
+    // space before it (spaceBefore, below), so it renders the same whatever the line height.
+    const groupParagraphs = (source: PdfLine[]): { lines: PdfLine[]; yTop: number }[] => {
+      const groups: { lines: PdfLine[]; yTop: number }[] = [];
+      let current: PdfLine[] = [];
+      for (let j = 0; j < source.length; j++) {
+        const line = source[j];
+        if (j > 0) {
+          const prevLine = source[j - 1];
+          const yDiff = prevLine.y - line.y;
+          const capH = avgLineHeight * 3;
+          // Use min of adjacent heights so a large heading followed by smaller text still
+          // splits correctly (a max-based threshold is too big across size boundaries like
+          // title → subtitle).
+          const threshold = Math.max(Math.min(prevLine.height, line.height, capH), avgLineHeight) * 1.5;
+          if (yDiff > threshold && current.length > 0) {
+            groups.push({ lines: current, yTop: current[0].y });
+            current = [];
+          }
         }
+        if (line.items.length > 0) current.push(line);
       }
-      if (currentParagraph.length > 0) paragraphs.push({ lines: currentParagraph, yTop: currentParagraph[0].y });
-    }
+      if (current.length > 0) groups.push({ lines: current, yTop: current[0].y });
+      return groups;
+    };
 
     const visibleLineItems = lines.flatMap(l => l.items.filter(i => i.str.trim().length > 0));
     const leftmostX = visibleLineItems.length > 0 ? Math.min(...visibleLineItems.map(i => i.transform[4])) : 0;
@@ -536,16 +537,48 @@ export const extractPdfPages = async (
 
     const pageAttrs = { ...pageDims, marginLeft, marginRight, marginTop, marginBottom };
 
-    // Build content items with their extent on the page (PDF units, y up): sorted by their
-    // top, and each text block given the real space between it and what comes before.
-    type Item = { yPdf: number; bottom: number; node: JSONContent };
-    const contentItems: Item[] = [];
+    // XObject images, with their place on the page from the operator list.
+    const opList = await page.getOperatorList();
+    const pageImages = await extractPageImages(page);
+    const imagePlaces = extractImageYPositions(opList, pageImages.length, pageViewport.height);
+
     // A text line's box as CSS lays it out at line height `lh`: ~80% of the font above the
     // baseline, ~20% below, plus half the extra leading on each side.
     const fontOf = (line: PdfLine) => line.height || avgLineHeight;
     const lineTop = (line: PdfLine, lh: number) => line.y + fontOf(line) * (0.8 + (lh - 1) / 2);
     const lineBottom = (line: PdfLine, lh: number) => line.y - fontOf(line) * (0.2 + (lh - 1) / 2);
     const toPx = (pt: number) => Math.round(pt * xScale * 10) / 10;
+
+    // ── Side by side: bands of the page laid out in two columns ──
+    // A band is a run of lines and images close together vertically with an empty vertical
+    // gutter between content on both sides (a form's two columns, a title with a logo or a
+    // QR beside it). Each side is then read as its own column, the left one first.
+    const bands = detectColumnBands(lines, imagePlaces, { avgLineHeight, fontOf, leftmostX, rightmostExtent });
+    const bandOfLine = new Map<PdfLine, { band: number; side: 0 | 1 }>();
+    const sideLines: PdfLine[][][] = bands.map(() => [[], []]);
+    bands.forEach((band, b) => {
+      for (const line of band.lines) {
+        const left = line.items.filter(i => i.transform[4] + i.width / 2 < band.gutter);
+        const right = line.items.filter(i => i.transform[4] + i.width / 2 >= band.gutter);
+        for (const [side, items] of [[0, left], [1, right]] as const) {
+          if (items.length === 0) continue;
+          const part: PdfLine = { items, y: line.y, height: items.reduce((m, i) => Math.max(m, i.height), 0), x: items[0].transform[4] };
+          sideLines[b][side].push(part);
+          bandOfLine.set(part, { band: b, side });
+        }
+        bandOfLine.set(line, { band: b, side: 0 });
+      }
+    });
+    const bandLines = new Set(bands.flatMap(b => b.lines));
+    const paragraphs = [
+      ...groupParagraphs(lines.filter(l => !bandLines.has(l))).map(p => ({ ...p, place: null as { band: number; side: 0 | 1 } | null })),
+      ...sideLines.flatMap((sides, b) => sides.flatMap((sl, side) => groupParagraphs(sl).map(p => ({ ...p, place: { band: b, side: side as 0 | 1 } })))),
+    ];
+
+    // Build content items with their extent on the page (PDF units, y up): sorted by their
+    // top, and each text block given the real space between it and what comes before.
+    type Item = { yPdf: number; bottom: number; node: JSONContent; place: { band: number; side: 0 | 1 } | null };
+    const contentItems: Item[] = [];
 
     // Paragraph items (skip those whose Y falls within a graphic region — they'll appear in the rendered image)
     for (const p of paragraphs) {
@@ -555,15 +588,19 @@ export const extractPdfPages = async (
       if (p.lines.length === 0) continue;
 
       const paragraphX = p.lines[0]?.x ?? leftmostX;
-      const pMarginLeft = Math.max(0, Math.round((paragraphX - leftmostX) * xScale));
+      // From the text's left edge -- or, in a right column, from where that column starts.
+      const indentFrom = p.place?.side === 1 ? bands[p.place.band].gutter : leftmostX;
+      const pMarginLeft = Math.max(0, Math.round((paragraphX - indentFrom) * xScale));
 
       // Detect text alignment from X coordinates of the first line.
       // Use the text block's own center/width as reference so that full-width lines
       // (whose center naturally falls near the page center) are NOT flagged as centered.
+      // Not inside a column: there the block keeps its real indent, as the page's text area
+      // says nothing about where a column's lines sit.
       const firstLine = p.lines[0];
       let textAlign: 'center' | 'right' | undefined;
       const visibleFirstLineItems = firstLine?.items.filter(i => i.str.trim().length > 0) ?? [];
-      if (visibleFirstLineItems.length > 0) {
+      if (visibleFirstLineItems.length > 0 && !p.place) {
         const lineStartX = visibleFirstLineItems[0].transform[4];
         const lineEndX = Math.max(...visibleFirstLineItems.map(i => i.transform[4] + i.width));
         const lineWidth = lineEndX - lineStartX;
@@ -651,51 +688,127 @@ export const extractPdfPages = async (
         yPdf: lineTop(p.lines[0], lineHeight),
         bottom: lineBottom(lastLine, lineHeight),
         node: { type: nodeType, attrs, content: contentNodes },
+        place: p.place,
       });
     }
 
     // Horizontal rule items
     for (const y of horizontalRules) {
-      contentItems.push({ yPdf: y, bottom: y, node: { type: 'horizontalRule' } });
+      contentItems.push({ yPdf: y, bottom: y, node: { type: 'horizontalRule' }, place: null });
     }
 
     for (const region of topLevelRegions) {
       const src = cropCanvasRegion(pageCanvas, pageViewport, xScale, region.yMin, region.yMax, textRgb);
-      if (src) contentItems.push({ yPdf: region.yMax, bottom: region.yMin, node: { type: 'image', attrs: { src, alt: null, title: 'pdf-graphic' } } });
+      if (src) contentItems.push({ yPdf: region.yMax, bottom: region.yMin, node: { type: 'image', attrs: { src, alt: null, title: 'pdf-graphic' } }, place: null });
     }
 
-    // XObject images — try to get approximate Y from operator list, fallback to bottomY
-    const opList = await page.getOperatorList();
-    const pageImages = await extractPageImages(page);
-    const imagePlaces = extractImageYPositions(opList, pageImages.length, pageViewport.height);
     for (let i = 0; i < pageImages.length; i++) {
       const place = imagePlaces[i];
       const y = place?.y ?? bottomY - 1;
+      const bandIndex = place ? bands.findIndex(b => b.images.includes(i)) : -1;
+      const side: 0 | 1 = bandIndex >= 0 && place!.x + place!.width / 2 >= bands[bandIndex].gutter ? 1 : 0;
+      const imageAttrs: Record<string, unknown> = { src: pageImages[i], alt: null, title: null };
+      // As wide as it's drawn on the page, not its own pixel size, and as far in (in a right
+      // column, from where it starts).
+      if (place?.width) imageAttrs.width = Math.round(place.width * xScale);
+      const imageIndentFrom = bandIndex >= 0 && side === 1 ? bands[bandIndex].gutter : leftmostX;
+      if (place && place.x - imageIndentFrom > 2) imageAttrs.marginLeft = Math.round((place.x - imageIndentFrom) * xScale);
       contentItems.push({
         yPdf: y + (place?.height ?? 0),
         bottom: y,
-        // As wide as it's drawn on the page, not its own pixel size.
-        node: { type: 'image', attrs: { src: pageImages[i], alt: null, title: null, ...(place?.width ? { width: Math.round(place.width * xScale) } : {}) } },
+        node: { type: 'image', attrs: imageAttrs },
+        place: bandIndex >= 0 ? { band: bandIndex, side } : null,
       });
     }
 
-    // Sort by Y descending (top → bottom of page)
-    contentItems.sort((a, b) => b.yPdf - a.yPdf);
+    // A band's items become one columns node at the band's top: each column's blocks in
+    // their own order, the left column first.
+    type Block = { yPdf: number; bottom: number; node: JSONContent };
+    const byTop = (a: { yPdf: number }, b: { yPdf: number }) => b.yPdf - a.yPdf;
+    // Each block's real space before it: from the bottom of what's above it to its top (none
+    // for things drawn side by side, which the flow stacks).
+    const spaced = (items: Block[], from: number | null) => {
+      let above = from;
+      for (const item of items) {
+        const gap = above === null ? 0 : Math.max(0, above - item.yPdf);
+        item.node.attrs = { ...(item.node.attrs ?? {}), spaceBefore: Math.round(gap * xScale) };
+        above = item.bottom;
+      }
+      return items.map(i => i.node);
+    };
+    const flow: Block[] = contentItems.filter(i => !i.place);
+    bands.forEach((band, b) => {
+      const columns = [0, 1].map(side => contentItems.filter(i => i.place?.band === b && i.place.side === side).sort(byTop));
+      if (columns.some(c => c.length === 0)) {
+        // Nothing left on one side (e.g. its text was part of a graphic): just blocks.
+        flow.push(...columns.flat().map(i => ({ ...i, place: null })));
+        return;
+      }
+      const top = Math.max(...columns.flat().map(i => i.yPdf));
+      const bottom = Math.min(...columns.flat().map(i => i.bottom));
+      flow.push({
+        yPdf: top,
+        bottom,
+        node: {
+          type: 'columns',
+          content: columns.map((items, side) => ({
+            type: 'column',
+            // The first column as wide as up to the gutter's middle; the other takes the rest.
+            attrs: side === 0 ? { width: Math.round((band.gutter - leftmostX) * xScale) } : {},
+            content: spaced(items, top),
+          })),
+        },
+      });
+    });
+    flow.sort(byTop);
 
-    // Each block's real space before it: from the bottom of what's above to its top (none
-    // for things drawn side by side, which the flow stacks). The page's top margin reaches
-    // the first one.
-    let flowBottom: number | null = null;
-    for (const item of contentItems) {
-      const gap = flowBottom === null ? 0 : Math.max(0, flowBottom - item.yPdf);
-      item.node.attrs = { ...(item.node.attrs ?? {}), spaceBefore: Math.round(gap * xScale) };
-      flowBottom = item.bottom;
+    // Blocks drawn inside a colored box (see extractFillRects) go into one box node of its
+    // color, as wide and as far in as the box, its padding the space between the box's
+    // edges and its blocks.
+    // Only boxes spanning a good part of the text's width: small colored shapes (a logo's
+    // pieces) aren't boxes around text.
+    const fillRects = extractFillRects(opList, pageViewport).filter(r => r.width >= (rightmostExtent - leftmostX) * 0.3);
+    const boxed: Block[] = [];
+    for (let i = 0; i < flow.length; i++) {
+      const item = flow[i];
+      const isText = item.node.type === 'paragraph' || item.node.type === 'heading';
+      const inside = (b: Block, r: FillRect) => b.yPdf <= r.y + r.height + 2 && b.bottom >= r.y - 2;
+      const rect = isText ? fillRects.find(r => inside(item, r)) : undefined;
+      if (!rect) { boxed.push(item); continue; }
+      const run: Block[] = [item];
+      while (i + 1 < flow.length && ['paragraph', 'heading'].includes(flow[i + 1].node.type ?? '') && inside(flow[i + 1], rect)) run.push(flow[++i]);
+      const top = rect.y + rect.height;
+      const offset = Math.max(0, rect.x - leftmostX);
+      // The blocks' indents are from the text's left edge: inside the box, from its own.
+      for (const b of run) {
+        const ml = b.node.attrs?.marginLeft;
+        if (typeof ml === 'number') b.node.attrs = { ...b.node.attrs, marginLeft: Math.max(0, Math.round(ml - offset * xScale)) || null };
+      }
+      boxed.push({
+        yPdf: top,
+        bottom: rect.y,
+        node: {
+          type: 'box',
+          attrs: {
+            background: rect.color,
+            ...(offset > 1 ? { marginLeft: Math.round(offset * xScale) } : {}),
+            width: Math.round(rect.width * xScale),
+            paddingBottom: Math.max(0, Math.round((run[run.length - 1].bottom - rect.y) * xScale)),
+          },
+          content: spaced(run, top),
+        },
+      });
     }
-    if (contentItems.length > 0) {
-      pageAttrs.marginTop = Math.max(0, Math.round((pageViewport.height - contentItems[0].yPdf) * xScale));
+    flow.length = 0;
+    flow.push(...boxed);
+
+    const contentTop = flow.length > 0 ? flow[0].yPdf : 0;
+    const blocks = spaced(flow, null);
+    if (flow.length > 0) {
+      pageAttrs.marginTop = Math.max(0, Math.round((pageViewport.height - contentTop) * xScale));
     }
 
-    const pageContent: JSONContent = { type: 'doc', attrs: pageAttrs, content: contentItems.map(i => i.node) };
+    const pageContent: JSONContent = { type: 'doc', attrs: pageAttrs, content: blocks };
     const finalContent = pageContent.content!.length > 0 ? pageContent : { ...emptyPageContent, attrs: pageAttrs };
     allPagesContent.push(finalContent);
     onPageExtracted?.(pageNum, finalContent);
@@ -710,6 +823,142 @@ export const extractPdfPages = async (
 // transform composed with every one set since, scoped by save/restore -- so that whole
 // transform is tracked, not just the last one set.
 type Matrix = [number, number, number, number, number, number];
+type ImagePlace = { x: number; y: number; height: number; width: number };
+
+export interface FillRect {
+  // Its extent (PDF units, y up) and fill color (#rrggbb).
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  color: string;
+}
+
+// The colored boxes painted behind the text (a grey details box, a colored footer band):
+// filled paths under the whole current transform, big enough to hold a line of text and
+// neither white nor the size of the page (the page's own background).
+export const extractFillRects = (
+  opList: { fnArray: number[]; argsArray: unknown[][] },
+  page: { width: number; height: number },
+): FillRect[] => {
+  const ops = pdfjsLib.OPS as Record<string, number>;
+  const fills = new Set([ops.fill, ops.eoFill, ops.fillStroke, ops.eoFillStroke].filter(v => v !== undefined));
+  if (ops.constructPath === undefined || fills.size === 0) return [];
+  const rects: FillRect[] = [];
+  let ctm: Matrix = [1, 0, 0, 1, 0, 0];
+  let color = '#000000';
+  const stack: [Matrix, string][] = [];
+  for (let i = 0; i < opList.fnArray.length; i++) {
+    const fn = opList.fnArray[i];
+    const args = opList.argsArray[i] as unknown[];
+    if (fn === ops.save) stack.push([ctm, color]);
+    else if (fn === ops.restore) [ctm, color] = stack.pop() ?? [ctm, color];
+    else if (fn === ops.transform) ctm = multiply(ctm, (args as number[]).slice(0, 6) as Matrix);
+    else if (fn === ops.setFillRGBColor && typeof args[0] === 'string') color = (args[0] as string).toLowerCase();
+    else if (fn === ops.constructPath && fills.has(args[0] as number) && args[2]) {
+      // [paint op, path data, bounding box in the path's own space]
+      const box = args[2] as ArrayLike<number>;
+      const corners = [[box[0], box[1]], [box[2], box[1]], [box[0], box[3]], [box[2], box[3]]]
+        .map(([x, y]) => [ctm[0] * x + ctm[2] * y + ctm[4], ctm[1] * x + ctm[3] * y + ctm[5]]);
+      const xs = corners.map(c => c[0]), ys = corners.map(c => c[1]);
+      rects.push({ x: Math.min(...xs), y: Math.min(...ys), width: Math.max(...xs) - Math.min(...xs), height: Math.max(...ys) - Math.min(...ys), color });
+    }
+  }
+  const nearWhite = (hex: string) => {
+    const [r, g, b] = [1, 3, 5].map(o => parseInt(hex.slice(o, o + 2), 16));
+    return r > 248 && g > 248 && b > 248;
+  };
+  return rects.filter(r =>
+    r.width >= 40 && r.height >= 10 && /^#[0-9a-f]{6}$/.test(r.color) && !nearWhite(r.color)
+    && r.width * r.height < page.width * page.height * 0.6);
+};
+
+export interface ColumnBand {
+  // Its vertical extent (PDF units, y up) and where its columns split.
+  top: number;
+  bottom: number;
+  gutter: number;
+  lines: PdfLine[];
+  // Indices of the images drawn in it.
+  images: number[];
+}
+
+// Runs of lines and images close together vertically with an empty vertical gutter between
+// content on both of its sides: parts of the page laid out in two columns (a form's two
+// columns of fields, a title with a QR beside it). The widest gutter wins; a band needs at
+// least two pieces, content on each side, and nothing crossing the gutter.
+export const detectColumnBands = (
+  lines: PdfLine[],
+  images: ImagePlace[],
+  { avgLineHeight, fontOf, leftmostX, rightmostExtent }: {
+    avgLineHeight: number; fontOf: (line: PdfLine) => number; leftmostX: number; rightmostExtent: number;
+  },
+): ColumnBand[] => {
+  type Atom = { top: number; bottom: number; intervals: [number, number][]; line?: PdfLine; image?: number };
+  const atoms: Atom[] = [];
+  for (const line of lines) {
+    const visible = line.items.filter(i => i.str.trim().length > 0);
+    if (visible.length === 0) continue;
+    const font = fontOf(line);
+    // A line's pieces, merged where they're closer than a couple of characters.
+    const intervals: [number, number][] = [];
+    for (const item of [...visible].sort((a, b) => a.transform[4] - b.transform[4])) {
+      const x0 = item.transform[4], x1 = x0 + item.width;
+      const last = intervals[intervals.length - 1];
+      if (last && x0 - last[1] < font * 2) last[1] = Math.max(last[1], x1);
+      else intervals.push([x0, x1]);
+    }
+    atoms.push({ top: line.y + font * 0.8, bottom: line.y - font * 0.2, intervals, line });
+  }
+  images.forEach((img, i) => {
+    if (img.width > 0 && img.height > 0) atoms.push({ top: img.y + img.height, bottom: img.y, intervals: [[img.x, img.x + img.width]], image: i });
+  });
+  atoms.sort((a, b) => b.top - a.top);
+
+  const minGutter = Math.max(avgLineHeight * 3, 24);
+  // More than a line and a half apart: a new part of the page.
+  const maxGap = avgLineHeight * 1.5;
+  const widestGutter = (run: Atom[]): [number, number] | null => {
+    const spans = run.flatMap(a => a.intervals).map(([a, b]) => [Math.max(a, leftmostX), Math.min(b, rightmostExtent)] as [number, number]);
+    spans.sort((a, b) => a[0] - b[0]);
+    let best: [number, number] | null = null;
+    let reach = spans[0]?.[1] ?? 0;
+    for (let i = 1; i < spans.length; i++) {
+      if (spans[i][0] - reach >= minGutter && (!best || spans[i][0] - reach > best[1] - best[0])) best = [reach, spans[i][0]];
+      reach = Math.max(reach, spans[i][1]);
+    }
+    return best;
+  };
+
+  const bands: ColumnBand[] = [];
+  let start = 0;
+  while (start < atoms.length) {
+    let end = -1;
+    let gutter: [number, number] | null = null;
+    let lowest = atoms[start].bottom;
+    for (let j = start + 1; j < atoms.length; j++) {
+      if (atoms[j].top < lowest - maxGap) break;
+      const g = widestGutter(atoms.slice(start, j + 1));
+      // A gutter shrinking to less than half: what's added is laid out differently.
+      const narrowed = g && gutter && g[1] - g[0] < (gutter[1] - gutter[0]) / 2;
+      if (g && !narrowed) { end = j; gutter = g; }
+      else if (end >= 0) break;
+      lowest = Math.min(lowest, atoms[j].bottom);
+    }
+    if (end < 0 || !gutter) { start++; continue; }
+    const run = atoms.slice(start, end + 1);
+    const mid = (gutter[0] + gutter[1]) / 2;
+    bands.push({
+      top: Math.max(...run.map(a => a.top)),
+      bottom: Math.min(...run.map(a => a.bottom)),
+      gutter: mid,
+      lines: run.flatMap(a => (a.line ? [a.line] : [])),
+      images: run.flatMap(a => (a.image !== undefined ? [a.image] : [])),
+    });
+    start = end + 1;
+  }
+  return bands;
+};
 const multiply = (m: Matrix, t: Matrix): Matrix => [
   m[0] * t[0] + m[2] * t[1],
   m[1] * t[0] + m[3] * t[1],
@@ -723,11 +972,11 @@ const extractImageYPositions = (
   opList: { fnArray: number[]; argsArray: unknown[][] },
   count: number,
   pageHeight: number,
-): { y: number; height: number; width: number }[] => {
-  const places: { y: number; height: number; width: number }[] = [];
+): ImagePlace[] => {
+  const places: ImagePlace[] = [];
   const ops = pdfjsLib.OPS as Record<string, number>;
   const { paintImageXObject: paintOp, transform: transformOp, save: saveOp, restore: restoreOp } = ops;
-  if (!paintOp) return Array(count).fill({ y: 0, height: 0, width: 0 });
+  if (!paintOp) return Array(count).fill({ x: 0, y: 0, height: 0, width: 0 });
 
   let ctm: Matrix = [1, 0, 0, 1, 0, 0];
   const stack: Matrix[] = [];
@@ -743,6 +992,7 @@ const extractImageYPositions = (
       const ys = [ctm[5], ctm[3] + ctm[5], ctm[1] + ctm[5], ctm[1] + ctm[3] + ctm[5]];
       const xs = [ctm[4], ctm[2] + ctm[4], ctm[0] + ctm[4], ctm[0] + ctm[2] + ctm[4]];
       places.push({
+        x: Math.min(...xs),
         y: Math.min(...ys),
         height: Math.max(...ys) - Math.min(...ys),
         width: Math.max(...xs) - Math.min(...xs),
@@ -750,6 +1000,6 @@ const extractImageYPositions = (
     }
   }
   // Fill any remaining with fallback
-  while (places.length < count) places.push({ y: pageHeight / 2, height: 0, width: 0 });
+  while (places.length < count) places.push({ x: 0, y: pageHeight / 2, height: 0, width: 0 });
   return places;
 };

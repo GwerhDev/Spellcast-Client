@@ -97,4 +97,27 @@ describe('SpellProcessor', () => {
     await waitFor(() => expect(store.getState().spellReader.sentences).toEqual(['b one.']));
     expect(store.getState().spellReader.isLoaded).toBe(true);
   });
+
+  // A page's columns (see ColumnsExtension) are read in order: the first column, then the next.
+  it('reads the sentences inside a page\'s columns, column by column', async () => {
+    const para = (text: string) => ({ type: 'paragraph', content: [{ type: 'text', text }] });
+    const columnsPage = {
+      type: 'doc',
+      content: [
+        para('Before.'),
+        { type: 'columns', content: [
+          { type: 'column', content: [para('Left one.'), para('Left two.')] },
+          { type: 'column', content: [para('Right one.')] },
+        ] },
+        para('After.'),
+      ],
+    };
+    mockGetSpellById.mockImplementation(async (id: string) => ({ id, title: id, pagesContent: JSON.stringify([columnsPage]) }));
+    const store = makeStore();
+    store.dispatch(setSpellFile({ id: 'cols', title: 'cols' }));
+    renderWithProviders(<SpellProcessor />, { store });
+    await waitFor(() => expect(store.getState().spellReader.isLoaded).toBe(true));
+    expect(store.getState().spellReader.sentences).toEqual(['Before.', 'Left one.', 'Left two.', 'Right one.', 'After.']);
+  });
 });
+

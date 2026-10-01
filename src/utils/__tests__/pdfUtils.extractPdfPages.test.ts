@@ -248,7 +248,8 @@ describe('extractPdfPages', () => {
 
   // The text keeps its proportion to the page, and its place on it.
   describe('layout read from the page', () => {
-    const textOf = (node: { content?: { text?: string }[] } | undefined) => (node?.content ?? []).map((c) => c.text ?? '').join('');
+    const textOf = (node: { content?: { type?: string; text?: string }[] } | undefined) =>
+      (node?.content ?? []).map((c) => (c.type === 'hardBreak' ? ' ' : c.text ?? '')).join('');
 
     it('gives each text its own size, in the same px as the page (pt * 96/72)', async () => {
       const items = [mkTextItem('Small print', 50, 380, { height: 9 }), mkTextItem('Big title', 50, 300, { height: 18 })];
@@ -319,6 +320,30 @@ describe('extractPdfPages', () => {
       })]) as never);
       const image = page.content?.find((n) => n.type === 'image' && (n.attrs as { title?: string })?.title === null);
       expect(image?.attrs?.width).toBe(Math.round(60 * (96 / 72)));
+    });
+
+    it('lays two columns of fields side by side, the left one read first', async () => {
+      const rows = ['Name', 'Age', 'City'];
+      const items = rows.flatMap((label, i) => [
+        mkTextItem(`${label}: left`, 50, 380 - i * 14, { width: 60 }),
+        mkTextItem(`${label}: right`, 180, 380 - i * 14, { width: 60 }),
+      ]);
+      const [page] = await extractPdfPages(mkPdf([mkPage({ items })]) as never);
+      const columns = page.content!.find((n) => n.type === 'columns');
+      expect(columns?.content).toHaveLength(2);
+      const colText = (c: number) => (columns!.content![c].content ?? []).map((n) => textOf(n as never)).join(' | ');
+      expect(colText(0)).toBe('Name: left Age: left City: left');
+      expect(colText(1)).toBe('Name: right Age: right City: right');
+    });
+
+    it('leaves ordinary full-width text alone', async () => {
+      const items = [
+        mkTextItem('A full width line of body text right here', 50, 380, { width: 230 }),
+        mkTextItem('Another one just as wide as the first one', 50, 366, { width: 230 }),
+        mkTextItem('Short last line', 50, 352, { width: 70 }),
+      ];
+      const [page] = await extractPdfPages(mkPdf([mkPage({ items })]) as never);
+      expect(page.content!.some((n) => n.type === 'columns')).toBe(false);
     });
   });
 });

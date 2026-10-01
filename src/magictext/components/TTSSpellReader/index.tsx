@@ -4,6 +4,8 @@ import type { CSSProperties, JSX, ReactNode } from 'react'
 import type { JSONContent } from '@tiptap/core'
 import type { DocumentBlock, TextRun } from '../../types'
 import { extractDocumentBlocks } from '../../utils/extractTTSSegments'
+import { pdfLayoutStyle } from '../../extensions/PdfPositionExtension'
+import { boxStyle } from '../../extensions/BoxExtension'
 
 interface Props {
   content: JSONContent | null | undefined
@@ -25,9 +27,15 @@ function renderRuns(runs: TextRun[] | undefined, fallback: string): ReactNode {
   })
 }
 
-/** A block's real space above it (e.g. from a PDF), in place of its own margins. */
-const spacing = (spaceBefore?: number): CSSProperties =>
-  spaceBefore === undefined ? {} : { marginTop: `${spaceBefore}px`, marginBottom: 0 }
+/** A block's PDF layout (its space above it: see PdfPositionExtension), as React styles. */
+const layout = (attrs?: Record<string, unknown>): CSSProperties => (attrs ? toReactStyle(pdfLayoutStyle(attrs)) : {})
+
+/** CSS property names to React's. */
+const toReactStyle = (css: Record<string, string>): CSSProperties => {
+  return Object.fromEntries(
+    Object.entries(css).map(([k, v]) => [k.replace(/-([a-z])/g, (_, c: string) => c.toUpperCase()), v]),
+  ) as CSSProperties
+}
 
 /**
  * Read-only document renderer that reproduces the editor's output (paragraphs,
@@ -50,7 +58,7 @@ export function TTSSpellReader({ content, currentSentenceIndex, onSentenceClick 
       ...(block.textAlign ? { textAlign: block.textAlign as CSSProperties['textAlign'] } : {}),
       ...(block.marginLeft ? { marginLeft: `${block.marginLeft}px` } : {}),
       ...(block.lineHeight ? { lineHeight: block.lineHeight } : {}),
-      ...spacing(block.spaceBefore),
+      ...layout(block.layout),
     }
 
     // Empty block — render a spacer line so vertical rhythm matches the editor.
@@ -87,24 +95,52 @@ export function TTSSpellReader({ content, currentSentenceIndex, onSentenceClick 
     return <Tag key={key} className={s.block} style={style}>{nodes}</Tag>
   }
 
-  return (
-    <>
-      {blocks.map((block, i) => {
-        if (block.kind === 'image') {
-          return (
-            <img
-              key={`img-${i}`}
-              className={s.image}
-              src={block.src}
-              alt={block.alt ?? ''}
-              title={block.title ?? undefined}
-              style={{ ...(block.width ? { width: `${block.width}px` } : {}), ...spacing(block.spaceBefore) }}
-            />
-          )
-        }
-        if (block.kind === 'rule') return <hr key={`hr-${i}`} className={s.rule} style={spacing(block.spaceBefore)} />
-        return renderText(block, `b-${i}`)
-      })}
-    </>
-  )
+  const renderBlocks = (list: DocumentBlock[], prefix: string): ReactNode[] => list.map((block, i) => {
+    const key = `${prefix}${i}`
+    if (block.kind === 'image') {
+      return (
+        <img
+          key={`img-${key}`}
+          className={s.image}
+          src={block.src}
+          alt={block.alt ?? ''}
+          title={block.title ?? undefined}
+          style={{
+            ...(block.width ? { width: `${block.width}px` } : {}),
+            ...(block.marginLeft ? { marginLeft: `${block.marginLeft}px` } : {}),
+            ...layout(block.layout),
+          }}
+        />
+      )
+    }
+    if (block.kind === 'rule') return <hr key={`hr-${key}`} className={s.rule} style={layout(block.layout)} />
+    if (block.kind === 'box') {
+      // A colored box, as on the page (the editor's is BoxExtension's).
+      return (
+        <div key={`box-${key}`} style={{ ...toReactStyle(boxStyle(block.box)), ...layout(block.layout) }}>
+          {renderBlocks(block.blocks, `${key}-`)}
+        </div>
+      )
+    }
+    if (block.kind === 'columns') {
+      // Side by side, as on the page: the first column at its width, the last one taking
+      // what's left (the editor's columns, see ColumnsExtension).
+      return (
+        <div key={`cols-${key}`} className={s.columns} style={layout(block.layout)}>
+          {block.columns.map((column, c) => (
+            <div
+              key={c}
+              className={s.column}
+              style={column.width ? { flex: `0 0 ${column.width}px`, width: `${column.width}px` } : { flex: '1 1 0' }}
+            >
+              {renderBlocks(column.blocks, `${key}-${c}-`)}
+            </div>
+          ))}
+        </div>
+      )
+    }
+    return renderText(block, `b-${key}`)
+  })
+
+  return <>{renderBlocks(blocks, '')}</>
 }

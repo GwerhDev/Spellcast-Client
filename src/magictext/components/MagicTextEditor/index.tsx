@@ -17,6 +17,8 @@ import { Toolbar } from '../Toolbar/Toolbar'
 import { VariableExtension } from '../../extensions/VariableExtension'
 import { TTSMarkExtension } from '../../extensions/TTSMarkExtension'
 import { PdfPositionExtension } from '../../extensions/PdfPositionExtension'
+import { Columns, Column } from '../../extensions/ColumnsExtension'
+import { Box } from '../../extensions/BoxExtension'
 import { RulerExtension, DEFAULT_MARGINS } from '../../extensions/RulerExtension'
 import type { PageMargins } from '../../extensions/RulerExtension'
 import { HorizontalRuler } from '../Ruler/HorizontalRuler'
@@ -115,6 +117,9 @@ export function MagicTextEditor({
       }),
       Image.configure({ allowBase64: true }),
       PdfPositionExtension,
+      Columns,
+      Column,
+      Box,
       TextStyle,
       // Each text's own size (e.g. read from a PDF: see PdfPositionExtension for the blocks).
       FontSize,
