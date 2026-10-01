@@ -523,6 +523,7 @@ export const en = {
     castSpell: 'Cast a Spell',
     writeTab: 'Write',
     importTab: 'Import',
+    spellInfo: 'Info',
     readSubtitle: 'Drag a spell to start reading it',
     readDropHint: 'Click to show options or drag a spell here to start reading it.',
     readDropRelease: 'Drop it to start reading',

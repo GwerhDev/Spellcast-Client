@@ -4,7 +4,7 @@ import { AltarBrandIcon, AltarCornerButton, AltarHint, AltarNowReading, AltarSen
 import { activeSentenceIndex } from '../../../../utils/activeSentence';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { faBookOpenReader, faEject, faFeatherPointed, faPen, faTrash, faUpload, faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons';
+import { faBookOpenReader, faEject, faFeatherPointed, faPen, faScroll, faTrash, faUpload, faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons';
 import { useNavigate } from 'react-router-dom';
 import { RadialMenu, type RadialMenuItem } from '../../../components/RadialMenu/RadialMenu';
 import { DeleteConfirmModal } from '../../../components/Modals/DeleteConfirmModal';
@@ -232,12 +232,13 @@ export const Altar = ({ onWrite, onImport, immersive = false, idle = false }: Al
   };
 
   // Immersive, the loaded spell's actions ring the center like the Spellcast button's menu
-  // does -- above it, clear of the sentence below -- instead of sitting in the corners, with
-  // that menu's own Write and Import first (the Spellcast button isn't shown with a spell).
-  // Short labels, so the ring stays tight around the center.
+  // does -- above it, clear of the sentence below -- instead of sitting in the corners. First
+  // the spell's info (its page) and that menu's Import (the Spellcast button isn't shown with
+  // a spell); not Write, which has nothing to do with the spell loaded. Short labels, so the
+  // ring stays tight around the center.
   const ringActions = immersive && hasSpell && !dropping;
   const actionItems: RadialMenuItem[] = [
-    { id: 'write', label: t.start.writeTab, icon: faPen, onSelect: onWrite },
+    { id: 'info', label: t.start.spellInfo, icon: faScroll, onSelect: () => navigate(`/spell/${spellId}`) },
     { id: 'import', label: t.start.importTab, icon: faUpload, onSelect: onImport },
     { id: 'reader', label: t.spell.reader, icon: faBookOpenReader, onSelect: () => navigate(`/spell/${spellId}/reader`) },
     ...(inGrimoire ? [

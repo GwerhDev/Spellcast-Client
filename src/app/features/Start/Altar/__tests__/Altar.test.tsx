@@ -468,24 +468,33 @@ describe('Altar', () => {
       expect(screen.queryByTestId('altar-unload')).not.toBeInTheDocument();
       expect(screen.queryByTestId('altar-open-reader')).not.toBeInTheDocument();
       expect(ringOpen()).toBe(true);
-      // Write and Import first, the spell's own actions, and unloading it last.
+      // The spell's info and Import first (no Write), the spell's own actions, and unloading it last.
       const order = Array.from(screen.getByTestId('radial-menu').querySelectorAll('[data-testid^="radial-menu-item-"]'))
         .map(el => el.getAttribute('data-testid')!.replace('radial-menu-item-', ''));
-      expect(order).toEqual(['write', 'import', 'reader', 'edit', 'delete', 'unload']);
+      expect(order).toEqual(['info', 'import', 'reader', 'edit', 'delete', 'unload']);
       // Escape doesn't close it.
       fireEvent.keyDown(document, { key: 'Escape' });
       expect(ringOpen()).toBe(true);
     });
 
-    it('Write and Import open their modals through Start, like the Spellcast button\'s menu', () => {
-      const onWrite = vi.fn();
+    it('Import opens its modal through Start, like the Spellcast button\'s menu', () => {
       const onImport = vi.fn();
-      renderWithProviders(<Read immersive onWrite={onWrite} onImport={onImport} />, { store: loaded() });
-      fireEvent.click(screen.getByTestId('radial-menu-item-write'));
+      renderWithProviders(<Read immersive onImport={onImport} />, { store: loaded() });
       fireEvent.click(screen.getByTestId('radial-menu-item-import'));
-      expect(onWrite).toHaveBeenCalled();
       expect(onImport).toHaveBeenCalled();
       expect(ringOpen()).toBe(true);
+    });
+
+    it('Info opens the loaded spell\'s page', () => {
+      renderWithProviders(
+        <Routes>
+          <Route path="/" element={<Read immersive />} />
+          <Route path="/spell/:id" element={<div data-testid="spell-page" />} />
+        </Routes>,
+        { store: loaded() },
+      );
+      fireEvent.click(screen.getByTestId('radial-menu-item-info'));
+      expect(screen.getByTestId('spell-page')).toBeInTheDocument();
     });
 
     it('steps aside while the pointer rests', () => {

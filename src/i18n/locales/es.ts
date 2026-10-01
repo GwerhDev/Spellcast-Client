@@ -525,6 +525,7 @@ export const es: Translations = {
     castSpell: 'Lanza un Spell',
     writeTab: 'Escribir',
     importTab: 'Importar',
+    spellInfo: 'Info',
     readSubtitle: 'Arrastra un spell para empezar a leerlo',
     readDropHint: 'Haz clic para ver opciones o arrastra un spell hasta aquí para empezar a leerlo.',
     readDropRelease: 'Suéltalo para empezar a leer',
