@@ -114,3 +114,53 @@ describe('useZoom', () => {
     expect(result.current.zoom).toBe(1.0);
   });
 });
+
+// The sheet fitted to the screen's width: scaled down when it's wider than its room.
+describe('useZoom fit to width', () => {
+  const makeRoom = (width: number) => {
+    const el = document.createElement('div');
+    Object.defineProperty(el, 'clientWidth', { value: width, configurable: true });
+    document.body.appendChild(el);
+    return el;
+  };
+
+  it('scales a sheet wider than its room down to fit, and never up', () => {
+    const room = makeRoom(400);
+    const { result, rerender } = renderHook(({ w }) => {
+      const scroll = useRef<HTMLDivElement | null>(room as HTMLDivElement);
+      const fit = useRef<HTMLElement | null>(room);
+      return useZoom(scroll, { contentWidth: w, fitRef: fit });
+    }, { initialProps: { w: 800 } });
+    expect(result.current.zoom).toBe(0.5);
+    rerender({ w: 200 });
+    expect(result.current.zoom).toBe(1);
+  });
+
+  // The reader shows a spinner until the spell loads: the fit element appears only on a later
+  // render, with the same sheet width as before (800, a page without its own width).
+  it('fits once the element appears after the first render, with an unchanged width', () => {
+    const room = makeRoom(400);
+    const fit = { current: null as HTMLElement | null };
+    const { result, rerender } = renderHook(({ loaded }) => {
+      fit.current = loaded ? room : null;
+      const scroll = useRef<HTMLDivElement | null>(null);
+      return useZoom(scroll, { contentWidth: 800, fitRef: fit });
+    }, { initialProps: { loaded: false } });
+    expect(result.current.zoom).toBe(1);
+    rerender({ loaded: true });
+    expect(result.current.zoom).toBe(0.5);
+  });
+
+  it('resetZoom goes back to the fit, not to 100%', () => {
+    const room = makeRoom(400);
+    const { result } = renderHook(() => {
+      const scroll = useRef<HTMLDivElement | null>(room as HTMLDivElement);
+      const fit = useRef<HTMLElement | null>(room);
+      return useZoom(scroll, { contentWidth: 800, fitRef: fit });
+    });
+    act(() => { result.current.adjustZoom(0.5); });
+    expect(result.current.zoom).toBe(0.75);
+    act(() => { result.current.resetZoom(); });
+    expect(result.current.zoom).toBe(0.5);
+  });
+});

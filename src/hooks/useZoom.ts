@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from 'react'
+import { useState, useRef, useCallback, useEffect, useLayoutEffect } from 'react'
 
 const MIN_ZOOM = 0.25
 const MAX_ZOOM = 2.0
@@ -20,20 +20,33 @@ export function useZoom(scrollContainerRef: React.RefObject<HTMLDivElement | nul
   const [showIndicator, setShowIndicator] = useState(false)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  // The fit element itself, re-read after every render: a ref changing doesn't re-run an
+  // effect, and the element isn't always there on the first one -- the reader shows a
+  // spinner until the spell loads, and swaps the element when "Fit to width" toggles. State
+  // only changes when the element does, so this costs nothing on an ordinary render.
+  const [fitEl, setFitEl] = useState<HTMLElement | null>(null)
+  // No dependency list on purpose (see above): it has to run after every render to notice
+  // the ref's element changing, and it only sets state when it did, so it can't loop.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useLayoutEffect(() => {
+    const el = fitRef?.current ?? null
+    if (el !== fitEl) setFitEl(el)
+  })
+
   // How much room the sheet has: the fit element's content box, followed as it resizes.
   useEffect(() => {
-    const el = fitRef?.current
+    const el = fitEl
     if (!el || !contentWidth) { setFit(1); return }
     const update = () => {
       const cs = getComputedStyle(el)
-      const room = el.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight)
+      const room = el.clientWidth - (parseFloat(cs.paddingLeft) || 0) - (parseFloat(cs.paddingRight) || 0)
       setFit(room > 0 ? Math.min(1, room / contentWidth) : 1)
     }
     update()
     const ro = new ResizeObserver(update)
     ro.observe(el)
     return () => ro.disconnect()
-  }, [fitRef, contentWidth])
+  }, [fitEl, contentWidth])
 
   const showFor1s = useCallback(() => {
     setShowIndicator(true)
