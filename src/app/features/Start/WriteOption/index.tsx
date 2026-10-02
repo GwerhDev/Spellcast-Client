@@ -45,9 +45,12 @@ export const WriteOption: React.FC = () => {
     const load = () => {
       const voices = window.speechSynthesis.getVoices();
       setBrowserVoices(voices);
-      if (voices.length > 0 && !selectedVoiceValue) {
+      if (voices.length > 0) {
         const def = voices.find(v => v.default) ?? voices[0];
-        setSelectedVoiceValue(def.name);
+        // Functional update: `load` is subscribed once and re-runs on every `voiceschanged`
+        // (fired again as network voices arrive), so reading selectedVoiceValue from this
+        // closure would see '' forever and overwrite the user's own pick with the default.
+        setSelectedVoiceValue(prev => prev || def.name);
       }
     };
     load();
@@ -56,8 +59,8 @@ export const WriteOption: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (voiceType === 'ai' && aiVoices.length > 0 && !selectedVoiceValue) {
-      setSelectedVoiceValue(aiVoices[0].value);
+    if (voiceType === 'ai' && aiVoices.length > 0) {
+      setSelectedVoiceValue(prev => prev || aiVoices[0].value);
     }
   }, [voiceType, aiVoices]);
 
@@ -86,7 +89,6 @@ export const WriteOption: React.FC = () => {
 
   useEffect(() => {
     return () => { if (isPlayingRef.current) stopLocal(); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleVolumeChange = (val: number) => {

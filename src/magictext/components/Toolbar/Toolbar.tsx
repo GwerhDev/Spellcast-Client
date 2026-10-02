@@ -28,8 +28,11 @@ interface ToolbarProps {
 }
 
 export function Toolbar({ editor, className, variables, onVariableAdd, ttsMarks, ttsInflections, onTTSPlay, onTTSStop, ttsPlaying }: ToolbarProps) {
-  if (!editor) return null
+  // Hooks before the early return: called after it, the hook count changes the moment
+  // `editor` goes from null to ready, and React throws "Rendered more hooks than during the
+  // previous render".
   const t = useTranslations()
+  if (!editor) return null
 
   return (
     <div
