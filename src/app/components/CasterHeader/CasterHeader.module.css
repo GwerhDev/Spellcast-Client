@@ -29,6 +29,7 @@
   justify-content: center;
 }
 
+
 /* ── Gamification ── */
 .xpSection {
   display: flex;
@@ -162,5 +163,48 @@
 
   100% {
     left: 100%;
+  }
+}
+
+/* A phone: the header is on every caster page, so it's compact there -- a small avatar
+   beside the name and level, instead of a stack taking half the screen before the page's
+   own content. */
+@media screen and (max-width: 600px) {
+  .header {
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+  }
+
+  .details {
+    align-items: flex-start;
+    text-align: left;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .imgContainer {
+    width: 4.5rem;
+    height: 4.5rem;
+    flex-shrink: 0;
+  }
+
+  .imageContainer {
+    font-size: 2.25rem;
+  }
+
+  .title h1 {
+    font-size: 1.75rem;
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .xpBarTrack {
+    width: 100%;
+    max-width: 200px;
   }
 }

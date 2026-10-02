@@ -126,14 +126,17 @@
   width: 45%;
 }
 
-/* Matches SpellCard's hover-reveal footer: on pointer devices the real card is just its
-   cover, so the skeleton drops its footer too and the carousel doesn't reflow on load. */
-@media (hover: hover) {
-  .skeletonFooter { display: none; }
-}
+/* A card is only its cover on every device, so its skeleton has no footer either and the
+   carousel doesn't reflow on load. */
+.skeletonFooter { display: none; }
 
+/* Narrow: the coverflow runs edge to edge, its header keeps a gutter. */
 @media (max-width: 1024px) {
   .container {
     padding-inline: 0;
+  }
+
+  .header {
+    padding-inline: 1rem;
   }
 }

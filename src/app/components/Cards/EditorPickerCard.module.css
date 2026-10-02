@@ -104,9 +104,15 @@
 }
 
 /* ── Hover-reveal footer ──
-   Same treatment as SpellCard (see its module for the full reasoning): on pointer devices
-   the card is only its cover and the footer slides up over it on hover; touch devices keep
-   the original in-flow footer, since there's no hover there to reveal it with. */
+   The card is only its cover, the same shape on every device: on pointer devices the
+   footer slides up over it on hover; touch devices, with no hover to reveal it, don't show
+   it at all (the card's name is its title, see EditorPickerCard). */
+@media (hover: none) {
+  .footer {
+    display: none;
+  }
+}
+
 @media (hover: hover) {
   .footer {
     position: absolute;

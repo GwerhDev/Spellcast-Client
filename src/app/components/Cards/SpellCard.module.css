@@ -23,6 +23,11 @@
      positioned, not part of the flex flow at all) can overhang this box's edge instead of
      being cut off by it. See .coverFrameSlot's own comment. */
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  /* Held down by a finger it's picked up to be dragged (see touchSpellDrag): no text
+     selection or the phone's own long-press menu over it. */
+  -webkit-touch-callout: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 /* Being dragged: the card keeps its exact size (content hidden, not removed) and shows an
@@ -294,65 +299,3 @@
   color: var(--color-primary);
 }
 
-.footer {
-  padding: 0.6rem 0.75rem 0.75rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  overflow: hidden;
-}
-
-.titleRow {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-
-.title {
-  flex: 1;
-  min-width: 0;
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: var(--text-color);
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  word-break: break-word;
-  line-height: 1.3;
-}
-
-.date {
-  font-size: 0.68rem;
-  color: var(--color-light-400);
-}
-
-.progressBar {
-  width: 100%;
-  height: 2px;
-  background: var(--line);
-  border-radius: 999px;
-  overflow: hidden;
-}
-
-.progressFill {
-  height: 100%;
-  background: linear-gradient(to right, var(--color-primary), var(--color-secondary));
-  border-radius: 999px;
-  transition: width 0.3s ease;
-}
-
-.progress {
-  font-size: 0.65rem;
-  color: var(--color-light-400);
-}
-
-/* ── Footer ──
-   On pointer devices the card is only its cover (its title is the tooltip, see SpellCard),
-   so the footer isn't shown at all. A touch device has no hover and no tooltip, so it keeps
-   the in-flow footer rather than being left with untitled covers. */
-@media (hover: hover) {
-  .footer {
-    display: none;
-  }
-}

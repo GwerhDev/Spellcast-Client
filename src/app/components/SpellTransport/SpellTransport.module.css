@@ -8,8 +8,13 @@
   min-height: 32px;
 }
 
+/* On one line, cut short rather than wrapped (a page count wrapped word by word in a narrow
+   row read as "149 / pages"). */
 .leading {
   min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .center {

@@ -118,10 +118,10 @@ export const SpellReader = () => {
   const playerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const readerContentRef = useRef<HTMLDivElement>(null);
 
-  const { zoom, showIndicator, adjustZoom, resetZoom, ZOOM_STEP } = useZoom(paperBgRef);
-
-  // The page's sheet: the same frame the editor draws it in (see pageFrame / PaperSheet).
+  // The page's sheet: the same frame the editor draws it in (see pageFrame / PaperSheet),
+  // scaled down to fit the screen's width when it's wider (a phone).
   const frame = pageFrame(editedText, (currentPage || 1) - 1);
+  const { zoom, showIndicator, adjustZoom, resetZoom, ZOOM_STEP } = useZoom(paperBgRef, { contentWidth: frame.width, fitRef: paperBgRef });
 
   useEffect(() => {
     document.body.classList.toggle('fullscreen-reader', isFullscreen);

@@ -80,6 +80,17 @@ export const SegmentedTabs: React.FC<SegmentedTabsProps> = ({ tabs, active, onCh
     };
   }, [tabs, updateOverflow]);
 
+  // The active tab in view: a strip that overflows (a phone) is scrolled to it -- only the
+  // strip, not the page -- so a tab that's open isn't left hidden past the edge.
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el || !overflowing) return;
+    const tab = el.querySelector<HTMLElement>(`[data-testid="segmented-tab-${active}"]`);
+    if (!tab) return;
+    const left = tab.offsetLeft - (el.clientWidth - tab.offsetWidth) / 2;
+    el.scrollTo?.({ left: Math.max(0, left), behavior: 'smooth' });
+  }, [active, overflowing]);
+
   const scrollByPage = (direction: 1 | -1) => {
     const el = scrollRef.current;
     if (!el) return;

@@ -50,7 +50,7 @@ export const EditorPickerCard = ({ doc, onClick, show3D }: EditorPickerCardProps
   const hasCoverFrame = !!(coverUrl && coverFrameCorners);
 
   return (
-    <div className={s.card} onClick={onClick}>
+    <div className={s.card} onClick={onClick} title={doc.title} aria-label={doc.title}>
       {/* TCORE-123 follow-up: same split as SpellCard (see its own comment) -- .cardClip
           carries the rounded-corner overflow clipping, so CoverFrameCorners (a sibling,
           living directly on the unclipped .card) can overhang the cover's edge instead of

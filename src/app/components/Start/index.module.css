@@ -70,8 +70,9 @@
   justify-content: center;
 }
 
+/* A phone: a thin gutter, so the altar's hint doesn't touch the screen's edges. */
 @media (max-width: 768px) {
   .container {
-    padding-inline: 0;
+    padding-inline: 1rem;
   }
 }

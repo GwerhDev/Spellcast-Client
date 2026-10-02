@@ -302,6 +302,15 @@
     display: flex;
   }
 
+  /* The menu opens over the page here, not beside it. Its z-index below only counts inside
+     .nav-container (isolated, see above): the nav itself has to sit above .app-viewer, or the
+     page's own layered pieces (the reader's sheet, the coverflow's cards, sticky tabs) paint
+     over the open menu. */
+  .nav-container {
+    position: relative;
+    z-index: 50;
+  }
+
   .aside-container {
     top: .5rem;
     left: 0;

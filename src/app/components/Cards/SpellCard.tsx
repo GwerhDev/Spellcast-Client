@@ -1,7 +1,8 @@
 import s from './SpellCard.module.css';
 import { SPELL_DRAG_TYPE } from '../../../config/consts';
 import { DragTether } from '../DragTether/DragTether';
-import React, { useMemo, useEffect, useState, useRef } from 'react';
+import { beginTouchSpellDrag, isTouchDragging } from '../../../utils/touchSpellDrag';
+import React, { useEffect, useState, useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faScroll, faHourglassHalf, faCheck } from '@fortawesome/free-solid-svg-icons';
 import { Spell } from '../../../interfaces';
@@ -60,11 +61,6 @@ interface SpellCardProps {
 // A spell in a grid: just its cover, which glows on hover. Clicking opens its detail; the
 // only thing drawn over the cover is the reading indicator, while it's the loaded spell.
 export const SpellCard = ({ doc, isActive, isPlaying, onClick, lifted = false, focusable = true, uploadJob, selectionMode, selected, onToggleSelect, show3D }: SpellCardProps) => {
-  const totalPages = useMemo(() => {
-    if (!doc.pagesContent) return null;
-    try { return JSON.parse(doc.pagesContent).length; } catch { return null; }
-  }, [doc.pagesContent]);
-
   // TCORE-123: this spell's own pick, falling back to the global default when unset. The
   // pick itself is made from the spell's detail, which refreshes the lists after saving.
   const { activeCoverFrameId } = useAppSelector(state => state.casterInventory);
@@ -86,6 +82,10 @@ export const SpellCard = ({ doc, isActive, isPlaying, onClick, lifted = false, f
   // The frame scheduled to switch to the placeholder; a drag that ends before it runs must
   // cancel it, or it would turn the placeholder on after the drag is already over.
   const dragFrameRef = useRef<number | null>(null);
+  // A touch drag waiting for its long press, or under way (see touchSpellDrag): cancelled
+  // if the card goes away first.
+  const touchDragRef = useRef<(() => void) | null>(null);
+  useEffect(() => () => touchDragRef.current?.(), []);
 
   useEffect(() => {
     if (!doc.cover) return;
@@ -93,11 +93,6 @@ export const SpellCard = ({ doc, isActive, isPlaying, onClick, lifted = false, f
     setCoverUrl(url);
     return () => URL.revokeObjectURL(url);
   }, [doc.cover]);
-
-  const currentPage = doc.progress?.currentPage ?? 0;
-  const progressPct = (totalPages && currentPage > 0)
-    ? Math.min(Math.round(currentPage / totalPages * 100), 100)
-    : null;
 
   const coverRef = useRef<HTMLDivElement>(null);
 
@@ -132,7 +127,24 @@ export const SpellCard = ({ doc, isActive, isPlaying, onClick, lifted = false, f
       // Draggable onto a drop target that reads spells (e.g. Start's "Read" tab), which gets
       // the spell id under SPELL_DRAG_TYPE. Off in selection mode, where clicks select.
       draggable={!selectionMode}
+      // A finger can't start the native drag above: holding the card still picks it up
+      // instead, firing the same drag events (see touchSpellDrag).
+      onTouchStart={e => {
+        if (selectionMode || e.touches.length !== 1) return;
+        const touch = e.touches[0];
+        const card = e.currentTarget;
+        touchDragRef.current?.();
+        touchDragRef.current = beginTouchSpellDrag({ x: touch.clientX, y: touch.clientY }, card, doc.id, {
+          onStart: () => {
+            const rect = card.getBoundingClientRect();
+            setDragging(true);
+            setDragOrigin({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
+          },
+        });
+      }}
       onDragStart={e => {
+        // A browser that does start a native drag from a long touch: the touch one is on.
+        if (isTouchDragging()) { e.preventDefault(); return; }
         e.dataTransfer.setData(SPELL_DRAG_TYPE, doc.id);
         e.dataTransfer.effectAllowed = 'copy';
         const rect = e.currentTarget.getBoundingClientRect();
@@ -156,7 +168,7 @@ export const SpellCard = ({ doc, isActive, isPlaying, onClick, lifted = false, f
     >
       {/* TCORE-123 follow-up: everything that needs to respect .card's own rounded
           corners (or that positions itself with inset:0 expecting to be clipped, like the
-          upload overlay/hover scrim/sliding footer) lives inside this inner clip wrapper.
+          upload overlay or the hover scrim) lives inside this inner clip wrapper.
           CoverFrameCorners is the one exception -- it's a sibling of this wrapper, a direct
           child of the unclipped .card, specifically so its corner plates and medallions can
           overhang the cover's own edge instead of being cut off by the card's overflow. */}
@@ -204,23 +216,6 @@ export const SpellCard = ({ doc, isActive, isPlaying, onClick, lifted = false, f
             </div>
           )}
         </div>
-        <div className={s.footer}>
-          <div className={s.titleRow}>
-            <span className={s.title}>{doc.title}</span>
-          </div>
-          {progressPct !== null ? (
-            <div className={s.progressBar}>
-              <div className={s.progressFill} style={{ width: `${progressPct}%` }} />
-            </div>
-          ) : (
-            <small className={s.date}>{new Date(doc.createdAt).toLocaleDateString()}</small>
-          )}
-          {currentPage > 0 && (
-            <small className={s.progress}>
-              p. {currentPage}{totalPages ? ` / ${totalPages}` : ''}
-            </small>
-          )}
-        </div>
       </div>
       {/* Positioned relative to .coverWrapper's own box (see CoverFrameCorners' own
           comment) but living outside .cardClip so its pieces can overhang the cover's edge
@@ -247,7 +242,7 @@ export const SpellCard = ({ doc, isActive, isPlaying, onClick, lifted = false, f
         // z-index only set here, inline, for the 3D branch -- see .coverFrameSlot's own
         // CSS comment for why 2D CoverFrameCorners needs to stay at z-index:auto (matches
         // production) while CoverFrame3DView's own larger ornaments need to yield to
-        // .nowIndicator/.uploadOverlay/.footer.
+        // .nowIndicator/.uploadOverlay.
         <div className={s.coverFrameSlot} style={coverFrame3D ? ({ '--cover-frame-3d-margin-x': `${VIEW_MARGIN_X}px`, '--cover-frame-3d-margin-y': `${VIEW_MARGIN_Y}px`, zIndex: 1 } as React.CSSProperties) : undefined}>
           {coverFrame3D
             ? (

@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 're
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons';
 import { IconButton } from '../Buttons/IconButton';
+import { isTouchDragging } from '../../../utils/touchSpellDrag';
 import s from './Coverflow.module.css';
 
 export interface CoverflowItem {
@@ -181,7 +182,8 @@ export const Coverflow = ({ items, renderEmpty, itemWidth, slots = 7, interactiv
   const handlePointerUp = (e: React.PointerEvent) => {
     const from = swipeFrom.current;
     swipeFrom.current = null;
-    if (from === null) return;
+    // A finger that picked a card up and carried it off (see touchSpellDrag) wasn't swiping.
+    if (from === null || isTouchDragging()) return;
     const dx = e.clientX - from;
     if (Math.abs(dx) < SWIPE_PX) return;
     swiped.current = true;

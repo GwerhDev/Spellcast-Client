@@ -247,6 +247,12 @@
     display: none;
   }
 
+  /* A phone's width is the page's: a thin gutter around the sheet (which fits itself to
+     what's left, see useZoom). */
+  .paperBackground {
+    padding: 0.75rem 0.5rem 4rem;
+  }
+
   /* Stack the pages panel below the sheet as a horizontal strip */
   .bodyWrapper {
     flex-direction: column;

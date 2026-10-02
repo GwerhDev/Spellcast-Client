@@ -16,8 +16,11 @@
   gap: 0.75rem;
 }
 
+/* A title that doesn't fit beside its icon (a long one, on a phone) goes under it, both
+   centered, instead of wrapping beside it. */
 .center .titleRow {
   justify-content: center;
+  flex-wrap: wrap;
 }
 
 .iconChip {

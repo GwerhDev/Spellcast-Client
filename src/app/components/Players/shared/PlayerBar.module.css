@@ -120,13 +120,65 @@
   gap: 1rem;
 }
 
+/* A phone: one row can't hold the spell, its buttons, the controls and the volume -- the
+   spell's side was squeezed to a few pixels, its title hidden and its cover crushed. Two
+   rows instead: the spell (cover, title and page, its voice and unload) with the volume
+   and settings beside it, and the playback controls centered under them. */
 @media (max-width: 768px) {
-  .spellDetails {
-    display: none;
+  .audioPlayerContainer {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "spell side"
+      "controls controls";
+    align-items: center;
+    row-gap: 0.15rem;
+    padding: 0.4rem 0.75rem 0.25rem;
   }
 
-  .audioPlayerContainer {
-    padding: 0.25rem 0.5rem;
+  .leftSection {
+    grid-area: spell;
+  }
+
+  .rightSection {
+    grid-area: side;
+    flex: none;
+  }
+
+  /* The playback controls: whatever is neither side (the <audio> elements aren't drawn). */
+  .audioPlayerContainer > :not(.leftSection):not(.rightSection) {
+    grid-area: controls;
+    justify-self: center;
+    width: 100%;
+  }
+
+  .cover,
+  .coverIcon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .spellDetails {
+    flex: 1;
+    min-width: 0;
+    max-width: none;
+  }
+
+  /* Cut short, not scrolled on hover: there's no hover here. */
+  .spellDetails p {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .spellDetails:hover p {
+    animation: none;
+    text-decoration: none;
+  }
+
+  .spellDetails small {
+    font-size: 10px;
   }
 }
 

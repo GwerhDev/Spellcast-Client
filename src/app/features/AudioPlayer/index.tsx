@@ -1,4 +1,4 @@
-import s from '../../components/Players/AudioPlayer/AudioPlayer.module.css';
+import s from '../../components/Players/shared/PlayerBar.module.css';
 import { usePlaySpell } from '../../../hooks/usePlaySpell';
 import { UnloadSpellButton } from '../../components/Players/shared/UnloadSpellButton/UnloadSpellButton';
 import { useLanguage } from '../../../i18n';

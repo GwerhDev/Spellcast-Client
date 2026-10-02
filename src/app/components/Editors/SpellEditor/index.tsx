@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { MagicTextEditor, VerticalRuler } from '../../../../magictext';
 import type { JSONContent, TTSMark, TTSPlayPayload } from '../../../../magictext';
 import { useZoom } from '../../../../hooks/useZoom';
+import { useMediaQuery } from '../../../../hooks/useMediaQuery';
 import { pageFrame, type PageMargins } from '../../../../utils/spellPage';
 import { ZoomOverlay } from '../../Zoom/ZoomOverlay';
 import { PaperSheet } from '../../PaperSheet/PaperSheet';
@@ -34,8 +35,10 @@ export const SpellEditor: React.FC<SpellEditorProps> = ({
 }) => {
   const [content, setContent] = useState<JSONContent>(pageContent);
   const paperBgRef = useRef<HTMLDivElement>(null);
-  const { zoom, showIndicator, adjustZoom, resetZoom, ZOOM_STEP } = useZoom(paperBgRef);
+  const paperCenterRef = useRef<HTMLDivElement>(null);
   const fromEditorRef = useRef(false);
+  // A phone's screen: no rulers (no room for them, and margins aren't set by finger there).
+  const narrow = useMediaQuery('(max-width: 768px)');
 
   useEffect(() => {
     paperBgRef.current?.scrollTo({ top: 0 });
@@ -53,6 +56,8 @@ export const SpellEditor: React.FC<SpellEditorProps> = ({
   const activeMargins = frame.margins;
   const paperWidth = frame.width;
   const paperHeight = frame.height;
+  // Scaled down to fit the space beside the ruler when the sheet is wider (a phone).
+  const { zoom, showIndicator, adjustZoom, resetZoom, ZOOM_STEP } = useZoom(paperBgRef, { contentWidth: paperWidth, fitRef: paperCenterRef });
 
   return (
     <div className={s.root}>
@@ -73,7 +78,7 @@ export const SpellEditor: React.FC<SpellEditorProps> = ({
         onTTSStop={onTTSStop}
         ttsPlaying={ttsPlaying}
         ruler={{
-          enabled: true,
+          enabled: !narrow,
           margins: activeMargins,
           paperWidth,
           paperHeight,
@@ -84,16 +89,18 @@ export const SpellEditor: React.FC<SpellEditorProps> = ({
           <div className={s.paperBackground} ref={paperBgRef}>
             {/* Ruler at far-left + paper centered in remaining space */}
             <div className={s.contentRow}>
-              <VerticalRuler
-                paperHeight={paperHeight}
-                marginTop={activeMargins.marginTop}
-                marginBottom={activeMargins.marginBottom}
-                onMarginTopChange={v => onMarginsChange?.({ ...activeMargins, marginTop: v })}
-                onMarginBottomChange={v => onMarginsChange?.({ ...activeMargins, marginBottom: v })}
-                zoom={zoom}
-                paperOffsetTop={32}
-              />
-              <div className={s.paperCenter}>
+              {!narrow && (
+                <VerticalRuler
+                  paperHeight={paperHeight}
+                  marginTop={activeMargins.marginTop}
+                  marginBottom={activeMargins.marginBottom}
+                  onMarginTopChange={v => onMarginsChange?.({ ...activeMargins, marginTop: v })}
+                  onMarginBottomChange={v => onMarginsChange?.({ ...activeMargins, marginBottom: v })}
+                  zoom={zoom}
+                  paperOffsetTop={32}
+                />
+              )}
+              <div className={s.paperCenter} ref={paperCenterRef}>
                 {/* The theme's own paper: the caster's page background is the reader's alone. */}
                 <PaperSheet key={pageNumber} frame={frame} zoom={zoom}>
                   {editorContent}

@@ -208,3 +208,38 @@
     flex-direction: column;
   }
 }
+
+/* A phone: no room for the details beside the cover (they'd be a narrow column with its
+   title in three lines, and the playback row overflowing it). The cover on top, centered,
+   and the details under it at the modal's full width -- as tall as they are, so nothing
+   scrolls inside them. */
+@media (max-width: 520px) {
+  .header {
+    flex-direction: column;
+    align-items: center;
+    height: auto;
+  }
+
+  .info {
+    width: 100%;
+    overflow: visible;
+    padding-right: 0;
+    align-items: center;
+    text-align: center;
+  }
+
+  .tags {
+    justify-content: center;
+  }
+
+  /* The playback row keeps its place as the details' widest line. */
+  .info > :global(*) {
+    max-width: 100%;
+  }
+
+  /* Still reading the spell: the spinner's place under the cover, about as tall as the
+     details it stands in for. */
+  .loading {
+    min-height: 8rem;
+  }
+}
