@@ -7,7 +7,7 @@ import { selectCurrentCredential } from '../../../store/credentialsSlice';
 import * as pdfjsLib from 'pdfjs-dist';
 import { PageList } from '../../components/SpellCreateForm/PageList';
 import { SpellEditor } from '../../components/Editors/SpellEditor';
-import type { PageMargins } from '../../components/Editors/SpellEditor';
+import { isCoverPage } from '../../../utils/spellPage';
 import { saveSpellToDB } from '../../../db';
 import { setOriginalPdf } from '../../../db/originalPdfs';
 import { useNavigate } from 'react-router-dom';
@@ -46,7 +46,6 @@ export const SpellCreateForm: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [pdfProgress, setPdfProgress] = useState<{ current: number; total: number } | null>(null);
   const [editingPageIndex, setEditingPageIndex] = useState<number>(0);
-  const [currentMargins, setCurrentMargins] = useState<PageMargins>({ marginTop: 48, marginRight: 64, marginBottom: 48, marginLeft: 64 });
   const pdfInputRef = useRef<HTMLInputElement>(null);
   const originalPdfRef = useRef<File | null>(null);
   const originalPagesRef = useRef<JSONContent[] | null>(null);
@@ -64,21 +63,6 @@ export const SpellCreateForm: React.FC = () => {
   // hand in the (tiny, but real) window before extractPdfMetadata resolves.
   const titleEditedByUserRef = useRef(false);
 
-  const isCoverPage = (p: JSONContent): boolean => {
-    const first = p?.content?.[0];
-    return first?.type === 'image' && (first?.attrs as Record<string, unknown>)?.title !== 'pdf-graphic';
-  };
-
-  const getMarginsFromPage = (p: JSONContent): PageMargins => {
-    if (isCoverPage(p)) return { marginTop: 0, marginRight: 0, marginBottom: 0, marginLeft: 0 };
-    const a = p?.attrs as Record<string, number> | undefined;
-    return {
-      marginTop: a?.marginTop ?? 48,
-      marginRight: a?.marginRight ?? 64,
-      marginBottom: a?.marginBottom ?? 48,
-      marginLeft: a?.marginLeft ?? 64,
-    };
-  };
 
   const activeCredential = useAppSelector(selectCurrentCredential);
   const aiVoices = activeCredential?.voices ?? [];
@@ -239,7 +223,6 @@ export const SpellCreateForm: React.FC = () => {
 
   const handlePageClick = (pageIndex: number) => {
     setEditingPageIndex(pageIndex);
-    setCurrentMargins(getMarginsFromPage(pagesContent[pageIndex]));
   };
 
   const handlePageDelete = (pageIndex: number) => {
@@ -390,9 +373,7 @@ export const SpellCreateForm: React.FC = () => {
             pageNumber={editingPageIndex + 1}
             pageContent={pagesContent[editingPageIndex]}
             onPageContentChange={handlePageContentChange}
-            margins={currentMargins}
-            onMarginsChange={isCoverPage(pagesContent[editingPageIndex]) ? undefined : (m) => {
-              setCurrentMargins(m);
+            onMarginsChange={isCoverPage(pagesContent[editingPageIndex], editingPageIndex) ? undefined : (m) => {
               const updated = [...pagesContent];
               const p = updated[editingPageIndex];
               updated[editingPageIndex] = { ...p, attrs: { ...(p?.attrs as object ?? {}), ...m } };

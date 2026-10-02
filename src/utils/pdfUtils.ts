@@ -1,6 +1,7 @@
 import * as pdfjsLib from 'pdfjs-dist';
 import type { TextItem } from 'pdfjs-dist/types/src/display/api';
 import type { JSONContent } from '@tiptap/core';
+import { isCoverNode } from './spellPage';
 
 export const emptyPageContent: JSONContent = {
   type: 'doc',
@@ -44,11 +45,16 @@ export const blobToDataUrl = (blob: Blob): Promise<string> =>
     reader.readAsDataURL(blob);
   });
 
+// A cover image node: marked as one, so the reader and editor know page 1's first image is
+// the cover (see isCoverNode) rather than a logo the page starts with.
+const coverNodeOf = (src: string): JSONContent => ({ type: 'image', attrs: { src, alt: null, title: null, cover: true } });
+
 export const injectCoverIntoPages = async (pages: JSONContent[], coverBlob: Blob | null): Promise<JSONContent[]> => {
   if (!coverBlob || pages.length === 0) return pages;
   const firstNode = pages[0]?.content?.[0];
-  // Skip if already has a non-graphic cover image
-  if (firstNode?.type === 'image' && (firstNode?.attrs as Record<string, unknown>)?.title !== 'pdf-graphic') return pages;
+  // Not over an image page 1 already starts with (a cover, or the scan of the page itself):
+  // it would show twice.
+  if (firstNode?.type === 'image' && (firstNode.attrs as Record<string, unknown> | undefined)?.title !== 'pdf-graphic') return pages;
   // Only treat the first page as a decorative cover if it has no text content.
   // Empty paragraphs from emptyPageContent don't count as text.
   const firstPageHasText = (pages[0]?.content ?? []).some(
@@ -61,7 +67,7 @@ export const injectCoverIntoPages = async (pages: JSONContent[], coverBlob: Blob
     updated[0] = {
       ...pages[0],
       content: [
-        { type: 'image', attrs: { src: coverDataUrl, alt: null, title: null } },
+        coverNodeOf(coverDataUrl),
         ...(pages[0].content || []),
       ],
     };
@@ -96,9 +102,9 @@ export const renderPageToCover = async (pdf: pdfjsLib.PDFDocumentProxy): Promise
 export const applyCoverToPage1 = (pages: JSONContent[], coverDataUrl: string): JSONContent[] => {
   if (pages.length === 0) return pages;
   const page1 = pages[0];
-  const coverNode = { type: 'image', attrs: { src: coverDataUrl, alt: null, title: null } };
+  const coverNode = coverNodeOf(coverDataUrl);
   const firstNode = page1?.content?.[0];
-  const hasCoverNode = firstNode?.type === 'image' && (firstNode?.attrs as Record<string, unknown>)?.title !== 'pdf-graphic';
+  const hasCoverNode = isCoverNode(firstNode);
   const content = hasCoverNode
     ? [coverNode, ...(page1.content ?? []).slice(1)]
     : [coverNode, ...(page1.content ?? [])];
@@ -190,6 +196,201 @@ export const extractPageImages = async (page: pdfjsLib.PDFPageProxy): Promise<st
 
 type PdfLine = { items: TextItem[]; y: number; height: number; x: number };
 
+const visibleOf = (line: PdfLine) => line.items.filter(i => i.str.trim().length > 0);
+const lineStart = (line: PdfLine) => {
+  const v = visibleOf(line);
+  return v.length ? Math.min(...v.map(i => i.transform[4])) : line.x;
+};
+const lineEnd = (line: PdfLine) => {
+  const v = visibleOf(line);
+  return v.length ? Math.max(...v.map(i => i.transform[4] + i.width)) : line.x;
+};
+
+export interface FontInfo {
+  bold: boolean;
+  italic: boolean;
+  // A CSS font-family list: the PDF font's own family first, then a generic one.
+  family: string;
+}
+
+// The CSS family for a PDF font: the common standard fonts by their usual stacks, any other
+// named font by its own name (if the system has it) before its generic family.
+export const cssFontFamily = (fontName: string, generic?: string): string => {
+  const name = fontName.replace(/^[A-Z]{6}\+/, '');
+  const base = name.split(/[-,]/)[0].replace(/(PSMT|PS|MT|Std|Pro|LT)$/, '');
+  if (/helvetica|arial|arimo|liberation ?sans|nimbus ?sans/i.test(base)) return 'Helvetica, Arial, sans-serif';
+  if (/times/i.test(base)) return '"Times New Roman", Times, serif';
+  if (/courier/i.test(base)) return '"Courier New", Courier, monospace';
+  const fallback = generic === 'serif' || generic === 'sans-serif' || generic === 'monospace'
+    ? generic
+    : /mono|code|consol/i.test(base) ? 'monospace'
+      : (!/sans/i.test(base) && /serif|roman|georgia|garamond|book|antiqua|palatino|minion|cambria|caslon|baskerville/i.test(base)) ? 'serif'
+        : 'sans-serif';
+  // Generated names (pdf.js's own "g_d0_f1", or none at all) say nothing of the family.
+  if (!/^[A-Za-z][A-Za-z ]{2,}$/.test(base) || /^g_d\d/.test(base)) return fallback;
+  return `"${base.replace(/([a-z])([A-Z])/g, '$1 $2')}", ${fallback}`;
+};
+
+// Bold, italic and family of a text item's font. pdf.js names a font on the text by an id
+// ("g_d0_f1"); its real name and style are on the loaded font object, there once the page
+// has been rendered or its operator list read.
+const readFontInfo = (
+  page: pdfjsLib.PDFPageProxy,
+  fontName: string,
+  styles: Record<string, { fontFamily?: string }> | undefined,
+): FontInfo => {
+  let font: { name?: string; bold?: boolean; black?: boolean; italic?: boolean; fallbackName?: string } | null = null;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    font = (page as any).commonObjs?.get?.(fontName) ?? null;
+  } catch {
+    font = null; // not loaded: fall back to what the text's own font name says
+  }
+  const name = font?.name ?? fontName;
+  const normName = name.replace(/^[A-Z]{6}\+/, '').toLowerCase();
+  const generic = (styles?.[fontName]?.fontFamily ?? '').toLowerCase();
+  return {
+    bold: !!font?.bold || !!font?.black || /bold|demi|heavy|black|semibold/.test(normName) || /bold|demi|heavy|black/.test(generic),
+    italic: !!font?.italic || /italic|oblique|slant/.test(normName) || /italic|oblique/.test(generic),
+    family: cssFontFamily(name, font?.fallbackName ?? generic),
+  };
+};
+
+const toHex = (r: number, g: number, b: number) =>
+  `#${[r, g, b].map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, '0')).join('')}`;
+
+// A text item's color, read from the rendered page: the ink pixels in its box -- the ones
+// furthest from the box's most common color (the paper, or the box it sits on). Null when
+// there's no clear ink (an empty or covered-up item).
+export const sampleTextColor = (
+  pixels: { data: Uint8ClampedArray; width: number; height: number },
+  box: { left: number; top: number; right: number; bottom: number },
+): string | null => {
+  const { data, width, height } = pixels;
+  const x0 = Math.max(0, Math.floor(box.left)), x1 = Math.min(width - 1, Math.ceil(box.right));
+  const y0 = Math.max(0, Math.floor(box.top)), y1 = Math.min(height - 1, Math.ceil(box.bottom));
+  if (x1 <= x0 || y1 <= y0) return null;
+  const counts = new Map<number, number>();
+  for (let y = y0; y <= y1; y++) {
+    for (let x = x0; x <= x1; x++) {
+      const i = (y * width + x) * 4;
+      const key = ((data[i] >> 4) << 8) | ((data[i + 1] >> 4) << 4) | (data[i + 2] >> 4);
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+  }
+  let bgKey = 0, bgCount = -1;
+  for (const [k, c] of counts) if (c > bgCount) { bgKey = k; bgCount = c; }
+  const bg = [((bgKey >> 8) & 15) * 17, ((bgKey >> 4) & 15) * 17, (bgKey & 15) * 17];
+  let maxD = 0;
+  const dist = (i: number) => Math.abs(data[i] - bg[0]) + Math.abs(data[i + 1] - bg[1]) + Math.abs(data[i + 2] - bg[2]);
+  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) maxD = Math.max(maxD, dist((y * width + x) * 4));
+  if (maxD < 60) return null;
+  let r = 0, g = 0, b = 0, n = 0;
+  for (let y = y0; y <= y1; y++) {
+    for (let x = x0; x <= x1; x++) {
+      const i = (y * width + x) * 4;
+      if (dist(i) >= maxD * 0.85) { r += data[i]; g += data[i + 1]; b += data[i + 2]; n++; }
+    }
+  }
+  return n ? toHex(r / n, g / n, b / n) : null;
+};
+
+const rgbOfHex = (hex: string): [number, number, number] | null => {
+  const m = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex);
+  return m ? [parseInt(m[1], 16), parseInt(m[2], 16), parseInt(m[3], 16)] : null;
+};
+
+// Greys, black and white: colors that carry no hue. Text in them takes the theme's own text
+// color instead (the page is the app's, light or dark, not the PDF's white).
+export const isNeutralColor = (hex: string): boolean => {
+  const rgb = rgbOfHex(hex);
+  if (!rgb) return true;
+  const max = Math.max(...rgb), min = Math.min(...rgb);
+  return max === 0 || (max - min) / max < 0.15;
+};
+
+// How a paragraph's lines run: whether each line break is only where the line ran out of
+// room (a soft wrap, joined back so the text wraps again at the reader's own width) or a
+// real one, where the text sits (its left edge, the first line's indent) and whether it's
+// justified.
+export interface TextFlow {
+  left: number;
+  indent: number;
+  justify: boolean;
+  // Per line but the last: true when the break after it is only a wrap.
+  soft: boolean[];
+}
+
+// The width a word takes in an item, from the item's own width (its text, evenly spread).
+const leadingWordWidth = (line: PdfLine) => {
+  const first = visibleOf(line)[0];
+  if (!first) return 0;
+  const text = first.str.trimStart();
+  const word = text.split(/\s/)[0] ?? '';
+  return text.length ? first.width * (word.length / text.length) : 0;
+};
+
+// A block of wrapped text: several of its lines ending at the same right edge, where the
+// next line's first word wouldn't have fit. A single line ending further right than the
+// others (a list of label/value rows) isn't a margin, so those keep their breaks.
+export const analyseFlow = (lines: PdfLine[], textAreaWidth: number): TextFlow | null => {
+  if (lines.length < 2) return null;
+  const ends = lines.map(lineEnd);
+  const starts = lines.map(lineStart);
+  const right = Math.max(...ends);
+  const fonts = lines.map(l => l.height).filter(h => h > 0).sort((a, b) => a - b);
+  const font = fonts[Math.floor(fonts.length / 2)] ?? 10;
+  const nearEdge = (i: number) => right - ends[i] <= font * 0.6;
+  const atEdge = lines.slice(0, -1).filter((_, i) => nearEdge(i)).length;
+  const wrapped = atEdge >= 2 && atEdge >= (lines.length - 1) * 0.4;
+  // Two lines, the first nearly as wide as the page's text: a wrapped paragraph too.
+  const wideFirst = lines.length === 2 && ends[0] - starts[0] >= textAreaWidth * 0.75;
+  if (!wrapped && !wideFirst) return null;
+  const soft = lines.slice(0, -1).map((_, i) =>
+    nearEdge(i) && leadingWordWidth(lines[i + 1]) + font * 0.25 > right - ends[i]);
+  if (!soft.some(Boolean)) return null;
+  const left = Math.min(...starts);
+  const softEnds = soft.map((s, i) => (s ? right - ends[i] : null)).filter((d): d is number => d !== null);
+  const justify = softEnds.length >= 2 && softEnds.filter(d => d <= font * 0.3).length >= softEnds.length * 0.7;
+  return { left, indent: starts[0] - left, justify, soft };
+};
+
+// A wrapped block's paragraphs: a new one at each line set in from the block's left edge (a
+// first-line indent), each with its own flow.
+export const splitFlowParagraphs = (lines: PdfLine[], flow: TextFlow): { lines: PdfLine[]; flow: TextFlow }[] => {
+  const fonts = lines.map(l => l.height).filter(h => h > 0).sort((a, b) => a - b);
+  const font = fonts[Math.floor(fonts.length / 2)] ?? 10;
+  const out: { lines: PdfLine[]; flow: TextFlow }[] = [];
+  let start = 0;
+  const close = (end: number) => {
+    const part = lines.slice(start, end);
+    out.push({
+      lines: part,
+      flow: { left: flow.left, indent: lineStart(part[0]) - flow.left, justify: flow.justify, soft: flow.soft.slice(start, end - 1) },
+    });
+    start = end;
+  };
+  for (let i = 1; i < lines.length; i++) {
+    if (lineStart(lines[i]) - flow.left > font * 0.8) close(i);
+  }
+  close(lines.length);
+  return out;
+};
+
+// How a paragraph's lines line up against each other: centered when their middles meet but
+// their edges don't, right-aligned when their right edges do. Needs two lines or more.
+export const lineAlignment = (lines: PdfLine[]): 'center' | 'right' | null => {
+  if (lines.length < 2) return null;
+  const starts = lines.map(lineStart), ends = lines.map(lineEnd);
+  const spread = (v: number[]) => Math.max(...v) - Math.min(...v);
+  const fonts = lines.map(l => l.height).filter(h => h > 0);
+  const tol = (fonts.length ? Math.min(...fonts) : 10) * 0.5;
+  if (spread(starts) <= tol) return null;
+  if (spread(starts.map((s, i) => (s + ends[i]) / 2)) <= tol) return 'center';
+  if (spread(ends) <= tol) return 'right';
+  return null;
+};
+
 
 const resolveCssColorToRgb = (): [number, number, number] => {
   try {
@@ -248,7 +449,7 @@ const detectHorizontalRulesCanvas = (
   pageViewport: ReturnType<pdfjsLib.PDFPageProxy['getViewport']>,
   scale: number,
   textLines: PdfLine[],
-): number[] => {
+): { y: number; color: string | null; thickness: number }[] => {
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
   if (!ctx) return [];
   const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -284,7 +485,19 @@ const detectHorizontalRulesCanvas = (
     if (span > w * 0.25 && darkCount / span > 0.75) isRuleRow[y] = true;
   }
 
-  const rules: number[] = [];
+  // A rule's color: the average of its drawn pixels.
+  const colorOfRows = (from: number, to: number) => {
+    let r = 0, g = 0, b = 0, n = 0;
+    for (let ry = from; ry < to; ry++) {
+      for (let x = 0; x < w; x++) {
+        const i = (ry * w + x) * 4;
+        if ((data[i] + data[i + 1] + data[i + 2]) / 3 < 180) { r += data[i]; g += data[i + 1]; b += data[i + 2]; n++; }
+      }
+    }
+    return n ? toHex(r / n, g / n, b / n) : null;
+  };
+
+  const rules: { y: number; color: string | null; thickness: number }[] = [];
   let y = 0;
   while (y < h) {
     if (isRuleRow[y]) {
@@ -292,7 +505,7 @@ const detectHorizontalRulesCanvas = (
       while (y < h && isRuleRow[y]) y++;
       if (y - start <= 6) { // thin cluster = a line, not a filled region
         const midCanvasY = (start + y - 1) / 2;
-        rules.push(pageViewport.height - midCanvasY / scale);
+        rules.push({ y: pageViewport.height - midCanvasY / scale, color: colorOfRows(start, y), thickness: y - start });
       }
     } else {
       y++;
@@ -400,6 +613,14 @@ const detectDecorativeRegionsFromCanvas = (
   return regions;
 };
 
+// One page of the PDF (1-based), read the same way extractPdfPages reads them all: for
+// reading a single page again from the stored PDF (the editor's per-page reset).
+export const extractPdfPage = async (pdf: pdfjsLib.PDFDocumentProxy, pageNumber: number): Promise<JSONContent> => {
+  const single = { numPages: 1, getPage: () => pdf.getPage(pageNumber) } as unknown as pdfjsLib.PDFDocumentProxy;
+  const [page] = await extractPdfPages(single);
+  return page;
+};
+
 export const extractPdfPages = async (
   pdf: pdfjsLib.PDFDocumentProxy,
   onProgress?: (current: number, total: number) => void,
@@ -445,20 +666,29 @@ export const extractPdfPages = async (
       return a.transform[4] - b.transform[4];
     });
 
+    // Pieces of one line can sit a fraction of a point apart (a bold label and its value,
+    // drawn by separate text operations): within a quarter of the font size they're the same
+    // line. Lines of text are always further apart than that.
+    const sameLine = (a: TextItem, lineHeight: number, dy: number) =>
+      dy <= Math.max(1, Math.min(a.height || avgItemH, lineHeight || avgItemH) * 0.25);
+
     const lines: PdfLine[] = [];
     if (items.length > 0) {
       let currentLine: TextItem[] = [];
       let lastY = groupY(items[0]);
+      let currentHeight = items[0].height;
       for (const item of items) {
         const gy = groupY(item);
-        if (Math.abs(gy - lastY) > 1) {
+        if (!sameLine(item, currentHeight, Math.abs(gy - lastY))) {
           currentLine.sort((a, b) => a.transform[4] - b.transform[4]);
           lines.push({ items: currentLine, y: lastY, height: currentLine.reduce((max, i) => Math.max(max, i.height), 0), x: currentLine[0]?.transform[4] || 0 });
           currentLine = [];
           lastY = gy;
+          currentHeight = item.height;
         }
         currentLine.push(item);
         lastY = gy;
+        currentHeight = Math.max(currentHeight, item.height);
       }
       currentLine.sort((a, b) => a.transform[4] - b.transform[4]);
       lines.push({ items: currentLine, y: lastY, height: currentLine.reduce((max, i) => Math.max(max, i.height), 0), x: currentLine[0]?.transform[4] || 0 });
@@ -494,11 +724,24 @@ export const extractPdfPages = async (
       return groups;
     };
 
+    // XObject images, with their place on the page from the operator list.
+    const opList = await page.getOperatorList();
+    const pageImages = await extractPageImages(page);
+    const imagePlaces = extractImageYPositions(opList, pageImages.length, pageViewport.height);
+    const xobjectPlaces = imagePlaces.filter(p => p.width > 0 && p.height > 0);
+
+    // The page's content area: its text and its images. Not the text alone: on a page of a
+    // few short lines (a credits page) the text says nothing of how wide the page's column
+    // is, and a narrow one made from it wrapped lines that are whole on the page.
     const visibleLineItems = lines.flatMap(l => l.items.filter(i => i.str.trim().length > 0));
-    const leftmostX = visibleLineItems.length > 0 ? Math.min(...visibleLineItems.map(i => i.transform[4])) : 0;
-    const rightmostExtent = visibleLineItems.length > 0
-      ? Math.max(...visibleLineItems.map(i => i.transform[4] + i.width))
-      : pageViewport.width;
+    const leftmostX = Math.min(
+      ...(visibleLineItems.length > 0 ? visibleLineItems.map(i => i.transform[4]) : [xobjectPlaces.length ? Infinity : 0]),
+      ...xobjectPlaces.map(p => Math.max(0, p.x)),
+    );
+    const rightmostExtent = Math.max(
+      ...(visibleLineItems.length > 0 ? visibleLineItems.map(i => i.transform[4] + i.width) : [xobjectPlaces.length ? -Infinity : pageViewport.width]),
+      ...xobjectPlaces.map(p => Math.min(pageViewport.width, p.x + p.width)),
+    );
     const topY = lines.length > 0 ? Math.max(...lines.map(l => l.y)) : pageViewport.height;
     const bottomY = lines.length > 0 ? Math.min(...lines.map(l => l.y)) : 0;
 
@@ -521,7 +764,12 @@ export const extractPdfPages = async (
 
     // Decorative/graphic regions: detected from the rendered canvas so coordinates are always
     // correct regardless of PDF structure (Form XObjects, unusual CTM, etc.)
-    const graphicRegions = detectDecorativeRegionsFromCanvas(pageCanvas, pageViewport, xScale, lines);
+    // Not where an image is drawn: the image is already on the page as itself, and cropping
+    // the same rows again (recolored) drew it a second time under it.
+    const graphicRegions = detectDecorativeRegionsFromCanvas(pageCanvas, pageViewport, xScale, lines).filter(r => {
+      const covered = Math.max(0, ...xobjectPlaces.map(p => Math.min(r.yMax, p.y + p.height) - Math.max(r.yMin, p.y)));
+      return covered < (r.yMax - r.yMin) * 0.5;
+    });
 
     // Top-level (non-nested) regions only
     const topLevelRegions = graphicRegions.filter((r, i) =>
@@ -537,10 +785,18 @@ export const extractPdfPages = async (
 
     const pageAttrs = { ...pageDims, marginLeft, marginRight, marginTop, marginBottom };
 
-    // XObject images, with their place on the page from the operator list.
-    const opList = await page.getOperatorList();
-    const pageImages = await extractPageImages(page);
-    const imagePlaces = extractImageYPositions(opList, pageImages.length, pageViewport.height);
+    // Drawings made of vector shapes, as images in their place like the XObject ones (not
+    // the ornaments already cropped whole as graphic regions).
+    const textBoxes = items.filter(i => i.str.trim()).map(i => ({
+      x: i.transform[4], y: i.transform[5] - (i.height || avgItemH) * 0.25, width: i.width, height: (i.height || avgItemH) * 1.1,
+    }));
+    for (const g of findVectorGraphics(opList, pageViewport, textBoxes)) {
+      if (graphicRegions.some(r => g.y < r.yMax && g.y + g.height > r.yMin)) continue;
+      const src = cropVectorGraphic(pageCanvas, pageViewport.height, xScale, g);
+      if (!src) continue;
+      pageImages.push(src);
+      imagePlaces.push({ x: g.x, y: g.y, width: g.width, height: g.height });
+    }
 
     // A text line's box as CSS lays it out at line height `lh`: ~80% of the font above the
     // baseline, ~20% below, plus half the extra leading on each side.
@@ -570,10 +826,57 @@ export const extractPdfPages = async (
       }
     });
     const bandLines = new Set(bands.flatMap(b => b.lines));
-    const paragraphs = [
-      ...groupParagraphs(lines.filter(l => !bandLines.has(l))).map(p => ({ ...p, place: null as { band: number; side: 0 | 1 } | null })),
-      ...sideLines.flatMap((sides, b) => sides.flatMap((sl, side) => groupParagraphs(sl).map(p => ({ ...p, place: { band: b, side: side as 0 | 1 } })))),
+
+    // Its lines as far apart as in the PDF: baseline to baseline over the font size.
+    const lineHeightOf = (source: PdfLine[]): number | null => {
+      if (source.length < 2) return null;
+      const steps = source.slice(1).map((l, i) => source[i].y - l.y);
+      const avgStep = steps.reduce((a, b) => a + b, 0) / steps.length;
+      const avgFont = source.reduce((a, l) => a + fontOf(l), 0) / source.length;
+      return Math.min(2.5, Math.max(1, Math.round((avgStep / avgFont) * 100) / 100));
+    };
+
+    // Wrapped text (a page of prose) is kept as text that wraps again, not as the PDF's lines:
+    // the reader's font and width aren't the PDF's, so its line breaks never land where the
+    // PDF's did, and forced ones leave every line broken twice. A block's paragraphs are split
+    // at each first-line indent, all keeping the block's line spacing.
+    type Place = { band: number; side: 0 | 1 } | null;
+    type Para = { lines: PdfLine[]; yTop: number; place: Place; flow: TextFlow | null; lineHeight: number | null };
+    const withFlow = (groups: { lines: PdfLine[]; yTop: number }[], place: Place, width: number): Para[] => groups.flatMap((g): Para[] => {
+      const flow = lineAlignment(g.lines) ? null : analyseFlow(g.lines, width);
+      if (!flow) return [{ ...g, place, flow: null, lineHeight: null }];
+      const lineHeight = lineHeightOf(g.lines);
+      return splitFlowParagraphs(g.lines, flow).map(s => ({ lines: s.lines, yTop: s.lines[0].y, place, flow: s.flow, lineHeight }));
+    });
+    const textAreaWidth = rightmostExtent - leftmostX;
+    const paragraphs: Para[] = [
+      ...withFlow(groupParagraphs(lines.filter(l => !bandLines.has(l))), null, textAreaWidth),
+      ...sideLines.flatMap((sides, b) => sides.flatMap((sl, side) => withFlow(
+        groupParagraphs(sl),
+        { band: b, side: side as 0 | 1 },
+        side === 0 ? bands[b].gutter - leftmostX : rightmostExtent - bands[b].gutter,
+      ))),
     ];
+
+    // Each font's bold/italic/family, read once.
+    const fontInfos = new Map<string, FontInfo>();
+    const fontInfoOf = (fontName: string) => {
+      let info = fontInfos.get(fontName);
+      if (!info) { info = readFontInfo(page, fontName, contentStyles); fontInfos.set(fontName, info); }
+      return info;
+    };
+    // The page as drawn, for each text's color.
+    const pagePixels = pageCtx.getImageData(0, 0, pageCanvas.width, pageCanvas.height);
+    const colorOf = (item: TextItem) => {
+      const baseline = (pageViewport.height - item.transform[5]) * xScale;
+      const size = (item.height || avgItemH) * xScale;
+      return sampleTextColor(pagePixels, {
+        left: item.transform[4] * xScale,
+        right: (item.transform[4] + item.width) * xScale,
+        top: baseline - size * 0.75,
+        bottom: baseline + size * 0.2,
+      });
+    };
 
     // Build content items with their extent on the page (PDF units, y up): sorted by their
     // top, and each text block given the real space between it and what comes before.
@@ -587,20 +890,24 @@ export const extractPdfPages = async (
 
       if (p.lines.length === 0) continue;
 
-      const paragraphX = p.lines[0]?.x ?? leftmostX;
+      // Wrapped text from its block's left edge (its first line's indent is its own, below).
+      const paragraphX = p.flow ? p.flow.left : (p.lines[0]?.x ?? leftmostX);
       // From the text's left edge -- or, in a right column, from where that column starts.
       const indentFrom = p.place?.side === 1 ? bands[p.place.band].gutter : leftmostX;
       const pMarginLeft = Math.max(0, Math.round((paragraphX - indentFrom) * xScale));
 
-      // Detect text alignment from X coordinates of the first line.
+      // Alignment: justified wrapped text; lines centered or right-aligned against each other
+      // (in a column too); and for a single line outside columns, its place in the text area.
       // Use the text block's own center/width as reference so that full-width lines
       // (whose center naturally falls near the page center) are NOT flagged as centered.
       // Not inside a column: there the block keeps its real indent, as the page's text area
       // says nothing about where a column's lines sit.
       const firstLine = p.lines[0];
-      let textAlign: 'center' | 'right' | undefined;
+      let textAlign: 'center' | 'right' | 'justify' | undefined;
+      if (p.flow?.justify) textAlign = 'justify';
+      else if (p.lines.length > 1) textAlign = lineAlignment(p.lines) ?? undefined;
       const visibleFirstLineItems = firstLine?.items.filter(i => i.str.trim().length > 0) ?? [];
-      if (visibleFirstLineItems.length > 0 && !p.place) {
+      if (visibleFirstLineItems.length > 0 && !p.place && p.lines.length === 1) {
         const lineStartX = visibleFirstLineItems[0].transform[4];
         const lineEndX = Math.max(...visibleFirstLineItems.map(i => i.transform[4] + i.width));
         const lineWidth = lineEndX - lineStartX;
@@ -616,14 +923,28 @@ export const extractPdfPages = async (
         }
       }
 
-      const contentNodes: object[] = [];
+      const contentNodes: JSONContent[] = [];
+      // How many characters at each size: the block's own size is its most common one.
+      const sizeCounts = new Map<number, number>();
 
       for (let i = 0; i < p.lines.length; i++) {
         const line = p.lines[i];
-        if (i > 0) {
+        if (i > 0 && p.flow?.soft[i - 1]) {
+          // Only where the line ran out of room: joined back, a word split by a hyphen at the
+          // line's end whole again.
+          const last = [...contentNodes].reverse().find(n => n.type === 'text');
+          const nextStr = visibleOf(line)[0]?.str.trimStart() ?? '';
+          if (last?.text && /\p{L}-$/u.test(last.text) && /^\p{Ll}/u.test(nextStr)) {
+            last.text = last.text.slice(0, -1);
+          } else if (last?.text && !/\s$/.test(last.text) && !/^\s/.test(line.items[0]?.str ?? '')) {
+            contentNodes.push({ type: 'text', text: ' ' });
+          }
+        } else if (i > 0) {
           contentNodes.push({ type: 'hardBreak' });
+          // A line set further in than the first: as many spaces (not for wrapped text or
+          // lines lined up by alignment, where it's their alignment, not an indent).
           const relativeIndent = line.x - paragraphX;
-          if (relativeIndent > 5) {
+          if (relativeIndent > 5 && !p.flow && !textAlign) {
             const numSpaces = Math.round(relativeIndent * xScale / 7);
             if (numSpaces > 0) contentNodes.push({ type: 'text', text: ' '.repeat(numSpaces) });
           }
@@ -641,24 +962,41 @@ export const extractPdfPages = async (
             }
           }
           previous = item;
-          const textNode: { type: 'text'; text: string; marks?: object[] } = { type: 'text', text: item.str, marks: [] };
-          // Strip 6-char subset prefix (e.g. "ABCDEF+BookAntiqua-Bold" → "bookantiqua-bold")
-          const normFontName = item.fontName.replace(/^[A-Z]{6}\+/, '').toLowerCase();
-          // pdfjs may expose computed CSS font-family which often includes style info
-          const fontFamily = (contentStyles?.[item.fontName]?.fontFamily ?? '').toLowerCase();
-          const isBold = /bold|demi|heavy|black/.test(normFontName) || /bold|demi|heavy|black/.test(fontFamily);
-          const isItalic = /italic|oblique|slant/.test(normFontName) || /italic|oblique/.test(fontFamily);
-          if (isBold) textNode.marks!.push({ type: 'bold' });
-          if (isItalic) textNode.marks!.push({ type: 'italic' });
+          const textNode: JSONContent & { marks: NonNullable<JSONContent['marks']> } = { type: 'text', text: item.str, marks: [] };
+          // Its font's real style and family (see readFontInfo), not just what its name says.
+          const font = fontInfoOf(item.fontName);
+          if (font.bold) textNode.marks.push({ type: 'bold' });
+          if (font.italic) textNode.marks.push({ type: 'italic' });
           // Its size, in the same px as the page (pt * 96/72): the text keeps its proportion
-          // to the page instead of taking the editor's default size.
+          // to the page instead of taking the editor's default size. Its font family, and its
+          // color as drawn (kept only where it says something: see keepTextColors).
           const fontPx = toPx(item.height || line.height || avgLineHeight);
-          if (fontPx > 0) textNode.marks!.push({ type: 'textStyle', attrs: { fontSize: `${fontPx}px` } });
-          if (textNode.marks?.length === 0) delete textNode.marks;
+          const style: Record<string, string> = { fontFamily: font.family };
+          if (fontPx > 0) style.fontSize = `${fontPx}px`;
+          const color = item.str.trim() ? colorOf(item) : null;
+          if (color) style.color = color;
+          textNode.marks.push({ type: 'textStyle', attrs: style });
+          if (fontPx > 0 && item.str.trim()) sizeCounts.set(fontPx, (sizeCounts.get(fontPx) ?? 0) + item.str.length);
           contentNodes.push(textNode);
         }
       }
       if (contentNodes.length === 0) continue;
+
+      // Wrapped text's spacing is the reader's own: a justified PDF line often comes with
+      // runs of spaces between its words, which the editor would keep (its text keeps every
+      // space) and wrap differently from the reader, which collapses them.
+      if (p.flow) {
+        let previousEndsInSpace = false;
+        for (const node of contentNodes) {
+          if (node.type !== 'text' || !node.text) { previousEndsInSpace = false; continue; }
+          node.text = node.text.replace(/\s+/g, ' ');
+          if (previousEndsInSpace) node.text = node.text.replace(/^ /, '');
+          if (node.text) previousEndsInSpace = node.text.endsWith(' ');
+        }
+        for (let n = contentNodes.length - 1; n >= 0; n--) {
+          if (contentNodes[n].type === 'text' && !contentNodes[n].text) contentNodes.splice(n, 1);
+        }
+      }
 
       const firstLineHeight = p.lines[0]?.height || 0;
       let nodeType = 'paragraph';
@@ -669,18 +1007,19 @@ export const extractPdfPages = async (
       if (firstLineHeight > headingBaseline * 1.8) { nodeType = 'heading'; attrs = { level: 1 }; }
       else if (firstLineHeight > headingBaseline * 1.5) { nodeType = 'heading'; attrs = { level: 2 }; }
       else if (firstLineHeight > headingBaseline * 1.2) { nodeType = 'heading'; attrs = { level: 3 }; }
-      if (pMarginLeft > 0 && !textAlign) attrs = { ...attrs, marginLeft: pMarginLeft };
+      // Justified text keeps its left margin; centered or right-aligned text is placed by its
+      // alignment instead.
+      if (pMarginLeft > 0 && (!textAlign || textAlign === 'justify')) attrs = { ...attrs, marginLeft: pMarginLeft };
       if (textAlign) attrs = { ...attrs, textAlign };
+      if (p.flow && p.flow.indent * xScale > 2) attrs = { ...attrs, textIndent: Math.round(p.flow.indent * xScale) };
+      // The block's own size, its text's most common one: its line height is a multiple of
+      // it, so a heading's lines aren't spaced by the heading tag's own (bigger) size.
+      const blockSize = [...sizeCounts].sort((a, b) => b[1] - a[1])[0]?.[0];
+      if (blockSize) attrs = { ...attrs, fontSize: blockSize };
 
-      // Its lines as far apart as in the PDF (baseline to baseline over the font size); a
-      // single line gets a plain one.
-      let lineHeight = 1.2;
-      if (p.lines.length > 1) {
-        const steps = p.lines.slice(1).map((l, i) => p.lines[i].y - l.y);
-        const avgStep = steps.reduce((a, b) => a + b, 0) / steps.length;
-        const avgFont = p.lines.reduce((a, l) => a + fontOf(l), 0) / p.lines.length;
-        lineHeight = Math.min(2.5, Math.max(1, Math.round((avgStep / avgFont) * 100) / 100));
-      }
+      // Its lines as far apart as in the PDF; a single line gets its block's (when it was
+      // split from a wrapped one) or a plain one.
+      const lineHeight = lineHeightOf(p.lines) ?? p.lineHeight ?? 1.2;
       attrs = { ...attrs, lineHeight };
 
       const lastLine = p.lines[p.lines.length - 1];
@@ -693,8 +1032,16 @@ export const extractPdfPages = async (
     }
 
     // Horizontal rule items
-    for (const y of horizontalRules) {
-      contentItems.push({ yPdf: y, bottom: y, node: { type: 'horizontalRule' }, place: null });
+    // A colored rule keeps its color (a grey or black one, the theme's); and its thickness.
+    // Not the edge of a colored box (its rows above the text in it look like a line): the
+    // box is drawn whole, below.
+    const boxRects = extractFillRects(opList, pageViewport);
+    for (const rule of horizontalRules) {
+      if (boxRects.some(r => rule.y >= r.y - 1 && rule.y <= r.y + r.height + 1)) continue;
+      const attrs: Record<string, unknown> = {};
+      if (rule.color && !isNeutralColor(rule.color)) attrs.ruleColor = rule.color;
+      if (rule.thickness > 1) attrs.ruleThickness = rule.thickness;
+      contentItems.push({ yPdf: rule.y, bottom: rule.y, node: { type: 'horizontalRule', ...(Object.keys(attrs).length ? { attrs } : {}) }, place: null });
     }
 
     for (const region of topLevelRegions) {
@@ -778,7 +1125,9 @@ export const extractPdfPages = async (
       const run: Block[] = [item];
       while (i + 1 < flow.length && ['paragraph', 'heading'].includes(flow[i + 1].node.type ?? '') && inside(flow[i + 1], rect)) run.push(flow[++i]);
       const top = rect.y + rect.height;
-      const offset = Math.max(0, rect.x - leftmostX);
+      // From the text's left edge; negative for a box reaching out past it (a band as wide as
+      // the page's frame).
+      const offset = rect.x - leftmostX;
       // The blocks' indents are from the text's left edge: inside the box, from its own.
       for (const b of run) {
         const ml = b.node.attrs?.marginLeft;
@@ -791,7 +1140,7 @@ export const extractPdfPages = async (
           type: 'box',
           attrs: {
             background: rect.color,
-            ...(offset > 1 ? { marginLeft: Math.round(offset * xScale) } : {}),
+            ...(Math.abs(offset) > 1 ? { marginLeft: Math.round(offset * xScale) } : {}),
             width: Math.round(rect.width * xScale),
             paddingBottom: Math.max(0, Math.round((run[run.length - 1].bottom - rect.y) * xScale)),
           },
@@ -801,6 +1150,7 @@ export const extractPdfPages = async (
     }
     flow.length = 0;
     flow.push(...boxed);
+    for (const item of flow) keepTextColors(item.node, false);
 
     const contentTop = flow.length > 0 ? flow[0].yPdf : 0;
     const blocks = spaced(flow, null);
@@ -816,6 +1166,26 @@ export const extractPdfPages = async (
   }
 
   return allPagesContent;
+};
+
+// Text colors kept only where they say something: a hue of their own (a link's blue), or any
+// color inside a box drawn in one (white on a colored band), as that box keeps its own color
+// (see BoxExtension). Greys and black elsewhere take the theme's text color instead, so the
+// text stays readable on the app's own page, dark or light.
+const keepTextColors = (node: JSONContent, inColoredBox: boolean) => {
+  const background = node.attrs?.background;
+  const colored = node.type === 'box' ? typeof background === 'string' && !isNeutralColor(background) : inColoredBox;
+  if (node.type === 'text') {
+    for (const mark of node.marks ?? []) {
+      const color = mark.attrs?.color;
+      if (mark.type === 'textStyle' && typeof color === 'string' && !colored && isNeutralColor(color)) {
+        const { color: _drop, ...rest } = mark.attrs!;
+        void _drop;
+        mark.attrs = rest;
+      }
+    }
+  }
+  for (const child of node.content ?? []) keepTextColors(child, colored);
 };
 
 // Where each image is drawn: its bottom (y), and how tall and wide (PDF units, y up). An
@@ -841,6 +1211,18 @@ export const extractFillRects = (
   opList: { fnArray: number[]; argsArray: unknown[][] },
   page: { width: number; height: number },
 ): FillRect[] => {
+  const nearWhite = (hex: string) => {
+    const [r, g, b] = [1, 3, 5].map(o => parseInt(hex.slice(o, o + 2), 16));
+    return r > 248 && g > 248 && b > 248;
+  };
+  return collectFilledPaths(opList).filter(r =>
+    r.width >= 40 && r.height >= 10 && /^#[0-9a-f]{6}$/.test(r.color) && !nearWhite(r.color)
+    && r.width * r.height < page.width * page.height * 0.6);
+};
+
+// Every filled path on the page: its extent (PDF units, y up) under the whole current
+// transform, and its fill color.
+const collectFilledPaths = (opList: { fnArray: number[]; argsArray: unknown[][] }): FillRect[] => {
   const ops = pdfjsLib.OPS as Record<string, number>;
   const fills = new Set([ops.fill, ops.eoFill, ops.fillStroke, ops.eoFillStroke].filter(v => v !== undefined));
   if (ops.constructPath === undefined || fills.size === 0) return [];
@@ -864,13 +1246,67 @@ export const extractFillRects = (
       rects.push({ x: Math.min(...xs), y: Math.min(...ys), width: Math.max(...xs) - Math.min(...xs), height: Math.max(...ys) - Math.min(...ys), color });
     }
   }
-  const nearWhite = (hex: string) => {
-    const [r, g, b] = [1, 3, 5].map(o => parseInt(hex.slice(o, o + 2), 16));
-    return r > 248 && g > 248 && b > 248;
-  };
-  return rects.filter(r =>
-    r.width >= 40 && r.height >= 10 && /^#[0-9a-f]{6}$/.test(r.color) && !nearWhite(r.color)
-    && r.width * r.height < page.width * page.height * 0.6);
+  return rects;
+};
+
+type Rect = { x: number; y: number; width: number; height: number };
+const overlaps = (a: Rect, b: Rect, pad = 0) =>
+  a.x - pad < b.x + b.width && b.x - pad < a.x + a.width && a.y - pad < b.y + b.height && b.y - pad < a.y + a.height;
+
+// Drawings made of filled shapes (an icon or a logo drawn as vector paths, not an image):
+// colored shapes that touch, grouped, clear of any text -- shapes behind text are its boxes
+// (see extractFillRects) -- and smaller than half the page each way.
+export const findVectorGraphics = (
+  opList: { fnArray: number[]; argsArray: unknown[][] },
+  page: { width: number; height: number },
+  textBoxes: Rect[],
+): Rect[] => {
+  const shapes = collectFilledPaths(opList).filter(r => {
+    const rgb = rgbOfHex(r.color);
+    if (!rgb || Math.min(...rgb) > 245) return false;
+    return r.width * r.height < page.width * page.height * 0.25 && !textBoxes.some(t => overlaps(r, t));
+  });
+  // Shapes within a couple of points of each other are one drawing.
+  const groups: Rect[] = [];
+  for (const shape of shapes) {
+    let merged: Rect = { x: shape.x, y: shape.y, width: shape.width, height: shape.height };
+    for (let i = groups.length - 1; i >= 0; i--) {
+      if (!overlaps(groups[i], merged, 2)) continue;
+      const g = groups.splice(i, 1)[0];
+      const x = Math.min(g.x, merged.x), y = Math.min(g.y, merged.y);
+      merged = { x, y, width: Math.max(g.x + g.width, merged.x + merged.width) - x, height: Math.max(g.y + g.height, merged.y + merged.height) - y };
+    }
+    groups.push(merged);
+  }
+  return groups.filter(g => g.width >= 6 && g.height >= 6 && g.width <= page.width * 0.5 && g.height <= page.height * 0.5
+    && !textBoxes.some(t => overlaps(g, t)));
+};
+
+// A region of the rendered page as an image, its white made transparent (the page under it
+// is the app's, not white).
+const cropVectorGraphic = (canvas: HTMLCanvasElement, pageHeight: number, scale: number, r: Rect): string | null => {
+  try {
+    const left = Math.max(0, Math.floor(r.x * scale) - 1);
+    const top = Math.max(0, Math.floor((pageHeight - r.y - r.height) * scale) - 1);
+    const width = Math.min(canvas.width - left, Math.ceil(r.width * scale) + 2);
+    const height = Math.min(canvas.height - top, Math.ceil(r.height * scale) + 2);
+    if (width <= 0 || height <= 0) return null;
+    const out = document.createElement('canvas');
+    out.width = width;
+    out.height = height;
+    const ctx = out.getContext('2d', { willReadFrequently: true })!;
+    ctx.drawImage(canvas, left, top, width, height, 0, 0, width, height);
+    const img = ctx.getImageData(0, 0, width, height);
+    for (let i = 0; i < img.data.length; i += 4) {
+      const whiteness = Math.min(img.data[i], img.data[i + 1], img.data[i + 2]);
+      // Fully white is the page; the anti-aliased edge in between fades out with it.
+      if (whiteness > 200) img.data[i + 3] = Math.round(img.data[i + 3] * Math.min(1, (255 - whiteness) / 55));
+    }
+    ctx.putImageData(img, 0, 0);
+    return out.toDataURL('image/png');
+  } catch {
+    return null;
+  }
 };
 
 export interface ColumnBand {

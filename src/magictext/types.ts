@@ -52,6 +52,9 @@ export interface TextRun {
   italic: boolean
   /** The text's own size (a CSS length, e.g. read from a PDF), when it has one. */
   fontSize?: string
+  /** Its own font (a CSS font-family list) and color, when it has them. */
+  fontFamily?: string
+  color?: string
   /** A line break inside the sentence (a hardBreak in the source), rendered as one. */
   lineBreak?: boolean
 }
@@ -92,12 +95,16 @@ export type DocumentBlock =
       textAlign?: string
       marginLeft?: number
       lineHeight?: number
+      /** Its own size and first-line indent, in px (see PdfPositionExtension). */
+      fontSize?: number
+      textIndent?: number
       /** Its PDF layout attrs (spaceBefore): see PdfPositionExtension. */
       layout?: Record<string, unknown>
       segments: TTSSegment[]
     }
   | { kind: 'image'; src: string; alt: string | null; title: string | null; width?: number; marginLeft?: number; layout?: Record<string, unknown> }
-  | { kind: 'rule'; layout?: Record<string, unknown> }
+  /** A rule; its own color/thickness (ruleColor/ruleThickness, see PdfPositionExtension). */
+  | { kind: 'rule'; layout?: Record<string, unknown>; rule?: Record<string, unknown> }
   /** Columns side by side (see ColumnsExtension): each one's blocks, in reading order. */
   | { kind: 'columns'; layout?: Record<string, unknown>; columns: { width?: number; blocks: DocumentBlock[] }[] }
   /** A colored box around blocks (see BoxExtension). */

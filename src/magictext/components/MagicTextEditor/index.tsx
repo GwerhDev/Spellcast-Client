@@ -7,7 +7,7 @@ import Highlight from '@tiptap/extension-highlight'
 import Link from '@tiptap/extension-link'
 import Image from '@tiptap/extension-image'
 import Placeholder from '@tiptap/extension-placeholder'
-import { TextStyle, FontSize } from '@tiptap/extension-text-style'
+import { TextStyle, FontSize, FontFamily } from '@tiptap/extension-text-style'
 import Color from '@tiptap/extension-color'
 import type { JSONContent } from '@tiptap/core'
 
@@ -121,8 +121,10 @@ export function MagicTextEditor({
       Column,
       Box,
       TextStyle,
-      // Each text's own size (e.g. read from a PDF: see PdfPositionExtension for the blocks).
+      // Each text's own size and font (e.g. read from a PDF: see PdfPositionExtension for the
+      // blocks).
       FontSize,
+      FontFamily,
       Color,
       Placeholder.configure({ placeholder }),
       RulerExtension.configure({

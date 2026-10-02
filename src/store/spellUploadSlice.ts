@@ -22,6 +22,9 @@ export interface SpellUploadJob {
   // its content and its metadata are both read again from the PDF, keeping its cover (and
   // its title, when the PDF has none).
   refreshFromPdf?: boolean;
+  // With refreshFromPdf: only its pages are read again (the editor's "reset to original"),
+  // its title and details are left as the caster has them.
+  pagesOnly?: boolean;
   errorMessage?: string;
 }
 

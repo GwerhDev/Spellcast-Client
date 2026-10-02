@@ -336,6 +336,112 @@ describe('extractPdfPages', () => {
       expect(colText(1)).toBe('Name: right Age: right City: right');
     });
 
+    it('keeps a bold label and its value on one line though their baselines differ a little', async () => {
+      // As drawn by separate text operations: the value ~1pt below the label.
+      const items = [mkTextItem('Rut:', 50, 380.1, { width: 20 }), mkTextItem('16.120.598-2', 74, 379, { width: 60 })];
+      const [page] = await extractPdfPages(mkPdf([mkPage({ items })]) as never);
+      const block = page.content![0];
+      expect(block.content?.some((c) => c.type === 'hardBreak')).toBe(false);
+      expect(textOf(block as never)).toBe('Rut: 16.120.598-2');
+    });
+
+    it('takes bold and the family from the loaded font, not just its name', async () => {
+      const page = mkPage({ items: [mkTextItem('Label:', 50, 380, { fontName: 'g_d0_f1' })] });
+      (page as { commonObjs: unknown }).commonObjs = {
+        get: (name: string) => (name === 'g_d0_f1' ? { name: 'Helvetica-Bold', bold: true } : null),
+      };
+      const [doc] = await extractPdfPages(mkPdf([page]) as never);
+      const text = doc.content![0].content![0];
+      expect(text.marks).toEqual(expect.arrayContaining([{ type: 'bold' }]));
+      expect(text.marks?.find((m) => m.type === 'textStyle')?.attrs?.fontFamily).toBe('Helvetica, Arial, sans-serif');
+    });
+
+    it('gives a block its text\'s own size, so its line height is a multiple of it', async () => {
+      const items = [mkTextItem('Line one', 50, 380, { height: 9 }), mkTextItem('Line two', 50, 368, { height: 9 })];
+      const [page] = await extractPdfPages(mkPdf([mkPage({ items })]) as never);
+      expect(page.content![0].attrs?.fontSize).toBe(12);
+    });
+
+    // Prose set justified, as a book's page: lines all reaching the right edge, each new
+    // paragraph's first line set in.
+    const prose = () => {
+      const line = (str: string, x: number, y: number, width: number) => mkTextItem(str, x, y, { width });
+      return [
+        line('The first paragraph runs the whole width', 50, 380, 220),
+        line('of the text and wraps onto a second line', 50, 366, 220),
+        line('which ends short.', 50, 352, 90),
+        line('A second paragraph is set in and then', 62, 338, 208),
+        line('wraps as well, all the way to the right', 50, 324, 220),
+        line('edge, before it ends.', 50, 310, 100),
+      ];
+    };
+
+    it('joins a wrapped paragraph\'s lines back into text that wraps again, justified', async () => {
+      const [page] = await extractPdfPages(mkPdf([mkPage({ items: prose() })]) as never);
+      const first = page.content![0];
+      expect(first.content?.some((c) => c.type === 'hardBreak')).toBe(false);
+      expect(textOf(first as never)).toBe('The first paragraph runs the whole width of the text and wraps onto a second line which ends short.');
+      expect(first.attrs?.textAlign).toBe('justify');
+    });
+
+    it('starts a new paragraph at each first-line indent, keeping that indent', async () => {
+      const [page] = await extractPdfPages(mkPdf([mkPage({ items: prose() })]) as never);
+      const paragraphs = page.content!.filter((n) => n.type === 'paragraph');
+      expect(paragraphs).toHaveLength(2);
+      expect(textOf(paragraphs[1] as never)).toMatch(/^A second paragraph/);
+      expect(paragraphs[1].attrs?.textIndent).toBe(Math.round(12 * (96 / 72)));
+    });
+
+    it('makes a word hyphenated at a line\'s end whole again', async () => {
+      const items = [
+        mkTextItem('A line of prose that ends in a hyphen-', 50, 380, { width: 220 }),
+        mkTextItem('ated word and keeps going to the edge', 50, 366, { width: 220 }),
+        mkTextItem('then stops.', 50, 352, { width: 60 }),
+      ];
+      const [page] = await extractPdfPages(mkPdf([mkPage({ items })]) as never);
+      expect(textOf(page.content![0] as never)).toContain('hyphenated word');
+    });
+
+    it('keeps the breaks of rows that only look like a block (label/value fields)', async () => {
+      const rows = ['Name: Ann', 'Specialty: General psychiatry', 'City: Santiago'];
+      const items = rows.map((r, i) => mkTextItem(r, 50, 380 - i * 14, { width: r.length * 6 }));
+      const [page] = await extractPdfPages(mkPdf([mkPage({ items })]) as never);
+      expect(page.content![0].content?.filter((c) => c.type === 'hardBreak')).toHaveLength(2);
+    });
+
+    it('centers lines whose middles line up, without fake indent spaces', async () => {
+      const items = [
+        mkTextItem('A wider centered title', 100, 380, { width: 120 }),
+        mkTextItem('Shorter', 135, 366, { width: 50 }),
+      ];
+      const [page] = await extractPdfPages(mkPdf([mkPage({ items })]) as never);
+      const block = page.content![0];
+      expect(block.attrs?.textAlign).toBe('center');
+      expect(textOf(block as never)).toBe('A wider centered title Shorter');
+    });
+
+    it('keeps a text\'s color only when it has a hue', async () => {
+      const items = [mkTextItem('link', 50, 380, { width: 30 }), mkTextItem('plain', 50, 300, { width: 30 })];
+      const [page] = await extractPdfPages(mkPdf([mkPage({
+        items,
+        render: (ctx) => {
+          // Glyph-like strokes where each text is drawn (canvas y down, at 96/72), over the
+          // white page: one blue, one dark grey.
+          const s = 96 / 72;
+          const strokes = (color: string, baseline: number) => {
+            ctx.fillStyle = color;
+            for (let x = 50; x < 80; x += 6) ctx.fillRect(x * s, (400 - baseline - 8) * s, 2 * s, 8 * s);
+          };
+          strokes('#1f6fd0', 380);
+          strokes('#333333', 300);
+        },
+      })]) as never);
+      const colorOf = (text: string) => page.content!.flatMap((n) => n.content ?? []).find((c) => c.text === text)
+        ?.marks?.find((m) => m.type === 'textStyle')?.attrs?.color;
+      expect(colorOf('link')).toBe('#1f6fd0');
+      expect(colorOf('plain')).toBeUndefined();
+    });
+
     it('leaves ordinary full-width text alone', async () => {
       const items = [
         mkTextItem('A full width line of body text right here', 50, 380, { width: 230 }),

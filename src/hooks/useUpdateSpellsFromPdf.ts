@@ -16,8 +16,9 @@ export function useUpdateSpellsFromPdf() {
   const { t } = useLanguage();
   const userId = useAppSelector((state) => state.session.userData?.id);
 
-  // `report: false` for a caller that tells the outcome on its own (e.g. a single spell's page).
-  return async (spellIds: string[], { report = true } = {}): Promise<{ queued: number; skipped: number }> => {
+  // `report: false` for a caller that tells the outcome on its own (e.g. a single spell's page);
+  // `pagesOnly` to read only the pages again, leaving the title and details as they are.
+  return async (spellIds: string[], { report = true, pagesOnly = false } = {}): Promise<{ queued: number; skipped: number }> => {
     if (!userId) return { queued: 0, skipped: spellIds.length };
     let queued = 0;
     let skipped = 0;
@@ -32,6 +33,7 @@ export function useUpdateSpellsFromPdf() {
         userId,
         targetDocId: spellId,
         refreshFromPdf: true,
+        ...(pagesOnly ? { pagesOnly: true } : {}),
       }));
       queued++;
     }

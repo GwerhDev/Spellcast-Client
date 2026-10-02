@@ -24,8 +24,10 @@
   z-index: 4;
 }
 
-/* Fit-to-width: center cover images */
-.textContainer>img:first-child:not([title="pdf-graphic"]) {
+/* Fit-to-width: a cover page's cover, centered (the page's blocks sit in .documentBody, the
+   share-quote wrapper). Which page is the cover page is pageFrame's to say, not a guess
+   from the first image on any page. */
+.textContainer[data-cover-page]>.documentBody>img:first-child {
   display: block;
   margin: 0 auto;
 }
@@ -231,49 +233,13 @@
   position: relative;
 }
 
-.zoomWrapper {
-  flex-shrink: 0;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  overflow: hidden;
-}
-
-
-/* Paper mode — the sheet itself; width is set via inline style (dynamic per page) */
+/* Paper mode: the sheet is PaperSheet's, drawn the same as in the editor (its paper, cover
+   and PDF graphics live there). Only the reader's own stacking is set here -- a real
+   stacking position, not just paint order: see PAGE_Z_INDEX in CompanionOverlay.tsx, each
+   companion model's canvas is placed just above or below this exact value so a cat can
+   occlude the page (or be occluded by it) individually. */
 .paperSheet {
-  flex-shrink: 0;
-  background: var(--paper-bg);
-  border-radius: 2px;
-  box-shadow: var(--paper-shadow);
-  color: var(--page-text-color, var(--color-light-100));
-  box-sizing: border-box;
-  /* Real stacking position, not just paint order -- see PAGE_Z_INDEX in
-     CompanionOverlay.tsx: each companion model's canvas is placed just above or below
-     this exact value so a cat can occlude the page (or be occluded by it) individually. */
-  position: relative;
   z-index: 4;
-}
-
-.paperSheet>img:first-child:not([title="pdf-graphic"]) {
-  display: block;
-  object-fit: cover;
-  height: var(--paper-height, auto);
-  border-radius: 0;
-  width: calc(100% + var(--margin-left, 64px) + var(--margin-right, 64px));
-  max-width: none;
-  margin-left: calc(-1 * var(--margin-left, 64px));
-  margin-top: calc(-1 * var(--margin-top, 48px));
-  margin-bottom: 0;
-}
-
-/* PDF graphic (decorative header) — normal inline image, no bleed */
-.paperSheet img[title="pdf-graphic"] {
-  display: block;
-  height: auto;
-  width: calc(100% + var(--margin-left, 64px) + var(--margin-right, 64px));
-  max-width: none;
-  margin-left: calc(-1 * var(--margin-left, 64px));
 }
 
 @media (max-width: 768px) {

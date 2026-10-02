@@ -1,0 +1,50 @@
+/* A spell page's sheet, the same in the reader and the editor (see PaperSheet). Everything
+   about how a page is drawn -- its paper, its cover, its cropped PDF graphics -- lives here
+   once; the page's blocks themselves are in [data-page-body] (the reader's) or the editor's
+   .ProseMirror. */
+
+/* Sized to the scaled sheet, so whatever scrolls around it tracks its visual size. */
+.zoomWrapper {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  overflow: hidden;
+}
+
+.sheet {
+  flex-shrink: 0;
+  background: var(--paper-bg);
+  border-radius: 2px;
+  box-shadow: var(--paper-shadow);
+  color: var(--page-text-color, var(--color-light-100));
+  box-sizing: border-box;
+  position: relative;
+}
+
+/* The cover page: its cover is the whole sheet (the page has no margins, see pageFrame). */
+.coverPage :is(:global(.ProseMirror), [data-page-body]) > img:first-child {
+  display: block;
+  width: 100%;
+  max-width: none;
+  height: var(--paper-height);
+  object-fit: cover;
+  margin: 0;
+  border-radius: 0;
+}
+
+/* The empty line a cover-only page carries after its cover isn't drawn: it would hang below
+   the cover, past the page's end. */
+.coverPage :is(:global(.ProseMirror), [data-page-body]) > img:first-child + :last-child:is([data-empty], p:has(> br:only-child)) {
+  display: none;
+}
+
+/* A graphic cropped from the PDF page (a decorative header, an ornament): as wide as the
+   page it was cropped from, over the text's margins, so it's at the page's own scale. */
+.sheet img[title="pdf-graphic"] {
+  display: block;
+  height: auto;
+  width: calc(100% + var(--margin-left, 64px) + var(--margin-right, 64px));
+  max-width: none;
+  margin-left: calc(-1 * var(--margin-left, 64px));
+}

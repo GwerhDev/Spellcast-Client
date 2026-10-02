@@ -9,7 +9,7 @@ import { getSpellById, updateSpellContent, updateSpellFull } from '../../../db';
 import { hasOriginalPdf, getOriginalPdf } from '../../../db/originalPdfs';
 import * as pdfjsLib from 'pdfjs-dist';
 import workerSrc from 'pdfjs-dist/build/pdf.worker?url';
-import { renderPageToCover, blobToDataUrl, applyCoverToPage1, downscaleImageBlob } from '../../../utils/pdfUtils';
+import { renderPageToCover, blobToDataUrl, applyCoverToPage1, downscaleImageBlob, extractPdfPage, injectCoverIntoPages } from '../../../utils/pdfUtils';
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 import { setShowEditorSettings } from '../../../store/editorSlice';
 import { invalidateContent, invalidateSpellList } from '../../../store/spellReaderSlice';
@@ -19,7 +19,8 @@ import { textToSpeechService } from '../../../services/tts';
 import { useUpdateSpellsFromPdf } from '../../../hooks/useUpdateSpellsFromPdf';
 import { Spinner } from '../../components/Spinner';
 import { PageList } from '../../components/SpellCreateForm/PageList';
-import { SpellEditor, PageMargins } from '../../components/Editors/SpellEditor';
+import { SpellEditor } from '../../components/Editors/SpellEditor';
+import { isCoverPage } from '../../../utils/spellPage';
 import { faArrowLeft, faCloudUpload, faPaperclip, faGear, faSave, faRotateLeft, faTriangleExclamation } from '@fortawesome/free-solid-svg-icons';
 import { PdfProcessingStatus } from '../../components/PdfProcessingStatus';
 import { IconButton } from '../../components/Buttons/IconButton';
@@ -62,7 +63,6 @@ export const SpellEditForm: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const [hasChanges, setHasChanges] = useState(false);
-  const [currentMargins, setCurrentMargins] = useState<PageMargins>({ marginTop: 48, marginRight: 64, marginBottom: 48, marginLeft: 64 });
 
   // TCORE-103: editing the same social/feed metadata TCORE-97 introduced at creation time.
   const [description, setDescription] = useState('');
@@ -78,21 +78,6 @@ export const SpellEditForm: React.FC = () => {
   // replaced whenever the user picks a new one (upload or "use PDF page 1").
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
 
-  const isCoverPage = (p: JSONContent): boolean => {
-    const first = p?.content?.[0];
-    return first?.type === 'image' && (first?.attrs as Record<string, unknown>)?.title !== 'pdf-graphic';
-  };
-
-  const getMarginsFromPage = (p: JSONContent): PageMargins => {
-    if (isCoverPage(p)) return { marginTop: 0, marginRight: 0, marginBottom: 0, marginLeft: 0 };
-    const a = p?.attrs as Record<string, number> | undefined;
-    return {
-      marginTop: a?.marginTop ?? 48,
-      marginRight: a?.marginRight ?? 64,
-      marginBottom: a?.marginBottom ?? 48,
-      marginLeft: a?.marginLeft ?? 64,
-    };
-  };
   const parseTagsInput = (raw: string): string[] | undefined => {
     const trimmed = raw.split(/[,;]/).map((t) => t.trim()).filter(Boolean);
     return trimmed.length ? trimmed : undefined;
@@ -201,8 +186,6 @@ export const SpellEditForm: React.FC = () => {
         }
         applyMetadataFromDoc(doc);
         setCoverUrl(doc.cover ? await blobToDataUrl(doc.cover) : null);
-        const initIndex = Number(page) - 1 || 0;
-        setCurrentMargins(getMarginsFromPage(finalPages[initIndex] ?? finalPages[0]));
         hasLoaded.current = true;
       } catch {
         setError('Failed to load spell.');
@@ -211,7 +194,6 @@ export const SpellEditForm: React.FC = () => {
       }
     };
     load();
-    //eslint-disable-next-line
   }, [id, logged, userData.id]);
 
   // TCORE-103: gates the "Update from PDF" action -- same pattern as SpellDetail's "PDF"
@@ -286,7 +268,6 @@ export const SpellEditForm: React.FC = () => {
 
   const handlePageClick = (index: number) => {
     setEditingPageIndex(index);
-    setCurrentMargins(getMarginsFromPage(pagesContent[index]));
   };
 
   const handlePageDelete = (index: number) => {
@@ -387,23 +368,44 @@ export const SpellEditForm: React.FC = () => {
     if (!queued) dispatch(addApiResponse({ message: t.spell.updateFromPdfNoPdf, type: 'error' }));
   };
 
-  const handleResetAll = () => {
-    if (!originalPages) return;
-    const fresh = originalPages.map(p => ({ ...p }));
-    setPagesContent(fresh);
-    setCurrentMargins(getMarginsFromPage(fresh[Number(editingPageIndex)] ?? fresh[0]));
-    setHasChanges(true);
+  // Back to the original: read again from the stored PDF when there is one -- so the pages
+  // come back as the current extraction reads them, not as an older one did when the spell
+  // was imported -- or, without it, the pages saved at import.
+  const handleResetAll = async () => {
     setShowResetAllModal(false);
+    if (id && spellHasOriginalPdf) {
+      // By the upload worker (its progress shows here); its pages only, not the title or
+      // details. Once done, contentVersion reloads this form from the updated spell.
+      const { queued } = await updateFromPdf([id], { report: false, pagesOnly: true });
+      if (queued) return;
+    }
+    if (!originalPages) return;
+    setPagesContent(originalPages.map(p => ({ ...p })));
+    setHasChanges(true);
   };
 
-  const handleResetPage = (index: number) => {
-    if (!originalPages || !originalPages[index]) return;
-    const updated = [...pagesContent];
-    updated[index] = { ...originalPages[index] };
-    setPagesContent(updated);
-    if (index === Number(editingPageIndex)) {
-      setCurrentMargins(getMarginsFromPage(originalPages[index]));
+  const handleResetPage = async (index: number) => {
+    let fresh = originalPages?.[index] ? { ...originalPages[index] } : null;
+    if (id && spellHasOriginalPdf) {
+      try {
+        const blob = await getOriginalPdf(id);
+        if (blob) {
+          const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(await blob.arrayBuffer()) }).promise;
+          let page = await extractPdfPage(pdf, index + 1);
+          // Page 1 keeps its cover, as at import (only over a page with no text of its own).
+          if (index === 0 && coverUrl) [page] = await injectCoverIntoPages([page], await (await fetch(coverUrl)).blob());
+          fresh = page;
+          // The stored original is this reading of it from now on.
+          setOriginalPages(prev => (prev ? prev.map((p, i) => (i === index ? page : p)) : prev));
+        }
+      } catch (err) {
+        console.error('Failed to read the page again from the PDF:', err);
+      }
     }
+    if (!fresh) return;
+    const updated = [...pagesContent];
+    updated[index] = fresh;
+    setPagesContent(updated);
     setHasChanges(true);
   };
 
@@ -446,7 +448,7 @@ export const SpellEditForm: React.FC = () => {
 
         <IconButton icon={faPaperclip} variant='transparent' title={t.spell.replaceContent} disabled={isProcessingPdf} onClick={() => pdfInputRef.current?.click()} />
         <input ref={pdfInputRef} type="file" accept=".pdf" style={{ display: 'none' }} onChange={handleFileSelect} />
-        {originalPages && <IconButton icon={faRotateLeft} variant='transparent' title={t.spell.resetAllTitle} disabled={isProcessingPdf} onClick={() => setShowResetAllModal(true)} />}
+        {(originalPages || spellHasOriginalPdf) && <IconButton icon={faRotateLeft} variant='transparent' title={t.spell.resetAllTitle} disabled={isProcessingPdf} onClick={() => setShowResetAllModal(true)} />}
         <IconButton data-testid="spell-edit-save-btn" icon={faSave} variant='transparent' title={t.common.save} disabled={!hasChanges || isProcessingPdf} onClick={handleSave} />
         <IconButton icon={faCloudUpload} disabled variant='transparent' title={t.nav.cloud} onClick={() => {}} />
         <IconButton icon={faGear} variant='transparent' onClick={() => dispatch(setShowEditorSettings(true))} />
@@ -486,9 +488,7 @@ export const SpellEditForm: React.FC = () => {
             pageNumber={Number(editingPageIndex) + 1}
             pageContent={pagesContent[Number(editingPageIndex)]}
             onPageContentChange={handlePageContentChange}
-            margins={currentMargins}
-            onMarginsChange={isCoverPage(pagesContent[Number(editingPageIndex)]) ? undefined : (m) => {
-              setCurrentMargins(m);
+            onMarginsChange={isCoverPage(pagesContent[Number(editingPageIndex)], Number(editingPageIndex)) ? undefined : (m) => {
               const idx = Number(editingPageIndex);
               const updated = [...pagesContent];
               const page = updated[idx];
@@ -509,7 +509,7 @@ export const SpellEditForm: React.FC = () => {
             onPageClick={handlePageClick}
             onPageDelete={handlePageDelete}
             onAddPage={handleAddPage}
-            onPageReset={originalPages ? handleResetPage : undefined}
+            onPageReset={originalPages || spellHasOriginalPdf ? handleResetPage : undefined}
             pdfProgress={activeJob?.progress ?? null}
           />
         </div>

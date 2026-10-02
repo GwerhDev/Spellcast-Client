@@ -6,8 +6,8 @@ describe('boxBackground', () => {
     expect(boxBackground('#e9e9e9')).toBe('color-mix(in srgb, currentColor 9%, transparent)');
   });
 
-  it('a colored box keeps its hue, translucent', () => {
-    expect(boxBackground('#33c3ff')).toBe('color-mix(in srgb, #33c3ff 32%, transparent)');
+  it('a colored box is drawn in its own color, as its text keeps its own too', () => {
+    expect(boxBackground('#33c3ff')).toBe('#33c3ff');
   });
 });
 

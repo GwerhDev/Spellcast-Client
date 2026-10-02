@@ -50,45 +50,5 @@
   padding: 2rem 1rem 4rem;
 }
 
-/* Zoom wrapper — sized to match the scaled paper so the scroll container tracks the visual size */
-.zoomWrapper {
-  flex-shrink: 0;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  overflow: hidden;
-}
-
-/* Paper sheet — width is set via inline style (dynamic per page) */
-.paperSheet {
-  flex-shrink: 0;
-  background: var(--paper-bg);
-  border-radius: 2px;
-  box-shadow: var(--paper-shadow);
-  color: var(--color-light-100);
-  box-sizing: border-box;
-}
-
-/* Cover image (first page, not a pdf-graphic) — bleeds to edges */
-.paperSheet :global(.ProseMirror > img:first-child:not([title="pdf-graphic"])) {
-  display: block;
-  height: auto;
-  border-radius: 0;
-  width: calc(100% + var(--margin-left, 64px) + var(--margin-right, 64px));
-  max-width: none;
-  margin-left: calc(-1 * var(--margin-left, 64px));
-  margin-top: calc(-1 * var(--margin-top, 48px));
-  margin-bottom: -6rem;
-}
-
-/* PDF graphic (decorative header, ornament) — bleeds out of text margins to match
-   the full canvas width it was cropped from, so ornaments always appear at the
-   correct scale regardless of per-page text margins. */
-.paperSheet :global(.ProseMirror img[title="pdf-graphic"]) {
-  display: block;
-  height: auto;
-  width: calc(100% + var(--margin-left, 64px) + var(--margin-right, 64px));
-  max-width: none;
-  margin-left: calc(-1 * var(--margin-left, 64px));
-}
-
+/* The sheet itself is PaperSheet's, the same as the reader's (its paper, cover and PDF graphics
+   live there). */

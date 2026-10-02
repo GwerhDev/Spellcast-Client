@@ -72,12 +72,12 @@ export const SpellUploadWorker: React.FC = () => {
           const keptCover = previousSpell?.cover ?? null;
           const pagesContent = await injectCoverIntoPages(rawPages, keptCover ?? coverBlob);
           await updateSpellFull(next.targetDocId, next.userId, {
-            title: meta.title || previousSpell?.title || next.title,
+            title: next.pagesOnly ? (previousSpell?.title ?? next.title) : (meta.title || previousSpell?.title || next.title),
             pagesContent: JSON.stringify(pagesContent),
             ...(keptCover ? {} : { cover: coverBlob ?? undefined }),
             originalPagesContent: JSON.stringify(pagesContent),
           });
-          await updateSpellMetadata(next.targetDocId, next.userId, meta);
+          if (!next.pagesOnly) await updateSpellMetadata(next.targetDocId, next.userId, meta);
           dispatch(invalidateContent());
           dispatch(invalidateSpellList());
           dispatch(setUploadDone({ id: next.id }));

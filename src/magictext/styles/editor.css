@@ -143,6 +143,10 @@
   outline: none;
   min-height: inherit;
   caret-color: var(--mte-caret-color);
+  /* Not Tiptap's break-spaces: there a space ending a line takes room on it, so a line
+     wraps a word earlier than the reader's (whose spaces at a line's end hang past it), and
+     text read from a PDF wraps differently in each. pre-wrap still keeps every space. */
+  white-space: pre-wrap;
 }
 
 .magic-text-editor .ProseMirror img {

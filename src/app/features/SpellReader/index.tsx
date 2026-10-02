@@ -13,7 +13,10 @@ import { activeSentenceIndex as getActiveSentenceIndex } from '../../../utils/ac
 import { goToPage, setCurrentSentenceIndex, setShowReaderSettings, recordReaderActivity } from '../../../store/spellReaderSlice';
 import { setPendingSeek } from '../../../store/audioPlayerSlice';
 import { moveCompanionModel, rotateCompanionModel, scaleCompanionModel, toggleCompanionDepth, type CompanionPlacement } from '../../../store/casterInventorySlice';
-import { pageBackgrounds, companions } from '../../../config/assets';
+import { companions } from '../../../config/assets';
+import { usePageBackground } from '../../../hooks/usePageBackground';
+import { pageFrame } from '../../../utils/spellPage';
+import { PaperSheet } from '../../components/PaperSheet/PaperSheet';
 import { Spinner } from '../../components/Spinner';
 import { IconButton } from '../../components/Buttons/IconButton';
 import { SpellDetailModal } from '../../components/Modals/SpellDetailModal';
@@ -55,9 +58,7 @@ export const SpellReader = () => {
   const { selectedVoice } = useSelector((state: RootState) => state.voice);
   const { timeline: aiTimeline, currentTime: aiCurrentTime, isPlaying: aiIsPlaying } = useSelector((state: RootState) => state.audioPlayer);
   const { isPlaying } = useSelector((state: RootState) => state.browserPlayer);
-  const { activePageBgId, activeCompanionId, unlockedIds, companionPlacements } = useSelector((state: RootState) => state.casterInventory);
-  const activeBg = pageBackgrounds.find(b => b.id === activePageBgId) ?? null;
-  const activePageBgCss = activeBg?.cssValue ?? null;
+  const { activeCompanionId, unlockedIds, companionPlacements } = useSelector((state: RootState) => state.casterInventory);
   const activeCompanion = activeCompanionId && unlockedIds.includes(activeCompanionId)
     ? companions.find(c => c.id === activeCompanionId) ?? null
     : null;
@@ -108,35 +109,19 @@ export const SpellReader = () => {
         ])
       )
     : {};
-  const pageBgVars = {
-    ...(activePageBgCss ? { background: activePageBgCss } : {}),
-    ...(activeBg?.textColor ? { '--page-text-color': activeBg.textColor } : {}),
-    ...(activeBg?.highlightColor ? { '--page-highlight': activeBg.highlightColor } : {}),
-    ...(activeBg?.sentenceHoverColor ? { '--page-sentence-hover': activeBg.sentenceHoverColor } : {}),
-  } as React.CSSProperties;
+  const pageBgVars = usePageBackground();
   const [editedText, setEditedText] = useState<JSONContent>(emptyContent);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
-  const [sheetHeight, setSheetHeight] = useState(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const paperBgRef = useRef<HTMLDivElement>(null);
-  const paperSheetRef = useRef<HTMLDivElement>(null);
   const playerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const readerContentRef = useRef<HTMLDivElement>(null);
 
   const { zoom, showIndicator, adjustZoom, resetZoom, ZOOM_STEP } = useZoom(paperBgRef);
 
-  const pageAttrs = editedText?.attrs as { pageWidth?: number; pageHeight?: number; displayWidth?: number; displayHeight?: number; marginTop?: number; marginRight?: number; marginBottom?: number; marginLeft?: number } | undefined;
-  const paperWidth = pageAttrs?.displayWidth ?? 800;
-  const paperMinHeight = pageAttrs?.displayHeight ?? (pageAttrs?.pageWidth && pageAttrs?.pageHeight
-    ? Math.round((pageAttrs.pageHeight / pageAttrs.pageWidth) * paperWidth)
-    : 1131);
-  const pageMargins = {
-    marginTop: pageAttrs?.marginTop ?? 48,
-    marginRight: pageAttrs?.marginRight ?? 64,
-    marginBottom: pageAttrs?.marginBottom ?? 48,
-    marginLeft: pageAttrs?.marginLeft ?? 64,
-  };
+  // The page's sheet: the same frame the editor draws it in (see pageFrame / PaperSheet).
+  const frame = pageFrame(editedText, (currentPage || 1) - 1);
 
   useEffect(() => {
     document.body.classList.toggle('fullscreen-reader', isFullscreen);
@@ -235,7 +220,8 @@ export const SpellReader = () => {
   };
 
   const documentBody = (
-    <div ref={readerContentRef}>
+    // data-page-body: the page's blocks, as PaperSheet's own rules (its cover) find them.
+    <div ref={readerContentRef} className={s.documentBody} data-page-body="">
       <TTSSpellReader
         content={editedText}
         currentSentenceIndex={activeSentenceIndex}
@@ -244,65 +230,22 @@ export const SpellReader = () => {
     </div>
   );
 
-  // Track the real rendered height of the paper sheet so the (scaled) zoom wrapper
-  // grows to fit reflowed content — otherwise text taller than the nominal page
-  // height gets clipped at the bottom. offsetHeight is unscaled (transform-agnostic).
-  useEffect(() => {
-    const el = paperSheetRef.current;
-    if (fitToWidth || !el) { setSheetHeight(0); return; }
-    const update = () => setSheetHeight(el.offsetHeight);
-    update();
-    const ro = new ResizeObserver(update);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [fitToWidth, editedText, paperMinHeight]);
-
   const renderBody = () => {
     if (!isLoaded) {
       return <div data-testid="spell-reader-loading" className={s.container}><Spinner isLoading message={t.common.loading} /></div>;
     }
 
-    const paperSheet = (children: React.ReactNode) => (
-      <div
-        ref={paperSheetRef}
-        className={s.paperSheet}
-        style={{
-          ...pageBgVars,
-          width: `${paperWidth}px`,
-          minHeight: `${paperMinHeight}px`,
-          transform: `scale(${zoom})`,
-          transformOrigin: 'top center',
-          paddingTop: pageMargins.marginTop,
-          paddingRight: pageMargins.marginRight,
-          paddingBottom: pageMargins.marginBottom,
-          paddingLeft: pageMargins.marginLeft,
-          '--margin-top': `${pageMargins.marginTop}px`,
-          '--margin-right': `${pageMargins.marginRight}px`,
-          '--margin-bottom': `${pageMargins.marginBottom}px`,
-          '--margin-left': `${pageMargins.marginLeft}px`,
-          '--paper-height': `${paperMinHeight}px`,
-        } as React.CSSProperties}
-      >
-        {children}
-      </div>
-    );
-
-    const wrapperStyle: React.CSSProperties = {
-      width: `${paperWidth * zoom}px`,
-      height: `${Math.max(sheetHeight || 0, paperMinHeight) * zoom}px`,
-    };
-
     if (!fitToWidth) {
       return (
         <div ref={paperBgRef} className={s.paperBackground}>
-          <div className={s.zoomWrapper} style={wrapperStyle}>
-            {paperSheet(documentBody)}
-          </div>
+          <PaperSheet frame={frame} zoom={zoom} className={s.paperSheet} style={pageBgVars}>
+            {documentBody}
+          </PaperSheet>
         </div>
       );
     }
     return (
-      <div ref={scrollContainerRef} className={`${s.textContainer} ${s.readerContent}`} style={Object.keys(pageBgVars).length ? pageBgVars : undefined}>
+      <div ref={scrollContainerRef} className={`${s.textContainer} ${s.readerContent}`} data-cover-page={frame.cover || undefined} style={Object.keys(pageBgVars).length ? pageBgVars : undefined}>
         {documentBody}
       </div>
     );

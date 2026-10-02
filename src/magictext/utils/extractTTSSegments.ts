@@ -32,9 +32,21 @@ interface CharInfo {
   bold: boolean
   italic: boolean
   fontSize?: string
+  fontFamily?: string
+  color?: string
   // A hardBreak: a space for the sentence text (so sentences split the same way), but a
   // line break where it's drawn.
   lineBreak?: boolean
+}
+
+// The text style a run carries (see TextRun): equal for every char of one run.
+const STYLE_KEYS = ['fontSize', 'fontFamily', 'color'] as const
+const sameStyle = (a: CharInfo | undefined, b: CharInfo | undefined) =>
+  STYLE_KEYS.every(k => a?.[k] === b?.[k])
+const styleOf = (c: CharInfo | undefined): Partial<Pick<CharInfo, typeof STYLE_KEYS[number]>> => {
+  const out: Partial<Pick<CharInfo, typeof STYLE_KEYS[number]>> = {}
+  for (const k of STYLE_KEYS) if (c?.[k]) out[k] = c[k]
+  return out
 }
 
 /** Flatten a block's inline content into a string plus per-character mark info. */
@@ -48,9 +60,11 @@ function buildCharInfo(node: JSONContent): { fullText: string; chars: CharInfo[]
       const tts = getTTSAttrs(marks)
       const bold = marks.some(m => m.type === 'bold')
       const italic = marks.some(m => m.type === 'italic')
-      const fontSize = marks.find(m => m.type === 'textStyle')?.attrs?.fontSize as string | undefined
+      const style = marks.find(m => m.type === 'textStyle')?.attrs ?? {}
+      const own: Partial<Pick<CharInfo, typeof STYLE_KEYS[number]>> = {}
+      for (const k of STYLE_KEYS) if (typeof style[k] === 'string' && style[k]) own[k] = style[k] as string
       const text = inline.text ?? ''
-      for (let i = 0; i < text.length; i++) chars.push({ tts, bold, italic, ...(fontSize ? { fontSize } : {}) })
+      for (let i = 0; i < text.length; i++) chars.push({ tts, bold, italic, ...own })
       fullText += text
     } else if (inline.type === 'hardBreak') {
       hardBreakOffsets.push(fullText.length)
@@ -61,7 +75,7 @@ function buildCharInfo(node: JSONContent): { fullText: string; chars: CharInfo[]
   return { fullText, chars, hardBreakOffsets }
 }
 
-/** Group [start, end) of fullText into runs of the same bold/italic/size. */
+/** Group [start, end) of fullText into runs of the same bold/italic/size/font/color. */
 function buildRuns(fullText: string, chars: CharInfo[], start: number, end: number): TextRun[] {
   const runs: TextRun[] = []
   let i = start
@@ -73,16 +87,15 @@ function buildRuns(fullText: string, chars: CharInfo[], start: number, end: numb
     }
     const bold = chars[i]?.bold ?? false
     const italic = chars[i]?.italic ?? false
-    const fontSize = chars[i]?.fontSize
     let j = i + 1
     while (
       j < end
       && !chars[j]?.lineBreak
       && (chars[j]?.bold ?? false) === bold
       && (chars[j]?.italic ?? false) === italic
-      && chars[j]?.fontSize === fontSize
+      && sameStyle(chars[j], chars[i])
     ) j++
-    runs.push({ text: fullText.slice(i, j), bold, italic, ...(fontSize ? { fontSize } : {}) })
+    runs.push({ text: fullText.slice(i, j), bold, italic, ...styleOf(chars[i]) })
     i = j
   }
   return runs
@@ -118,7 +131,7 @@ export function extractDocumentBlocks(content: JSONContent | null | undefined): 
 
   const processText = (node: JSONContent, blockType: 'paragraph' | 'heading', headingLevel?: number) => {
     const { fullText, chars, hardBreakOffsets } = buildCharInfo(node)
-    const attrs = node.attrs as { textAlign?: string; marginLeft?: number; lineHeight?: number | null } | undefined
+    const attrs = node.attrs as { textAlign?: string; marginLeft?: number; lineHeight?: number | null; fontSize?: number | null; textIndent?: number | null } | undefined
     const segments: TTSSegment[] = []
 
     if (fullText.trim()) {
@@ -166,6 +179,8 @@ export function extractDocumentBlocks(content: JSONContent | null | undefined): 
       ...(attrs?.textAlign ? { textAlign: attrs.textAlign } : {}),
       ...(attrs?.marginLeft ? { marginLeft: attrs.marginLeft } : {}),
       ...(attrs?.lineHeight ? { lineHeight: attrs.lineHeight } : {}),
+      ...(attrs?.fontSize ? { fontSize: attrs.fontSize } : {}),
+      ...(attrs?.textIndent ? { textIndent: attrs.textIndent } : {}),
       ...layoutOf(node),
       segments,
     })
@@ -186,7 +201,9 @@ export function extractDocumentBlocks(content: JSONContent | null | undefined): 
         ...layoutOf(node),
       })
     } else if (node.type === 'horizontalRule') {
-      blocks.push({ kind: 'rule', ...layoutOf(node) })
+      const a = (node.attrs ?? {}) as Record<string, unknown>
+      const rule = Object.fromEntries(['ruleColor', 'ruleThickness'].filter(k => a[k] != null).map(k => [k, a[k]]))
+      blocks.push({ kind: 'rule', ...layoutOf(node), ...(Object.keys(rule).length ? { rule } : {}) })
     } else if (node.type === 'columns') {
       // Each column's blocks in turn -- sentence indices running on through them in that
       // order, the same reading order everything else walks the page in.

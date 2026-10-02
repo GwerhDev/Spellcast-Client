@@ -5,9 +5,10 @@ import { Node, mergeAttributes } from '@tiptap/core'
 // order for everything that walks the page's blocks.
 
 // The box's color drawn for whatever theme the page is in: the page is the app's (dark, or
-// a page background), not the PDF's white, so the PDF's own color could hide the text. A
-// neutral light grey becomes a light tint of the text's own color; a colored one keeps its
-// hue, translucent.
+// a page background), not the PDF's white, so a grey box's own color could hide the text
+// (which takes the theme's color there). A neutral grey becomes a light tint of the text's
+// own color; a colored one is drawn as on the page, as its text keeps its own color from the
+// PDF too (white on a blue band; see keepTextColors in pdfUtils).
 export const boxBackground = (hex: string): string => {
   const m = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex)
   if (!m) return 'transparent'
@@ -16,7 +17,7 @@ export const boxBackground = (hex: string): string => {
   const min = Math.min(r, g, b)
   const saturation = max === 0 ? 0 : (max - min) / max
   if (saturation < 0.15) return `color-mix(in srgb, currentColor ${max > 128 ? 9 : 16}%, transparent)`
-  return `color-mix(in srgb, ${hex} 32%, transparent)`
+  return hex
 }
 
 type Attrs = Record<string, unknown>

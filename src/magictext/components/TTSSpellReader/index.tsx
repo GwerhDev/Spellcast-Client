@@ -4,7 +4,7 @@ import type { CSSProperties, JSX, ReactNode } from 'react'
 import type { JSONContent } from '@tiptap/core'
 import type { DocumentBlock, TextRun } from '../../types'
 import { extractDocumentBlocks } from '../../utils/extractTTSSegments'
-import { pdfLayoutStyle } from '../../extensions/PdfPositionExtension'
+import { pdfLayoutStyle, pdfTextStyle, pdfRuleStyle } from '../../extensions/PdfPositionExtension'
 import { boxStyle } from '../../extensions/BoxExtension'
 
 interface Props {
@@ -13,7 +13,7 @@ interface Props {
   onSentenceClick?: (index: number) => void
 }
 
-/** Render a sentence's inline runs, reproducing bold/italic and each text's size. */
+/** Render a sentence's inline runs, reproducing bold/italic and each text's size, font and color. */
 function renderRuns(runs: TextRun[] | undefined, fallback: string): ReactNode {
   if (!runs || runs.length === 0) return fallback
   return runs.map((r, i) => {
@@ -22,7 +22,9 @@ function renderRuns(runs: TextRun[] | undefined, fallback: string): ReactNode {
     if (r.bold && r.italic) el = <strong><em>{r.text}</em></strong>
     else if (r.bold) el = <strong>{r.text}</strong>
     else if (r.italic) el = <em>{r.text}</em>
-    if (r.fontSize) el = <span style={{ fontSize: r.fontSize }}>{el}</span>
+    if (r.fontSize || r.fontFamily || r.color) {
+      el = <span style={{ fontSize: r.fontSize, fontFamily: r.fontFamily, color: r.color }}>{el}</span>
+    }
     return <Fragment key={i}>{el}</Fragment>
   })
 }
@@ -58,12 +60,13 @@ export function TTSSpellReader({ content, currentSentenceIndex, onSentenceClick 
       ...(block.textAlign ? { textAlign: block.textAlign as CSSProperties['textAlign'] } : {}),
       ...(block.marginLeft ? { marginLeft: `${block.marginLeft}px` } : {}),
       ...(block.lineHeight ? { lineHeight: block.lineHeight } : {}),
+      ...toReactStyle(pdfTextStyle({ fontSize: block.fontSize, textIndent: block.textIndent })),
       ...layout(block.layout),
     }
 
     // Empty block — render a spacer line so vertical rhythm matches the editor.
     if (!block.segments.length) {
-      return <Tag key={key} className={s.block} style={style}><br /></Tag>
+      return <Tag key={key} className={s.block} style={style} data-empty=""><br /></Tag>
     }
 
     const nodes: ReactNode[] = []
@@ -113,7 +116,9 @@ export function TTSSpellReader({ content, currentSentenceIndex, onSentenceClick 
         />
       )
     }
-    if (block.kind === 'rule') return <hr key={`hr-${key}`} className={s.rule} style={layout(block.layout)} />
+    if (block.kind === 'rule') {
+      return <hr key={`hr-${key}`} className={s.rule} style={{ ...toReactStyle(pdfRuleStyle(block.rule ?? {})), ...layout(block.layout) }} />
+    }
     if (block.kind === 'box') {
       // A colored box, as on the page (the editor's is BoxExtension's).
       return (

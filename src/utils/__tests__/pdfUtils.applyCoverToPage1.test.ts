@@ -21,7 +21,7 @@ describe('applyCoverToPage1', () => {
     const result = applyCoverToPage1(pages, NEW_COVER);
 
     expect(result[0].content).toHaveLength(2);
-    expect(result[0].content?.[0]).toEqual({ type: 'image', attrs: { src: NEW_COVER, alt: null, title: null } });
+    expect(result[0].content?.[0]).toEqual({ type: 'image', attrs: { src: NEW_COVER, alt: null, title: null, cover: true } });
     expect(result[0].content?.[1]).toEqual(pages[0].content?.[0]);
     // The original array/page object is not mutated in place.
     expect(pages[0].content).toHaveLength(1);
@@ -38,7 +38,7 @@ describe('applyCoverToPage1', () => {
     const result = applyCoverToPage1(pages, NEW_COVER);
 
     expect(result[0].content).toHaveLength(2);
-    expect(result[0].content?.[0]).toEqual({ type: 'image', attrs: { src: NEW_COVER, alt: null, title: null } });
+    expect(result[0].content?.[0]).toEqual({ type: 'image', attrs: { src: NEW_COVER, alt: null, title: null, cover: true } });
     expect(result[0].content?.[1]).toEqual(pages[0].content?.[1]);
   });
 
@@ -50,7 +50,7 @@ describe('applyCoverToPage1', () => {
     const result = applyCoverToPage1(pages, NEW_COVER);
 
     expect(result[0].content).toHaveLength(2);
-    expect(result[0].content?.[0]).toEqual({ type: 'image', attrs: { src: NEW_COVER, alt: null, title: null } });
+    expect(result[0].content?.[0]).toEqual({ type: 'image', attrs: { src: NEW_COVER, alt: null, title: null, cover: true } });
     expect(result[0].content?.[1]).toMatchObject({ attrs: { title: 'pdf-graphic' } });
   });
 
