@@ -7,7 +7,6 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
   border-radius: inherit;
 }
 
@@ -16,8 +15,6 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
-  overflow-x: hidden;
 }
 
 /* The cover behind everything, attached to the frame: the altar's own cover treatment
@@ -26,8 +23,8 @@
   position: absolute;
   inset: 0;
   z-index: -1;
-  overflow: hidden;
   pointer-events: none;
+  background: #000;
 }
 
 .cover {
@@ -52,9 +49,10 @@
    cover's colors but held dark (brightness), so a light cover glows in color instead of
    turning into a white blotch behind the light text. */
 .glow {
+  height: 100%;
   position: absolute;
   inset: -40px;
-  background-position: center 22%;
+  background-position: center 20%;
   background-size: cover;
   filter: blur(40px) saturate(1.6) brightness(0.55);
   opacity: 0.75;
@@ -91,4 +89,18 @@
   .secondaryHidden {
     transform: none;
   }
+}
+
+/* The page's top right corner, over the scene (e.g. the altar's settings). */
+.corner {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 5;
+  transition: opacity 0.4s ease;
+}
+
+.cornerHidden {
+  opacity: 0;
+  pointer-events: none;
 }

@@ -18,6 +18,7 @@ import groupsReducer from '../store/groupsSlice';
 import spellReducer from '../store/spellSlice';
 import apiResponsesReducer from '../store/apiResponsesSlice';
 import layoutReducer from '../store/layoutSlice';
+import altarReducer from '../store/altarSlice';
 import signalReducer from '../store/signalSlice';
 import desktopReducer from '../store/desktopSlice';
 
@@ -35,6 +36,7 @@ const rootReducer = combineReducers({
   spell: spellReducer,
   apiResponses: apiResponsesReducer,
   layout: layoutReducer,
+  altar: altarReducer,
   signal: signalReducer,
   desktop: desktopReducer,
 });

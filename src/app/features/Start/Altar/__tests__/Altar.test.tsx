@@ -6,6 +6,7 @@ import { setSpellFile, setSpellLoaded, setSentences, setCurrentSentenceIndex } f
 import { play, pause } from '../../../../../store/browserPlayerSlice';
 import { play as playAudio, setAiTimeline, setCurrentTime } from '../../../../../store/audioPlayerSlice';
 import { setSelectedVoice } from '../../../../../store/voiceSlice';
+import { setReadOnConjure } from '../../../../../store/altarSlice';
 import { Routes, Route } from 'react-router-dom';
 import { Altar } from '../index';
 import { SPELL_DRAG_TYPE } from '../../../../../config/consts';
@@ -394,6 +395,19 @@ describe('Altar', () => {
       expect(mockGetSpellById).toHaveBeenCalledWith('spell-1', undefined);
       expect(store.getState().browserPlayer.autoPlayOnLoad).toBe(true);
       expect(screen.getByTestId('altar').className).not.toMatch(/dragActive/);
+    });
+
+    // The altar's settings: with "read on conjuring" off, the spell is conjured paused.
+    it('only conjures the dropped spell, paused, when reading on conjuring is off', async () => {
+      mockGetSpellById.mockResolvedValue(readable);
+      const store = makeStore();
+      store.dispatch(setReadOnConjure(false));
+      renderWithProviders(<Read />, { store });
+      dragSpellOver();
+      await act(async () => { fireEvent.drop(screen.getByTestId('altar'), spellDrag()); });
+      await waitFor(() => expect(store.getState().spellReader.spellId).toBe('spell-1'));
+      expect(store.getState().browserPlayer.autoPlayOnLoad).toBe(false);
+      expect(store.getState().audioPlayer.autoPlayOnLoad).toBe(false);
     });
 
     it('dropping the spell that is already playing does not pause it', async () => {

@@ -12,6 +12,7 @@ import { addApiResponse } from '../../../../store/apiResponsesSlice';
 import { getSpellById } from '../../../../db';
 import { useSpellImport } from '../../../../hooks/useSpellImport';
 import { usePlaySpell } from '../../../../hooks/usePlaySpell';
+import type { Spell } from '../../../../interfaces';
 import { useSpellCoverUrl } from '../../../../hooks/useSpellCoverUrl';
 import { isInCasterGrimoire } from '../../../../utils/grimoire';
 import { useDragPointer } from '../../../../hooks/useDragPointer';
@@ -44,7 +45,10 @@ const GLOW_RANGE = 420;
 // it (Write, Import, Editor); once something is loaded, that spell's cover fills the panel.
 export const Altar = ({ onWrite, onImport, immersive = false, idle = false }: AltarProps) => {
   const { t } = useLanguage();
-  const { readSpell, unloadSpell } = usePlaySpell();
+  const { readSpell, mountSpell, unloadSpell } = usePlaySpell();
+  // Conjuring a spell here: reading it at once, or only conjured, paused (the altar's settings).
+  const readOnConjure = useAppSelector(state => state.altar.readOnConjure);
+  const conjure = (spell: Spell) => (readOnConjure ? readSpell(spell) : mountSpell(spell));
   const { importFile } = useSpellImport();
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
@@ -117,7 +121,7 @@ export const Altar = ({ onWrite, onImport, immersive = false, idle = false }: Al
       const firstId = ids.find((id): id is string => !!id);
       if (!firstId) return;
       const spell = await getSpellById(firstId, userId);
-      if (spell) readSpell(spell);
+      if (spell) conjure(spell);
     } finally {
       setImporting(false);
     }
@@ -126,7 +130,7 @@ export const Altar = ({ onWrite, onImport, immersive = false, idle = false }: Al
   const openDroppedSpell = async (droppedId: string) => {
     try {
       const spell = await getSpellById(droppedId, userId);
-      if (spell) readSpell(spell);
+      if (spell) conjure(spell);
     } catch (error) {
       console.error('Failed to load dropped spell:', error);
     }

@@ -12,6 +12,7 @@ import { faArrowRight, faBuildingColumns } from '@fortawesome/free-solid-svg-ico
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Coverflow, type CoverflowItem } from '../../components/Coverflow/Coverflow';
 import { EmptySpellCard } from '../../components/Cards/EmptySpellCard';
+import { applyQuickStart } from '../../../utils/quickStart';
 
 // The places the row always shows: a spell in the middle and three on each side, filled
 // with empty ones when there are fewer spells.
@@ -34,6 +35,7 @@ export const LastSpells: React.FC = () => {
   const uploadQueue = useAppSelector((state) => state.spellUpload.queue);
   const audioPlaying = useAppSelector((state) => state.audioPlayer.isPlaying);
   const browserPlaying = useAppSelector((state) => state.browserPlayer.isPlaying);
+  const quickStart = useAppSelector((state) => state.altar.quickStart);
   const { t } = useLanguage();
   const [documents, setDocuments] = useState<Spell[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -86,9 +88,11 @@ export const LastSpells: React.FC = () => {
     ));
   }, [activeCurrentPage, activeDocId]);
 
+  // The quick start's spells: the altar's filters, all applied at once (see applyQuickStart).
+  const listed = applyQuickStart(documents, quickStart);
   const MAX = 10;
-  const visible = documents.slice(0, MAX);
-  const hasMore = documents.length > MAX;
+  const visible = listed.slice(0, MAX);
+  const hasMore = listed.length > MAX;
 
   const coverflowLabels = {
     previous: t.common.previous,

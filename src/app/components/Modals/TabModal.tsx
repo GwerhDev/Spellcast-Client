@@ -1,5 +1,6 @@
 import s from './TabModal.module.css';
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faXmark } from '@fortawesome/free-solid-svg-icons';
@@ -23,7 +24,10 @@ export const TabModal: React.FC<TabModalProps> = ({ show, onClose, title, tabs }
 
   if (!show) return null;
 
-  return (
+  // Portaled to <body> (as CustomModal is): opened from inside an element with a stacking
+  // context of its own (e.g. the home page's corner), it would otherwise sit under whatever
+  // the page draws after that element.
+  return createPortal(
     <div className={s.overlay} onClick={onClose}>
       <div className={s.outterBorder}>
         <div className={s.modal} onClick={(e) => e.stopPropagation()}>
@@ -50,6 +54,7 @@ export const TabModal: React.FC<TabModalProps> = ({ show, onClose, title, tabs }
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 };

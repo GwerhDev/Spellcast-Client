@@ -1,0 +1,105 @@
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-light-400);
+}
+
+.sectionDesc {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: var(--color-light-300);
+}
+
+/* The choices side by side (as many per row as fit, stacked on a phone), the picked one
+   in the app's color. */
+.options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+  gap: 0.6rem;
+}
+
+@media (max-width: 480px) {
+  .options {
+    grid-template-columns: 1fr;
+  }
+}
+
+.option {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.8rem 0.9rem;
+  border-radius: 12px;
+  border: 1px solid var(--color-dark-300);
+  background: var(--component-background);
+  color: var(--text-color);
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.option:hover {
+  border-color: color-mix(in srgb, var(--color-primary) 55%, transparent);
+}
+
+.optionSelected,
+.optionSelected:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 10%, var(--component-background));
+}
+
+.optionIcon {
+  font-size: 1rem;
+  opacity: 0.8;
+}
+
+.optionLabel {
+  flex: 1;
+  min-width: 0;
+}
+
+.optionCheck {
+  font-size: 0.8rem;
+}
+
+/* Not there yet: shown, dimmed, with its "soon" tag, and not pickable. */
+.optionLocked,
+.optionLocked:hover {
+  cursor: not-allowed;
+  opacity: 0.55;
+  border-color: var(--color-dark-300);
+  border-style: dashed;
+}
+
+.soonTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  background: var(--color-dark-300);
+  color: var(--color-light-400);
+  font-size: 0.65rem;
+  font-weight: 600;
+  white-space: nowrap;
+}

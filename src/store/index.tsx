@@ -14,6 +14,7 @@ import casterInventoryReducer from './casterInventorySlice';
 import spellUploadReducer from './spellUploadSlice';
 import desktopReducer from './desktopSlice';
 import layoutReducer from './layoutSlice';
+import altarReducer, { ALTAR_BACKDROP_KEY, ALTAR_QUICK_START_KEY, ALTAR_READ_ON_CONJURE_KEY } from './altarSlice';
 
 export const store = configureStore({
   reducer: {
@@ -32,6 +33,7 @@ export const store = configureStore({
     casterInventory: casterInventoryReducer,
     spellUpload: spellUploadReducer,
     layout: layoutReducer,
+    altar: altarReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
@@ -79,6 +81,16 @@ store.subscribe(() => {
     localStorage.setItem('reader:attentionGuard', String(attentionGuardEnabled));
     localStorage.setItem('reader:attentionGuardInterval', String(attentionGuardInterval));
   } catch {}
+});
+
+// The altar's settings (see AltarSettingsModal): dispatching is enough to keep them.
+store.subscribe(() => {
+  try {
+    const { backdrop, quickStart, readOnConjure } = store.getState().altar;
+    localStorage.setItem(ALTAR_BACKDROP_KEY, backdrop);
+    localStorage.setItem(ALTAR_QUICK_START_KEY, JSON.stringify(quickStart));
+    localStorage.setItem(ALTAR_READ_ON_CONJURE_KEY, String(readOnConjure));
+  } catch { /* storage unavailable: the setting just isn't kept */ }
 });
 
 export type RootState = ReturnType<typeof store.getState>;

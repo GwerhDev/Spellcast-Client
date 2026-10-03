@@ -15,6 +15,9 @@ interface HomeStageProps {
   // The scene (the altar) and what sits below it (e.g. Last Spells).
   main: ReactNode;
   secondary: ReactNode;
+  // Over the page's top right corner (e.g. the altar's settings), stepping aside with the
+  // secondary content while the pointer rests.
+  corner?: ReactNode;
 }
 
 // The home page as a stage: with a spell loaded, its cover fills the whole page (blurred,
@@ -22,7 +25,7 @@ interface HomeStageProps {
 // secondary content below fades away while the pointer rests, leaving the scene alone.
 // The backdrop is attached to the stage's frame, which doesn't scroll: the content scrolls
 // over it in its own scroller, so the cover always fills the page, edge to edge.
-export const HomeStage = ({ coverUrl, immersive, idle, main, secondary }: HomeStageProps) => (
+export const HomeStage = ({ coverUrl, immersive, idle, main, secondary, corner }: HomeStageProps) => (
   <div data-testid="home-stage" className={`${s.stage} ${immersive ? s.immersive : ''}`}>
     {/* Fades in as a spell loads and out as it's unloaded (or crossfades to the next). */}
     <AnimatePresence>
@@ -41,6 +44,11 @@ export const HomeStage = ({ coverUrl, immersive, idle, main, secondary }: HomeSt
         </motion.div>
       )}
     </AnimatePresence>
+    {corner && (
+      <div data-testid="home-stage-corner" className={`${s.corner} ${immersive && idle ? s.cornerHidden : ''}`}>
+        {corner}
+      </div>
+    )}
     <div data-testid="home-stage-scroller" className={s.scroller}>
       {main}
       <div

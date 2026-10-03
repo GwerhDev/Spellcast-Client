@@ -4,6 +4,7 @@ import { renderWithProviders, makeStore } from '../../../../test/renderWithProvi
 import { LastSpells } from '../index';
 import * as db from '../../../../db';
 import { invalidateSpellList, coverFrameChanged } from '../../../../store/spellReaderSlice';
+import { toggleQuickStartFilter } from '../../../../store/altarSlice';
 
 // The detail modal loads the spell on its own; a stub is enough to see which spell a card opened.
 vi.mock('../../../components/Modals/SpellDetailModal', () => ({
@@ -54,6 +55,17 @@ describe('LastSpells', () => {
     await vi.waitFor(() => {
       expect(container.firstChild).toBeNull();
     });
+  });
+
+  // The quick start's filters: with "in progress" on, only the spells being read.
+  it('lists only the spells in progress when the altar is set to', async () => {
+    const reading = { ...mockDoc, id: 'doc-2', title: 'Being read', progress: { currentPage: 3, pagesProgress: [], lastReadSentenceIndex: 0 } };
+    vi.spyOn(db, 'getSpellsFromDB').mockResolvedValue([mockDoc, reading] as never);
+    const store = loggedStore();
+    store.dispatch(toggleQuickStartFilter('inProgress'));
+    renderWithProviders(<LastSpells />, { store });
+    await screen.findByTestId('spell-card-doc-2');
+    expect(screen.queryByTestId('spell-card-doc-1')).toBeNull();
   });
 
   it('shows document cards when documents exist', async () => {
