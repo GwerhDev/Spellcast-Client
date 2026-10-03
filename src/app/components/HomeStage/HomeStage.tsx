@@ -1,6 +1,12 @@
-import type { ReactNode } from 'react';
+import { useState, type FocusEvent, type ReactNode } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import s from './HomeStage.module.css';
+
+// Whether focus landing on an element is keyboard focus (Tab), not a click's: only that
+// keeps the secondary content in view while idle. Unsupported selector: treated as a click.
+const isKeyboardFocus = (el: Element) => {
+  try { return el.matches(':focus-visible'); } catch { return false; }
+};
 
 // Quoted: blob: URLs can contain characters an unquoted url() rejects.
 const cssUrl = (url: string) => `url("${url}")`;
@@ -25,7 +31,16 @@ interface HomeStageProps {
 // secondary content below fades away while the pointer rests, leaving the scene alone.
 // The backdrop is attached to the stage's frame, which doesn't scroll: the content scrolls
 // over it in its own scroller, so the cover always fills the page, edge to edge.
-export const HomeStage = ({ coverUrl, immersive, idle, main, secondary, corner }: HomeStageProps) => (
+export const HomeStage = ({ coverUrl, immersive, idle, main, secondary, corner }: HomeStageProps) => {
+  // Someone moving through the secondary content with the keyboard isn't touching the
+  // pointer, so it goes idle under them: while they're in it, it stays.
+  const [keyboardInside, setKeyboardInside] = useState(false);
+  const secondaryHidden = immersive && idle && !keyboardInside;
+  const handleFocus = (e: FocusEvent<HTMLDivElement>) => setKeyboardInside(isKeyboardFocus(e.target));
+  const handleBlur = (e: FocusEvent<HTMLDivElement>) => {
+    if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setKeyboardInside(false);
+  };
+  return (
   <div data-testid="home-stage" className={`${s.stage} ${immersive ? s.immersive : ''}`}>
     {/* Fades in as a spell loads and out as it's unloaded (or crossfades to the next). */}
     <AnimatePresence>
@@ -53,11 +68,17 @@ export const HomeStage = ({ coverUrl, immersive, idle, main, secondary, corner }
       {main}
       <div
         data-testid="home-stage-secondary"
-        className={`${s.secondary} ${immersive && idle ? s.secondaryHidden : ''}`}
-        aria-hidden={immersive && idle ? true : undefined}
+        className={`${s.secondary} ${secondaryHidden ? s.secondaryHidden : ''}`}
+        // inert, not aria-hidden: hidden from assistive technology all the same, and it also
+        // takes focus out of it (a card clicked keeps focus) -- aria-hidden over a focused
+        // element is invalid ARIA, and the browser blocks it.
+        inert={secondaryHidden || undefined}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
       >
         {secondary}
       </div>
     </div>
   </div>
 );
+};
