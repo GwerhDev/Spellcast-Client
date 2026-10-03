@@ -12,9 +12,11 @@ interface PageListProps {
   onAddPage?: () => void;
   onPageReset?: (pageIndex: number) => void;
   pdfProgress?: { current: number; total: number } | null;
+  // Always one column (in the floating menu on a phone), not the row a phone gets otherwise.
+  column?: boolean;
 }
 
-export const PageList: React.FC<PageListProps> = ({ pages, currentPage, onPageClick, onPageDelete, onAddPage, onPageReset, pdfProgress }) => {
+export const PageList: React.FC<PageListProps> = ({ pages, currentPage, onPageClick, onPageDelete, onAddPage, onPageReset, pdfProgress, column }) => {
   const { t } = useLanguage();
   const gridRef = useRef<HTMLDivElement>(null);
 
@@ -44,7 +46,7 @@ export const PageList: React.FC<PageListProps> = ({ pages, currentPage, onPageCl
   };
 
   return (
-    <div ref={gridRef} className={s.pageGrid}>
+    <div ref={gridRef} className={`${s.pageGrid} ${column ? s.pageGridColumn : ''}`}>
       {pages.map((_, index) => {
         const progressState = getProgressState(index);
         return (
@@ -56,6 +58,7 @@ export const PageList: React.FC<PageListProps> = ({ pages, currentPage, onPageCl
               progressState === 'processing' ? s.processingPage : '',
               progressState === 'pending' ? s.pendingPage : '',
             ].filter(Boolean).join(' ')}
+            data-page-item
             onClick={() => onPageClick(index)}
           >
             {onPageDelete && (

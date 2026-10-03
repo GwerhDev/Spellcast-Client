@@ -39,6 +39,24 @@ export const isCoverPage = (page: JSONContent | undefined, index: number): boole
   return (first?.attrs as Record<string, unknown> | undefined)?.cover === true || !hasText(page);
 };
 
+// Whether anything is written on the page, however deep (in columns, boxes, tables...):
+// a page read from a PDF keeps its layout, so its text needn't be in top-level paragraphs.
+export const pageHasText = (page: JSONContent | undefined): boolean => hasText(page);
+
+// The cover only goes on a page 1 with nothing written on it -- one with text shows its
+// text, not the PDF page's picture over it. Takes off a (marked) cover that ended up over
+// page 1's text: spells imported before the text in columns/boxes counted as text got one.
+// The same array back when there's nothing to take off.
+export const dropCoverOverText = (pages: JSONContent[]): JSONContent[] => {
+  const page1 = pages[0];
+  const [first, ...rest] = page1?.content ?? [];
+  if ((first?.attrs as Record<string, unknown> | undefined)?.cover !== true || first?.type !== 'image') return pages;
+  if (!rest.some(hasText)) return pages;
+  const updated = [...pages];
+  updated[0] = { ...page1, content: rest };
+  return updated;
+};
+
 export interface PageFrame {
   width: number;
   height: number;

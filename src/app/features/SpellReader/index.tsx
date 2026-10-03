@@ -7,7 +7,7 @@ import { useGoBack } from '../../../hooks/useGoBack';
 import { ZoomOverlay } from '../../components/Zoom/ZoomOverlay';
 import { useDispatch, useSelector } from 'react-redux';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowLeft, faEdit, faScroll, faGear, faExpand, faCompress, faInfoCircle } from '@fortawesome/free-solid-svg-icons';
+import { faArrowLeft, faEdit, faScroll, faGear, faExpand, faCompress, faInfoCircle, faLayerGroup } from '@fortawesome/free-solid-svg-icons';
 import { RootState } from '../../../store';
 import { activeSentenceIndex as getActiveSentenceIndex } from '../../../utils/activeSentence';
 import { goToPage, setCurrentSentenceIndex, setShowReaderSettings, recordReaderActivity } from '../../../store/spellReaderSlice';
@@ -22,6 +22,8 @@ import { IconButton } from '../../components/Buttons/IconButton';
 import { SpellDetailModal } from '../../components/Modals/SpellDetailModal';
 import { SearcherButton } from '../../components/SpellReader/Searcher/SearcherButton';
 import { PageList } from '../../components/SpellCreateForm/PageList';
+import { PageListOverlay } from '../../components/SpellCreateForm/PageListOverlay';
+import { usePageListToggle } from '../../../hooks/usePageListToggle';
 import { TTSSpellReader, ShareQuoteMenu, type JSONContent, type SpellQuoteSelection } from '../../../magictext';
 import { addApiResponse } from '../../../store/apiResponsesSlice';
 import { useLanguage } from '../../../i18n';
@@ -113,6 +115,12 @@ export const SpellReader = () => {
   const [editedText, setEditedText] = useState<JSONContent>(emptyContent);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
+  // The page list, shown or hidden from the top bar: its column beside the page on a wide
+  // screen, over the page on a phone.
+  const pageList = usePageListToggle();
+  // Over the page on a phone; beside it otherwise -- fullscreen too, where it stays as it
+  // is (it doesn't fade with the top bar and the player): only its button shows or hides it.
+  const listOverPage = pageList.narrow;
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const paperBgRef = useRef<HTMLDivElement>(null);
   const playerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -277,6 +285,18 @@ export const SpellReader = () => {
           {spellTitle}
         </div>
         <div className={s.controlsContainer}>
+          {isLoaded && (
+            <IconButton
+              data-testid="page-list-toggle"
+              data-page-list-toggle
+              icon={faLayerGroup}
+              variant='transparent'
+              className={pageList.open ? s.headerBtnActive : undefined}
+              title={pageList.open ? t.spell.hidePages : t.spell.showPages}
+              aria-pressed={pageList.open}
+              onClick={pageList.toggle}
+            />
+          )}
           {isLoaded && <IconButton data-testid="spell-reader-info-btn" icon={faInfoCircle} variant='transparent' title={t.reader.spellInfo} onClick={() => setShowInfoModal(true)} />}
           {isLoaded && <IconButton icon={faEdit} variant='transparent' title={t.spell.editSpell} onClick={handleEdit} />}
           {isLoaded && <IconButton icon={faGear} variant='transparent' title={t.reader.readerSettings} onClick={() => dispatch(setShowReaderSettings(true))} />}
@@ -312,7 +332,7 @@ export const SpellReader = () => {
           )}
         </div>
         <AnimatePresence>
-          {isLoaded && !isFullscreen && (
+          {isLoaded && pageList.open && !listOverPage && (
             <motion.div
               className={s.pagesContainer}
               initial={{ opacity: 0, width: 0 }}
@@ -329,6 +349,18 @@ export const SpellReader = () => {
             </motion.div>
           )}
         </AnimatePresence>
+        {/* A phone: over the page instead (below the top bar, which floats over it in
+            fullscreen). */}
+        {isLoaded && pageList.open && listOverPage && (
+          <PageListOverlay className={isFullscreen ? s.pageListBelowBar : undefined} onClose={() => pageList.setOpen(false)}>
+            <PageList
+              pages={Array.from({ length: totalPages }, () => '')}
+              currentPage={currentPage - 1}
+              onPageClick={(idx) => dispatch(goToPage(idx + 1))}
+              column
+            />
+          </PageListOverlay>
+        )}
       </div>
     </div>
   );

@@ -143,13 +143,6 @@
   transition: opacity 0.25s ease, visibility 0.25s ease;
 }
 
-:global(body.fullscreen-reader) .pagesContainer {
-  opacity: 0;
-  visibility: hidden;
-  width: 0 !important;
-  overflow: hidden;
-}
-
 :global(body.fullscreen-reader) .pageInfoContainer {
   position: absolute;
   top: 0;
@@ -253,22 +246,18 @@
     padding: 0.75rem 0.5rem 4rem;
   }
 
-  /* Stack the pages panel below the sheet as a horizontal strip */
-  .bodyWrapper {
-    flex-direction: column;
-  }
-
+  /* The page list isn't beside the page here: it opens over it (see PageListOverlay). */
   .textContainer {
     border-radius: 0;
   }
+}
 
-  /* Override the framer-motion inline width animation on mobile so the panel
-     spans full width below the content instead of staying glued to the side. */
-  .pagesContainer {
-    width: 100% !important;
-    max-height: 32vh;
-    flex-shrink: 0;
-    overflow-x: auto;
-    overflow-y: hidden;
-  }
+/* A top bar button that's on (the page list shown). */
+.headerBtnActive,
+.headerBtnActive:hover {
+  color: var(--color-primary);
+}
+/* Fullscreen, the top bar floats over the page: the page list opens below it. */
+.bodyWrapper > .pageListBelowBar {
+  top: 3.75rem;
 }

@@ -12,6 +12,11 @@
   }
 }
 
+/* One column whatever the screen (over the page on a phone, see PageListOverlay). */
+.pageGrid.pageGridColumn {
+  flex-direction: column;
+}
+
 
 .pagesHeader {
   display: flex;
@@ -107,9 +112,11 @@
   opacity: 1;
 }
 
+/* No background of its own on hover (the icon over the page's card, as it is): only the
+   app's color. */
 .resetButton:hover {
-  background: var(--color-primary);
-  color: white;
+  background: transparent;
+  color: var(--color-primary);
 }
 
 .addPageItem {

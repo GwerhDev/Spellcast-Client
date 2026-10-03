@@ -167,3 +167,9 @@
     flex-direction: row;
   }
 }
+
+/* A header button that's on (the page list shown). */
+.headerBtnActive,
+.headerBtnActive:hover {
+  color: var(--color-primary);
+}

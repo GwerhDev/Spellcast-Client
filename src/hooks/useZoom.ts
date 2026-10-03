@@ -17,6 +17,8 @@ interface FitOptions {
 export function useZoom(scrollContainerRef: React.RefObject<HTMLDivElement | null>, { contentWidth, fitRef }: FitOptions = {}) {
   const [userZoom, setUserZoom] = useState(1.0)
   const [fit, setFit] = useState(1)
+  // The fit element's width for the sheet (its content box), 0 until measured.
+  const [room, setRoom] = useState(0)
   const [showIndicator, setShowIndicator] = useState(false)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -36,10 +38,11 @@ export function useZoom(scrollContainerRef: React.RefObject<HTMLDivElement | nul
   // How much room the sheet has: the fit element's content box, followed as it resizes.
   useEffect(() => {
     const el = fitEl
-    if (!el || !contentWidth) { setFit(1); return }
+    if (!el || !contentWidth) { setFit(1); setRoom(0); return }
     const update = () => {
       const cs = getComputedStyle(el)
       const room = el.clientWidth - (parseFloat(cs.paddingLeft) || 0) - (parseFloat(cs.paddingRight) || 0)
+      setRoom(Math.max(0, room))
       setFit(room > 0 ? Math.min(1, room / contentWidth) : 1)
     }
     update()
@@ -82,5 +85,5 @@ export function useZoom(scrollContainerRef: React.RefObject<HTMLDivElement | nul
   }, [adjustZoom, scrollContainerRef])
 
   const zoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, Math.round(fit * userZoom * 100) / 100))
-  return { zoom, showIndicator, adjustZoom, resetZoom, ZOOM_STEP }
+  return { zoom, room, showIndicator, adjustZoom, resetZoom, ZOOM_STEP }
 }

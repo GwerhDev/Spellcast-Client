@@ -106,6 +106,24 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
     hasOriginalPdf(doc.id).then(setHasPdf);
   }, [doc?.id]);
 
+  // Delete (⌘+Backspace on a Mac) asks to delete this spell, as its Delete button does --
+  // while this is the modal on top (not over its own confirmation or cover editor) and
+  // nothing is being typed. Only for the caster's own spells (see inGrimoire below).
+  const canAskDelete = show && !!spellId && !!doc && isInCasterGrimoire(doc.userId, userData?.id)
+    && !showDeleteModal && !showCoverModal;
+  useEffect(() => {
+    if (!canAskDelete) return;
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.target as HTMLElement | null)?.closest('input, textarea, select, [contenteditable="true"]')) return;
+      if (e.key === 'Delete' || (e.metaKey && e.key === 'Backspace')) {
+        e.preventDefault();
+        setShowDeleteModal(true);
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [canAskDelete]);
+
   if (!show || !spellId) return null;
 
   const resolvedCoverFrameId = doc ? resolveCoverFrameId(doc.coverFrameId, activeCoverFrameId) : null;

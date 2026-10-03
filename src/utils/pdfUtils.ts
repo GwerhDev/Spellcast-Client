@@ -1,7 +1,7 @@
 import * as pdfjsLib from 'pdfjs-dist';
 import type { TextItem } from 'pdfjs-dist/types/src/display/api';
 import type { JSONContent } from '@tiptap/core';
-import { isCoverNode } from './spellPage';
+import { isCoverNode, pageHasText, dropCoverOverText } from './spellPage';
 
 export const emptyPageContent: JSONContent = {
   type: 'doc',
@@ -55,12 +55,10 @@ export const injectCoverIntoPages = async (pages: JSONContent[], coverBlob: Blob
   // Not over an image page 1 already starts with (a cover, or the scan of the page itself):
   // it would show twice.
   if (firstNode?.type === 'image' && (firstNode.attrs as Record<string, unknown> | undefined)?.title !== 'pdf-graphic') return pages;
-  // Only treat the first page as a decorative cover if it has no text content.
-  // Empty paragraphs from emptyPageContent don't count as text.
-  const firstPageHasText = (pages[0]?.content ?? []).some(
-    node => (node.type === 'paragraph' || node.type === 'heading') && (node.content ?? []).length > 0
-  );
-  if (firstPageHasText) return pages;
+  // Only a page 1 with nothing written on it gets the cover -- its text counted however
+  // deep it is (a PDF's columns, boxes, tables). Empty paragraphs from emptyPageContent
+  // don't count as text.
+  if (pageHasText(pages[0])) return pages;
   try {
     const coverDataUrl = await blobToDataUrl(coverBlob);
     const updated = [...pages];
@@ -98,13 +96,17 @@ export const renderPageToCover = async (pdf: pdfjsLib.PDFDocumentProxy): Promise
 // first thing on page 1 -- shared by SpellCreateForm and SpellEditForm's applyCover, so a
 // cover picked while editing an already-saved spell updates the reader's page 1 the exact
 // same way it does at creation time, not just the cover Blob/thumbnail. Replaces an
-// existing cover image node in place, or prepends a new one when page 1 has none yet.
+// existing cover image node in place, or prepends a new one when page 1 has none yet --
+// unless page 1 has text: then the cover is only the spell's thumbnail, and the page stays
+// as written (without a cover left over it, see dropCoverOverText).
 export const applyCoverToPage1 = (pages: JSONContent[], coverDataUrl: string): JSONContent[] => {
   if (pages.length === 0) return pages;
   const page1 = pages[0];
   const coverNode = coverNodeOf(coverDataUrl);
   const firstNode = page1?.content?.[0];
   const hasCoverNode = isCoverNode(firstNode);
+  const written = hasCoverNode ? { ...page1, content: (page1.content ?? []).slice(1) } : page1;
+  if (pageHasText(written)) return dropCoverOverText(pages);
   const content = hasCoverNode
     ? [coverNode, ...(page1.content ?? []).slice(1)]
     : [coverNode, ...(page1.content ?? [])];
@@ -728,6 +730,11 @@ export const extractPdfPages = async (
     const opList = await page.getOperatorList();
     const pageImages = await extractPageImages(page);
     const imagePlaces = extractImageYPositions(opList, pageImages.length, pageViewport.height);
+    // A scanned page: the whole sheet is one picture, with its text (read by OCR) laid
+    // over it. The page is its text then -- the picture isn't kept, or it showed the page a
+    // second time above it. Its place still counts as drawn (scanPlaces), so the graphic
+    // regions below don't crop it again piece by piece.
+    const scanPlaces = splitOffPageScans(pageImages, imagePlaces, pageViewport, lines.some(l => l.items.some(i => i.str.trim())));
     const xobjectPlaces = imagePlaces.filter(p => p.width > 0 && p.height > 0);
 
     // The page's content area: its text and its images. Not the text alone: on a page of a
@@ -767,7 +774,7 @@ export const extractPdfPages = async (
     // Not where an image is drawn: the image is already on the page as itself, and cropping
     // the same rows again (recolored) drew it a second time under it.
     const graphicRegions = detectDecorativeRegionsFromCanvas(pageCanvas, pageViewport, xScale, lines).filter(r => {
-      const covered = Math.max(0, ...xobjectPlaces.map(p => Math.min(r.yMax, p.y + p.height) - Math.max(r.yMin, p.y)));
+      const covered = Math.max(0, ...[...xobjectPlaces, ...scanPlaces].map(p => Math.min(r.yMax, p.y + p.height) - Math.max(r.yMin, p.y)));
       return covered < (r.yMax - r.yMin) * 0.5;
     });
 
@@ -1403,6 +1410,32 @@ const multiply = (m: Matrix, t: Matrix): Matrix => [
   m[0] * t[4] + m[2] * t[5] + m[4],
   m[1] * t[4] + m[3] * t[5] + m[5],
 ];
+
+// How much of the sheet an image has to cover to be the page's own scan.
+const SCAN_COVERAGE = 0.8;
+
+// Takes the page's scans out of its images (and their places, kept in step), when the
+// page has text: an image drawn over most of the sheet is the page itself, scanned, and
+// the text on it is what was read from it. Returns their places.
+export const splitOffPageScans = (
+  images: string[],
+  places: ImagePlace[],
+  page: { width: number; height: number },
+  hasText: boolean,
+): ImagePlace[] => {
+  if (!hasText) return [];
+  const scans: ImagePlace[] = [];
+  for (let i = Math.min(images.length, places.length) - 1; i >= 0; i--) {
+    const p = places[i];
+    const covered = Math.max(0, Math.min(p.x + p.width, page.width) - Math.max(p.x, 0))
+      * Math.max(0, Math.min(p.y + p.height, page.height) - Math.max(p.y, 0));
+    if (covered < page.width * page.height * SCAN_COVERAGE) continue;
+    scans.push(p);
+    images.splice(i, 1);
+    places.splice(i, 1);
+  }
+  return scans;
+};
 
 const extractImageYPositions = (
   opList: { fnArray: number[]; argsArray: unknown[][] },

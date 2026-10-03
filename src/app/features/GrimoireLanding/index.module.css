@@ -9,6 +9,35 @@
   align-items: center;
 }
 
+/* ── Entrance ── the page's top rows (header, tabs, search, actions) rise in one after
+   another as the Grimoire mounts, and then the list fades in (its cards cascade on their
+   own, see SpellList). `backwards`, not `both`: once done the animation lets go, leaving
+   the rows' own transforms and transitions alone. The bulk bar (positioned with a
+   transform of its own) is never among the first five children. */
+.container > :nth-child(-n + 4) {
+  animation: grimoireRise 0.5s cubic-bezier(0.2, 0.7, 0.3, 1) backwards;
+}
+.container > :nth-child(2) { animation-delay: 60ms; }
+.container > :nth-child(3) { animation-delay: 120ms; }
+.container > :nth-child(4) { animation-delay: 180ms; }
+.container > :nth-child(5):not(.bulkBar) {
+  animation: grimoireFade 0.4s ease-out 200ms backwards;
+}
+
+@keyframes grimoireRise {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes grimoireFade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .container > * { animation: none !important; }
+}
+
 .header {
   width: 100%;
   max-width: 800px;
@@ -86,48 +115,28 @@
   white-space: nowrap;
 }
 
-/* The bar's buttons: one family, like the toolbar's (outlined pills with their icon),
-   each in its own tone -- neutral, the main action, the destructive one. */
-.bulkBtn {
-  --bulk-tone: var(--color-light-300);
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
+/* The bar's buttons are the app's own (Primary/SecondaryButton, the shared chip, with its
+   danger variant for delete), only sized down for a bar: as wide as their label, not the
+   full width a form's buttons take. `button.` outranks the chip's own width. */
+button.bulkAction {
+  width: auto;
   padding: 0.4rem 0.95rem;
-  border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--bulk-tone) 55%, transparent);
-  background: transparent;
-  color: var(--bulk-tone);
   font-size: 0.78rem;
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: border-color 0.2s, color 0.2s, background 0.2s;
 }
 
-.bulkBtn:hover:not(:disabled),
-.bulkBtn:focus-visible {
-  border-color: var(--bulk-tone);
-  background: color-mix(in srgb, var(--bulk-tone) 14%, transparent);
-  outline: none;
-}
-
-.bulkBtn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.bulkBtnActive {
-  --bulk-tone: var(--color-primary);
-  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
-}
-
-.bulkBtnPrimary {
-  --bulk-tone: var(--color-primary);
-}
-
-.bulkBtnDanger {
-  --bulk-tone: var(--color-danger);
+/* A phone: the count and three buttons don't fit one line -- the bar spans the screen
+   (with a gutter) and wraps. */
+@media (max-width: 600px) {
+  .bulkBar {
+    left: 0.75rem;
+    right: 0.75rem;
+    transform: none;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.6rem 0.75rem;
+    border-radius: 16px;
+  }
 }
 
 /* ── Doc filter chips ── */

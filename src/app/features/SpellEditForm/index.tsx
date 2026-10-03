@@ -19,11 +19,14 @@ import { textToSpeechService } from '../../../services/tts';
 import { useUpdateSpellsFromPdf } from '../../../hooks/useUpdateSpellsFromPdf';
 import { Spinner } from '../../components/Spinner';
 import { PageList } from '../../components/SpellCreateForm/PageList';
+import { PageListPlace } from '../../components/SpellCreateForm/PageListOverlay';
+import { usePageListToggle } from '../../../hooks/usePageListToggle';
 import { SpellEditor } from '../../components/Editors/SpellEditor';
 import { isCoverPage } from '../../../utils/spellPage';
-import { faArrowLeft, faCloudUpload, faPaperclip, faGear, faSave, faRotateLeft, faTriangleExclamation } from '@fortawesome/free-solid-svg-icons';
+import { faArrowLeft, faCloudUpload, faGear, faSave, faTriangleExclamation, faFilePdf, faLayerGroup } from '@fortawesome/free-solid-svg-icons';
 import { PdfProcessingStatus } from '../../components/PdfProcessingStatus';
 import { IconButton } from '../../components/Buttons/IconButton';
+import { DeleteConfirmModal } from '../../components/Modals/DeleteConfirmModal';
 import { CustomModal } from '../../components/Modals/CustomModal';
 import { PrimaryButton } from '../../components/Buttons/PrimaryButton';
 import { SecondaryButton } from '../../components/Buttons/SecondaryButton';
@@ -39,6 +42,8 @@ const emptyContent: JSONContent = {
 };
 
 type SaveStatus = 'idle' | 'saving' | 'saved';
+
+const SHOW_ORIGINAL_KEY = 'spellcast.editor.showOriginalPdf';
 
 export const SpellEditForm: React.FC = () => {
   const { id, page } = useParams<{ id: string, page?: string }>();
@@ -71,6 +76,16 @@ export const SpellEditForm: React.FC = () => {
   const [language, setLanguage] = useState('');
   const [metadataExpanded, setMetadataExpanded] = useState(false);
   const [spellHasOriginalPdf, setSpellHasOriginalPdf] = useState(false);
+  // The page list, shown or hidden from the top bar (see PageListPlace).
+  const pageList = usePageListToggle();
+  // The page compared with the original PDF's (beside it, or on its back; see SpellEditor).
+  // Remembered for the next spell edited (this browser's own preference).
+  const [showOriginal, setShowOriginal] = useState(() => {
+    try { return localStorage.getItem(SHOW_ORIGINAL_KEY) === '1'; } catch { return false; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem(SHOW_ORIGINAL_KEY, showOriginal ? '1' : '0'); } catch { /* storage unavailable */ }
+  }, [showOriginal]);
   const [showRefreshMetadataModal, setShowRefreshMetadataModal] = useState(false);
   const updateFromPdf = useUpdateSpellsFromPdf();
 
@@ -92,6 +107,9 @@ export const SpellEditForm: React.FC = () => {
 
   const [originalPages, setOriginalPages] = useState<JSONContent[] | null>(null);
   const [showResetAllModal, setShowResetAllModal] = useState(false);
+  // A page about to be deleted, or restored from the PDF: asked first (its edits would go).
+  const [pageToDelete, setPageToDelete] = useState<number | null>(null);
+  const [pageToReset, setPageToReset] = useState<number | null>(null);
   const [showImportModal, setShowImportModal] = useState(false);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [processingCollapsed, setProcessingCollapsed] = useState(false);
@@ -446,9 +464,28 @@ export const SpellEditForm: React.FC = () => {
         {!isProcessingPdf && saveStatus === 'saving' && <span className={s.saveStatus}>{t.common.saving}</span>}
         {!isProcessingPdf && saveStatus === 'saved' && <span className={s.saveStatus}>{t.common.saved}</span>}
 
-        <IconButton icon={faPaperclip} variant='transparent' title={t.spell.replaceContent} disabled={isProcessingPdf} onClick={() => pdfInputRef.current?.click()} />
+        {/* Replacing the PDF and restoring the spell are the PDF panel's own (see SpellEditor's
+            pdfPanel): it opens this picker. */}
         <input ref={pdfInputRef} type="file" accept=".pdf" style={{ display: 'none' }} onChange={handleFileSelect} />
-        {(originalPages || spellHasOriginalPdf) && <IconButton icon={faRotateLeft} variant='transparent' title={t.spell.resetAllTitle} disabled={isProcessingPdf} onClick={() => setShowResetAllModal(true)} />}
+        <IconButton
+          data-testid="page-list-toggle"
+          data-page-list-toggle
+          icon={faLayerGroup}
+          variant='transparent'
+          className={pageList.open ? s.headerBtnActive : undefined}
+          title={pageList.open ? t.spell.hidePages : t.spell.showPages}
+          aria-pressed={pageList.open}
+          onClick={pageList.toggle}
+        />
+        <IconButton
+          data-testid="spell-edit-original-btn"
+          icon={faFilePdf}
+          variant='transparent'
+          className={showOriginal ? s.headerBtnActive : undefined}
+          title={t.spell.showOriginal}
+          aria-pressed={showOriginal}
+          onClick={() => setShowOriginal(v => !v)}
+        />
         <IconButton data-testid="spell-edit-save-btn" icon={faSave} variant='transparent' title={t.common.save} disabled={!hasChanges || isProcessingPdf} onClick={handleSave} />
         <IconButton icon={faCloudUpload} disabled variant='transparent' title={t.nav.cloud} onClick={() => {}} />
         <IconButton icon={faGear} variant='transparent' onClick={() => dispatch(setShowEditorSettings(true))} />
@@ -500,19 +537,30 @@ export const SpellEditForm: React.FC = () => {
             onTTSPlay={handleTTSPlay}
             onTTSStop={stopTTSPreview}
             ttsPlaying={ttsPlaying}
+            pdfPanel={showOriginal && id ? {
+              spellId: id,
+              hasOriginal: spellHasOriginalPdf,
+              busy: isProcessingPdf,
+              onReplacePdf: () => pdfInputRef.current?.click(),
+              onRestoreAll: originalPages || spellHasOriginalPdf ? () => setShowResetAllModal(true) : undefined,
+              onRestorePage: originalPages || spellHasOriginalPdf ? () => setPageToReset(Number(editingPageIndex)) : undefined,
+            } : null}
           />
         </div>
-        <div className={s.pagesContainer}>
-          <PageList
-            pages={pagesContent.map(() => '')}
-            currentPage={Number(editingPageIndex)}
-            onPageClick={handlePageClick}
-            onPageDelete={handlePageDelete}
-            onAddPage={handleAddPage}
-            onPageReset={originalPages || spellHasOriginalPdf ? handleResetPage : undefined}
-            pdfProgress={activeJob?.progress ?? null}
-          />
-        </div>
+        <PageListPlace toggle={pageList} className={s.pagesContainer}>
+          {(overlay) => (
+            <PageList
+              pages={pagesContent.map(() => '')}
+              currentPage={Number(editingPageIndex)}
+              onPageClick={handlePageClick}
+              onPageDelete={setPageToDelete}
+              onAddPage={handleAddPage}
+              onPageReset={originalPages || spellHasOriginalPdf ? setPageToReset : undefined}
+              pdfProgress={activeJob?.progress ?? null}
+              column={overlay}
+            />
+          )}
+        </PageListPlace>
       </div>
 
       <CustomModal compact show={showImportModal} onClose={() => { setShowImportModal(false); setPendingFile(null); }} title={t.spell.replaceContent}>
@@ -524,6 +572,22 @@ export const SpellEditForm: React.FC = () => {
           </div>
         </div>
       </CustomModal>
+
+      <DeleteConfirmModal
+        show={pageToDelete !== null}
+        onClose={() => setPageToDelete(null)}
+        onConfirm={() => { if (pageToDelete !== null) handlePageDelete(pageToDelete); setPageToDelete(null); }}
+        title={t.spell.deletePageTitle}
+        message={t.spell.deletePageConfirm.replace('{n}', String((pageToDelete ?? 0) + 1))}
+      />
+      <DeleteConfirmModal
+        show={pageToReset !== null}
+        onClose={() => setPageToReset(null)}
+        onConfirm={async () => { const index = pageToReset; setPageToReset(null); if (index !== null) await handleResetPage(index); }}
+        title={t.spell.resetPage}
+        message={t.spell.resetPageConfirm.replace('{n}', String((pageToReset ?? 0) + 1))}
+        confirmText={t.spell.resetPage}
+      />
 
       <CustomModal compact show={showResetAllModal} onClose={() => setShowResetAllModal(false)} title={t.spell.resetAllTitle}>
         <div className={s.importModalBody}>

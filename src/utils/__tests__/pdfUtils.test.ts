@@ -57,6 +57,15 @@ describe('injectCoverIntoPages', () => {
     expect(result).toBe(pages);
   });
 
+  it('does not inject a cover when the first page has text inside a layout (columns, boxes, tables)', async () => {
+    const pages: JSONContent[] = [{
+      type: 'doc',
+      content: [{ type: 'table', content: [{ type: 'tableRow', content: [{ type: 'tableCell', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Nhexa SpA' }] }] }] }] }],
+    }];
+    const result = await injectCoverIntoPages(pages, new Blob(['cover'], { type: 'image/jpeg' }));
+    expect(result).toBe(pages);
+  });
+
   it('injects a cover image as the first node when the first page has no text', async () => {
     const pages = [{ ...emptyPageContent }, textPage('Chapter One')];
     const result = await injectCoverIntoPages(pages, new Blob(['cover'], { type: 'image/jpeg' }));

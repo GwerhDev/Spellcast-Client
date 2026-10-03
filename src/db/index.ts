@@ -3,6 +3,7 @@ import { Spell, SpellProgress } from "../interfaces";
 import { setOriginalPdf, deleteOriginalPdf } from "./originalPdfs";
 import { clearSpellAudioCache } from "./audioCache";
 import { sameUser } from "../utils/grimoire";
+import { dropCoverOverText } from "../utils/spellPage";
 import { getStoredProgress, getAllStoredProgress, setStoredProgress, setStoredProgressMany, deleteStoredProgress, clearStoredProgress } from "./spellProgress";
 import { getStoredCoverFrame, getAllStoredCoverFrames, setStoredCoverFrame, deleteStoredCoverFrame, clearStoredCoverFrames, type CoverFrameRecord } from "./spellCoverFrames";
 
@@ -480,13 +481,27 @@ export const getSpellById = (id: string, userId: string | undefined): Promise<Sp
     ]).then(([spell, stored, frame]) => {
       if (!spell) return undefined;
       rememberCover(spell);
-      return withStoredCoverFrame(withStoredProgress(spell, stored), frame);
+      return withStoredCoverFrame(withStoredProgress(withoutCoverOverText(spell), stored), frame);
     });
     inFlightSpellReads.set(key, read);
     const forget = () => { if (inFlightSpellReads.get(key) === read) inFlightSpellReads.delete(key); };
     read.then(forget, forget);
   }
   return read.then(spell => (spell ? { ...spell } : undefined));
+};
+
+// A spell imported before the text in a PDF's columns/boxes counted as text may have its
+// cover over page 1's text: the reader and editor (which both open a spell from here) get
+// page 1 as written, without it (see dropCoverOverText). Saved like that on the next save.
+const withoutCoverOverText = (spell: Spell): Spell => {
+  if (!spell.pagesContent?.includes('"cover":true')) return spell;
+  try {
+    const pages = JSON.parse(spell.pagesContent);
+    const cleaned = dropCoverOverText(pages);
+    return cleaned === pages ? spell : { ...spell, pagesContent: JSON.stringify(cleaned) };
+  } catch {
+    return spell;
+  }
 };
 
 const readSpellFromStore = async (id: string, userId: string | undefined): Promise<Spell | undefined> => {

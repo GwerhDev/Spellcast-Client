@@ -8,7 +8,7 @@ vi.mock('pdfjs-dist', () => ({
   OPS: { transform: 1, paintImageXObject: 2, save: 3, restore: 4 },
 }));
 
-const { extractPdfPages } = await import('../pdfUtils');
+const { extractPdfPages, splitOffPageScans } = await import('../pdfUtils');
 
 interface MockPageOptions {
   items?: TextItem[];
@@ -227,6 +227,42 @@ describe('extractPdfPages', () => {
     const image = page.content?.find((n) => n.type === 'image' && (n.attrs as { title?: string })?.title === null);
     expect(image).toBeDefined();
     expect((image?.attrs as { src: string }).src).toMatch(/^data:image\/png;base64,/);
+  });
+
+  describe('a scanned page (the whole sheet one picture, its text read over it)', () => {
+    // The scan drawn over the whole 300x400 sheet; the page dark grey, as a scan's paper is.
+    const scanned = (items: TextItem[]) => mkPdf([mkPage({
+      items,
+      pageWidth: 300,
+      pageHeight: 400,
+      render: (ctx, canvas) => { ctx.fillStyle = '#888'; ctx.fillRect(0, 0, canvas.width, canvas.height); },
+      operatorList: {
+        fnArray: [1 /* transform */, 2 /* paintImageXObject */],
+        argsArray: [[300, 0, 0, 400, 0, 0], ['scan']],
+      },
+      imageObjs: { scan: { width: 32, height: 32, data: new Uint8ClampedArray(32 * 32 * 4).fill(128) } },
+    })]);
+
+    it('is its text, without the picture of the page over it', async () => {
+      const [page] = await extractPdfPages(scanned([mkTextItem('Read from the scan', 50, 300)]) as never);
+      expect(page.content?.some(n => n.type === 'image')).toBe(false);
+      expect(JSON.stringify(page.content)).toContain('Read from the scan');
+    });
+
+    it('takes only the images covering the sheet, and only from a page with text', () => {
+      const sheet = { width: 300, height: 400 };
+      const scan = { x: 0, y: 0, width: 300, height: 400 };
+      const logo = { x: 20, y: 300, width: 80, height: 40 };
+      const images = ['logo', 'scan'];
+      const places = [logo, scan];
+      expect(splitOffPageScans(images, places, sheet, true)).toEqual([scan]);
+      expect(images).toEqual(['logo']);
+      expect(places).toEqual([logo]);
+
+      const untouched = ['scan'];
+      expect(splitOffPageScans(untouched, [scan], sheet, false)).toEqual([]);
+      expect(untouched).toEqual(['scan']);
+    });
   });
 
   it('reports progress and extracted content once per page across a multi-page doc', async () => {

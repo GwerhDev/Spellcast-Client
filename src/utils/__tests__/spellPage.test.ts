@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isCoverPage, pageFrame, DEFAULT_PAGE_MARGINS } from '../spellPage';
+import { isCoverPage, pageFrame, DEFAULT_PAGE_MARGINS, dropCoverOverText } from '../spellPage';
 
 const image = (attrs: Record<string, unknown>) => ({ type: 'image', attrs: { src: 'data:', alt: null, title: null, ...attrs } });
 const text = (t: string) => ({ type: 'paragraph', content: [{ type: 'text', text: t }] });
@@ -39,5 +39,22 @@ describe('pageFrame', () => {
 
   it('a page written here gets the defaults', () => {
     expect(pageFrame({ type: 'doc', content: [] }, 0)).toEqual({ width: 800, height: 1131, cover: false, margins: DEFAULT_PAGE_MARGINS });
+  });
+});
+
+describe('dropCoverOverText', () => {
+  it('takes a marked cover off a page 1 with text, however nested', () => {
+    const box = { type: 'box', content: [text('Nhexa')] };
+    const pages = [pageOf(image({ cover: true }), box), pageOf(text('two'))];
+    const result = dropCoverOverText(pages);
+    expect(result[0].content).toEqual([box]);
+    expect(result[1]).toBe(pages[1]);
+  });
+
+  it('keeps the cover of a page 1 with nothing written on it, and a page starting with a logo', () => {
+    const coverPage = [pageOf(image({ cover: true }), { type: 'paragraph' })];
+    expect(dropCoverOverText(coverPage)).toBe(coverPage);
+    const logoPage = [pageOf(image({ title: 'pdf-graphic', width: 120 }), text('Title'))];
+    expect(dropCoverOverText(logoPage)).toBe(logoPage);
   });
 });

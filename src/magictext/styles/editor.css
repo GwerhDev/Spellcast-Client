@@ -154,6 +154,16 @@
   height: auto;
   display: block;
   border-radius: 4px;
+  /* Room for the selected image's ring (below), kept transparent until then. */
+  outline: 2px solid transparent;
+  outline-offset: 3px;
+  transition: outline-color 0.12s ease;
+}
+
+/* A selected image (clicked on, ready to be deleted, copied or moved): ringed in the
+   app's color, a little off its edge. An outline, so the page's layout doesn't move. */
+.magic-text-editor .ProseMirror img.ProseMirror-selectednode {
+  outline-color: var(--color-primary);
 }
 
 /* ─── Document typography (shared rhythm with TTSSpellReader) ─────────────── */

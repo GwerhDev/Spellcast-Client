@@ -1,0 +1,34 @@
+/* A sheet of paper like the spell page's (see PaperSheet): the PDF's page drawn on it. */
+.sheet {
+  position: relative;
+  flex-shrink: 0;
+  background: white;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+}
+
+.canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transition: opacity 0.15s ease;
+}
+
+/* Drawing it again (another zoom): the last drawing dims instead of going blank. */
+.canvasRendering {
+  opacity: 0.55;
+}
+
+.status {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 2rem;
+  text-align: center;
+  font-size: 0.95rem;
+  color: #666;
+}

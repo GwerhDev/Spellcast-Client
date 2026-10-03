@@ -5,6 +5,23 @@
   gap: 0.75rem;
 }
 
+/* The list's empty space is where a selection box starts (see useMarqueeSelect): it fills
+   the rest of the page, so there's room below a short grid, and the box sits over it. */
+.selectable {
+  position: relative;
+  flex: 1;
+  min-height: 12rem;
+}
+
+.marquee {
+  position: absolute;
+  z-index: 5;
+  pointer-events: none;
+  border: 1px solid var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 14%, transparent);
+  border-radius: 2px;
+}
+
 .title {
   font-size: 1.5rem;
   font-weight: 600;

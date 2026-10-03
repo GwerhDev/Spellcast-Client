@@ -12,6 +12,9 @@ import { useCoverFrame3DSection } from '../../../hooks/useCoverFrame3DSection';
 import { faScroll, faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
 import { useLanguage } from '../../../i18n';
 import { useInfiniteList } from '../../../hooks/useInfiniteList';
+import { useMarqueeSelect } from '../../../hooks/useMarqueeSelect';
+import { useGridDeal } from '../../../hooks/useGridDeal';
+import type { SelectionModifiers } from '../../../utils/listSelection';
 
 export type GrimoireFilter = 'all' | 'local' | 'cloud';
 export type GrimoireSpellFilter = 'all' | 'reading' | 'pdf' | 'unprocessed';
@@ -24,9 +27,15 @@ interface SpellListProps {
   selectedIds?: string[];
   onToggleSelect?: (id: string) => void;
   onSelectableIdsChange?: (ids: string[]) => void;
+  // A file manager's gestures (see listSelection): a click on a card with Ctrl/⌘ or Shift,
+  // a box dragged across the list's empty space (the cards it touches), and a click there.
+  onItemModifiedClick?: (id: string, modifiers: SelectionModifiers) => void;
+  onBoxStart?: (additive: boolean) => void;
+  onBoxChange?: (hit: string[]) => void;
+  onEmptyClick?: (additive: boolean) => void;
 }
 
-export const SpellList: React.FC<SpellListProps> = ({ query = '', filter = 'local', docFilter = 'all', selectionMode, selectedIds = [], onToggleSelect, onSelectableIdsChange }) => {
+export const SpellList: React.FC<SpellListProps> = ({ query = '', filter = 'local', docFilter = 'all', selectionMode, selectedIds = [], onToggleSelect, onSelectableIdsChange, onItemModifiedClick, onBoxStart, onBoxChange, onEmptyClick }) => {
   // A card click opens the spell's detail in a modal (the same one the player's cover
   // opens), where all of its actions live.
   const [detailSpellId, setDetailSpellId] = useState<string | null>(null);
@@ -43,6 +52,14 @@ export const SpellList: React.FC<SpellListProps> = ({ query = '', filter = 'loca
   const [pdfIds, setPdfIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
   const sectionRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const { box, onPointerDown } = useMarqueeSelect(listRef, {
+    itemSelector: '[data-spell-id]',
+    idOf: el => el.getAttribute('data-spell-id'),
+    onStart: additive => onBoxStart?.(additive),
+    onChange: hit => onBoxChange?.(hit),
+    onEmptyClick: additive => onEmptyClick?.(additive),
+  });
 
   const fetchLocal = async () => {
     if (!logged) { setIsLoading(false); return; }
@@ -89,6 +106,9 @@ export const SpellList: React.FC<SpellListProps> = ({ query = '', filter = 'loca
   // conditions.
   const show3D = useCoverFrame3DSection(sectionRef);
 
+  // The first time the cards show they're dealt onto the grid, in order (see useGridDeal).
+  useGridDeal(sectionRef, !isLoading && visible.length > 0);
+
   // "Select all" (GrimoireLanding) needs every id matching the current search/tab, not
   // just the paginated `visible` subset -- kept in a ref so this doesn't re-run just
   // because the parent passed a new inline callback identity.
@@ -128,7 +148,12 @@ export const SpellList: React.FC<SpellListProps> = ({ query = '', filter = 'loca
 
   return (
     <>
-      <div className={s.container}>
+      <div
+        ref={listRef}
+        data-testid="spell-list"
+        className={`${s.container} ${s.selectable}`}
+        onPointerDown={onBoxStart ? onPointerDown : undefined}
+      >
         <div className={grid.grid} ref={sectionRef}>
           {visible.map((doc) => {
             const uploadJob = uploadQueue.find(j => j.targetDocId === doc.id && (j.status === 'queued' || j.status === 'processing')) ?? null;
@@ -144,12 +169,20 @@ export const SpellList: React.FC<SpellListProps> = ({ query = '', filter = 'loca
                 selectionMode={selectionMode}
                 selected={selectedIds.includes(doc.id)}
                 onToggleSelect={() => onToggleSelect?.(doc.id)}
+                onModifiedClick={onItemModifiedClick ? (modifiers) => onItemModifiedClick(doc.id, modifiers) : undefined}
                 show3D={show3D}
               />
             );
           })}
         </div>
         {hasMore && <div ref={sentinelRef} data-testid="spell-list-sentinel" className={grid.sentinel} />}
+        {box && (
+          <div
+            data-testid="spell-list-marquee"
+            className={s.marquee}
+            style={{ left: box.left, top: box.top, width: box.width, height: box.height }}
+          />
+        )}
       </div>
       <SpellDetailModal spellId={detailSpellId} show={detailSpellId !== null} origin={detailOrigin} onClose={() => { setDetailSpellId(null); setDetailOrigin(null); }} />
     </>

@@ -5,7 +5,10 @@ import { useAppSelector } from '../../../store/hooks';
 import { RootState } from '../../../store';
 import { selectCurrentCredential } from '../../../store/credentialsSlice';
 import * as pdfjsLib from 'pdfjs-dist';
+import { DeleteConfirmModal } from '../../components/Modals/DeleteConfirmModal';
 import { PageList } from '../../components/SpellCreateForm/PageList';
+import { PageListPlace } from '../../components/SpellCreateForm/PageListOverlay';
+import { usePageListToggle } from '../../../hooks/usePageListToggle';
 import { SpellEditor } from '../../components/Editors/SpellEditor';
 import { isCoverPage } from '../../../utils/spellPage';
 import { saveSpellToDB } from '../../../db';
@@ -14,7 +17,7 @@ import { useNavigate } from 'react-router-dom';
 import type { JSONContent } from '../../../magictext';
 import type { TTSPlayPayload } from '../../../magictext';
 import workerSrc from 'pdfjs-dist/build/pdf.worker?url';
-import { faArrowLeft, faCloudUpload, faPaperclip, faSave } from '@fortawesome/free-solid-svg-icons';
+import { faArrowLeft, faCloudUpload, faPaperclip, faSave, faLayerGroup } from '@fortawesome/free-solid-svg-icons';
 import { PdfProcessingStatus } from '../../components/PdfProcessingStatus';
 import { SpellMetadataFields } from '../../components/SpellMetadataFields';
 import { IconButton } from '../../components/Buttons/IconButton';
@@ -46,6 +49,10 @@ export const SpellCreateForm: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [pdfProgress, setPdfProgress] = useState<{ current: number; total: number } | null>(null);
   const [editingPageIndex, setEditingPageIndex] = useState<number>(0);
+  // The page list, shown or hidden from the top bar (see PageListPlace).
+  const pageList = usePageListToggle();
+  // A page about to be deleted: asked first (its content would go).
+  const [pageToDelete, setPageToDelete] = useState<number | null>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
   const originalPdfRef = useRef<File | null>(null);
   const originalPagesRef = useRef<JSONContent[] | null>(null);
@@ -338,6 +345,16 @@ export const SpellCreateForm: React.FC = () => {
         <IconButton icon={faPaperclip} variant='transparent' title={t.spell.importPdf} onClick={() => pdfInputRef.current?.click()} />
         <input ref={pdfInputRef} type="file" accept=".pdf" style={{ display: 'none' }}
           onChange={(e) => { if (e.target.files?.[0]) handlePdfImport(e.target.files[0]); }} />
+        <IconButton
+          data-testid="page-list-toggle"
+          data-page-list-toggle
+          icon={faLayerGroup}
+          variant='transparent'
+          className={pageList.open ? s.headerBtnActive : undefined}
+          title={pageList.open ? t.spell.hidePages : t.spell.showPages}
+          aria-pressed={pageList.open}
+          onClick={pageList.toggle}
+        />
         <IconButton data-testid="spell-create-save-btn" icon={faSave} variant='transparent' title={t.common.save} disabled={isSaving || !spellTitle} onClick={handleSaveLocal} />
         <IconButton icon={faCloudUpload} disabled variant='transparent' title={t.nav.cloud} onClick={() => {}} />
       </div>
@@ -385,17 +402,27 @@ export const SpellCreateForm: React.FC = () => {
             ttsPlaying={ttsPlaying}
           />
         </div>
-        <div className={s.pagesContainer}>
-          <PageList
-            pages={pagesContent.map(() => '')}
-            currentPage={editingPageIndex}
-            onPageClick={handlePageClick}
-            onPageDelete={handlePageDelete}
-            onAddPage={handleAddPage}
-            pdfProgress={pdfProgress}
-          />
-        </div>
+        <PageListPlace toggle={pageList} className={s.pagesContainer}>
+          {(overlay) => (
+            <PageList
+              pages={pagesContent.map(() => '')}
+              currentPage={editingPageIndex}
+              onPageClick={handlePageClick}
+              onPageDelete={setPageToDelete}
+              onAddPage={handleAddPage}
+              pdfProgress={pdfProgress}
+              column={overlay}
+            />
+          )}
+        </PageListPlace>
       </div>
+      <DeleteConfirmModal
+        show={pageToDelete !== null}
+        onClose={() => setPageToDelete(null)}
+        onConfirm={() => { if (pageToDelete !== null) handlePageDelete(pageToDelete); setPageToDelete(null); }}
+        title={t.spell.deletePageTitle}
+        message={t.spell.deletePageConfirm.replace('{n}', String((pageToDelete ?? 0) + 1))}
+      />
     </div>
   );
 };

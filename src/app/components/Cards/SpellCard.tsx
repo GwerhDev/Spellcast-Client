@@ -49,6 +49,9 @@ interface SpellCardProps {
   selectionMode?: boolean;
   selected?: boolean;
   onToggleSelect?: () => void;
+  // A click with Ctrl/⌘ or Shift held: the list selects with it (a file manager's gestures,
+  // see listSelection) instead of the card opening.
+  onModifiedClick?: (modifiers: { toggle: boolean; range: boolean }) => void;
   // TCORE-124: true once the caller's own gate (Mode3D user setting + desktop +
   // !reduced-motion + this card in viewport, see useCoverFrame3DGate) says this specific
   // card should get 3D corners instead of the flat 2D CoverFrameCorners. Undefined/false
@@ -60,7 +63,7 @@ interface SpellCardProps {
 
 // A spell in a grid: just its cover, which glows on hover. Clicking opens its detail; the
 // only thing drawn over the cover is the reading indicator, while it's the loaded spell.
-export const SpellCard = ({ doc, isActive, isPlaying, onClick, lifted = false, focusable = true, uploadJob, selectionMode, selected, onToggleSelect, show3D }: SpellCardProps) => {
+export const SpellCard = ({ doc, isActive, isPlaying, onClick, lifted = false, focusable = true, uploadJob, selectionMode, selected, onToggleSelect, onModifiedClick, show3D }: SpellCardProps) => {
   // TCORE-123: this spell's own pick, falling back to the global default when unset. The
   // pick itself is made from the spell's detail, which refreshes the lists after saving.
   const { activeCoverFrameId } = useAppSelector(state => state.casterInventory);
@@ -96,7 +99,10 @@ export const SpellCard = ({ doc, isActive, isPlaying, onClick, lifted = false, f
 
   const coverRef = useRef<HTMLDivElement>(null);
 
-  const handleClick = () => {
+  const handleClick = (e?: React.MouseEvent) => {
+    const toggle = !!e && (e.ctrlKey || e.metaKey);
+    const range = !!e?.shiftKey;
+    if (onModifiedClick && (toggle || range)) { onModifiedClick({ toggle, range }); return; }
     if (selectionMode) { onToggleSelect?.(); return; }
     const el = coverRef.current;
     const box = el?.getBoundingClientRect();
@@ -109,6 +115,8 @@ export const SpellCard = ({ doc, isActive, isPlaying, onClick, lifted = false, f
     <>
     <div
       data-testid={`spell-card-${doc.id}`}
+      // Its spell, for a selection box dragged across the list (see useMarqueeSelect).
+      data-spell-id={doc.id}
       // The cover is all a pointer device sees of it: its title as the tooltip and name.
       title={doc.title}
       aria-label={doc.title}

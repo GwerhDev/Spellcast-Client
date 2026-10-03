@@ -137,8 +137,11 @@
   font-size: 0.8rem;
 }
 
+/* By the preview's height, not its width: on a phone the preview spans the modal (wider
+   than tall), and a cover as wide as half of that was taller than the preview, cut off. */
 .thumbDetail .coverPreview {
-  width: 55%;
+  width: auto;
+  height: 75%;
 }
 
 .thumbDetail .coverPreviewIcon {

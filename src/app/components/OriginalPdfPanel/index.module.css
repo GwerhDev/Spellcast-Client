@@ -1,0 +1,90 @@
+/* Beside the text editor, its half of the space: a toolbar like the editor's, and the PDF's
+   page under it in a scroll of its own. */
+.panel {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-left: 1px solid var(--mte-toolbar-border);
+}
+
+/* The editor's toolbar class (magic-text-editor__toolbar) draws it; this only lays it out. */
+.toolbar {
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  gap: 0.5rem;
+  min-height: 43px;
+}
+
+.toolbarTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: 0;
+  padding-left: 0.25rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-color);
+  white-space: nowrap;
+}
+
+.toolbarPage {
+  font-weight: 400;
+  color: var(--color-light-400);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.toolbarActions {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+/* The scroll and the zoom controls floating over it (positioned against this). */
+.bodyArea {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  scrollbar-gutter: stable;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem 1rem 4rem;
+}
+
+.empty {
+  margin: auto;
+  max-width: 22rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.9rem;
+  text-align: center;
+  color: var(--color-light-400);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.empty p {
+  margin: 0;
+}
+
+.emptyIcon {
+  font-size: 2rem;
+  opacity: 0.6;
+}
+
+button.emptyAction {
+  width: auto;
+}

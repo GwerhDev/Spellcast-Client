@@ -14,10 +14,8 @@ describe('applyCoverToPage1', () => {
     expect(applyCoverToPage1([], NEW_COVER)).toEqual([]);
   });
 
-  it('prepends a cover image node when page 1 has none yet, keeping its existing content', () => {
-    const pages: JSONContent[] = [
-      { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'hello' }] }] },
-    ];
+  it('prepends a cover image node when page 1 has none yet and nothing written on it', () => {
+    const pages: JSONContent[] = [{ type: 'doc', content: [{ type: 'paragraph' }] }];
     const result = applyCoverToPage1(pages, NEW_COVER);
 
     expect(result[0].content).toHaveLength(2);
@@ -32,7 +30,7 @@ describe('applyCoverToPage1', () => {
       type: 'doc',
       content: [
         { type: 'image', attrs: { src: 'data:image/jpeg;base64,OLD', alt: null, title: null } },
-        { type: 'paragraph', content: [{ type: 'text', text: 'hello' }] },
+        { type: 'paragraph' },
       ],
     }];
     const result = applyCoverToPage1(pages, NEW_COVER);
@@ -40,6 +38,22 @@ describe('applyCoverToPage1', () => {
     expect(result[0].content).toHaveLength(2);
     expect(result[0].content?.[0]).toEqual({ type: 'image', attrs: { src: NEW_COVER, alt: null, title: null, cover: true } });
     expect(result[0].content?.[1]).toEqual(pages[0].content?.[1]);
+  });
+
+  it('leaves a page 1 with text as written -- the cover is only the thumbnail then', () => {
+    const pages: JSONContent[] = [
+      { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'hello' }] }] },
+    ];
+    expect(applyCoverToPage1(pages, NEW_COVER)).toBe(pages);
+  });
+
+  it('takes a marked cover off a page 1 with text, even text nested in a box', () => {
+    const written = { type: 'box', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'hello' }] }] };
+    const pages: JSONContent[] = [{
+      type: 'doc',
+      content: [{ type: 'image', attrs: { src: 'data:image/jpeg;base64,OLD', alt: null, title: null, cover: true } }, written],
+    }];
+    expect(applyCoverToPage1(pages, NEW_COVER)[0].content).toEqual([written]);
   });
 
   it('treats a decorative "pdf-graphic" image as page content, not an existing cover -- prepends instead of replacing it', () => {

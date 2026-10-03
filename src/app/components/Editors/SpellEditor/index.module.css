@@ -1,11 +1,33 @@
+/* The text editor, and beside it (on a wide screen) the original PDF's panel. */
 .root {
   width: 100%;
   flex-grow: 1;
   min-height: 0;
   display: flex;
+  flex-direction: row;
+  overflow: hidden;
+  position: relative;
+}
+
+/* The text editor: its toolbar, rulers and page, with its zoom controls over them. */
+.editorColumn {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
   flex-direction: column;
   overflow: hidden;
   position: relative;
+}
+
+/* Turned over to the PDF's page: the PDF's toolbar takes the text toolbar's place. */
+.toolbarAway {
+  display: none !important;
+}
+
+.flipToolbar {
+  order: -1;
+  flex-shrink: 0;
 }
 
 .root :global(.magic-text-editor) {
@@ -63,3 +85,56 @@
 
 /* The sheet itself is PaperSheet's, the same as the reader's (its paper, cover and PDF graphics
    live there). */
+
+/* ── Comparing with the original PDF ──
+   The stage holds the page's sheet and, while comparing, the PDF's. Not comparing, it's
+   only a wrapper: no transform or 3D context of its own, so nothing inside the editor
+   (its menus) is placed against it. */
+.stage {
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+
+.face {
+  position: relative;
+}
+
+/* The PDF's side without room beside the editor: the sheet turns over, the PDF's page
+   on its back. */
+.stageFlip {
+  perspective: 2400px;
+  transform-style: preserve-3d;
+  transition: transform 0.7s cubic-bezier(0.3, 0.7, 0.25, 1);
+}
+
+.stageFlip .face {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.stageFlip .faceBack {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%) rotateY(180deg);
+}
+
+.stageFlipped {
+  transform: rotateY(180deg);
+}
+
+/* The hidden side takes no clicks or typing. */
+.stageFlip > [aria-hidden='true'] {
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stageFlip { transition: none; }
+}
+
+/* The vertical ruler's column, as tall as the row (the ruler fills it). */
+.vRulerSlot {
+  display: flex;
+  flex-shrink: 0;
+}

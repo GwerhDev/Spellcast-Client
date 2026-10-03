@@ -32,6 +32,9 @@ export interface RulerConfig {
   paperHeight?: number
   onMarginsChange?: (margins: PageMargins) => void
   zoom?: number
+  /** Out of sight but still taking its room (the paper doesn't move): e.g. while the
+   *  paper is turned over, showing something the margins aren't for. */
+  hidden?: boolean
 }
 
 export interface MagicTextEditorProps {
@@ -206,6 +209,7 @@ export function MagicTextEditor({
         overflowX: 'hidden',
         overflowY: 'auto',
         scrollbarGutter: 'stable',
+        visibility: ruler.hidden ? 'hidden' : undefined,
       } as React.CSSProperties}>
         <div style={{
           width: 20, height: 20, flexShrink: 0,
