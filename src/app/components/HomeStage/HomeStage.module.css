@@ -1,18 +1,20 @@
-/* The frame: fills the page's whole area and never scrolls itself, so the backdrop in it
-   stays put (attached) and reaches every edge; the content scrolls in .scroller over it. */
+/* The frame: at least the page's whole area, and as tall as its content when that's taller
+   (the page scrolls, not the frame) -- so the backdrop in it reaches every edge of all of
+   it, the part below the first screen included. Clipped (clip, not hidden: it doesn't turn
+   into a scroller of its own): what's drawn past it -- the cover scaled up, the list below
+   sliding away -- would otherwise add scroll to the page, with nothing behind it. */
 .stage {
   position: relative;
   isolation: isolate;
-  flex: 1;
-  min-height: 0;
+  flex: 1 0 auto;
   display: flex;
   flex-direction: column;
+  overflow: clip;
   border-radius: inherit;
 }
 
 .scroller {
-  flex: 1;
-  min-height: 0;
+  flex: 1 0 auto;
   display: flex;
   flex-direction: column;
 }
