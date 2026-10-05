@@ -46,7 +46,6 @@ export const en = {
     accountsCenter: 'Accounts center',
     nhexaInterface: 'Nhexa Interface',
     havenstore: 'Havenstore',
-    lastSpells: 'Last Spells',
     home: 'Home',
     local: 'Local',
     cloud: 'Cloud',

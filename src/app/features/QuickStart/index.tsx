@@ -29,7 +29,7 @@ const SkeletonCard = () => (
   </div>
 );
 
-export const LastSpells: React.FC = () => {
+export const QuickStart: React.FC = () => {
   const { userData } = useAppSelector((state) => state.session);
   const { spellId: activeDocId, currentPage: activeCurrentPage, listVersion, coverFrameChange } = useAppSelector((state) => state.spellReader);
   const uploadQueue = useAppSelector((state) => state.spellUpload.queue);
@@ -127,7 +127,7 @@ export const LastSpells: React.FC = () => {
       node: ({ front }) => (
         <div
           className={s.seeAllCard}
-          data-testid="last-spells-see-all"
+          data-testid="quick-start-see-all"
           role="link"
           tabIndex={front ? 0 : -1}
           onClick={() => navigate('/grimoire')}
@@ -152,13 +152,13 @@ export const LastSpells: React.FC = () => {
         </div>
         <div className={s.carouselWrapper} ref={carouselWrapperRef}>
           <Coverflow
-            testId="last-spells"
+            testId="quick-start"
             items={items}
             slots={SLOTS}
             itemWidth="var(--spell-card-width)"
             interactive={!isLoading}
             labels={coverflowLabels}
-            renderEmpty={(key) => (isLoading ? <SkeletonCard /> : <EmptySpellCard testId={`last-spells-${key}`} />)}
+            renderEmpty={(key) => (isLoading ? <SkeletonCard /> : <EmptySpellCard testId={`quick-start-${key}`} />)}
           />
         </div>
       </div>

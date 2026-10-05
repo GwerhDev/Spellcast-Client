@@ -56,7 +56,7 @@ interface SpellCardProps {
   // !reduced-motion + this card in viewport, see useCoverFrame3DGate) says this specific
   // card should get 3D corners instead of the flat 2D CoverFrameCorners. Undefined/false
   // keeps today's plain 2D behavior -- a caller that never passes this literally cannot
-  // change (LastSpells/SpellList opt in explicitly, everything else keeps working exactly
+  // change (QuickStart/SpellList opt in explicitly, everything else keeps working exactly
   // as before untouched).
   show3D?: boolean;
 }

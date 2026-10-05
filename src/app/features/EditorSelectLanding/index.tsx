@@ -31,7 +31,7 @@ export const EditorSelectLanding = () => {
   const [filter, setFilter] = useState<EditorFilter>('all');
   const [query, setQuery] = useState('');
   const panelBodyRef = useRef<HTMLDivElement>(null);
-  // TCORE-124: same gate LastSpells/SpellList use, scoped to this panel's own body -- see
+  // TCORE-124: same gate QuickStart/SpellList use, scoped to this panel's own body -- see
   // useCoverFrame3DSection/useCoverFrame3DGate for the actual conditions.
   const show3D = useCoverFrame3DSection(panelBodyRef);
 

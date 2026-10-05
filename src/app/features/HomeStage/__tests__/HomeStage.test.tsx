@@ -7,7 +7,7 @@ import { setAltarBackdrop } from '../../../../store/altarSlice';
 
 // The scene and the list are their own features, tested on their own.
 vi.mock('../../Start', () => ({ Start: ({ immersive }: { immersive?: boolean }) => <div data-testid="start-stub" data-immersive={String(!!immersive)} /> }));
-vi.mock('../../LastSpells', () => ({ LastSpells: () => <div data-testid="last-spells-stub" /> }));
+vi.mock('../../QuickStart', () => ({ QuickStart: () => <div data-testid="quick-start-stub" /> }));
 
 const mockCover = vi.fn();
 vi.mock('../../../../hooks/useSpellCoverUrl', () => ({ useSpellCoverUrl: () => mockCover() }));
@@ -22,7 +22,7 @@ describe('HomeStage (feature)', () => {
     expect(screen.queryByTestId('home-stage-cover')).not.toBeInTheDocument();
   });
 
-  it("with a loaded spell's cover and the altar set to show it: the cover as backdrop, the altar immersive, Last Spells fading while the pointer rests", () => {
+  it("with a loaded spell's cover and the altar set to show it: the cover as backdrop, the altar immersive, the quick start fading while the pointer rests", () => {
     vi.useFakeTimers();
     mockCover.mockReturnValue('blob:cover');
     const store = makeStore();

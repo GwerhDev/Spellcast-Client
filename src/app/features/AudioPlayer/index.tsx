@@ -192,7 +192,7 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
     setCoverUrl(null);
     setCoverSettled(false);
     if (spellId && userData?.id) {
-      // From memory when the spell was already listed (Last Spells / Grimoire), instead of
+      // From memory when the spell was already listed (the quick start / Grimoire), instead of
       // reading the whole spell record just for its cover.
       getSpellCover(spellId, userData.id).then(cover => {
         if (cancelled) return;

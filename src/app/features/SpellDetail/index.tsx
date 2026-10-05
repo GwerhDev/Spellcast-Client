@@ -61,7 +61,7 @@ export const SpellDetail: React.FC = () => {
   // the SpellExportModal render near the end of this file.
   // const { exportTarget, openExportModal, closeExportModal, handleExport, isExporting } = useSpellExport();
   const headerRef = useRef<HTMLDivElement>(null);
-  // TCORE-124: same gate LastSpells/SpellList/EditorSelectLanding use -- see
+  // TCORE-124: same gate QuickStart/SpellList/EditorSelectLanding use -- see
   // useCoverFrame3DSection/useCoverFrame3DGate for the actual conditions.
   const show3D = useCoverFrame3DSection(headerRef);
   // Walks every page's text: once per spell, not on every progress re-render.

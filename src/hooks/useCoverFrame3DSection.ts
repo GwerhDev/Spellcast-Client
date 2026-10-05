@@ -1,7 +1,7 @@
 import { useCoverFrame3DGate } from './useCoverFrame3DGate';
 
 // TCORE-124: thin wrapper around useCoverFrame3DGate -- kept as its own hook (not just
-// calling useCoverFrame3DGate directly from LastSpells/SpellList) so a caller's intent
+// calling useCoverFrame3DGate directly from QuickStart/SpellList) so a caller's intent
 // reads clearly ("gate my whole 3D-corners section") and so this is the one place a future
 // per-section concern (if one ever comes up) gets added, without every call site having to
 // change.

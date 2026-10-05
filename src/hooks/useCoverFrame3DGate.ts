@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useMediaQuery } from './useMediaQuery';
 import { useMode3D } from '../context/Mode3DContext';
 
-// TCORE-124: every guardrail the ticket asks for, gathered in one hook so LastSpells only
+// TCORE-124: every guardrail the ticket asks for, gathered in one hook so QuickStart only
 // has to check a single boolean before mounting CoverFrame3DOverlay -- the user's own
 // Mode3D toggle (Appearance settings) is the master switch, desktop + motion-ok are
 // static-ish (checked once, reactive to real changes), section-in-viewport is the one that
@@ -31,7 +31,7 @@ export const useCoverFrame3DGate = (sectionRef: React.RefObject<HTMLElement | nu
 
   useEffect(() => {
     if (!mode3dEnabled || !isDesktop || reducedMotion) { setInViewport(false); return; }
-    // sectionRef.current is often still null on this effect's first run -- LastSpells (the
+    // sectionRef.current is often still null on this effect's first run -- QuickStart (the
     // one caller today) renders a loading skeleton before its real .carouselWrapper div
     // (the one carrying this ref) ever mounts, and a plain ref mutation doesn't re-trigger
     // a dependency array (sectionRef itself, as an object, never changes) the way state

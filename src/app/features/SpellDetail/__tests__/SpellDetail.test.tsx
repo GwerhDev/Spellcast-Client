@@ -150,7 +150,7 @@ describe('SpellDetail', () => {
     });
   });
 
-  it('dispatches invalidateSpellList after confirming delete, so SpellList/LastSpells refresh', async () => {
+  it('dispatches invalidateSpellList after confirming delete, so SpellList/QuickStart refresh', async () => {
     vi.spyOn(db, 'getSpellById').mockResolvedValue(mockDoc as never);
     vi.spyOn(db, 'deleteSpellFromDB').mockResolvedValue(undefined);
     const store = loggedStore();
@@ -164,7 +164,7 @@ describe('SpellDetail', () => {
     await waitFor(() => expect(store.getState().spellReader.listVersion).toBe(1));
   });
 
-  // TCORE-123: cover frame selection moved to SpellCard's own context menu (Last Spells/
+  // TCORE-123: cover frame selection moved to SpellCard's own context menu (the quick start/
   // Grimoire grid) -- SpellDetail only ever displays the resolved frame now, it doesn't
   // edit it. See SpellCard.test.tsx for the picker's own coverage.
   it('shows the resolved cover frame (this spell\'s own pick, or the global default) on the cover image', async () => {

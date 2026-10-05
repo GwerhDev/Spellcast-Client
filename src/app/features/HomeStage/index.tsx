@@ -5,17 +5,17 @@ import { IconButton } from '../../components/Buttons/IconButton';
 import { AltarSettingsModal } from '../../components/Altar/AltarSettingsModal';
 import { useLanguage } from '../../../i18n';
 import { Start } from '../Start';
-import { LastSpells } from '../LastSpells';
+import { QuickStart } from '../QuickStart';
 import { useAppSelector } from '../../../store/hooks';
 import { useSpellCoverUrl } from '../../../hooks/useSpellCoverUrl';
 import { usePointerIdle } from '../../../hooks/usePointerIdle';
 
-// How long the pointer rests before Last Spells steps aside, with a spell loaded.
+// How long the pointer rests before the quick start steps aside, with a spell loaded.
 export const HOME_IDLE_MS = 3000;
 
-// The home page: Start's altar as the scene, Last Spells below it. With a spell loaded, the
+// The home page: Start's altar as the scene, the quick start below it. With a spell loaded, the
 // altar is shown immersive (no box of its own, centered, its actions around the center) and
-// Last Spells fades out while the pointer rests; if the spell has a cover, it becomes the
+// the quick start fades out while the pointer rests; if the spell has a cover, it becomes the
 // whole page's backdrop too -- if the altar's settings say so (see AltarSettingsModal; by
 // default nothing is drawn behind it).
 export const HomeStage = () => {
@@ -34,7 +34,7 @@ export const HomeStage = () => {
       immersive={immersive}
       idle={idle}
       main={<Start immersive={immersive} idle={idle} />}
-      secondary={<LastSpells />}
+      secondary={<QuickStart />}
       corner={(
         <>
           <IconButton data-testid="altar-settings-btn" icon={faGear} variant='transparent' title={t.start.altarSettings} onClick={() => setShowSettings(true)} />

@@ -112,7 +112,7 @@
   --paper-shadow: 0 4px 28px rgba(0, 0, 0, 0.55);
 
   /* One standard cover height for every spell card and its loading skeleton (SpellCard,
-     EditorPickerCard, SpellGrid/LastSpells skeletons) -- covers are arbitrary PDF first
+     EditorPickerCard, SpellGrid/QuickStart skeletons) -- covers are arbitrary PDF first
      pages, so they're cropped to this box (object-fit: cover, anchored top) rather than
      letterboxed, and a single token keeps all four from drifting apart. The same on every
      device: a card is only its cover everywhere, so it has the same shape on a phone as on a

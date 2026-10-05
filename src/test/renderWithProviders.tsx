@@ -62,7 +62,7 @@ export const renderWithProviders = (ui: React.ReactElement, options: Options = {
     <Provider store={store}>
       <MemoryRouter initialEntries={[initialPath]}>
         <LanguageProvider>
-          {/* TCORE-124: useCoverFrame3DGate (used by LastSpells) reads useMode3D(), which
+          {/* TCORE-124: useCoverFrame3DGate (used by QuickStart) reads useMode3D(), which
               throws outside a Mode3DProvider -- every test render needs one available, same
               as LanguageProvider above, even for tests that never touch the 3D toggle. */}
           <Mode3DProvider>
