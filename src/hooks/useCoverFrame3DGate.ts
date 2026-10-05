@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useMediaQuery } from './useMediaQuery';
 import { useMode3D } from '../context/Mode3DContext';
 
-// TCORE-124: every guardrail the ticket asks for, gathered in one hook so QuickStart only
+// Every guardrail for 3D cover corners, gathered in one hook so QuickStart only
 // has to check a single boolean before mounting CoverFrame3DOverlay -- the user's own
 // Mode3D toggle (Appearance settings) is the master switch, desktop + motion-ok are
 // static-ish (checked once, reactive to real changes), section-in-viewport is the one that

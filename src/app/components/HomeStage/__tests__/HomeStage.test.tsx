@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, onTestFinished } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { HomeStage } from '../HomeStage';
 
@@ -58,5 +58,36 @@ describe('HomeStage', () => {
     card.matches = (() => false) as typeof card.matches;
     fireEvent.focus(card);
     expect(screen.getByTestId('home-stage-secondary')).toHaveAttribute('inert');
+  });
+
+  // With a spell loaded the scene stays at the top while the quick start scrolls under it;
+  // with nothing loaded it's an ordinary page.
+  it('immersive, the scene and its corner stay in view at the top; not otherwise', () => {
+    const { rerender } = render(stage({ corner: <span data-testid="corner-btn" /> }));
+    expect(screen.getByTestId('home-stage-main').className).not.toMatch(/mainSticky/);
+    rerender(stage({ immersive: true, corner: <span data-testid="corner-btn" /> }));
+    const main = screen.getByTestId('home-stage-main');
+    expect(main.className).toMatch(/mainSticky/);
+    // The corner (the altar's settings) is part of the scene, so it stays with it.
+    expect(main).toContainElement(screen.getByTestId('corner-btn'));
+    expect(main).toContainElement(screen.getByTestId('main'));
+    expect(main).not.toContainElement(screen.getByTestId('secondary'));
+  });
+
+  // The cover stays put while the page scrolls: its layer is as tall as what the page shows.
+  it('the cover layer is as tall as the page\'s visible area', () => {
+    const height = vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(640);
+    onTestFinished(() => height.mockRestore());
+    render(
+      <div style={{ overflowY: 'auto' }}>
+        {stage({ coverUrl: 'blob:cover', immersive: true })}
+      </div>,
+    );
+    expect(screen.getByTestId('home-stage-attached').style.height).toBe('640px');
+  });
+
+  it('with no scrolling page around it, the cover layer is the window\'s height', () => {
+    render(stage({ coverUrl: 'blob:cover', immersive: true }));
+    expect(screen.getByTestId('home-stage-attached').style.height).toBe('100vh');
   });
 });

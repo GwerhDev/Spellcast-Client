@@ -46,7 +46,7 @@ export const QuickStart: React.FC = () => {
   const [detailSpellId, setDetailSpellId] = useState<string | null>(null);
   const [detailOrigin, setDetailOrigin] = useState<SpellDetailOrigin | null>(null);
 
-  // TCORE-124: gates 3D corners for this whole section -- passed straight to each SpellCard
+  // Gates 3D corners for this whole section -- passed straight to each SpellCard
   // below as show3D. See useCoverFrame3DSection/useCoverFrame3DGate for the actual
   // conditions (Mode3D user setting, desktop, !reduced-motion, low-end check, section in
   // viewport).

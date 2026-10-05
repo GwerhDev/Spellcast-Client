@@ -427,7 +427,7 @@ export const getSpellsFromDB = async (userId: string | undefined): Promise<Spell
   return spells.map(spell => withStoredCoverFrame(withStoredProgress(spell, stored.get(spell.id)), frames.get(spell.id)));
 };
 
-// Covers kept in memory as spells are read (the the quick start / Grimoire listing reads them
+// Covers kept in memory as spells are read (the quick start / Grimoire listing reads them
 // all), so the players and the Read tab can show a spell's cover without reading its whole
 // record again just for it. `null` = known to have no cover; missing = not read yet.
 const coverCache = new Map<string, Blob | null>();
