@@ -88,6 +88,19 @@
   z-index: 2;
 }
 
+/* A layer over the whole stage (see HomeStage's `layer`): over the secondary content (z-index
+   1, before it), under the scene (2) unless raised. It takes no pointer events. */
+.layer {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.layerRaised {
+  z-index: 3;
+}
+
 .secondary {
   position: relative;
   z-index: 1;

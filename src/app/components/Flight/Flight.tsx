@@ -29,6 +29,9 @@ export interface FlightProps {
   // The flying box, for an owner that needs where it is right now (e.g. to turn it back
   // mid-flight from that exact spot).
   boxRef?: React.Ref<HTMLDivElement>;
+  // The flying box's size as it changes, every frame it does (before that frame is drawn):
+  // for what has to follow it without being resized itself (e.g. a canvas, scaled instead).
+  onBoxSize?: (width: number, height: number) => void;
   testId?: string;
 }
 
@@ -46,7 +49,7 @@ const moved = (a: FlightRect, b: FlightRect) =>
 // the other instead of one disappearing and the other appearing. See useFlightTransition
 // for the usual owner.
 export const Flight = ({
-  children, back, from, target, lift = false, spin = false, radius = '.2rem', faceClassName = '', onDone, boxRef, testId = 'flight',
+  children, back, from, target, lift = false, spin = false, radius = '.2rem', faceClassName = '', onDone, boxRef, onBoxSize, testId = 'flight',
 }: FlightProps) => {
   const [dest, setDest] = useState<FlightRect>(() => target() ?? from);
   // The first leg (with the lift), a short follow-up after the destination moved, and the
@@ -105,6 +108,9 @@ export const Flight = ({
       animate={path}
       transition={transition}
       onAnimationComplete={handleComplete}
+      onUpdate={onBoxSize ? (latest) => {
+        if (typeof latest.width === 'number' && typeof latest.height === 'number') onBoxSize(latest.width, latest.height);
+      } : undefined}
     >
       <div data-testid={`${testId}-front`} className={`${s.face} ${faceClassName}`}>
         {children}

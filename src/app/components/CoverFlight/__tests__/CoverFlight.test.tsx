@@ -3,6 +3,12 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { MotionGlobalConfig } from 'framer-motion';
 import { CoverFlight } from '../CoverFlight';
 import { liveRect } from '../../Flight/flightRect';
+import { VIEW_MARGIN_X, VIEW_MARGIN_Y } from '../../Cover3D/constants';
+
+// WebGL isn't available here: the 3D cover's canvas stands in as a marker.
+vi.mock('../../Cover3D/CoverFrame3DCanvas', () => ({
+  CoverFrame3DCanvas: () => <div data-testid="cover-3d-canvas" />,
+}));
 
 const from = { top: 500, left: 100, width: 160, height: 240 };
 const to = { top: 200, left: 400, width: 150, height: 206 };
@@ -20,6 +26,22 @@ describe('CoverFlight', () => {
     const front = screen.getByTestId('cover-flight-front');
     expect(front.querySelectorAll('[data-testid="cover-frame-corner"]').length).toBeGreaterThan(0);
     expect(front.className).toMatch(/framed/);
+  });
+
+  it('with 3D on, flies its frame as the 3D cover, its canvas at the landing size scaled to the flying box', async () => {
+    render(<CoverFlight src="blob:cover" frameId="grimoire" show3D from={from} target={() => to} onDone={vi.fn()} />);
+    const slot = screen.getByTestId('cover-flight-3d');
+    expect(screen.queryByTestId('cover-frame-corner')).not.toBeInTheDocument();
+    expect(slot.style.width).toBe(`${to.width + 2 * VIEW_MARGIN_X}px`);
+    expect(slot.style.height).toBe(`${to.height + 2 * VIEW_MARGIN_Y}px`);
+    expect(slot.style.transform).toBe(`scale(${from.width / to.width}, ${from.height / to.height})`);
+    expect(await screen.findByTestId('cover-3d-canvas')).toBeInTheDocument();
+  });
+
+  it('with 3D off, keeps the flat frame', () => {
+    render(<CoverFlight src="blob:cover" frameId="grimoire" from={from} target={() => to} onDone={vi.fn()} />);
+    expect(screen.queryByTestId('cover-flight-3d')).not.toBeInTheDocument();
+    expect(screen.getAllByTestId('cover-frame-corner').length).toBeGreaterThan(0);
   });
 
   it('flies bare without a frame', () => {

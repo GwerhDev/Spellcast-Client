@@ -7,13 +7,7 @@ import { useAppSelector } from '../../../store/hooks';
 import { resolveCoverFrameId, getCoverFrameStyle, getCoverFrameCorners, getCoverFrame3D } from '../../../utils/coverFrame';
 import { CoverFrameCorners } from '../CoverFrameCorners';
 import { VIEW_MARGIN_X, VIEW_MARGIN_Y } from '../Cover3D/constants';
-
-// TCORE-124: same lazy boundary as SpellCard's own (see that file's comment) -- this card
-// renders on /editor/select, a route of its own, but three/@react-three/fiber/@react-three/
-// drei still shouldn't load there unless show3D is actually true for at least one card.
-const CoverFrame3DView = React.lazy(() =>
-  import('../Cover3D/CoverFrame3DView').then(m => ({ default: m.CoverFrame3DView }))
-);
+import { LazyCoverFrame3DView } from '../Cover3D/lazyCover3D';
 
 // Matches .card's own `border-radius: .3rem` in EditorPickerCard.module.css (16px root ->
 // 4.8px) -- see SpellCard's own COVER_RADIUS comment for why this can't be a shared CSS
@@ -81,7 +75,7 @@ export const EditorPickerCard = ({ doc, onClick, show3D }: EditorPickerCardProps
           {coverFrame3D
             ? (
               <React.Suspense fallback={null}>
-                <CoverFrame3DView config={coverFrame3D} coverUrl={coverUrl!} radius={COVER_RADIUS} />
+                <LazyCoverFrame3DView config={coverFrame3D} coverUrl={coverUrl!} radius={COVER_RADIUS} />
               </React.Suspense>
             )
             : <CoverFrameCorners config={coverFrameCorners} />}

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { beginTouchSpellDrag, isTouchDragging, LONG_PRESS_MS } from '../touchSpellDrag';
+import { beginTouchSpellDrag, isTouchDragging, LONG_PRESS_MS, startSyntheticSpellDrag } from '../touchSpellDrag';
 import { SPELL_DRAG_TYPE } from '../../config/consts';
 
 // A touch on the document at a point (the drag listens for the finger there).
@@ -80,5 +80,59 @@ describe('beginTouchSpellDrag', () => {
     touch('touchend', 10, 10);
     vi.advanceTimersByTime(LONG_PRESS_MS);
     expect(onStart).not.toHaveBeenCalled();
+  });
+});
+
+describe('startSyntheticSpellDrag', () => {
+  let first: HTMLElement;
+  let second: HTMLElement;
+  let under: HTMLElement;
+  const accept = (el: HTMLElement) => el.addEventListener('dragover', e => e.preventDefault());
+
+  beforeEach(() => {
+    first = document.createElement('div');
+    second = document.createElement('div');
+    document.body.append(first, second);
+    under = first;
+    document.elementFromPoint = vi.fn(() => under);
+  });
+  afterEach(() => { first.remove(); second.remove(); });
+
+  it('drops the spell on what takes it, carrying its id', () => {
+    accept(first);
+    const drop = vi.fn((e: DragEvent) => e.dataTransfer?.getData(SPELL_DRAG_TYPE));
+    first.addEventListener('drop', drop);
+    const drag = startSyntheticSpellDrag('spell-1', { x: 5, y: 5 });
+    expect(drag.end(true)).toBe(true);
+    expect(drop).toHaveReturnedWith('spell-1');
+  });
+
+  // A drop target redraws itself as something is dragged over it: the element the pointer
+  // was last over may be gone by the time it's let go.
+  it('drops onto what is under the pointer when it is let go, not what was there before', () => {
+    accept(first);
+    accept(second);
+    const onFirst = vi.fn();
+    const onSecond = vi.fn();
+    first.addEventListener('drop', onFirst);
+    second.addEventListener('drop', onSecond);
+    const drag = startSyntheticSpellDrag('spell-1', { x: 5, y: 5 });
+    under = second;
+    drag.end(true);
+    expect(onFirst).not.toHaveBeenCalled();
+    expect(onSecond).toHaveBeenCalled();
+  });
+
+  it("doesn't drop when cancelled, and always ends the drag", () => {
+    accept(first);
+    const drop = vi.fn();
+    const dragend = vi.fn();
+    first.addEventListener('drop', drop);
+    document.body.addEventListener('dragend', dragend);
+    const drag = startSyntheticSpellDrag('spell-1', { x: 5, y: 5 });
+    expect(drag.end(false)).toBe(false);
+    expect(drop).not.toHaveBeenCalled();
+    expect(dragend).toHaveBeenCalled();
+    document.body.removeEventListener('dragend', dragend);
   });
 });

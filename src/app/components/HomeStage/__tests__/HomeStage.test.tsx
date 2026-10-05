@@ -109,4 +109,18 @@ describe('HomeStage', () => {
     rerender(page({ immersive: false, sceneOverflow: 120 }));
     expect(screen.getByTestId('home-stage-secondary').style.marginTop).toBe('');
   });
+
+  it('draws a layer over the stage, raised over the scene when asked', () => {
+    const { rerender } = render(stage({ layer: <div data-testid="scene" /> }));
+    const layer = screen.getByTestId('home-stage-layer');
+    expect(layer).toContainElement(screen.getByTestId('scene'));
+    expect(layer.className).not.toMatch(/layerRaised/);
+    rerender(stage({ layer: <div data-testid="scene" />, layerRaised: true }));
+    expect(screen.getByTestId('home-stage-layer').className).toMatch(/layerRaised/);
+  });
+
+  it('draws no layer without one', () => {
+    render(stage());
+    expect(screen.queryByTestId('home-stage-layer')).not.toBeInTheDocument();
+  });
 });

@@ -1,36 +1,19 @@
-import { useEffect, useRef, useState } from 'react';
-import { useMediaQuery } from './useMediaQuery';
-import { useMode3D } from '../context/Mode3DContext';
+import { useEffect, useState } from 'react';
+import { useCoverFrame3DEnabled } from './useCoverFrame3DEnabled';
 
-// Every guardrail for 3D cover corners, gathered in one hook so QuickStart only
-// has to check a single boolean before mounting CoverFrame3DOverlay -- the user's own
-// Mode3D toggle (Appearance settings) is the master switch, desktop + motion-ok are
-// static-ish (checked once, reactive to real changes), section-in-viewport is the one that
-// actually toggles during normal use (scrolling the section in/out).
-
-const DESKTOP_QUERY = '(min-width: 1025px) and (hover: hover) and (pointer: fine)';
-const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
+// Every guardrail for a section's 3D covers, gathered in one hook so a section only has to
+// check a single boolean: whether 3D covers can be shown at all (useCoverFrame3DEnabled),
+// and the section being in the viewport -- the one that actually toggles during normal use
+// (scrolling the section in/out).
 
 export const useCoverFrame3DGate = (sectionRef: React.RefObject<HTMLElement | null>) => {
-  const { enabled: mode3dEnabled } = useMode3D();
-  const isDesktop = useMediaQuery(DESKTOP_QUERY);
-  const reducedMotion = useMediaQuery(REDUCED_MOTION_QUERY);
-  const [inViewport, setInViewport] = useState(false);
-  // Bumped once, never reset -- lets a device known to be too weak stay opted out for the
-  // rest of the session even if it briefly reports otherwise, cheaper than re-querying it.
-  const lowEndRef = useRef(false);
+  const enabled = useCoverFrame3DEnabled();
+  // Assumed in view until it's known not to be: a section is nearly always on screen as it
+  // mounts, and starting out of view showed its covers flat first, then again in 3D.
+  const [inViewport, setInViewport] = useState(true);
 
   useEffect(() => {
-    // navigator.hardwareConcurrency / deviceMemory are both optional per spec -- absence
-    // (Safari doesn't expose deviceMemory) must read as "unknown", not "low-end", so a
-    // capable-but-unreporting device isn't excluded.
-    const cores = navigator.hardwareConcurrency;
-    const memory = (navigator as Navigator & { deviceMemory?: number }).deviceMemory;
-    lowEndRef.current = (typeof cores === 'number' && cores <= 2) || (typeof memory === 'number' && memory <= 2);
-  }, []);
-
-  useEffect(() => {
-    if (!mode3dEnabled || !isDesktop || reducedMotion) { setInViewport(false); return; }
+    if (!enabled) return;
     // sectionRef.current is often still null on this effect's first run -- QuickStart (the
     // one caller today) renders a loading skeleton before its real .carouselWrapper div
     // (the one carrying this ref) ever mounts, and a plain ref mutation doesn't re-trigger
@@ -62,7 +45,7 @@ export const useCoverFrame3DGate = (sectionRef: React.RefObject<HTMLElement | nu
       window.clearInterval(poll);
       io?.disconnect();
     };
-  }, [sectionRef, isDesktop, reducedMotion, mode3dEnabled]);
+  }, [sectionRef, enabled]);
 
-  return mode3dEnabled && isDesktop && !reducedMotion && !lowEndRef.current && inViewport;
+  return enabled && inViewport;
 };

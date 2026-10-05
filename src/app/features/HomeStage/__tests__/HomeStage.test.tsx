@@ -8,12 +8,19 @@ import { setAltarBackdrop } from '../../../../store/altarSlice';
 // The scene and the list are their own features, tested on their own.
 vi.mock('../../Start', () => ({ Start: ({ immersive }: { immersive?: boolean }) => <div data-testid="start-stub" data-immersive={String(!!immersive)} /> }));
 vi.mock('../../QuickStart', () => ({ QuickStart: () => <div data-testid="quick-start-stub" /> }));
+vi.mock('../../QuickStart3D', () => ({
+  useQuickStart3D: () => ({ dragging: false }),
+  QuickStart3DStrip: () => <div data-testid="quick-start-3d-stub" />,
+  QuickStart3DScene: () => <div data-testid="quick-start-3d-scene-stub" />,
+}));
+const mock3D = vi.fn(() => false);
+vi.mock('../../../../hooks/useCoverFrame3DEnabled', () => ({ useCoverFrame3DEnabled: () => mock3D() }));
 
 const mockCover = vi.fn();
 vi.mock('../../../../hooks/useSpellCoverUrl', () => ({ useSpellCoverUrl: () => mockCover() }));
 
 describe('HomeStage (feature)', () => {
-  beforeEach(() => { mockCover.mockReset().mockReturnValue(null); });
+  beforeEach(() => { mockCover.mockReset().mockReturnValue(null); mock3D.mockReturnValue(false); });
   afterEach(() => { vi.useRealTimers(); });
 
   it('with nothing loaded: a plain page, the altar not immersive', () => {
@@ -93,5 +100,19 @@ describe('HomeStage (feature)', () => {
     expect(toggle).toHaveAttribute('aria-checked', 'true');
     fireEvent.click(toggle);
     expect(store.getState().altar.readOnConjure).toBe(false);
+  });
+
+  it('shows the quick start as a list without 3D covers', () => {
+    renderWithProviders(<HomeStage />);
+    expect(screen.getByTestId('quick-start-stub')).toBeInTheDocument();
+    expect(screen.queryByTestId('home-stage-layer')).not.toBeInTheDocument();
+  });
+
+  it("with 3D covers on, shows the quick start's books in the home's 3D scene, over the page", () => {
+    mock3D.mockReturnValue(true);
+    renderWithProviders(<HomeStage />);
+    expect(screen.queryByTestId('quick-start-stub')).not.toBeInTheDocument();
+    expect(screen.getByTestId('home-stage-secondary')).toContainElement(screen.getByTestId('quick-start-3d-stub'));
+    expect(screen.getByTestId('home-stage-layer')).toContainElement(screen.getByTestId('quick-start-3d-scene-stub'));
   });
 });

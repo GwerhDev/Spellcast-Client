@@ -78,6 +78,43 @@ const makeGhost = (source: HTMLElement, at: Point) => {
   return { place, remove: () => ghost.remove() };
 };
 
+// A spell dragged by something that isn't a native drag (a finger, or a book in the home's
+// 3D scene, see BookCarousel3D): from `at`, the same drag events a mouse drag fires are fired
+// on whatever is under the pointer as it moves, carrying the spell's id the same way, so
+// every drop target and drag effect works unchanged. `end` drops it where it is if what's
+// there takes it (or not, when cancelled) and ends the drag on `source`.
+export const startSyntheticSpellDrag = (spellId: string, at: Point, source: EventTarget = document.body) => {
+  const dataTransfer = makeDataTransfer(spellId);
+  let target: Element | null = null;
+  let accepted = false;
+  let last = at;
+  const over = (p: Point) => {
+    last = p;
+    const el = document.elementFromPoint(p.x, p.y);
+    if (el !== target) {
+      if (target) fire('dragleave', target, p, dataTransfer, el);
+      if (el) fire('dragenter', el, p, dataTransfer, target);
+      target = el;
+    }
+    // As with a native drag, a target that takes the drop says so by cancelling dragover.
+    accepted = el ? fire('dragover', el, p, dataTransfer) : false;
+  };
+  over(at);
+  return {
+    move: over,
+    // Whether it was dropped on something that took it.
+    end: (drop: boolean): boolean => {
+      // Onto what's under the pointer now, as a native drop: what was there may have changed
+      // under a still pointer (a drop target redraws itself as something is dragged over it).
+      if (drop) over(last);
+      const dropped = drop && !!target && accepted;
+      if (dropped) fire('drop', target!, last, dataTransfer);
+      fire('dragend', source, last, dataTransfer);
+      return dropped;
+    },
+  };
+};
+
 interface TouchDragHooks {
   // The card was picked up (as a mouse drag's dragstart).
   onStart: () => void;
@@ -88,37 +125,22 @@ interface TouchDragHooks {
 export const beginTouchSpellDrag = (start: Point, source: HTMLElement, spellId: string, { onStart }: TouchDragHooks): (() => void) => {
   let picked = false;
   let ghost: ReturnType<typeof makeGhost> | null = null;
-  let dataTransfer: DataTransfer | null = null;
-  let target: Element | null = null;
-  let accepted = false;
-  let last = start;
-
-  const over = (at: Point) => {
-    const el = document.elementFromPoint(at.x, at.y);
-    if (el !== target) {
-      if (target) fire('dragleave', target, at, dataTransfer!, el);
-      if (el) fire('dragenter', el, at, dataTransfer!, target);
-      target = el;
-    }
-    // As with a native drag, a target that takes the drop says so by cancelling dragover.
-    accepted = el ? fire('dragover', el, at, dataTransfer!) : false;
-  };
+  let drag: ReturnType<typeof startSyntheticSpellDrag> | null = null;
 
   const pickUp = () => {
     picked = true;
     dragging = true;
-    dataTransfer = makeDataTransfer(spellId);
     navigator.vibrate?.(12);
     ghost = makeGhost(source, start);
     onStart();
-    over(start);
+    drag = startSyntheticSpellDrag(spellId, start, source);
   };
   const timer = window.setTimeout(pickUp, LONG_PRESS_MS);
 
   const handleMove = (e: TouchEvent) => {
     const touch = e.touches[0];
     if (!touch) return;
-    last = { x: touch.clientX, y: touch.clientY };
+    const last = { x: touch.clientX, y: touch.clientY };
     if (!picked) {
       if (Math.hypot(last.x - start.x, last.y - start.y) > MOVE_TOLERANCE_PX) cleanup();
       return;
@@ -126,15 +148,14 @@ export const beginTouchSpellDrag = (start: Point, source: HTMLElement, spellId: 
     // Picked up: the finger moves the card, not the page.
     e.preventDefault();
     ghost?.place(last);
-    over(last);
+    drag?.move(last);
   };
 
   const handleEnd = (e: TouchEvent) => {
     if (picked) {
       // No click on what's under the finger once it lifts: the drag was the gesture.
       e.preventDefault();
-      if (target && accepted && e.type === 'touchend') fire('drop', target, last, dataTransfer!);
-      fire('dragend', source, last, dataTransfer!);
+      drag?.end(e.type === 'touchend');
       swallowNextClick();
     }
     cleanup();

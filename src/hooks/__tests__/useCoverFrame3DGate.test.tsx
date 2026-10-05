@@ -78,7 +78,10 @@ afterEach(() => {
   vi.useRealTimers();
   window.matchMedia = originalMatchMedia;
   HTMLElement.prototype.getBoundingClientRect = originalGetBoundingClientRect;
+  // navigator's own value normally lives on Navigator.prototype: a test that set its own
+  // has it removed, or it would leak into the next ones.
   if (originalHardwareConcurrency) Object.defineProperty(navigator, 'hardwareConcurrency', originalHardwareConcurrency);
+  else delete (navigator as { hardwareConcurrency?: number }).hardwareConcurrency;
   vi.unstubAllGlobals();
   localStorage.clear();
 });

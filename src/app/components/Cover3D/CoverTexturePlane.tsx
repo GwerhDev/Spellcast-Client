@@ -33,6 +33,8 @@ const loadTexture = (url: string): Promise<THREE.Texture> => {
 };
 
 const resultCache = new Map<string, THREE.Texture>();
+// How many covers on screen show each url's texture (see the disposal effect below).
+const users = new Map<string, number>();
 
 // Same throw-a-promise Suspense pattern as CoverFrameMesh's own `useSvgShapes` -- kept
 // local here (rather than pulling in drei's `useTexture`) so this file's loading/caching
@@ -70,16 +72,29 @@ const CoverTexturePlaneInner: React.FC<CoverTexturePlaneProps> = ({ url, width, 
     texture.needsUpdate = true;
   }, [texture, width, height]);
 
-  // Each card's own texture is disposed when ITS url changes or it unmounts (long
-  // Grimoire lists scroll cards in and out constantly) -- also drop it from resultCache
-  // and pendingLoads so neither map grows without bound over a session with many
-  // different spells scrolled through (unlike CoverFrameMesh's svgCache, which is safe to
-  // keep forever because the handful of frame assets it holds never changes). Doesn't
-  // touch either map for any OTHER url still in flight or in use.
-  useEffect(() => () => {
-    resultCache.delete(url);
-    pendingLoads.delete(url);
-    texture.dispose();
+  // A texture is disposed once nothing shows its url anymore (long Grimoire lists scroll
+  // cards in and out constantly) -- also dropped from resultCache and pendingLoads so neither
+  // map grows without bound over a session with many different spells scrolled through
+  // (unlike CoverFrameMesh's svgCache, which is safe to keep forever because the handful of
+  // frame assets it holds never changes). Counted, not dropped as each one unmounts: the
+  // same cover is often shown twice at once -- a coverflow card mounting anew at its next
+  // place while the old one leaves -- and the new one would otherwise find it gone and load
+  // it all over again, showing nothing meanwhile.
+  useEffect(() => {
+    users.set(url, (users.get(url) ?? 0) + 1);
+    // Back in the cache if a cleanup just took it out while this one still shows it (React
+    // runs a mount's cleanup and setup once more in development): the next render (any
+    // change at all, e.g. the coverflow turning) would otherwise not find it, and suspend
+    // to load it again, showing nothing meanwhile.
+    resultCache.set(url, texture);
+    return () => {
+      const left = (users.get(url) ?? 1) - 1;
+      if (left > 0) { users.set(url, left); return; }
+      users.delete(url);
+      resultCache.delete(url);
+      pendingLoads.delete(url);
+      texture.dispose();
+    };
   }, [url, texture]);
 
   const geometry = useMemo(() => {

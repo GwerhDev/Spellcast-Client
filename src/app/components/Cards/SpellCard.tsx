@@ -11,16 +11,7 @@ import { useAppSelector } from '../../../store/hooks';
 import { resolveCoverFrameId, getCoverFrameStyle, getCoverFrameCorners, getCoverFrame3D } from '../../../utils/coverFrame';
 import { CoverFrameCorners } from '../CoverFrameCorners';
 import { VIEW_MARGIN_X, VIEW_MARGIN_Y } from '../Cover3D/constants';
-
-// TCORE-124: three/@react-three/fiber/@react-three/drei are only downloaded once a card
-// actually renders this (i.e. show3D is true for it) -- lazy so SpellCard, used on nearly
-// every route, doesn't statically pull the whole 3D stack into the main bundle regardless
-// of whether Mode3D is even on. Confirmed the hard way: a non-lazy import here inflated the
-// main chunk by ~900kB even with CoverFrame3DRoot itself already lazy elsewhere -- SpellCard
-// is what actually touches nearly every route, so IT has to be the lazy boundary.
-const CoverFrame3DView = React.lazy(() =>
-  import('../Cover3D/CoverFrame3DView').then(m => ({ default: m.CoverFrame3DView }))
-);
+import { LazyCoverFrame3DCanvas, LazyCoverFrame3DView } from '../Cover3D/lazyCover3D';
 
 // Matches .card/.cardClip's own `border-radius: .2rem` in SpellCard.module.css (16px root
 // -> 3.2px) -- the 3D cover plane rounds its own corners in geometry (see
@@ -59,11 +50,15 @@ interface SpellCardProps {
   // change (QuickStart/SpellList opt in explicitly, everything else keeps working exactly
   // as before untouched).
   show3D?: boolean;
+  // The 3D cover in a canvas of its own, part of the card (see CoverFrame3DCanvas), rather
+  // than drawn into the app's shared one: for a card that's transformed, dimmed or
+  // overlapped by others (a coverflow's), which only its own canvas follows.
+  own3DCanvas?: boolean;
 }
 
 // A spell in a grid: just its cover, which glows on hover. Clicking opens its detail; the
 // only thing drawn over the cover is the reading indicator, while it's the loaded spell.
-export const SpellCard = ({ doc, isActive, isPlaying, onClick, lifted = false, focusable = true, uploadJob, selectionMode, selected, onToggleSelect, onModifiedClick, show3D }: SpellCardProps) => {
+export const SpellCard = ({ doc, isActive, isPlaying, onClick, lifted = false, focusable = true, uploadJob, selectionMode, selected, onToggleSelect, onModifiedClick, show3D, own3DCanvas = false }: SpellCardProps) => {
   // TCORE-123: this spell's own pick, falling back to the global default when unset. The
   // pick itself is made from the spell's detail, which refreshes the lists after saving.
   const { activeCoverFrameId } = useAppSelector(state => state.casterInventory);
@@ -255,7 +250,9 @@ export const SpellCard = ({ doc, isActive, isPlaying, onClick, lifted = false, f
           {coverFrame3D
             ? (
               <React.Suspense fallback={null}>
-                <CoverFrame3DView config={coverFrame3D} coverUrl={coverUrl!} radius={COVER_RADIUS} className={s.coverFrameOverlay} />
+                {own3DCanvas
+                  ? <LazyCoverFrame3DCanvas config={coverFrame3D} coverUrl={coverUrl!} radius={COVER_RADIUS} className={s.coverFrameOverlay} />
+                  : <LazyCoverFrame3DView config={coverFrame3D} coverUrl={coverUrl!} radius={COVER_RADIUS} className={s.coverFrameOverlay} />}
               </React.Suspense>
             )
             : <CoverFrameCorners config={coverFrameCorners} className={s.coverFrameOverlay} />}

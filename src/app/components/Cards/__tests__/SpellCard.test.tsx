@@ -5,6 +5,14 @@ import { SpellCard } from '../SpellCard';
 import type { Spell } from '../../../../interfaces';
 import { SPELL_DRAG_TYPE } from '../../../../config/consts';
 
+// WebGL isn't available here: each 3D cover mechanism stands in as a marker.
+vi.mock('../../Cover3D/CoverFrame3DCanvas', () => ({
+  CoverFrame3DCanvas: () => <div data-testid="cover-3d-canvas" />,
+}));
+vi.mock('../../Cover3D/CoverFrame3DView', () => ({
+  CoverFrame3DView: () => <div data-testid="cover-3d-view" />,
+}));
+
 const mockDoc: Spell = {
   id: 'doc-1',
   userId: 'user-1',
@@ -179,6 +187,26 @@ describe('SpellCard', () => {
     it('stays out of the tab order when it is only shown (focusable off)', () => {
       renderCard({ focusable: false });
       expect(screen.getByTestId('spell-card-doc-1')).toHaveAttribute('tabindex', '-1');
+    });
+  });
+
+  describe('3D cover', () => {
+    const framed = { ...mockDoc, cover: new Blob(['x']), coverFrameId: 'grimoire' } as Spell;
+    beforeEach(() => {
+      URL.createObjectURL = vi.fn(() => 'blob:card-cover');
+      URL.revokeObjectURL = vi.fn();
+    });
+
+    it("is drawn into the app's shared canvas by default", async () => {
+      renderCard({ doc: framed, show3D: true });
+      expect(await screen.findByTestId('cover-3d-view')).toBeInTheDocument();
+      expect(screen.queryByTestId('cover-3d-canvas')).not.toBeInTheDocument();
+    });
+
+    it('is drawn in a canvas of its own, part of the card, when asked (e.g. in a coverflow)', async () => {
+      renderCard({ doc: framed, show3D: true, own3DCanvas: true });
+      expect(await screen.findByTestId('cover-3d-canvas')).toBeInTheDocument();
+      expect(screen.queryByTestId('cover-3d-view')).not.toBeInTheDocument();
     });
   });
 });

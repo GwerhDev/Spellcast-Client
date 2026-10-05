@@ -30,6 +30,7 @@ import { useStorageQuotaWarning } from '../../hooks/useStorageQuotaWarning';
 import { AttentionGuardModal } from '../components/Modals/AttentionGuardModal';
 import { onSpellsMigrated } from '../../db';
 import { useMode3D } from '../../context/Mode3DContext';
+import { preloadCover3D } from '../components/Cover3D/lazyCover3D';
 
 // TCORE-124: the app's ONE shared 3D canvas for cover-frame corners -- mounted once here
 // (not per-route) so every card everywhere that opts into 3D corners (via SpellCard's own
@@ -56,6 +57,8 @@ export default function DefaultLayout() {
   // desktop/motion/low-end/per-card-visibility conditions are each individual card's own
   // concern (SpellCard's show3D prop, from useCoverFrame3DGate), not this root's.
   const { enabled: mode3dEnabled } = useMode3D();
+  // The covers' own 3D parts, ready before a page first shows any (see lazyCover3D).
+  useEffect(() => { if (mode3dEnabled) void preloadCover3D(); }, [mode3dEnabled]);
   const [isPlayerSettingsOpen, setIsPlayerSettingsOpen] = useState(false);
   const [isVoiceSelectorOpen, setIsVoiceSelectorOpen] = useState(false);
   const navRef = useRef<HTMLElement>(null);

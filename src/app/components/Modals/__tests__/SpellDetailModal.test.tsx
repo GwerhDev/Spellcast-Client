@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { renderWithProviders, makeStore } from '../../../../test/renderWithProviders';
 import { Routes, Route } from 'react-router-dom';
@@ -6,6 +6,11 @@ import { SpellDetailModal } from '../SpellDetailModal';
 import * as db from '../../../../db';
 import * as originalPdfsDb from '../../../../db/originalPdfs';
 import { setSpellFile, setSpellInfo, setSpellLoaded } from '../../../../store/spellReaderSlice';
+
+// WebGL isn't available here: the 3D cover's canvas stands in as a marker.
+vi.mock('../../Cover3D/CoverFrame3DCanvas', () => ({
+  CoverFrame3DCanvas: () => <div data-testid="cover-3d-canvas" />,
+}));
 
 const mockDoc = {
   id: 'doc-1',
@@ -281,6 +286,37 @@ describe('SpellDetailModal', () => {
       const img = screen.getByTestId('spell-detail-modal-cover').querySelector('img');
       expect(img).not.toBeNull();
       await waitFor(() => expect(img?.getAttribute('src')).toBe('blob:modal-cover'));
+    });
+  });
+
+  // The modal is over the app's shared 3D canvas: its cover has a canvas of its own.
+  describe('3D cover', () => {
+    const framed = { ...mockDoc, cover: new Blob(['x']), coverFrameId: 'grimoire' };
+    const desktop = (on: boolean) => Object.defineProperty(window, 'matchMedia', {
+      configurable: true,
+      value: (query: string) => ({ matches: on && query.includes('min-width'), media: query, addEventListener: vi.fn(), removeEventListener: vi.fn() }),
+    });
+    beforeEach(() => {
+      URL.createObjectURL = vi.fn(() => 'blob:modal-cover');
+      URL.revokeObjectURL = vi.fn();
+      vi.spyOn(db, 'getSpellById').mockResolvedValue(framed as never);
+    });
+    afterEach(() => localStorage.removeItem('mode3d'));
+
+    it('shows the framed cover in 3D with 3D covers on', async () => {
+      localStorage.setItem('mode3d', '1');
+      desktop(true);
+      renderWithProviders(<SpellDetailModal spellId="doc-1" show onClose={vi.fn()} />, { store: loggedStore() });
+      expect(await screen.findByTestId('spell-detail-modal-cover-3d')).toBeInTheDocument();
+      expect(await screen.findByTestId('cover-3d-canvas')).toBeInTheDocument();
+      expect(screen.queryByTestId('cover-frame-corner')).not.toBeInTheDocument();
+    });
+
+    it('keeps the flat frame with 3D covers off', async () => {
+      desktop(true);
+      renderWithProviders(<SpellDetailModal spellId="doc-1" show onClose={vi.fn()} />, { store: loggedStore() });
+      expect((await screen.findAllByTestId('cover-frame-corner')).length).toBeGreaterThan(0);
+      expect(screen.queryByTestId('spell-detail-modal-cover-3d')).not.toBeInTheDocument();
     });
   });
 });

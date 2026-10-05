@@ -35,6 +35,11 @@ interface HomeStageProps {
   // How far the scene's content runs down past it, in px (e.g. a long sentence on the
   // altar): the secondary content moves down that much, the scene staying where it is.
   sceneOverflow?: number;
+  // A layer over the whole stage (e.g. a 3D scene drawing the secondary content's objects):
+  // over the secondary content, under the scene (the altar) -- or over it too while
+  // `layerRaised` (e.g. a book being carried onto the altar).
+  layer?: ReactNode;
+  layerRaised?: boolean;
 }
 
 // The home page as a stage: with a spell loaded, its cover fills the whole page (blurred,
@@ -43,7 +48,7 @@ interface HomeStageProps {
 // The backdrop spans the whole stage, and what it shows sits in a layer as tall as the
 // page's visible area, stuck to its top: the page scrolls, the cover stays put (attached),
 // filling the visible area edge to edge however far down the page is.
-export const HomeStage = ({ coverUrl, immersive, idle, main, secondary, corner, sceneOverflow = 0 }: HomeStageProps) => {
+export const HomeStage = ({ coverUrl, immersive, idle, main, secondary, corner, sceneOverflow = 0, layer, layerRaised = false }: HomeStageProps) => {
   // Someone moving through the secondary content with the keyboard isn't touching the
   // pointer, so it goes idle under them: while they're in it, it stays.
   const [keyboardInside, setKeyboardInside] = useState(false);
@@ -129,6 +134,11 @@ export const HomeStage = ({ coverUrl, immersive, idle, main, secondary, corner, 
         {secondary}
       </div>
     </div>
+    {layer && (
+      <div data-testid="home-stage-layer" className={`${s.layer} ${layerRaised ? s.layerRaised : ''}`}>
+        {layer}
+      </div>
+    )}
   </div>
 );
 };

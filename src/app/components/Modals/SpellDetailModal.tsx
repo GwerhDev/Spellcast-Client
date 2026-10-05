@@ -11,7 +11,9 @@ import { goToNextPage, goToPreviousPage } from '../../../store/spellReaderSlice'
 import { SpellTransport } from '../SpellTransport/SpellTransport';
 import { coverFrames } from '../../../config/assets';
 import { hasOriginalPdf } from '../../../db/originalPdfs';
-import { resolveCoverFrameId, getCoverFrameStyle, getCoverFrameCorners } from '../../../utils/coverFrame';
+import { resolveCoverFrameId, getCoverFrameStyle, getCoverFrameCorners, getCoverFrame3D } from '../../../utils/coverFrame';
+import { useCoverFrame3DEnabled } from '../../../hooks/useCoverFrame3DEnabled';
+import { VIEW_MARGIN_X, VIEW_MARGIN_Y } from '../Cover3D/constants';
 import { CoverFrameCorners } from '../CoverFrameCorners';
 import { isInCasterGrimoire } from '../../../utils/grimoire';
 import { CustomModal } from './CustomModal';
@@ -27,6 +29,22 @@ import { useLanguage } from '../../../i18n';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
 import { CoverFlight } from '../CoverFlight/CoverFlight';
 import { useFlightTransition, type FlightOrigin } from '../Flight/useFlightTransition';
+import { LazyCoverFrame3DCanvas } from '../Cover3D/lazyCover3D';
+
+// In 3D, the cover with its frame as one object, in a canvas of its own (the modal is over
+// the app's shared one), with room around the cover for the frame's overhang. The flat cover
+// under it shows until it has loaded.
+const Cover3D = ({ url, config }: { url: string; config: NonNullable<ReturnType<typeof getCoverFrame3D>> }) => (
+  <div
+    data-testid="spell-detail-modal-cover-3d"
+    className={s.coverFrame3D}
+    style={{ '--cover-frame-3d-margin-x': `${VIEW_MARGIN_X}px`, '--cover-frame-3d-margin-y': `${VIEW_MARGIN_Y}px` } as React.CSSProperties}
+  >
+    <React.Suspense fallback={null}>
+      <LazyCoverFrame3DCanvas config={config} coverUrl={url} radius={0} />
+    </React.Suspense>
+  </div>
+);
 
 // Where the modal was opened from, when that was a spell card: its cover's place on screen
 // and image, so the cover can fly from the card into the modal (and back when closing).
@@ -58,6 +76,7 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
   const ownedCoverFrames = useMemo(() => coverFrames.filter(frame => unlockedIds.includes(frame.id)), [unlockedIds]);
 
   const deleteSpells = useDeleteSpells();
+  const show3D = useCoverFrame3DEnabled();
   const [doc, setDoc] = useState<Awaited<ReturnType<typeof getSpellById>> | null>(null);
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -128,6 +147,8 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
 
   const resolvedCoverFrameId = doc ? resolveCoverFrameId(doc.coverFrameId, activeCoverFrameId) : null;
   const coverFrameCorners = getCoverFrameCorners(resolvedCoverFrameId);
+  const coverFrame3D = show3D ? getCoverFrame3D(resolvedCoverFrameId) : null;
+  const originFrame3D = show3D && origin ? getCoverFrame3D(origin.coverFrameId ?? null) : null;
   const pagesCount = doc?.pagesContent ? (() => { try { return JSON.parse(doc.pagesContent!).length; } catch { return null; } })() : null;
   const currentPage = (currentPlayingId === spellId && readerCurrentPage > 0)
     ? readerCurrentPage
@@ -213,6 +234,8 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
                 {origin
                   ? <img src={origin.coverUrl} alt="" className={`${s.cover} ${getCoverFrameCorners(origin.coverFrameId ?? null) ? s.coverSquared : ''}`} />
                   : <div className={s.coverPlaceholder}><FontAwesomeIcon icon={faScroll} /></div>}
+                {/* Landed before the spell is read: the cover keeps the 3D look it flew in with. */}
+                {origin && originFrame3D && <Cover3D url={origin.coverUrl} config={originFrame3D} />}
               </div>
               <div data-testid="spell-detail-modal-loading" className={`${s.info} ${s.loading}`}>
                 <Spinner isLoading message={t.common.loading} />
@@ -230,7 +253,9 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
                   ? <img src={shownCoverUrl} alt={doc.title} className={`${s.cover} ${coverFrameCorners ? s.coverSquared : ''}`} style={getCoverFrameStyle(resolvedCoverFrameId)} />
                   : <div className={s.coverPlaceholder}><FontAwesomeIcon icon={faScroll} /></div>
                 }
-                {shownCoverUrl && coverFrameCorners && <CoverFrameCorners config={coverFrameCorners} />}
+                {shownCoverUrl && coverFrame3D
+                  ? <Cover3D url={shownCoverUrl} config={coverFrame3D} />
+                  : shownCoverUrl && coverFrameCorners && <CoverFrameCorners config={coverFrameCorners} />}
                 {/* Shown on hover: the cover and its frame, for the caster's own spells. */}
                 {inGrimoire && (
                   <IconButton
@@ -325,6 +350,7 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
           frameId={leg.direction === 'out' && doc ? resolvedCoverFrameId : origin.coverFrameId ?? null}
           // Arriving in the modal it turns over once, showing the app's mark on its back.
           spin={leg.direction === 'in'}
+          show3D={show3D}
         />
       )}
       <SpellCoverModal

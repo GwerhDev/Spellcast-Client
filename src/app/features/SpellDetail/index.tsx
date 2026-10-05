@@ -24,13 +24,8 @@ import { countSpellWords, estimateListeningMinutes } from '../../../utils/spellS
 import { isInCasterGrimoire } from '../../../utils/grimoire';
 import { useLanguage } from '../../../i18n';
 import { useGoBack } from '../../../hooks/useGoBack';
+import { LazyCoverFrame3DView } from '../../components/Cover3D/lazyCover3D';
 // import { useSpellExport } from '../../../hooks/useSpellExport'; // .spell export: future
-
-// TCORE-124: same lazy boundary as SpellCard/EditorPickerCard's own -- see SpellCard's own
-// comment on why this stays lazy rather than a static import.
-const CoverFrame3DView = React.lazy(() =>
-  import('../../components/Cover3D/CoverFrame3DView').then(m => ({ default: m.CoverFrame3DView }))
-);
 
 // Matches .cover's own `border-radius: 6px` in SpellDetail/index.module.css -- see
 // SpellCard's own COVER_RADIUS comment for why this can't be a shared CSS clip once 3D is
@@ -173,7 +168,7 @@ export const SpellDetail: React.FC = () => {
                     {coverFrame3D
                       ? (
                         <React.Suspense fallback={null}>
-                          <CoverFrame3DView config={coverFrame3D} coverUrl={coverUrl!} radius={COVER_RADIUS} />
+                          <LazyCoverFrame3DView config={coverFrame3D} coverUrl={coverUrl!} radius={COVER_RADIUS} />
                         </React.Suspense>
                       )
                       : <CoverFrameCorners config={coverFrameCorners} />}
