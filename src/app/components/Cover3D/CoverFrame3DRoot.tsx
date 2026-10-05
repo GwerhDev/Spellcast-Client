@@ -1,91 +1,122 @@
-import React from 'react';
-import { Canvas } from '@react-three/fiber';
-import { View } from '@react-three/drei';
-import { useCoverFrame3DInvalidate } from '../../../hooks/useCoverFrame3DInvalidate';
+import React, { useRef, useSyncExternalStore } from 'react';
+import * as THREE from 'three';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { PerspectiveCamera } from '@react-three/drei';
+import { Book3D, readLook, tint } from './CoverFrame3DScene';
+import { VIEW_MARGIN_X, VIEW_MARGIN_Y } from './constants';
+import { getPageBooks, subscribePageBooks, type PageBook } from './pageBooks';
 
-// TCORE-124: the ONE shared <Canvas>/WebGL context for the whole app's 3D cover-frame
-// objects -- mounted once here (in DefaultLayout.tsx, on .dashboard-container, a sibling of
-// the sidebar rather than a descendant of it) and reused by every section via drei's <View>.
-// Browsers cap concurrent WebGL contexts (~8-16), and any grid of SpellCards can render
-// 20-50+ at once, so one context per card (or even one context per SECTION, an earlier
-// design here) was ruled out -- see CoverFrame's own comment in config/assets/types.ts.
+// The camera's distance from the page, in px: how strong the perspective is.
+const CAMERA_DISTANCE = 1400;
+
+// The page's 3D scene: the covers on it (see CoverFrame3DView) as books, each drawn where
+// its element is and as it looks -- moved, turned, scaled and faded with it (the Grimoire's
+// deal, a card's hover, scrolling) -- so the page's cards behave exactly as they do flat,
+// with depth. One canvas for the whole app's pages (browsers cap WebGL contexts, and a grid
+// can show dozens of covers), mounted once 3D covers are on (see DefaultLayout), on
+// .dashboard-container: a box that doesn't reflow with the sidebar's rail/panel toggle.
+// Covers shown where this canvas can't reach them right (a modal over it, a coverflow's
+// overlapping cards, the home's own scene) have canvases of their own instead.
 //
-// Mounted on .dashboard-container specifically, NOT .app-viewer (where this used to live):
-// .app-viewer's own width reflows for ~220ms every time the sidebar's rail<->panel toggle
-// animates (a plain CSS `transition: width`), and drei's <View> converts each card's live
-// DOM rect into a WebGL scissor rect using THIS canvas' own measured size (react-three-
-// fiber's ResizeObserver-driven `useThree().size`) -- during that reflow the card's rect was
-// always fresh (read live every frame) but the canvas' own size lagged a frame or more
-// behind, so the 3D content visibly detached from the card underneath it. .dashboard-
-// container's own box is width:100% of .app-container, provably unaffected by how the
-// sidebar and viewer split that width between them (see globals.css), so it never reflows
-// from this. See DefaultLayout.tsx's own comment on the mount point, and .nav-container's
-// own `isolation: isolate` (globals.css) -- this canvas now geometrically spans the
-// sidebar's screen area too, so the sidebar needs its own stacking context to guarantee it
-// keeps painting on top regardless of DOM/z-index order.
-//
-// Why <View> replaces the earlier "one full-viewport canvas + manually sync mesh positions
-// to each card's DOM rect every rAF tick" design: that mesh-position-mirroring approach had
-// two real, structural problems, not just cosmetic ones --
-//   1. A visible one-frame-ish delay between a card's real DOM position (scroll, sidebar
-//      toggle, any layout change) and the mesh catching up, because the sync ran in a
-//      SEPARATE requestAnimationFrame loop from the browser's own layout/paint, reading
-//      getBoundingClientRect() after the fact rather than being part of the same paint.
-//   2. The canvas had to be position: fixed to the whole viewport to guarantee covering
-//      every possible card position, which put it in its own top-level stacking context
-//      competing with real page chrome (the sidebar) that has no z-index of its own in
-//      desktop layout -- any positive z-index on the fixed canvas could paint over it.
-// <View> fixes both by giving each card a real DOM element (a plain <div>, HtmlView below)
-// that lives in its own normal position in the page -- inheriting the correct stacking
-// context automatically, zero manual z-index -- and reads that element's rect from INSIDE
-// r3f's own useFrame render loop (same pass that paints, not a parallel rAF), using
-// gl.setScissor to draw only that screen rectangle from ONE shared scene/context. See
-// CoverFrame3DView.tsx for the per-card wrapper.
+// Its frame of reference is the canvas': 1 unit = 1 px on the page plane (z = 0), x right
+// from its left edge, y up from its top edge. The camera looks at the canvas' middle from
+// CAMERA_DISTANCE in front, its frustum set so the page plane lines up with the page: what's
+// flat on it sits exactly at its page position, and a book's depth shows the more it is off
+// to the side.
+
+// The camera, kept lined up with the canvas.
+const PageCamera: React.FC = () => {
+  const camera = useRef<THREE.PerspectiveCamera>(null);
+  const { size } = useThree();
+  useFrame(() => {
+    const cam = camera.current;
+    if (!cam) return;
+    const cx = size.width / 2;
+    const cy = size.height / 2;
+    const near = 10;
+    const k = near / CAMERA_DISTANCE;
+    cam.position.set(cx, -cy, CAMERA_DISTANCE);
+    cam.near = near;
+    cam.far = CAMERA_DISTANCE * 4;
+    cam.projectionMatrix.makePerspective(-cx * k, cx * k, cy * k, -cy * k, near, cam.far);
+    cam.projectionMatrixInverse.copy(cam.projectionMatrix).invert();
+    cam.updateMatrixWorld();
+  }, -2);
+  return <PerspectiveCamera ref={camera} makeDefault manual />;
+};
+
+// One cover as a book, over its element.
+const PageBookObject: React.FC<{ book: PageBook }> = ({ book }) => {
+  const group = useRef<THREE.Group>(null);
+  const { gl } = useThree();
+  // The cover's own size: the element's layout size (its box on screen is bigger while it's
+  // turned) less the room around the cover.
+  const [size, setSize] = React.useState({ width: 0, height: 0 });
+  useFrame(() => {
+    const g = group.current;
+    const el = book.element;
+    if (!g) return;
+    if (!el.isConnected) { g.visible = false; return; }
+    const width = el.offsetWidth - 2 * VIEW_MARGIN_X;
+    const height = el.offsetHeight - 2 * VIEW_MARGIN_Y;
+    if (width !== size.width || height !== size.height) setSize({ width, height });
+    const canvas = gl.domElement.getBoundingClientRect();
+    const r = el.getBoundingClientRect();
+    // Off the canvas: nothing to draw.
+    if (r.right < canvas.left || r.left > canvas.right || r.bottom < canvas.top || r.top > canvas.bottom) { g.visible = false; return; }
+    const { matrix: m, opacity } = readLook(el);
+    // Its middle (a box's middle stays its middle however it's turned or scaled), and its
+    // turn and scale -- the page's y runs down, the scene's up.
+    const x = r.left + r.width / 2 - canvas.left;
+    const y = -(r.top + r.height / 2 - canvas.top);
+    g.matrix.set(m.a, -m.c, 0, x, -m.b, m.d, 0, y, 0, 0, 1, 0, 0, 0, 0, 1);
+    g.matrixWorldNeedsUpdate = true;
+    g.visible = opacity > 0.02;
+    tint(g, 1, opacity);
+  });
+  return (
+    <group ref={group} matrixAutoUpdate={false} visible={false}>
+      {size.width > 0 && size.height > 0 && (
+        <Book3D coverUrl={book.coverUrl} frame3D={book.config} width={size.width} height={size.height} radius={book.radius} />
+      )}
+    </group>
+  );
+};
+
+const PageBooks: React.FC = () => {
+  const books = useSyncExternalStore(subscribePageBooks, getPageBooks);
+  return (
+    <>
+      {Array.from(books.entries()).map(([id, book]) => <PageBookObject key={id} book={book} />)}
+    </>
+  );
+};
+
 export const CoverFrame3DRoot: React.FC = () => {
-  // TCORE-127: everything that has to call invalidate() for demand mode below to actually
-  // stay in sync (scroll/resize/layout-affecting CSS transitions) -- see that hook's own
-  // comment. Scoped to live here (not e.g. DefaultLayout) so it only ever runs while this
-  // Canvas itself is mounted, matching frameloop="demand"'s own lifetime exactly.
-  useCoverFrame3DInvalidate();
-
+  const books = useSyncExternalStore(subscribePageBooks, getPageBooks);
   return (
     <Canvas
       data-testid="cover-frame-3d-root"
       style={{
         position: 'absolute',
         inset: 0,
-        // Every real card position is captured by its own tracked <View>'s <div> (a normal,
-        // in-flow DOM element) -- this root canvas is purely the shared WebGL surface those
-        // views scissor-draw into, so it must never itself intercept pointer events or it
-        // would sit as an invisible click-blocking layer over the whole .dashboard-container.
+        // Only draws: the cards under it take the pointer, as they do flat.
         pointerEvents: 'none',
-        // A LOW z-index, not a high one -- this only ever needs to paint ABOVE plain page
-        // content (SpellCard covers, which carry no z-index of their own), never above real
-        // UI chrome like modals/menus/the audio player (all much higher, see globals.css).
-        // This canvas now geometrically spans .dashboard-container's full box, sidebar
-        // included -- .nav-container's own `isolation: isolate` (globals.css) is what actually
-        // keeps the sidebar on top, not this number; no z-index here can defeat that isolation
-        // regardless of value, which is the point (see this file's own header comment).
+        // Over the page's content, under its chrome (modals, menus, the player); the sidebar
+        // keeps itself on top (its own stacking context, see globals.css).
         zIndex: 1,
       }}
-      // TCORE-127: "demand", not "always" -- a continuous rAF loop used to tick every
-      // browser frame regardless of whether any tracked card was actually visible or
-      // moving, which is real, avoidable cost while Mode3D is on but nothing on screen is
-      // changing. useCoverFrame3DInvalidate() (above) covers every case that moves a
-      // tracked card WITHOUT r3f noticing on its own (scroll, resize, layout-affecting CSS
-      // transitions); r3f's own reconciler already auto-invalidates on scene-graph changes
-      // (a <View> mounting/unmounting -- a card list changing -- or its `visible` prop
-      // toggling -- a View entering/leaving the viewport gate), so neither of those needs
-      // separate wiring here.
-      frameloop="demand"
+      // Drawn every frame while there's a book on the page (it follows the page as it
+      // scrolls and animates); with none, only when something changes.
+      frameloop={books.size > 0 ? 'always' : 'demand'}
       gl={{ alpha: true, antialias: true, powerPreference: 'low-power' }}
-      eventSource={typeof document !== 'undefined' ? document.body : undefined}
+      dpr={[1, 2]}
     >
-      {/* No lights here -- each <View> (CoverFrame3DView) portals its own children into ITS
-          OWN separate virtual scene (confirmed by reading drei's View.js), not this root
-          canvas' top-level scene, so lights declared here would never reach anything a View
-          renders. Each CoverFrame3DView brings its own lights instead. */}
-      <View.Port />
+      <PageCamera />
+      <ambientLight intensity={1.1} />
+      <directionalLight position={[300, 500, 900]} intensity={1.6} />
+      <directionalLight position={[-400, -200, 600]} intensity={0.5} />
+      <PageBooks />
     </Canvas>
   );
 };

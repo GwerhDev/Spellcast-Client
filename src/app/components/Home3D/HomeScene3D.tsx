@@ -1,11 +1,9 @@
-import React, { Suspense, useEffect, useMemo, useReducer, useRef } from 'react';
+import React, { useEffect, useMemo, useReducer, useRef } from 'react';
 import * as THREE from 'three';
 import { Canvas, events as pointerEvents, useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
 import { PerspectiveCamera } from '@react-three/drei';
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
-import { CoverObjectLayout } from '../Cover3D/CoverFrame3DView';
-import { CoverTexturePlane } from '../Cover3D/CoverTexturePlane';
-import { VIEW_MARGIN_X, VIEW_MARGIN_Y } from '../Cover3D/constants';
+import { Book3D, tint } from '../Cover3D/CoverFrame3DScene';
 import { startSyntheticSpellDrag } from '../../../utils/touchSpellDrag';
 import type { CoverFrame3DConfig } from '../../../utils/coverFrame';
 
@@ -65,8 +63,6 @@ interface HomeScene3DProps {
 const DRAG_THRESHOLD_PX = 6;
 // The camera's distance from the page, in px: how strong the perspective is.
 const CAMERA_DISTANCE = 1400;
-// A book's thickness, behind its cover (px).
-const BOOK_DEPTH = 22;
 // A book being dragged, toward the viewer (px).
 const DRAG_LIFT = 140;
 // The row's spring, as the page's coverflow moves its cards (see Coverflow).
@@ -141,39 +137,6 @@ const CameraRig: React.FC<{ anchor: React.RefObject<HTMLElement | null>; layout:
   return <PerspectiveCamera ref={camera} makeDefault manual />;
 };
 
-// A book: its cover (with its frame, in 3D, when it has one) on the front of a block of
-// pages, the cover centered on the group's origin.
-const Book: React.FC<{ book: SceneBook; width: number; height: number }> = ({ book, width, height }) => (
-  <>
-    {book.coverUrl && book.frame3D ? (
-      <Suspense fallback={null}>
-        <CoverObjectLayout
-          config={book.frame3D}
-          coverUrl={book.coverUrl}
-          radius={3.2}
-          marginX={VIEW_MARGIN_X}
-          marginY={VIEW_MARGIN_Y}
-          size={{ width: width + 2 * VIEW_MARGIN_X, height: height + 2 * VIEW_MARGIN_Y }}
-        />
-      </Suspense>
-    ) : book.coverUrl ? (
-      <group position={[0, 0, -4]}>
-        <CoverTexturePlane url={book.coverUrl} width={width} height={height} radius={3.2} />
-      </group>
-    ) : (
-      <mesh position={[0, 0, -4]}>
-        <planeGeometry args={[width, height]} />
-        <meshStandardMaterial color="#2c2f36" />
-      </mesh>
-    )}
-    {/* The pages, behind the cover. */}
-    <mesh position={[0, 0, -4.5 - BOOK_DEPTH / 2]}>
-      <boxGeometry args={[width - 4, height - 4, BOOK_DEPTH]} />
-      <meshStandardMaterial color="#d9cfb8" roughness={0.9} />
-    </mesh>
-  </>
-);
-
 // The page's theme colors, for the flat cards drawn as the page draws them.
 const themeColor = (name: string, fallback: string) =>
   getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
@@ -239,19 +202,6 @@ const FlatCard: React.FC<{ width: number; height: number; draw: 'empty' | 'more'
       <meshBasicMaterial map={texture} transparent toneMapped={false} />
     </mesh>
   );
-};
-
-// Brightness and opacity on every material of a card, from what each one was made with.
-const tint = (group: THREE.Group, light: number, opacity: number) => {
-  group.traverse(object => {
-    const material = (object as THREE.Mesh).material as (THREE.Material & { color?: THREE.Color }) | undefined;
-    if (!material || Array.isArray(material)) return;
-    if (material.userData.baseColor === undefined && material.color) material.userData.baseColor = material.color.clone();
-    material.userData.baseOpacity ??= material.opacity;
-    if (material.color && material.userData.baseColor) material.color.copy(material.userData.baseColor).multiplyScalar(light);
-    material.transparent = material.transparent || opacity < 1;
-    material.opacity = material.userData.baseOpacity * opacity;
-  });
 };
 
 // Where the cover of a card is on screen: its corners, as the camera sees them.
@@ -470,7 +420,7 @@ const Row: React.FC<Omit<HomeScene3DProps, 'anchor'> & { layout: React.MutableRe
           onPointerOut={() => { if (!drag.current) document.body.style.cursor = ''; }}
         >
           {l && (card.place.kind === 'book'
-            ? <Book book={card.place.book!} width={l.cardW} height={l.cardH} />
+            ? <Book3D coverUrl={card.place.book!.coverUrl} frame3D={card.place.book!.frame3D} width={l.cardW} height={l.cardH} />
             : card.place.kind === 'more'
               ? <FlatCard width={l.cardW} height={l.cardH} draw="more" icon={moreIcon} label={moreLabel} />
               : <FlatCard width={l.cardW} height={l.cardH} draw="empty" icon={emptyIcon} />)}

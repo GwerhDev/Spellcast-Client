@@ -1,6 +1,6 @@
 import React from 'react';
 import { Canvas } from '@react-three/fiber';
-import { CoverFrame3DScene } from './CoverFrame3DView';
+import { CoverFrame3DScene } from './CoverFrame3DScene';
 import type { CoverFrame3DConfig } from '../../../utils/coverFrame';
 
 interface CoverFrame3DCanvasProps {
