@@ -4,6 +4,7 @@ import { Canvas, events as pointerEvents, useFrame, useThree, type ThreeEvent } 
 import { PerspectiveCamera } from '@react-three/drei';
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import { Book3D, tint } from '../Cover3D/CoverFrame3DScene';
+import { usePageFrames } from '../Cover3D/usePageFrames';
 import { startSyntheticSpellDrag } from '../../../utils/touchSpellDrag';
 import type { CoverFrame3DConfig } from '../../../utils/coverFrame';
 
@@ -108,6 +109,8 @@ interface Layout { cardW: number; cardH: number; cx: number; cy: number; left: n
 const CameraRig: React.FC<{ anchor: React.RefObject<HTMLElement | null>; layout: React.MutableRefObject<Layout | null> }> = ({ anchor, layout }) => {
   const camera = useRef<THREE.PerspectiveCamera>(null);
   const { gl, size } = useThree();
+  // Drawn only when the page moves (or animates) the row, or the row itself moves (see Row).
+  usePageFrames(() => (anchor.current ? [anchor.current] : []), anchor.current);
   useFrame(() => {
     const cam = camera.current;
     const el = anchor.current;
@@ -255,7 +258,9 @@ const Row: React.FC<Omit<HomeScene3DProps, 'anchor'> & { layout: React.MutableRe
   const [, redraw] = useReducer((n: number) => n + 1, 0);
   // The book being dragged, where the pointer is (on screen), and the drag it fires.
   const drag = useRef<{ key: string; at: { x: number; y: number }; syn: ReturnType<typeof startSyntheticSpellDrag> } | null>(null);
-  const { camera, gl } = useThree();
+  const { camera, gl, invalidate } = useThree();
+  // The row changing (it turned, a card came or went): drawn from there.
+  useEffect(() => { invalidate(); });
   const plane = useRef(new THREE.Plane(new THREE.Vector3(0, 0, 1), -DRAG_LIFT));
   const raycaster = useRef(new THREE.Raycaster());
   const handlers = useRef({ onBring, onOpen, onMore, onDragChange, onSettled });
@@ -334,6 +339,8 @@ const Row: React.FC<Omit<HomeScene3DProps, 'anchor'> & { layout: React.MutableRe
       tint(g, card.brightness.value, opacity);
     }
     if (gone) redraw();
+    // Still on their way, or a book carried: the next frame too.
+    if (moving || drag.current) invalidate();
     if (!moving && !settled.current && cards.current.size > 0) {
       settled.current = true;
       handlers.current.onSettled?.();
@@ -360,6 +367,7 @@ const Row: React.FC<Omit<HomeScene3DProps, 'anchor'> & { layout: React.MutableRe
       if (drag.current) {
         drag.current.at = at;
         drag.current.syn.move(at);
+        invalidate();
       }
     };
     const finish = (dropped: boolean) => {
@@ -465,6 +473,8 @@ const SceneContents: React.FC<HomeScene3DProps> = (props) => {
 export const HomeScene3D: React.FC<HomeScene3DProps> = (props) => (
   <Canvas
     style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
+    // Drawn only when something changes (see usePageFrames, and Row's own motion).
+    frameloop="demand"
     eventSource={document.body}
     events={store => ({
       ...pointerEvents(store),

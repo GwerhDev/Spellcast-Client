@@ -5,6 +5,7 @@ import { PerspectiveCamera } from '@react-three/drei';
 import { Book3D, readLook, tint } from './CoverFrame3DScene';
 import { VIEW_MARGIN_X, VIEW_MARGIN_Y } from './constants';
 import { getPageBooks, subscribePageBooks, type PageBook } from './pageBooks';
+import { usePageFrames } from './usePageFrames';
 
 // The camera's distance from the page, in px: how strong the perspective is.
 const CAMERA_DISTANCE = 1400;
@@ -85,6 +86,8 @@ const PageBookObject: React.FC<{ book: PageBook }> = ({ book }) => {
 
 const PageBooks: React.FC = () => {
   const books = useSyncExternalStore(subscribePageBooks, getPageBooks);
+  // Drawn only when the page moves (or animates) a card, not every frame.
+  usePageFrames(() => Array.from(getPageBooks().values(), book => book.element), books);
   return (
     <>
       {Array.from(books.entries()).map(([id, book]) => <PageBookObject key={id} book={book} />)}
@@ -92,31 +95,28 @@ const PageBooks: React.FC = () => {
   );
 };
 
-export const CoverFrame3DRoot: React.FC = () => {
-  const books = useSyncExternalStore(subscribePageBooks, getPageBooks);
-  return (
-    <Canvas
-      data-testid="cover-frame-3d-root"
-      style={{
-        position: 'absolute',
-        inset: 0,
-        // Only draws: the cards under it take the pointer, as they do flat.
-        pointerEvents: 'none',
-        // Over the page's content, under its chrome (modals, menus, the player); the sidebar
-        // keeps itself on top (its own stacking context, see globals.css).
-        zIndex: 1,
-      }}
-      // Drawn every frame while there's a book on the page (it follows the page as it
-      // scrolls and animates); with none, only when something changes.
-      frameloop={books.size > 0 ? 'always' : 'demand'}
-      gl={{ alpha: true, antialias: true, powerPreference: 'low-power' }}
-      dpr={[1, 2]}
-    >
-      <PageCamera />
-      <ambientLight intensity={1.1} />
-      <directionalLight position={[300, 500, 900]} intensity={1.6} />
-      <directionalLight position={[-400, -200, 600]} intensity={0.5} />
-      <PageBooks />
-    </Canvas>
-  );
-};
+export const CoverFrame3DRoot: React.FC = () => (
+  <Canvas
+    data-testid="cover-frame-3d-root"
+    style={{
+      position: 'absolute',
+      inset: 0,
+      // Only draws: the cards under it take the pointer, as they do flat.
+      pointerEvents: 'none',
+      // Over the page's content, under its chrome (modals, menus, the player); the sidebar
+      // keeps itself on top (its own stacking context, see globals.css).
+      zIndex: 1,
+    }}
+    // Drawn only when something changes: the books follow the page (see usePageFrames).
+    frameloop="demand"
+    gl={{ alpha: true, antialias: true, powerPreference: 'low-power' }}
+    dpr={[1, 2]}
+  >
+    <PageCamera />
+    <ambientLight intensity={1.1} />
+    <directionalLight position={[300, 500, 900]} intensity={1.6} />
+    <directionalLight position={[-400, -200, 600]} intensity={0.5} />
+    <PageBooks />
+  </Canvas>
+);
+
