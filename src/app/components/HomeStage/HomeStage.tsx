@@ -1,4 +1,4 @@
-import { useState, type FocusEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type FocusEvent, type ReactNode } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import s from './HomeStage.module.css';
 
@@ -6,6 +6,14 @@ import s from './HomeStage.module.css';
 // keeps the secondary content in view while idle. Unsupported selector: treated as a click.
 const isKeyboardFocus = (el: Element) => {
   try { return el.matches(':focus-visible'); } catch { return false; }
+};
+
+// The nearest ancestor that scrolls: the page's own scroller.
+const scrollParentOf = (el: HTMLElement | null): HTMLElement | null => {
+  for (let node = el?.parentElement ?? null; node; node = node.parentElement) {
+    if (/(auto|scroll)/.test(getComputedStyle(node).overflowY)) return node;
+  }
+  return null;
 };
 
 // Quoted: blob: URLs can contain characters an unquoted url() rejects.
@@ -18,7 +26,7 @@ interface HomeStageProps {
   immersive: boolean;
   // The pointer has been left alone: the secondary content steps aside.
   idle: boolean;
-  // The scene (the altar) and what sits below it (e.g. Last Spells).
+  // The scene (the altar) and what sits below it (e.g. the quick start).
   main: ReactNode;
   secondary: ReactNode;
   // Over the page's top right corner (e.g. the altar's settings), stepping aside with the
@@ -29,8 +37,9 @@ interface HomeStageProps {
 // The home page as a stage: with a spell loaded, its cover fills the whole page (blurred,
 // dimmed, glowing behind the center, the altar's own treatment at page size) and the
 // secondary content below fades away while the pointer rests, leaving the scene alone.
-// The backdrop is attached to the stage's frame, which doesn't scroll: the content scrolls
-// over it in its own scroller, so the cover always fills the page, edge to edge.
+// The backdrop spans the whole stage, and what it shows sits in a layer as tall as the
+// page's visible area, stuck to its top: the page scrolls, the cover stays put (attached),
+// filling the visible area edge to edge however far down the page is.
 export const HomeStage = ({ coverUrl, immersive, idle, main, secondary, corner }: HomeStageProps) => {
   // Someone moving through the secondary content with the keyboard isn't touching the
   // pointer, so it goes idle under them: while they're in it, it stays.
@@ -40,8 +49,20 @@ export const HomeStage = ({ coverUrl, immersive, idle, main, secondary, corner }
   const handleBlur = (e: FocusEvent<HTMLDivElement>) => {
     if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setKeyboardInside(false);
   };
+  // The page's visible height, for the attached layer (the window's until it's measured).
+  const stageRef = useRef<HTMLDivElement>(null);
+  const [viewHeight, setViewHeight] = useState<number | null>(null);
+  useEffect(() => {
+    const scroller = scrollParentOf(stageRef.current);
+    if (!scroller || typeof ResizeObserver === 'undefined') return;
+    const measure = () => setViewHeight(scroller.clientHeight);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(scroller);
+    return () => observer.disconnect();
+  }, []);
   return (
-  <div data-testid="home-stage" className={`${s.stage} ${immersive ? s.immersive : ''}`}>
+  <div ref={stageRef} data-testid="home-stage" className={`${s.stage} ${immersive ? s.immersive : ''}`}>
     {/* Fades in as a spell loads and out as it's unloaded (or crossfades to the next). */}
     <AnimatePresence>
       {coverUrl && (
@@ -54,18 +75,25 @@ export const HomeStage = ({ coverUrl, immersive, idle, main, secondary, corner }
           exit={{ opacity: 0 }}
           transition={{ duration: 0.7, ease: 'easeInOut' }}
         >
-          <div data-testid="home-stage-cover" className={s.cover} style={{ backgroundImage: cssUrl(coverUrl) }} />
-          <div className={s.glow} style={{ backgroundImage: cssUrl(coverUrl) }} />
+          <div data-testid="home-stage-attached" className={s.attached} style={{ height: viewHeight ? `${viewHeight}px` : '100vh' }}>
+            <div data-testid="home-stage-cover" className={s.cover} style={{ backgroundImage: cssUrl(coverUrl) }} />
+            <div className={s.glow} style={{ backgroundImage: cssUrl(coverUrl) }} />
+          </div>
         </motion.div>
       )}
     </AnimatePresence>
-    {corner && (
-      <div data-testid="home-stage-corner" className={`${s.corner} ${immersive && idle ? s.cornerHidden : ''}`}>
-        {corner}
-      </div>
-    )}
     <div data-testid="home-stage-scroller" className={s.scroller}>
-      {main}
+      {/* With a spell loaded, everything above the quick start -- the scene and its corner
+          (the altar's settings) -- stays in view at the top while the page scrolls, the
+          quick start passing under it. */}
+      <div data-testid="home-stage-main" className={immersive ? s.mainSticky : s.main}>
+        {corner && (
+          <div data-testid="home-stage-corner" className={`${s.corner} ${immersive && idle ? s.cornerHidden : ''}`}>
+            {corner}
+          </div>
+        )}
+        {main}
+      </div>
       <div
         data-testid="home-stage-secondary"
         className={`${s.secondary} ${secondaryHidden ? s.secondaryHidden : ''}`}

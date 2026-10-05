@@ -19,14 +19,22 @@
   flex-direction: column;
 }
 
-/* The cover behind everything, attached to the frame: the altar's own cover treatment
-   (out of focus, dimmed, vignetted) at page size. */
+/* The cover behind everything: the altar's own cover treatment (out of focus, dimmed,
+   vignetted) at page size. It spans the whole stage; what it shows is in .attached. */
 .backdrop {
   position: absolute;
   inset: 0;
   z-index: -1;
   pointer-events: none;
   background: #000;
+}
+
+/* As tall as the page's visible area (set inline) and stuck to its top: the page scrolls
+   over it, the cover stays put. */
+.attached {
+  position: sticky;
+  top: 0;
+  overflow: hidden;
 }
 
 .cover {
@@ -62,7 +70,27 @@
   mask-image: radial-gradient(circle 320px at 50% 36%, #000 25%, transparent 100%);
 }
 
+.main {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+/* A spell loaded: the scene stays at the top of the page as it scrolls, over the content
+   below, which passes under it. */
+.mainSticky {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
 .secondary {
+  position: relative;
+  z-index: 1;
   transition: opacity 0.6s ease, transform 0.6s ease;
 }
 
@@ -76,7 +104,7 @@
 
 /* A soft dark veil over the center, above the glow: whatever the cover's brightness, the
    altar's light text always has a dark ground to read against. */
-.backdrop::after {
+.attached::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -93,7 +121,8 @@
   }
 }
 
-/* The page's top right corner, over the scene (e.g. the altar's settings). */
+/* The scene's top right corner (e.g. the altar's settings): part of the scene, so it stays
+   with it when it's sticky. */
 .corner {
   position: absolute;
   top: 0.75rem;
