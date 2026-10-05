@@ -533,13 +533,15 @@
 }
 
 .immersive .sentenceText {
-  -webkit-line-clamp: 4;
+  display: block;
+  overflow: visible;
 }
 
-/* Four lines of the immersive sentence: as much as fits without the altar outgrowing its
-   360px (which it keeps with or without a spell). */
+/* The immersive sentence is shown whole, however long: its slot keeps at least four lines'
+   room (so short sentences don't move the altar) and grows past that with it. */
 .immersive .footerSlot {
-  height: calc(1.3rem * 1.4 * 4);
+  height: auto;
+  min-height: calc(1.3rem * 1.4 * 4);
 }
 
 .immersive .nowTitle {
