@@ -13,6 +13,8 @@ interface StartProps {
   immersive?: boolean;
   // The pointer is resting: the altar's immersive actions step aside.
   idle?: boolean;
+  // See AltarPanel's onFooterOverflow.
+  onFooterOverflow?: (px: number) => void;
 }
 
 // Title and subtitle folding away as the altar goes immersive, and back when it doesn't.
@@ -24,7 +26,7 @@ const fold = {
   style: { overflow: 'hidden' },
 } as const;
 
-export const Start = ({ immersive = false, idle = false }: StartProps) => {
+export const Start = ({ immersive = false, idle = false, onFooterOverflow }: StartProps) => {
   // Write and Import open from the Spellcast button's menu (see Altar), as modals.
   const [modal, setModal] = useState<'write' | 'import' | null>(null);
   const { t } = useLanguage();
@@ -53,7 +55,7 @@ export const Start = ({ immersive = false, idle = false }: StartProps) => {
           </AnimatePresence>
 
           <div className={s.optionContainer}>
-            <Altar onWrite={() => setModal('write')} onImport={() => setModal('import')} immersive={immersive} idle={idle} />
+            <Altar onWrite={() => setModal('write')} onImport={() => setModal('import')} immersive={immersive} idle={idle} onFooterOverflow={onFooterOverflow} />
           </div>
         </div>
       </div>

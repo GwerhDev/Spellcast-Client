@@ -32,6 +32,9 @@ interface HomeStageProps {
   // Over the page's top right corner (e.g. the altar's settings), stepping aside with the
   // secondary content while the pointer rests.
   corner?: ReactNode;
+  // How far the scene's content runs down past it, in px (e.g. a long sentence on the
+  // altar): the secondary content moves down that much, the scene staying where it is.
+  sceneOverflow?: number;
 }
 
 // The home page as a stage: with a spell loaded, its cover fills the whole page (blurred,
@@ -40,7 +43,7 @@ interface HomeStageProps {
 // The backdrop spans the whole stage, and what it shows sits in a layer as tall as the
 // page's visible area, stuck to its top: the page scrolls, the cover stays put (attached),
 // filling the visible area edge to edge however far down the page is.
-export const HomeStage = ({ coverUrl, immersive, idle, main, secondary, corner }: HomeStageProps) => {
+export const HomeStage = ({ coverUrl, immersive, idle, main, secondary, corner, sceneOverflow = 0 }: HomeStageProps) => {
   // Someone moving through the secondary content with the keyboard isn't touching the
   // pointer, so it goes idle under them: while they're in it, it stays.
   const [keyboardInside, setKeyboardInside] = useState(false);
@@ -61,6 +64,23 @@ export const HomeStage = ({ coverUrl, immersive, idle, main, secondary, corner }
     observer.observe(scroller);
     return () => observer.disconnect();
   }, []);
+  // The secondary content's height: with it, the scene's height when it fills the page.
+  const secondaryRef = useRef<HTMLDivElement>(null);
+  const [secondaryHeight, setSecondaryHeight] = useState<number | null>(null);
+  useEffect(() => {
+    const el = secondaryRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const measure = () => setSecondaryHeight(el.offsetHeight);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+  // Making room for the scene's overflow below it, the secondary content moves down; the
+  // scene keeps the height it fills the page with (it would otherwise give that room up and,
+  // centered, rise), so it stays where it is.
+  const overflow = immersive ? sceneOverflow : 0;
+  const sceneMinHeight = overflow > 0 && viewHeight != null && secondaryHeight != null ? viewHeight - secondaryHeight : undefined;
   return (
   <div ref={stageRef} data-testid="home-stage" className={`${s.stage} ${immersive ? s.immersive : ''}`}>
     {/* Fades in as a spell loads and out as it's unloaded (or crossfades to the next). */}
@@ -86,7 +106,7 @@ export const HomeStage = ({ coverUrl, immersive, idle, main, secondary, corner }
       {/* With a spell loaded, everything above the quick start -- the scene and its corner
           (the altar's settings) -- stays in view at the top while the page scrolls, the
           quick start passing under it. */}
-      <div data-testid="home-stage-main" className={immersive ? s.mainSticky : s.main}>
+      <div data-testid="home-stage-main" className={immersive ? s.mainSticky : s.main} style={sceneMinHeight ? { minHeight: sceneMinHeight } : undefined}>
         {corner && (
           <div data-testid="home-stage-corner" className={`${s.corner} ${immersive && idle ? s.cornerHidden : ''}`}>
             {corner}
@@ -95,7 +115,9 @@ export const HomeStage = ({ coverUrl, immersive, idle, main, secondary, corner }
         {main}
       </div>
       <div
+        ref={secondaryRef}
         data-testid="home-stage-secondary"
+        style={overflow > 0 ? { marginTop: overflow } : undefined}
         className={`${s.secondary} ${secondaryHidden ? s.secondaryHidden : ''}`}
         // inert, not aria-hidden: hidden from assistive technology all the same, and it also
         // takes focus out of it (a card clicked keeps focus) -- aria-hidden over a focused

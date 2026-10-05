@@ -1,4 +1,4 @@
-import type { ReactNode, Ref } from 'react';
+import { useEffect, useState, type ReactNode, type Ref } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import s from './Altar.module.css';
 
@@ -37,6 +37,10 @@ interface AltarPanelProps {
   onDragOver?: React.DragEventHandler<HTMLDivElement>;
   onDragLeave?: React.DragEventHandler<HTMLDivElement>;
   onDrop?: React.DragEventHandler<HTMLDivElement>;
+  // How far the footer's content runs past its slot, in px (0 when it fits): immersive, the
+  // sentence being read is shown whole and overflows the slot downward without moving the
+  // stage, and the owner makes room for it below (see HomeStage's sceneOverflow).
+  onFooterOverflow?: (px: number) => void;
   children?: ReactNode;
 }
 
@@ -47,8 +51,25 @@ interface AltarPanelProps {
 export const AltarPanel = ({
   coverUrl, highlighted, menuOpen, immersive = false, panelRef, stageRef, centerRef,
   leftCorner, rightCorner, stageOverlay, center, centerKey = 'center', footer, footerKey = 'footer', summoning = false,
-  onDragEnter, onDragOver, onDragLeave, onDrop, children,
-}: AltarPanelProps) => (
+  onDragEnter, onDragOver, onDragLeave, onDrop, onFooterOverflow, children,
+}: AltarPanelProps) => {
+  // The footer's current content (each one mounts anew as the footer changes; while one
+  // swaps for the next there's none, and the last overflow stands until the next is measured).
+  const [slot, setSlot] = useState<HTMLDivElement | null>(null);
+  const [content, setContent] = useState<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!onFooterOverflow || !slot || !content || typeof ResizeObserver === 'undefined') return;
+    // Layout sizes, not the swap's animated offset.
+    const measure = () => onFooterOverflow(Math.max(0, Math.ceil(content.offsetHeight - slot.clientHeight)));
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(content);
+    observer.observe(slot);
+    return () => observer.disconnect();
+  }, [onFooterOverflow, slot, content]);
+  useEffect(() => () => onFooterOverflow?.(0), [onFooterOverflow]);
+
+  return (
   <div
     ref={panelRef}
     data-testid="altar"
@@ -92,10 +113,11 @@ export const AltarPanel = ({
     </div>
     {/* A fixed-height slot: whatever the footer shows (the title, the sentence being read,
         a hint), the altar keeps its size, so pausing or playing never moves it. */}
-    <div data-testid="altar-footer" className={s.footerSlot}>
+    <div ref={setSlot} data-testid="altar-footer" className={s.footerSlot}>
       <AnimatePresence mode="wait" initial={false}>
         <motion.div
           key={footerKey}
+          ref={(el: HTMLDivElement | null) => { if (el) setContent(el); }}
           className={s.footerSwap}
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
@@ -109,3 +131,4 @@ export const AltarPanel = ({
     {children}
   </div>
 );
+};

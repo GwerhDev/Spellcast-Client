@@ -27,6 +27,8 @@ interface AltarProps {
   immersive?: boolean;
   // The pointer is resting (see HomeStage): the immersive actions step aside.
   idle?: boolean;
+  // See AltarPanel's onFooterOverflow.
+  onFooterOverflow?: (px: number) => void;
 }
 
 const isSpellFile = (file: File) => file.name.toLowerCase().endsWith('.spell');
@@ -43,7 +45,7 @@ const GLOW_RANGE = 420;
 // dropping a .spell file from the computer, which is first imported into the browser.
 // With nothing loaded the button shows the Spellcast mark and opens a menu floating around
 // it (Write, Import, Editor); once something is loaded, that spell's cover fills the panel.
-export const Altar = ({ onWrite, onImport, immersive = false, idle = false }: AltarProps) => {
+export const Altar = ({ onWrite, onImport, immersive = false, idle = false, onFooterOverflow }: AltarProps) => {
   const { t } = useLanguage();
   const { readSpell, mountSpell, unloadSpell } = usePlaySpell();
   // Conjuring a spell here: reading it at once, or only conjured, paused (the altar's settings).
@@ -247,6 +249,7 @@ export const Altar = ({ onWrite, onImport, immersive = false, idle = false }: Al
     <AltarPanel
       coverUrl={coverUrl}
       immersive={immersive}
+      onFooterOverflow={onFooterOverflow}
       highlighted={dropping}
       menuOpen={showMenu}
       panelRef={panelRef}

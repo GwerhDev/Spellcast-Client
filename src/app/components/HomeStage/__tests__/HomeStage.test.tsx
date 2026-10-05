@@ -90,4 +90,23 @@ describe('HomeStage', () => {
     render(stage({ coverUrl: 'blob:cover', immersive: true }));
     expect(screen.getByTestId('home-stage-attached').style.height).toBe('100vh');
   });
+
+  // A long sentence on the altar runs past the scene: the content below makes room for it,
+  // the scene keeping the height it fills the page with, so it doesn't rise.
+  it('immersive, moves the secondary content down by the scene\'s overflow, keeping the scene\'s height', () => {
+    const client = vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(900);
+    const offset = vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(300);
+    onTestFinished(() => { client.mockRestore(); offset.mockRestore(); });
+    const page = (props: Partial<React.ComponentProps<typeof HomeStage>>) => (
+      <div style={{ overflowY: 'auto' }}>{stage(props)}</div>
+    );
+    const { rerender } = render(page({ immersive: true }));
+    expect(screen.getByTestId('home-stage-secondary').style.marginTop).toBe('');
+    expect(screen.getByTestId('home-stage-main').style.minHeight).toBe('');
+    rerender(page({ immersive: true, sceneOverflow: 120 }));
+    expect(screen.getByTestId('home-stage-secondary').style.marginTop).toBe('120px');
+    expect(screen.getByTestId('home-stage-main').style.minHeight).toBe('600px');
+    rerender(page({ immersive: false, sceneOverflow: 120 }));
+    expect(screen.getByTestId('home-stage-secondary').style.marginTop).toBe('');
+  });
 });

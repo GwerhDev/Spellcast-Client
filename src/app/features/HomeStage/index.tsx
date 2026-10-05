@@ -24,6 +24,7 @@ export const HomeStage = () => {
   const coverUrl = useSpellCoverUrl(spellId, userId);
   const backdrop = useAppSelector(state => state.altar.backdrop);
   const [showSettings, setShowSettings] = useState(false);
+  const [sceneOverflow, setSceneOverflow] = useState(0);
   const { t } = useLanguage();
   const immersive = !!spellId;
   const idle = usePointerIdle(HOME_IDLE_MS, immersive);
@@ -33,7 +34,8 @@ export const HomeStage = () => {
       coverUrl={backdrop === 'cover' ? coverUrl : null}
       immersive={immersive}
       idle={idle}
-      main={<Start immersive={immersive} idle={idle} />}
+      sceneOverflow={sceneOverflow}
+      main={<Start immersive={immersive} idle={idle} onFooterOverflow={setSceneOverflow} />}
       secondary={<QuickStart />}
       corner={(
         <>

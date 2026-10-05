@@ -537,11 +537,11 @@
   overflow: visible;
 }
 
-/* The immersive sentence is shown whole, however long: its slot keeps at least four lines'
-   room (so short sentences don't move the altar) and grows past that with it. */
+/* Four lines of the immersive sentence, the room the altar is laid out (and centered) with.
+   A longer one is shown whole, running down past the slot without moving the stage; the
+   page makes room for it below (see AltarPanel's onFooterOverflow). */
 .immersive .footerSlot {
-  height: auto;
-  min-height: calc(1.3rem * 1.4 * 4);
+  height: calc(1.3rem * 1.4 * 4);
 }
 
 .immersive .nowTitle {
