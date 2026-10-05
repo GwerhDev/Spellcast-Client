@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi, onTestFinished } from 'vitest';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { AltarPanel } from '../AltarPanel';
 
 const panel = (props: Partial<React.ComponentProps<typeof AltarPanel>> = {}) => (
@@ -59,5 +59,53 @@ describe('AltarPanel', () => {
     expect(screen.getByTestId('altar').className).toMatch(/immersive/);
     expect(screen.getByTestId('altar').className).toMatch(/noCover/);
     expect(screen.getByTestId('altar').className).not.toMatch(/hasCover/);
+  });
+
+  // Immersive, the sentence being read is shown whole: it runs down past the footer's slot,
+  // and the panel says how far, so the page can make room for it below.
+  describe('footer overflow', () => {
+    // The slot is 100px tall; its content as tall as what it shows says.
+    const heights = () => {
+      const client = vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockImplementation(function (this: HTMLElement) {
+        return this.dataset.testid === 'altar-footer' ? 100 : 0;
+      });
+      const offset = vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockImplementation(function (this: HTMLElement) {
+        const shown = Array.from(this.children).find(child => child.hasAttribute('data-height'));
+        return shown ? Number(shown.getAttribute('data-height')) : 0;
+      });
+      onTestFinished(() => { client.mockRestore(); offset.mockRestore(); });
+    };
+    const footer = (height: number) => <span data-testid={`footer-${height}`} data-height={height} />;
+
+    it('reports how far a long footer runs past its slot', () => {
+      heights();
+      const onFooterOverflow = vi.fn();
+      render(panel({ immersive: true, footer: footer(160), onFooterOverflow }));
+      expect(onFooterOverflow).toHaveBeenLastCalledWith(60);
+    });
+
+    it('reports nothing over when the footer fits', () => {
+      heights();
+      const onFooterOverflow = vi.fn();
+      render(panel({ immersive: true, footer: footer(80), onFooterOverflow }));
+      expect(onFooterOverflow).toHaveBeenLastCalledWith(0);
+    });
+
+    it('measures again once the footer shows something else', async () => {
+      heights();
+      const onFooterOverflow = vi.fn();
+      const { rerender } = render(panel({ immersive: true, footer: footer(160), footerKey: 'sentence', onFooterOverflow }));
+      expect(onFooterOverflow).toHaveBeenLastCalledWith(60);
+      rerender(panel({ immersive: true, footer: footer(80), footerKey: 'now', onFooterOverflow }));
+      await waitFor(() => expect(onFooterOverflow).toHaveBeenLastCalledWith(0));
+    });
+
+    it('takes its overflow back when it goes away', () => {
+      heights();
+      const onFooterOverflow = vi.fn();
+      const { unmount } = render(panel({ immersive: true, footer: footer(160), onFooterOverflow }));
+      unmount();
+      expect(onFooterOverflow).toHaveBeenLastCalledWith(0);
+    });
   });
 });
