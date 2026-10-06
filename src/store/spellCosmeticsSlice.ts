@@ -31,6 +31,11 @@ const spellCosmeticsSlice = createSlice({
       .addCase(loadSpellCosmetics.fulfilled, (state, action) => {
         state.bySpell[action.meta.arg.spellId] = action.payload;
       })
+      // Unreadable, the spell follows the defaults: it counts as read, with no picks of its
+      // own, so what waits for its picks (its sound, its companion) still starts.
+      .addCase(loadSpellCosmetics.rejected, (state, action) => {
+        state.bySpell[action.meta.arg.spellId] ??= {};
+      })
       // Shown as picked right away; the stored picks replace it once written.
       .addCase(pickSpellCosmetic.pending, (state, action) => {
         const { spellId, kind, assetId } = action.meta.arg;

@@ -28,11 +28,19 @@ export const useSpellCosmetic = (kind: SpellCosmeticKind, spellId: string | null
   }, [dispatch, spellId, userId, loaded]);
 
   const choice = picks?.[kind];
+  const resolvedId = spellId ? resolveAssetChoice(choice, defaultId) : defaultId;
   return {
     // Undefined while the spell's picks are still being read, or never picked.
     choice,
     defaultId,
-    resolvedId: spellId ? resolveAssetChoice(choice, defaultId) : defaultId,
+    // What shows: while the spell's picks are being read, the default -- what most spells
+    // follow, so a look (its page background) doesn't flicker.
+    resolvedId,
+    // Whether the spell's picks have been read (always, with no spell).
+    loaded: !spellId || loaded,
+    // What to start: nothing until the spell's picks are read, so what plays or appears (its
+    // sound background, its companion) is never the default for a moment before its own.
+    readyId: !spellId || loaded ? resolvedId : null,
     pick: (assetId: string | null | undefined) => {
       if (spellId) void dispatch(pickSpellCosmetic({ spellId, userId, kind, assetId }));
     },

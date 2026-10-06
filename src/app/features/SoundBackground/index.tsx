@@ -7,13 +7,15 @@ import { useSpellCosmetic } from '../../../hooks/useSpellCosmetic';
 // useSpellCosmetic), playing while the spell does.
 export const SoundBackground = () => {
   const spellId = useAppSelector(state => state.spellReader.spellId);
-  const { resolvedId: activeSoundBgId } = useSpellCosmetic('soundBackground', spellId);
+  const { readyId: activeSoundBgId } = useSpellCosmetic('soundBackground', spellId);
   const soundBgVolume = useAppSelector(state => state.casterInventory.soundBgVolume);
   const masterVolume = useAppSelector(state => state.casterInventory.masterVolume);
   const browserPlaying = useAppSelector(state => state.browserPlayer.isPlaying);
   const audioPlaying = useAppSelector(state => state.audioPlayer.isPlaying);
   const isPlaying = browserPlaying || audioPlaying;
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const isPlayingRef = useRef(isPlaying);
+  isPlayingRef.current = isPlaying;
 
   useEffect(() => {
     if (audioRef.current) {
@@ -29,6 +31,8 @@ export const SoundBackground = () => {
     audio.loop = bg.loop;
     audio.volume = soundBgVolume * masterVolume;
     audioRef.current = audio;
+    // Picked (or read) while the spell is already playing: it plays from here.
+    if (isPlayingRef.current) audio.play().catch(() => {});
 
     return () => {
       audio.pause();

@@ -63,7 +63,7 @@ export const SpellReader = () => {
   const { isPlaying } = useSelector((state: RootState) => state.browserPlayer);
   const { unlockedIds, companionPlacements } = useSelector((state: RootState) => state.casterInventory);
   // The spell's companion: its own pick, or the caster's default (see useSpellCosmetic).
-  const { resolvedId: companionId } = useSpellCosmetic('companion', spellId);
+  const { readyId: companionId } = useSpellCosmetic('companion', spellId);
   const activeCompanion = companionId && unlockedIds.includes(companionId)
     ? companions.find(c => c.id === companionId) ?? null
     : null;
