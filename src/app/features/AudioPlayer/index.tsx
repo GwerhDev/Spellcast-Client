@@ -38,6 +38,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Waveform } from '../../components/Waveform/Waveform';
 import { SpellDetailModal } from '../../components/Modals/SpellDetailModal';
 import { SILENT_AUDIO_SRC } from '../../../config/consts';
+import { useSpellCosmetic } from '../../../hooks/useSpellCosmetic';
 
 interface PlayerProps {
   showVoiceSelectorModal: React.Dispatch<SetStateAction<boolean>>;
@@ -90,7 +91,9 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
   } = useSelector((state: RootState) => state.spellReader);
   const { selectedVoice } = useSelector((state: RootState) => state.voice);
   const { userData } = useAppSelector((state) => state.session);
-  const { activeSoundBgId, soundBgVolume, masterVolume } = useAppSelector((state) => state.casterInventory);
+  const { soundBgVolume, masterVolume } = useAppSelector((state) => state.casterInventory);
+  // The loaded spell's sound background (see useSpellCosmetic).
+  const { resolvedId: activeSoundBgId } = useSpellCosmetic('soundBackground', useAppSelector((state) => state.spellReader.spellId));
 
   const [isFetching, setIsFetching] = useState(false);
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);

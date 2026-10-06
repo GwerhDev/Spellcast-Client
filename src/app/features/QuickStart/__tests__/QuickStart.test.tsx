@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { screen, fireEvent, act } from '@testing-library/react';
+import { screen, waitFor, fireEvent, act } from '@testing-library/react';
 import { renderWithProviders, makeStore } from '../../../../test/renderWithProviders';
 import { QuickStart } from '../index';
 import * as db from '../../../../db';
@@ -116,7 +116,8 @@ describe('QuickStart', () => {
     vi.spyOn(db, 'getSpellsFromDB').mockResolvedValue([mockDoc] as never);
     renderWithProviders(<QuickStart />, { store: loggedStore() });
     await screen.findByTestId('spell-card-doc-1');
-    expect(screen.getAllByTestId('quick-start-place')).toHaveLength(7);
+    // Once the empty place the spell took over has faded out of the row.
+    await waitFor(() => expect(screen.getAllByTestId('quick-start-place')).toHaveLength(7));
     expect(screen.getAllByTestId(/^quick-start-empty-/)).toHaveLength(6);
   });
 

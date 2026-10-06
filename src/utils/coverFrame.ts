@@ -1,5 +1,6 @@
 import { coverFrames, type CoverFrame } from '../config/assets';
 import type { CSSProperties } from 'react';
+import { resolveAssetChoice } from './assetChoice';
 
 // TCORE-123: the one place Spell.coverFrameId's three-state fallback (see that field's
 // own comment in interfaces/index.ts) gets resolved, so every render site (SpellCard,
@@ -9,8 +10,7 @@ import type { CSSProperties } from 'react';
 export const resolveCoverFrameId = (
   spellCoverFrameId: string | null | undefined,
   activeCoverFrameId: string | null,
-): string | null =>
-  spellCoverFrameId === undefined ? activeCoverFrameId : spellCoverFrameId;
+): string | null => resolveAssetChoice(spellCoverFrameId, activeCoverFrameId);
 
 export const getCoverFrameAsset = (id: string | null): CoverFrame | undefined =>
   id ? coverFrames.find(b => b.id === id) : undefined;

@@ -18,6 +18,7 @@ import groupsReducer from '../store/groupsSlice';
 import spellReducer from '../store/spellSlice';
 import apiResponsesReducer from '../store/apiResponsesSlice';
 import layoutReducer from '../store/layoutSlice';
+import spellCosmeticsReducer from '../store/spellCosmeticsSlice';
 import altarReducer from '../store/altarSlice';
 import signalReducer from '../store/signalSlice';
 import desktopReducer from '../store/desktopSlice';
@@ -30,6 +31,7 @@ const rootReducer = combineReducers({
   session: sessionReducer,
   voice: voiceReducer,
   casterInventory: casterInventoryReducer,
+  spellCosmetics: spellCosmeticsReducer,
   editor: editorReducer,
   credentials: credentialsReducer,
   groups: groupsReducer,

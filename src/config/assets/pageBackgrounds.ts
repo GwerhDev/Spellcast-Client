@@ -2,16 +2,6 @@ import type { PageBackground } from './types';
 
 export const pageBackgrounds: PageBackground[] = [
   {
-    id: 'default',
-    name: 'Default',
-    description: 'Your current theme paper color',
-    category: 'page-background',
-    unlockMethod: 'free',
-    cssValue: null,
-    thumbnail: 'var(--paper-bg)',
-    tags: ['minimal', 'default'],
-  },
-  {
     id: 'parchment',
     name: 'Parchment',
     description: 'Warm vintage parchment paper',

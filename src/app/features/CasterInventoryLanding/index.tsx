@@ -56,7 +56,7 @@ export const CasterInventoryLanding = () => {
     const clear = activeIdFor(asset) === asset.id;
     switch (asset.category) {
       case 'sound-background': dispatch(setActiveSoundBg(clear ? null : asset.id)); break;
-      case 'page-background': dispatch(setActivePageBg(asset.id)); break;
+      case 'page-background': dispatch(setActivePageBg(clear ? null : asset.id)); break;
       case 'companion': dispatch(setActiveCompanion(clear ? null : asset.id)); break;
       case 'cover-frame': dispatch(setActiveCoverFrame(clear ? null : asset.id)); break;
     }
@@ -77,7 +77,6 @@ export const CasterInventoryLanding = () => {
       <ItemDetailModal
         asset={selected?.asset ?? null}
         isActive={!!selected?.isActive}
-        canDeactivate={selected?.asset.category !== 'page-background'}
         onToggleActive={handleToggleActive}
         openedFrom={selectedOrigin}
         onClose={() => setSelectedId(null)}

@@ -20,6 +20,8 @@ export const en = {
     minimize: 'Minimize',
     all: 'All',
     none: 'None',
+    // A spell's pick that follows the caster's default (set from the inventory).
+    default: 'Default',
   },
   auth: {
     login: 'Log in',
@@ -628,7 +630,6 @@ export const en = {
       'ocean-tides': { name: 'Ocean Tides', description: 'Rhythmic waves on a quiet shore' },
       'crackling-hearth': { name: 'Crackling Hearth', description: 'Warm fireplace on a winter night' },
       'northern-winds': { name: 'Northern Winds', description: 'Haunting winds from the far north' },
-      'default': { name: 'Default', description: 'Your current theme paper color' },
       'parchment': { name: 'Parchment', description: 'Warm vintage parchment paper' },
       'midnight-slate': { name: 'Midnight Slate', description: 'Deep blue-gray for late night reading' },
       'warm-linen': { name: 'Warm Linen', description: 'Soft linen-white for comfortable reading' },

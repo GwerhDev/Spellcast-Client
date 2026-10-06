@@ -1,9 +1,13 @@
 import { useEffect, useRef } from 'react';
 import { useAppSelector } from '../../../store/hooks';
 import { soundBackgrounds } from '../../../config/assets';
+import { useSpellCosmetic } from '../../../hooks/useSpellCosmetic';
 
+// The loaded spell's sound background (its own pick, or the caster's default; see
+// useSpellCosmetic), playing while the spell does.
 export const SoundBackground = () => {
-  const activeSoundBgId = useAppSelector(state => state.casterInventory.activeSoundBgId);
+  const spellId = useAppSelector(state => state.spellReader.spellId);
+  const { resolvedId: activeSoundBgId } = useSpellCosmetic('soundBackground', spellId);
   const soundBgVolume = useAppSelector(state => state.casterInventory.soundBgVolume);
   const masterVolume = useAppSelector(state => state.casterInventory.masterVolume);
   const browserPlaying = useAppSelector(state => state.browserPlayer.isPlaying);

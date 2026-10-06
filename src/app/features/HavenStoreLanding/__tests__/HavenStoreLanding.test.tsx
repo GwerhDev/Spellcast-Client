@@ -50,22 +50,28 @@ describe('HavenStoreLanding', () => {
 
   it('a page background already owned by default shows as owned, never equippable', () => {
     renderWithProviders(<HavenStoreLanding />);
-    expect(screen.getByTestId('page-owned-default')).toBeInTheDocument();
-    expect(screen.queryByTestId('page-toggle-default')).not.toBeInTheDocument();
+    expect(screen.getByTestId('page-owned-parchment')).toBeInTheDocument();
+    expect(screen.queryByTestId('page-toggle-parchment')).not.toBeInTheDocument();
+  });
+
+  // The app's own paper isn't an item: it's what shows with no page background at all.
+  it("doesn't offer the app's own paper as a page background", () => {
+    renderWithProviders(<HavenStoreLanding />);
+    expect(screen.queryByTestId('page-card-default')).not.toBeInTheDocument();
   });
 
   it('clicking an already-owned page card does nothing (no whole-card equip in acquire mode)', () => {
     renderWithProviders(<HavenStoreLanding />);
-    fireEvent.click(screen.getByTestId('page-card-default'));
+    fireEvent.click(screen.getByTestId('page-card-parchment'));
     // Still just the owned badge, nothing changed.
-    expect(screen.getByTestId('page-owned-default')).toBeInTheDocument();
+    expect(screen.getByTestId('page-owned-parchment')).toBeInTheDocument();
   });
 
   it('search filters sounds, pages, and companions together by name', () => {
     renderWithProviders(<HavenStoreLanding />);
     fireEvent.change(screen.getByTestId('haven-search'), { target: { value: 'zzz-no-match-zzz' } });
     expect(screen.queryByTestId('sound-card-rain-window')).not.toBeInTheDocument();
-    expect(screen.queryByTestId('page-card-default')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('page-card-parchment')).not.toBeInTheDocument();
     expect(screen.queryByTestId('companion-card-cats')).not.toBeInTheDocument();
   });
 

@@ -5,6 +5,7 @@ import { clearSpellAudioCache } from "./audioCache";
 import { sameUser } from "../utils/grimoire";
 import { dropCoverOverText } from "../utils/spellPage";
 import { getStoredProgress, getAllStoredProgress, setStoredProgress, setStoredProgressMany, deleteStoredProgress, clearStoredProgress } from "./spellProgress";
+import { deleteSpellCosmetics, clearSpellCosmetics } from "./spellCosmetics";
 import { getStoredCoverFrame, getAllStoredCoverFrames, setStoredCoverFrame, deleteStoredCoverFrame, clearStoredCoverFrames, type CoverFrameRecord } from "./spellCoverFrames";
 
 // The pre-rename (TCORE-78) store name, frozen on purpose: it names whatever a
@@ -76,6 +77,9 @@ export const clearAllData = async (): Promise<void> => {
   });
   await clearStoredCoverFrames().catch((err) => {
     console.error('[IndexedDB] Failed to clear cover frames:', err);
+  });
+  await clearSpellCosmetics().catch((err) => {
+    console.error('[IndexedDB] Failed to clear spells\' cosmetics:', err);
   });
 };
 
@@ -574,6 +578,9 @@ export const deleteSpellFromDB = async (id: string, userId: string | undefined):
   });
   await deleteStoredCoverFrame(id).catch((err) => {
     console.error(`[IndexedDB] Failed to delete the cover frame of removed spell "${id}":`, err);
+  });
+  await deleteSpellCosmetics(id).catch((err) => {
+    console.error(`[IndexedDB] Failed to delete the cosmetics of removed spell "${id}":`, err);
   });
 };
 

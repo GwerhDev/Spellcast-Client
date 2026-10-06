@@ -98,6 +98,10 @@ const loadPersistedState = (): Partial<CasterInventoryState> => {
 
 const persisted = loadPersistedState();
 
+// The page background a caster had picked when the app's own paper was an item of its own
+// ('default'): no background now -- the app's own paper is what shows without one.
+const RETIRED_PAGE_BG_ID = 'default';
+
 // Placements saved before `inFront` existed lack the field entirely -- default them to
 // true (in front of the page, the pre-existing visual behavior) instead of leaving it
 // undefined, which would silently break the `!current.inFront` toggle and the Z placement
@@ -111,9 +115,10 @@ const sanitizePlacements = (placements: Record<string, CompanionPlacement> | und
 
 const initialState: CasterInventoryState = {
   version: STATE_VERSION,
-  unlockedIds: persisted.unlockedIds ?? FREE_IDS,
+  unlockedIds: (persisted.unlockedIds ?? FREE_IDS).filter(id => id !== RETIRED_PAGE_BG_ID),
   activeSoundBgId: persisted.activeSoundBgId ?? null,
-  activePageBgId: persisted.activePageBgId ?? 'default',
+  // None by default: the app's own paper.
+  activePageBgId: persisted.activePageBgId === RETIRED_PAGE_BG_ID ? null : persisted.activePageBgId ?? null,
   activeCompanionId: persisted.activeCompanionId ?? null,
   activeCoverFrameId: persisted.activeCoverFrameId ?? null,
   soundBgVolume: persisted.soundBgVolume ?? 0.35,

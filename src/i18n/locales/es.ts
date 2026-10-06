@@ -5,6 +5,8 @@ export const es: Translations = {
     loading: 'Cargando…',
     all: 'Todos',
     none: 'Ninguno',
+    // La elección de un spell que sigue el predeterminado del caster (el del inventario).
+    default: 'Predeterminado',
     save: 'Guardar',
     cancel: 'Cancelar',
     delete: 'Eliminar',
@@ -629,7 +631,6 @@ export const es: Translations = {
       'ocean-tides': { name: 'Mareas del océano', description: 'Olas rítmicas en una orilla tranquila' },
       'crackling-hearth': { name: 'Hogar crepitante', description: 'Una chimenea cálida en una noche de invierno' },
       'northern-winds': { name: 'Vientos del norte', description: 'Vientos inquietantes del lejano norte' },
-      'default': { name: 'Del tema', description: 'El color de hoja de tu tema actual' },
       'parchment': { name: 'Pergamino', description: 'Pergamino antiguo de tono cálido' },
       'midnight-slate': { name: 'Pizarra de medianoche', description: 'Gris azulado profundo para leer de noche' },
       'warm-linen': { name: 'Lino cálido', description: 'Blanco lino suave para una lectura cómoda' },

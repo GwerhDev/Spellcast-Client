@@ -12,17 +12,15 @@ import s from './Inventory.module.css';
 
 interface ItemDetailModalProps {
   asset: Asset | null;
+  // It's the caster's default (every spell that hasn't picked its own uses it).
   isActive: boolean;
-  // Page backgrounds always have one default, so the active one can't be cleared -- only
-  // replaced by picking another.
-  canDeactivate: boolean;
   onToggleActive: (asset: Asset) => void;
   onClose: () => void;
   // The bag slot it was opened from: the item flies from it into the preview, and back.
   openedFrom?: FlightOrigin | null;
 }
 
-export const ItemDetailModal = ({ asset, isActive, canDeactivate, onToggleActive, onClose, openedFrom = null }: ItemDetailModalProps) => {
+export const ItemDetailModal = ({ asset, isActive, onToggleActive, onClose, openedFrom = null }: ItemDetailModalProps) => {
   const { t } = useLanguage();
   const { slotRef, leg, requestClose, modalMotion, flightProps } = useFlightTransition({ show: !!asset, origin: openedFrom, onClose });
   if (!asset) return null;
@@ -55,13 +53,7 @@ export const ItemDetailModal = ({ asset, isActive, canDeactivate, onToggleActive
           )}
           <div className={s.detailActions}>
             {isActive ? (
-              canDeactivate ? (
-                <SecondaryButton data-testid="item-detail-deactivate" icon={faCheck} text={t.havenStore.deactivate} onClick={() => onToggleActive(asset)} />
-              ) : (
-                <span className={s.detailActiveNote} data-testid="item-detail-active">
-                  <FontAwesomeIcon icon={faCheck} /> {t.havenStore.active}
-                </span>
-              )
+              <SecondaryButton data-testid="item-detail-deactivate" icon={faCheck} text={t.havenStore.deactivate} onClick={() => onToggleActive(asset)} />
             ) : (
               <PrimaryButton data-testid="item-detail-activate" text={t.havenStore.setActive} onClick={() => onToggleActive(asset)} />
             )}

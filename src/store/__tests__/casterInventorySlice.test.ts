@@ -39,7 +39,8 @@ describe('casterInventorySlice', () => {
   it('returns initial state with free assets unlocked', () => {
     const state = reducer(undefined, { type: '@@INIT' });
     expect(state.activeSoundBgId).toBeNull();
-    expect(state.activePageBgId).toBe('default');
+    // No page background by default: the app's own paper.
+    expect(state.activePageBgId).toBeNull();
     expect(state.activeCompanionId).toBeNull();
     expect(state.activeCoverFrameId).toBeNull();
     expect(state.soundBgVolume).toBe(0.35);
@@ -223,5 +224,21 @@ describe('casterInventorySlice version-bump unlockedIds merge (TCORE-123)', () =
     const { default: freshReducer } = await import('../casterInventorySlice');
     const state = freshReducer(undefined, { type: '@@INIT' });
     expect(state.unlockedIds.filter(id => id === 'grimoire')).toHaveLength(1);
+  });
+
+  // The app's own paper used to be an item ('default'): a caster who had it picked has no
+  // page background now -- the app's own paper is what shows without one.
+  it("retires the app's own paper as an item, for a caster who had it", async () => {
+    const persisted = { version: 6, unlockedIds: ['default', 'parchment'], activePageBgId: 'default' };
+    vi.stubGlobal('localStorage', {
+      getItem: vi.fn((key: string) => (key === 'casterInventory' ? JSON.stringify(persisted) : null)),
+      setItem: vi.fn(),
+    });
+    vi.resetModules();
+    const { default: freshReducer } = await import('../casterInventorySlice');
+    const state = freshReducer(undefined, { type: '@@INIT' });
+    expect(state.activePageBgId).toBeNull();
+    expect(state.unlockedIds).not.toContain('default');
+    expect(state.unlockedIds).toContain('parchment');
   });
 });

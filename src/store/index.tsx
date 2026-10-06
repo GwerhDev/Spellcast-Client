@@ -14,6 +14,7 @@ import casterInventoryReducer from './casterInventorySlice';
 import spellUploadReducer from './spellUploadSlice';
 import desktopReducer from './desktopSlice';
 import layoutReducer from './layoutSlice';
+import spellCosmeticsReducer from './spellCosmeticsSlice';
 import altarReducer, { ALTAR_BACKDROP_KEY, ALTAR_QUICK_START_KEY, ALTAR_READ_ON_CONJURE_KEY } from './altarSlice';
 
 export const store = configureStore({
@@ -34,6 +35,7 @@ export const store = configureStore({
     spellUpload: spellUploadReducer,
     layout: layoutReducer,
     altar: altarReducer,
+    spellCosmetics: spellCosmeticsReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

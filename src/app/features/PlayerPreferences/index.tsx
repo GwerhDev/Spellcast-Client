@@ -1,10 +1,10 @@
 import s from '../../components/Modals/PlayerPreferences.module.css';
 import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCheck, faMusic } from '@fortawesome/free-solid-svg-icons';
+import { faBan, faCheck, faMusic } from '@fortawesome/free-solid-svg-icons';
 import { useLanguage, assetName } from '../../../i18n';
-import { useAppSelector, useAppDispatch } from '../../../store/hooks';
-import { setActiveSoundBg } from '../../../store/casterInventorySlice';
+import { useAppSelector } from '../../../store/hooks';
+import { useSpellCosmetic } from '../../../hooks/useSpellCosmetic';
 import { soundBackgrounds } from '../../../config/assets';
 
 interface ToggleRowProps {
@@ -92,14 +92,14 @@ export const PlayerPreferences: React.FC = () => {
   const [loopSpell, setLoopSpell] = useState(false);
   const [speed, setSpeed] = useState(1);
   const { t } = useLanguage();
-  const dispatch = useAppDispatch();
-  const { activeSoundBgId, unlockedIds } = useAppSelector(state => state.casterInventory);
+  const { unlockedIds } = useAppSelector(state => state.casterInventory);
+  const spellId = useAppSelector(state => state.spellReader.spellId);
+  // The loaded spell's sound background, picked as its cover frame is: the caster's default
+  // (set from the inventory), none, or one of the caster's own.
+  const { choice, defaultId, pick } = useSpellCosmetic('soundBackground', spellId);
+  const defaultSound = soundBackgrounds.find(bg => bg.id === defaultId);
 
   const unlockedSounds = soundBackgrounds.filter(bg => bg.available && unlockedIds.includes(bg.id));
-
-  const handleSoundBgClick = (id: string) => {
-    dispatch(setActiveSoundBg(activeSoundBgId === id ? null : id));
-  };
 
   return (
     <div data-testid="player-preferences" className={s.container}>
@@ -107,22 +107,42 @@ export const PlayerPreferences: React.FC = () => {
         <p className={s.sectionTitle}>{t.player.soundBackground}</p>
         <div className={s.soundBgList}>
           <button
-            className={`${s.soundBgItem} ${activeSoundBgId === null ? s.soundBgItemActive : ''}`}
-            onClick={() => dispatch(setActiveSoundBg(null))}
+            data-testid="player-sound-bg-pick-default"
+            className={`${s.soundBgItem} ${choice === undefined ? s.soundBgItemActive : ''}`}
+            onClick={() => pick(undefined)}
           >
-            <span className={`${s.soundBgDot} ${s.soundBgDotNone}`} />
+            <span
+              className={`${s.soundBgDot} ${defaultSound ? '' : s.soundBgDotNone}`}
+              style={defaultSound ? { background: SOUND_ARTWORK[defaultSound.id] ?? 'var(--color-dark-300)' } : undefined}
+            >
+              <FontAwesomeIcon icon={faMusic} className={s.soundBgDotIcon} />
+            </span>
+            <span className={s.soundBgName}>{defaultSound ? `${t.common.default} · ${assetName(t, defaultSound)}` : t.common.default}</span>
+            {choice === undefined && (
+              <FontAwesomeIcon icon={faCheck} className={s.soundBgCheck} />
+            )}
+          </button>
+          <button
+            data-testid="player-sound-bg-pick-none"
+            className={`${s.soundBgItem} ${choice === null ? s.soundBgItemActive : ''}`}
+            onClick={() => pick(null)}
+          >
+            <span className={`${s.soundBgDot} ${s.soundBgDotNone}`}>
+              <FontAwesomeIcon icon={faBan} className={s.soundBgDotIcon} />
+            </span>
             <span className={s.soundBgName}>{t.common.none}</span>
-            {activeSoundBgId === null && (
+            {choice === null && (
               <FontAwesomeIcon icon={faCheck} className={s.soundBgCheck} />
             )}
           </button>
           {unlockedSounds.map(bg => {
-            const isActive = activeSoundBgId === bg.id;
+            const isActive = choice === bg.id;
             return (
               <button
                 key={bg.id}
+                data-testid={`player-sound-bg-${bg.id}`}
                 className={`${s.soundBgItem} ${isActive ? s.soundBgItemActive : ''}`}
-                onClick={() => handleSoundBgClick(bg.id)}
+                onClick={() => pick(bg.id)}
               >
                 <span
                   className={s.soundBgDot}

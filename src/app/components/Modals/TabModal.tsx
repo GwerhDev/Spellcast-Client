@@ -7,6 +7,8 @@ import { faXmark } from '@fortawesome/free-solid-svg-icons';
 import { IconButton } from '../Buttons/IconButton';
 
 export interface TabDef {
+  // Names the tab's button (`tab-<id>`), for tests.
+  id?: string;
   icon: IconDefinition;
   label: string;
   content: React.ReactNode;
@@ -40,6 +42,7 @@ export const TabModal: React.FC<TabModalProps> = ({ show, onClose, title, tabs }
               {tabs.map((tab, i) => (
                 <button
                   key={i}
+                  data-testid={`tab-${tab.id ?? i}`}
                   className={`${s.tabBtn} ${activeTab === i ? s.activeTabBtn : ''}`}
                   onClick={() => setActiveTab(i)}
                   title={tab.label}

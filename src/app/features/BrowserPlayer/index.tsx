@@ -36,6 +36,7 @@ import { addSignalNotice } from '../../../store/signalSlice';
 import { SILENT_AUDIO_SRC } from '../../../config/consts';
 import { makeSilentWav } from '../../../utils/silentAudio';
 import { splitIntoSpeechChunks, speechChunkBudget } from '../../../utils/speechChunks';
+import { useSpellCosmetic } from '../../../hooks/useSpellCosmetic';
 
 // SILENT_AUDIO_SRC is 0.1s long, which Chromium treats as a one-shot sound rather than a
 // player, so the tab never got a controllable media session and headset presses went to
@@ -113,7 +114,9 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
   } = useSelector((state: RootState) => state.spellReader);
   const { selectedVoice } = useSelector((state: RootState) => state.voice);
   const { userData } = useAppSelector((state) => state.session);
-  const { activeSoundBgId, soundBgVolume, masterVolume } = useAppSelector((state) => state.casterInventory);
+  const { soundBgVolume, masterVolume } = useAppSelector((state) => state.casterInventory);
+  // The loaded spell's sound background (see useSpellCosmetic).
+  const { resolvedId: activeSoundBgId } = useSpellCosmetic('soundBackground', useAppSelector((state) => state.spellReader.spellId));
 
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
   const [coverUrl, setCoverUrl] = useState<string | null>(null);

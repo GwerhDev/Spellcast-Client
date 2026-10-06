@@ -15,6 +15,7 @@ import { setPendingSeek } from '../../../store/audioPlayerSlice';
 import { moveCompanionModel, rotateCompanionModel, scaleCompanionModel, toggleCompanionDepth, type CompanionPlacement } from '../../../store/casterInventorySlice';
 import { companions } from '../../../config/assets';
 import { usePageBackground } from '../../../hooks/usePageBackground';
+import { useSpellCosmetic } from '../../../hooks/useSpellCosmetic';
 import { pageFrame } from '../../../utils/spellPage';
 import { PaperSheet } from '../../components/PaperSheet/PaperSheet';
 import { Spinner } from '../../components/Spinner';
@@ -60,9 +61,11 @@ export const SpellReader = () => {
   const { selectedVoice } = useSelector((state: RootState) => state.voice);
   const { timeline: aiTimeline, currentTime: aiCurrentTime, isPlaying: aiIsPlaying } = useSelector((state: RootState) => state.audioPlayer);
   const { isPlaying } = useSelector((state: RootState) => state.browserPlayer);
-  const { activeCompanionId, unlockedIds, companionPlacements } = useSelector((state: RootState) => state.casterInventory);
-  const activeCompanion = activeCompanionId && unlockedIds.includes(activeCompanionId)
-    ? companions.find(c => c.id === activeCompanionId) ?? null
+  const { unlockedIds, companionPlacements } = useSelector((state: RootState) => state.casterInventory);
+  // The spell's companion: its own pick, or the caster's default (see useSpellCosmetic).
+  const { resolvedId: companionId } = useSpellCosmetic('companion', spellId);
+  const activeCompanion = companionId && unlockedIds.includes(companionId)
+    ? companions.find(c => c.id === companionId) ?? null
     : null;
 
   // Must match CompanionOverlay's own defaultPlacementFor exactly -- this is the "base" a
@@ -111,7 +114,7 @@ export const SpellReader = () => {
         ])
       )
     : {};
-  const pageBgVars = usePageBackground();
+  const pageBgVars = usePageBackground(spellId);
   const [editedText, setEditedText] = useState<JSONContent>(emptyContent);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);

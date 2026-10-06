@@ -29,14 +29,14 @@ describe('CasterInventoryLanding', () => {
 
   it('puts only owned items in the bag, not the full catalog', () => {
     renderWithProviders(<CasterInventoryLanding />, {
-      store: storeWith({ unlockedIds: ['rain-window', 'default', 'cats', 'grimoire'] }),
+      store: storeWith({ unlockedIds: ['rain-window', 'parchment', 'cats', 'grimoire'] }),
     });
     expect(screen.getByTestId('bag-slot-rain-window')).toBeInTheDocument();
-    expect(screen.getByTestId('bag-slot-default')).toBeInTheDocument();
+    expect(screen.getByTestId('bag-slot-parchment')).toBeInTheDocument();
     expect(screen.getByTestId('bag-slot-cats')).toBeInTheDocument();
     expect(screen.getByTestId('bag-slot-grimoire')).toBeInTheDocument();
     expect(screen.queryByTestId('bag-slot-cafe-murmur')).not.toBeInTheDocument();
-    expect(screen.queryByTestId('bag-slot-parchment')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('bag-slot-warm-linen')).not.toBeInTheDocument();
   });
 
   it('marks the equipped items in the bag', () => {
@@ -72,14 +72,16 @@ describe('CasterInventoryLanding', () => {
     expect(store.getState().casterInventory.activeCompanionId).toBe('cats');
   });
 
-  it('switches the page background but never clears it', () => {
-    const store = storeWith({ unlockedIds: ['default'], activePageBgId: null });
+  // The app's own paper is what shows without a default: a page background default can be
+  // unset like any other.
+  it('sets and clears the default page background', () => {
+    const store = storeWith({ unlockedIds: ['parchment'], activePageBgId: null });
     renderWithProviders(<CasterInventoryLanding />, { store });
-    openItem('default');
+    openItem('parchment');
     fireEvent.click(screen.getByTestId('item-detail-activate'));
-    expect(store.getState().casterInventory.activePageBgId).toBe('default');
-    expect(screen.getByTestId('item-detail-active')).toBeInTheDocument();
-    expect(screen.queryByTestId('item-detail-deactivate')).not.toBeInTheDocument();
+    expect(store.getState().casterInventory.activePageBgId).toBe('parchment');
+    fireEvent.click(screen.getByTestId('item-detail-deactivate'));
+    expect(store.getState().casterInventory.activePageBgId).toBeNull();
   });
 
   // Equipping a cover frame here only sets/clears the GLOBAL default -- a spell's own
@@ -95,7 +97,7 @@ describe('CasterInventoryLanding', () => {
   });
 
   describe('filter tabs', () => {
-    const unlockedIds = ['rain-window', 'default', 'cats', 'grimoire'];
+    const unlockedIds = ['rain-window', 'parchment', 'cats', 'grimoire'];
 
     it('shows everything under the default "all" tab', () => {
       renderWithProviders(<CasterInventoryLanding />, { store: storeWith({ unlockedIds }) });

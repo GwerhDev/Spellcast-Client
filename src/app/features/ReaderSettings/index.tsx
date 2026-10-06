@@ -1,13 +1,16 @@
 import s from '../../components/SpellReader/ReaderSettings.module.css';
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { faDesktop, faPalette, faShieldHalved, faCat } from '@fortawesome/free-solid-svg-icons';
+import { faDesktop, faPalette, faShieldHalved, faCat, faBan } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { RootState } from '../../../store';
 import { setShowReaderSettings, setFitToWidth, setLightningMode, setAttentionGuardEnabled, setAttentionGuardInterval } from '../../../store/spellReaderSlice';
-import { setActivePageBg, setActiveCompanion, unlockAsset } from '../../../store/casterInventorySlice';
+import { unlockAsset } from '../../../store/casterInventorySlice';
+import { useSpellCosmetic } from '../../../hooks/useSpellCosmetic';
 import { pageBackgrounds, companions } from '../../../config/assets';
 import { TabModal } from '../../components/Modals/TabModal';
 import { CompanionCard } from '../../components/Cards/CompanionCard';
+import { CompanionChoiceCard } from '../../components/Cards/CompanionChoiceCard';
 import { NumberStepper } from '../../components/Inputs/NumberStepper';
 import { ToggleRow } from '../../components/Inputs/ToggleRow';
 import { useLanguage, assetName } from '../../../i18n';
@@ -48,36 +51,53 @@ const DisplayTab: React.FC = () => {
 };
 
 const AppearanceTab: React.FC = () => {
-  const dispatch = useDispatch();
   const [highContrast, setHighContrast] = useState(false);
   const [sepiaMode, setSepiaMode] = useState(false);
   const [invertColors, setInvertColors] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
   const { t } = useLanguage();
-  const { activePageBgId, unlockedIds } = useSelector((state: RootState) => state.casterInventory);
+  const { unlockedIds } = useSelector((state: RootState) => state.casterInventory);
+  const spellId = useSelector((state: RootState) => state.spellReader.spellId);
+  // This spell's page background, picked as its cover frame is: the caster's default (set
+  // from the inventory), none (the app's own paper), or one of the caster's own.
+  const { choice, defaultId, pick } = useSpellCosmetic('pageBackground', spellId);
 
   const unlockedPageBgs = pageBackgrounds.filter(bg => unlockedIds.includes(bg.id));
+  const defaultBg = pageBackgrounds.find(bg => bg.id === defaultId);
 
   return (
     <div className={s.container}>
       <div className={s.section}>
         <p className={s.sectionTitle}>{t.reader.pageBackground}</p>
         <div className={s.bgGrid}>
-          {unlockedPageBgs.map(bg => {
-            const isActive = activePageBgId === bg.id;
-            const thumbStyle = bg.thumbnail.startsWith('var(')
-              ? { background: 'var(--paper-bg)' }
-              : { background: bg.thumbnail };
-            return (
-              <button
-                key={bg.id}
-                className={`${s.bgSwatch} ${isActive ? s.bgSwatchActive : ''}`}
-                style={thumbStyle}
-                onClick={() => dispatch(setActivePageBg(bg.id))}
-                title={assetName(t, bg)}
-              />
-            );
-          })}
+          <button
+            data-testid="reader-page-bg-pick-default"
+            className={`${s.bgSwatch} ${s.bgSwatchDefault} ${choice === undefined ? s.bgSwatchActive : ''}`}
+            style={defaultBg ? { background: defaultBg.thumbnail } : undefined}
+            onClick={() => pick(undefined)}
+            title={defaultBg ? `${t.common.default} · ${assetName(t, defaultBg)}` : t.common.default}
+          >
+            <span className={s.bgSwatchLabel}>{t.common.default}</span>
+          </button>
+          <button
+            data-testid="reader-page-bg-pick-none"
+            className={`${s.bgSwatch} ${s.bgSwatchNone} ${choice === null ? s.bgSwatchActive : ''}`}
+            onClick={() => pick(null)}
+            title={t.common.none}
+            aria-label={t.common.none}
+          >
+            <FontAwesomeIcon icon={faBan} />
+          </button>
+          {unlockedPageBgs.map(bg => (
+            <button
+              key={bg.id}
+              data-testid={`reader-page-bg-${bg.id}`}
+              className={`${s.bgSwatch} ${choice === bg.id ? s.bgSwatchActive : ''}`}
+              style={{ background: bg.thumbnail }}
+              onClick={() => pick(bg.id)}
+              title={assetName(t, bg)}
+            />
+          ))}
         </div>
       </div>
       <div className={s.section}>
@@ -97,7 +117,12 @@ const AppearanceTab: React.FC = () => {
 const CompanionsTab: React.FC = () => {
   const dispatch = useDispatch();
   const { t } = useLanguage();
-  const { unlockedIds, activeCompanionId } = useSelector((state: RootState) => state.casterInventory);
+  const { unlockedIds } = useSelector((state: RootState) => state.casterInventory);
+  const spellId = useSelector((state: RootState) => state.spellReader.spellId);
+  // This spell's companion, picked as its cover frame is: the caster's default (set from the
+  // inventory), none, or one of the caster's own -- "Use" picks it for this spell alone.
+  const { choice, defaultId, pick } = useSpellCosmetic('companion', spellId);
+  const defaultCompanion = companions.find(c => c.id === defaultId) ?? null;
 
   const isUnlocked = (id: string) => unlockedIds.includes(id);
 
@@ -107,20 +132,35 @@ const CompanionsTab: React.FC = () => {
   const handleCompanionAction = (id: string) => {
     if (!isUnlocked(id)) {
       dispatch(unlockAsset(id));
-      dispatch(setActiveCompanion(id));
+      pick(id);
       return;
     }
-    dispatch(setActiveCompanion(activeCompanionId === id ? null : id));
+    pick(choice === id ? null : id);
   };
 
   return (
     <div className={s.container}>
       <div className={s.section}>
         <div className={s.companionGrid}>
+          <CompanionChoiceCard
+            kind="default"
+            companion={defaultCompanion}
+            isActive={choice === undefined}
+            onUse={() => pick(undefined)}
+            activeLabel={t.reader.companionInUse}
+            useLabel={t.reader.companionUse}
+          />
+          <CompanionChoiceCard
+            kind="none"
+            isActive={choice === null}
+            onUse={() => pick(null)}
+            activeLabel={t.reader.companionInUse}
+            useLabel={t.reader.companionUse}
+          />
           {companions.map(companion => {
             const comingSoon = !!companion.comingSoon;
             const unlocked = !comingSoon && isUnlocked(companion.id);
-            const isActive = !comingSoon && activeCompanionId === companion.id;
+            const isActive = !comingSoon && choice === companion.id;
             return (
               <CompanionCard
                 key={companion.id}
@@ -200,10 +240,10 @@ export const ReaderSettings: React.FC = () => {
       onClose={() => dispatch(setShowReaderSettings(false))}
       title={t.reader.readerSettings}
       tabs={[
-        { icon: faDesktop,      label: t.reader.displayTab,         content: <DisplayTab /> },
-        { icon: faPalette,      label: t.reader.appearanceTab,      content: <AppearanceTab /> },
-        { icon: faCat,          label: t.reader.companions,         content: <CompanionsTab /> },
-        { icon: faShieldHalved, label: t.reader.attentionGuard,     content: <FocusTab /> },
+        { id: 'display',    icon: faDesktop,      label: t.reader.displayTab,         content: <DisplayTab /> },
+        { id: 'appearance', icon: faPalette,      label: t.reader.appearanceTab,      content: <AppearanceTab /> },
+        { id: 'companions', icon: faCat,          label: t.reader.companions,         content: <CompanionsTab /> },
+        { id: 'focus',      icon: faShieldHalved, label: t.reader.attentionGuard,     content: <FocusTab /> },
       ]}
     />
   );
