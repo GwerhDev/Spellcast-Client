@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, RenderOptions } from '@testing-library/react';
 import { Provider } from 'react-redux';
-import { MemoryRouter } from 'react-router-dom';
+import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { configureStore, combineReducers, EnhancedStore } from '@reduxjs/toolkit';
 import { LanguageProvider } from '../i18n';
 import { Mode3DProvider } from '../context/Mode3DContext';
@@ -54,24 +54,32 @@ interface Options extends Omit<RenderOptions, 'wrapper'> {
   preloadedState?: PreloadedState;
 }
 
+// What a test renders, handed to the router's single route (the router is made once per
+// render, so a rerender with new children keeps its location).
+const TestChildren = React.createContext<React.ReactNode>(null);
+const RenderedChildren = () => <>{React.useContext(TestChildren)}</>;
+
 export const renderWithProviders = (ui: React.ReactElement, options: Options = {}) => {
   // preloadedState is destructured out here only to exclude it from renderOptions
   // (RTL's render() doesn't accept it) -- makeStore already consumed it above.
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { store = makeStore(options.preloadedState), initialPath = '/', preloadedState: _ps, ...renderOptions } = options;
 
+  // A data router, as the app's (see main.tsx): some components use what only it offers.
+  const router = createMemoryRouter([{ path: '*', element: <RenderedChildren /> }], { initialEntries: [initialPath] });
+
   const Wrapper = ({ children }: { children: React.ReactNode }) => (
     <Provider store={store}>
-      <MemoryRouter initialEntries={[initialPath]}>
-        <LanguageProvider>
-          {/* useCoverFrame3DGate (used by QuickStart) reads useMode3D(), which
-              throws outside a Mode3DProvider -- every test render needs one available, same
-              as LanguageProvider above, even for tests that never touch the 3D toggle. */}
-          <Mode3DProvider>
-            {children}
-          </Mode3DProvider>
-        </LanguageProvider>
-      </MemoryRouter>
+      <LanguageProvider>
+        {/* useCoverFrame3DGate (used by QuickStart) reads useMode3D(), which
+            throws outside a Mode3DProvider -- every test render needs one available, same
+            as LanguageProvider above, even for tests that never touch the 3D toggle. */}
+        <Mode3DProvider>
+          <TestChildren.Provider value={children}>
+            <RouterProvider router={router} />
+          </TestChildren.Provider>
+        </Mode3DProvider>
+      </LanguageProvider>
     </Provider>
   );
 

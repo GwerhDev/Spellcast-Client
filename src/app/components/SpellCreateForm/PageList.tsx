@@ -67,7 +67,7 @@ export const PageList: React.FC<PageListProps> = ({ pages, currentPage, onPageCl
               </button>
             )}
             {onPageReset && (
-              <button className={s.resetButton} title={t.spell.resetPage} onClick={(e) => handleReset(e, index)}>
+              <button data-testid={`page-list-reset-btn-${index}`} className={s.resetButton} title={t.spell.resetPage} onClick={(e) => handleReset(e, index)}>
                 <FontAwesomeIcon icon={faRotateLeft} size='xs' />
               </button>
             )}
@@ -85,7 +85,7 @@ export const PageList: React.FC<PageListProps> = ({ pages, currentPage, onPageCl
         );
       })}
       {onAddPage && (
-        <div title={t.spell.addPage} className={s.addPageItem} onClick={onAddPage}>
+        <div data-testid="page-list-add-btn" title={t.spell.addPage} className={s.addPageItem} onClick={onAddPage}>
           <FontAwesomeIcon icon={faPlus} />
         </div>
       )}

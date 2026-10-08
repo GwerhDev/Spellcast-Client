@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useMemo } from 'react'
+import { type ReactNode, useEffect, useMemo, useRef } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Underline from '@tiptap/extension-underline'
@@ -144,13 +144,19 @@ export function MagicTextEditor({
     content,
     editable,
     autofocus,
-    onUpdate({ editor }) { onChange?.(getOutput(editor)) },
+    // Only an edit is a change: an update can come with nothing changed in the document
+    // (e.g. as the editor sets itself up), and reporting it would mark an untouched page edited.
+    onUpdate({ editor, transaction }) { if (transaction.docChanged) onChange?.(getOutput(editor)) },
     onBlur({ editor }) { onBlur?.(getOutput(editor)) },
     onFocus({ editor }) { onFocus?.(getOutput(editor)) },
   })
 
+  // The content in the new output type, when it changes -- not on mount: opening a document
+  // is no change to it.
+  const outputTypeRef = useRef(outputType)
   useEffect(() => {
-    if (!editor || editor.isDestroyed) return
+    if (!editor || editor.isDestroyed || outputTypeRef.current === outputType) return
+    outputTypeRef.current = outputType
     onChange?.(outputType === 'json' ? editor.getJSON() : editor.getHTML())
   }, [outputType]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -164,7 +170,8 @@ export function MagicTextEditor({
     const isDifferent = inputType === 'json'
       ? JSON.stringify(content) !== JSON.stringify(editor.getJSON())
       : content !== editor.getHTML()
-    if (isDifferent) editor.commands.setContent(content as string)
+    // Content given from outside is the parent's already: no change to report back.
+    if (isDifferent) editor.commands.setContent(content as string, { emitUpdate: false })
   }, [content]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Sync ruler options when ruler config changes (margins, paperHeight, etc.)

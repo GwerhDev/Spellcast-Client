@@ -1,6 +1,6 @@
 import s from '../../components/SpellEditForm/index.module.css';
 import React, { useEffect, useRef, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useBlocker, useParams } from 'react-router-dom';
 import type { JSONContent } from '../../../magictext';
 import { useDispatch } from 'react-redux';
 import { useAppSelector } from '../../../store/hooks';
@@ -292,11 +292,13 @@ export const SpellEditForm: React.FC = () => {
     const updated = pagesContent.filter((_, i) => i !== index);
     setPagesContent(updated);
     setEditingPageIndex(Math.min(Number(editingPageIndex), updated.length - 1));
+    setHasChanges(true);
   };
 
   const handleAddPage = () => {
     setPagesContent([...pagesContent, emptyContent]);
     setEditingPageIndex(pagesContent.length);
+    setHasChanges(true);
   };
 
   const handlePageContentChange = (newContent: JSONContent) => {
@@ -306,12 +308,14 @@ export const SpellEditForm: React.FC = () => {
     setHasChanges(true);
   };
 
-  const handleSave = async () => {
-    if (!spellTitle || pagesContent.length === 0 || !logged || !id) return;
+  // Saves the spell as it is now -- with `pages` in place of the form's pages when given (a
+  // change saved right away, before the form's state has it).
+  const saveNow = async (pages: JSONContent[] = pagesContent) => {
+    if (!spellTitle || pages.length === 0 || !logged || !id) return;
     try {
       await updateSpellContent(id, userData.id!, {
         title: spellTitle,
-        pagesContent: JSON.stringify(pagesContent),
+        pagesContent: JSON.stringify(pages),
         description: description || undefined,
         author: author || undefined,
         tags: parseTagsInput(tagsInput),
@@ -326,6 +330,18 @@ export const SpellEditForm: React.FC = () => {
       console.error('Failed to save spell:', err);
     }
   };
+
+  const handleSave = () => saveNow();
+
+  // Unsaved edits: leaving the page asks first (in the app), or the browser does (reloading,
+  // closing the tab).
+  const blocker = useBlocker(hasChanges);
+  useEffect(() => {
+    if (!hasChanges) return;
+    const warn = (e: BeforeUnloadEvent) => { e.preventDefault(); };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [hasChanges]);
 
   // TCORE-122: cover changes save immediately (like the "replace content"/"reset" actions
   // below) instead of going through the autosave timer -- there's no draft state worth
@@ -396,8 +412,10 @@ export const SpellEditForm: React.FC = () => {
       if (queued) return;
     }
     if (!originalPages) return;
-    setPagesContent(originalPages.map(p => ({ ...p })));
-    setHasChanges(true);
+    // Saved right away, as a reset from the PDF is.
+    const restored = originalPages.map(p => ({ ...p }));
+    setPagesContent(restored);
+    await saveNow(restored);
   };
 
   const handleResetPage = async (index: number) => {
@@ -420,7 +438,8 @@ export const SpellEditForm: React.FC = () => {
     const updated = [...pagesContent];
     updated[index] = fresh;
     setPagesContent(updated);
-    setHasChanges(true);
+    // Saved right away: a reset is done once confirmed, nothing left to save.
+    await saveNow(updated);
   };
 
   if (isLoading) return <div data-testid="spell-edit-form-loading" className={s.container}><Spinner isLoading /></div>;
@@ -436,7 +455,7 @@ export const SpellEditForm: React.FC = () => {
   return (
     <div data-testid="spell-edit-form" className={s.container}>
       <div className={s.pageInfoContainer}>
-        <IconButton icon={faArrowLeft} className={s.backButton} variant='transparent' title={t.common.back} onClick={goBack} />
+        <IconButton data-testid="spell-edit-back-btn" icon={faArrowLeft} className={s.backButton} variant='transparent' title={t.common.back} onClick={goBack} />
         <span className={s.titleContainer}>
           <input
             data-testid="spell-edit-title-input"
@@ -583,6 +602,15 @@ export const SpellEditForm: React.FC = () => {
         title={t.spell.resetPage}
         message={t.spell.resetPageConfirm.replace('{n}', String((pageToReset ?? 0) + 1))}
         confirmText={t.spell.resetPage}
+      />
+
+      <DeleteConfirmModal
+        show={blocker.state === 'blocked'}
+        onClose={() => blocker.reset?.()}
+        onConfirm={() => blocker.proceed?.()}
+        title={t.spell.unsavedChangesTitle}
+        message={t.spell.unsavedChangesMessage}
+        confirmText={t.spell.leaveWithoutSaving}
       />
 
       <CustomModal compact show={showResetAllModal} onClose={() => setShowResetAllModal(false)} title={t.spell.resetAllTitle}>

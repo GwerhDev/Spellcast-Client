@@ -61,6 +61,7 @@ const renderForm = (initialPath = '/editor/doc-1') => {
   return renderWithProviders(
     <Routes>
       <Route path="/editor" element={<div data-testid="editor-landing-page" />} />
+      <Route path="/spell/:id" element={<div data-testid="spell-page" />} />
       <Route path="/editor/:id" element={<SpellEditForm />} />
       <Route path="/editor/:id/:page" element={<SpellEditForm />} />
     </Routes>,
@@ -338,6 +339,52 @@ describe('SpellEditForm', () => {
       const call = vi.mocked(updateSpellFull).mock.calls[0][2];
       expect(call.title).toBe('Renamed while uploading cover');
       await waitFor(() => expect(screen.getByTestId('spell-edit-save-btn')).toBeDisabled());
+    });
+  });
+
+  describe('saving state', () => {
+    const original = { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'As in the PDF' }] }] };
+
+    it('resetting a page saves it right away, leaving nothing to save', async () => {
+      vi.mocked(getSpellById).mockResolvedValue({ ...mockDoc, originalPagesContent: JSON.stringify([original]) } as never);
+      renderForm();
+      await screen.findByTestId('spell-edit-form');
+      fireEvent.click(await screen.findByTestId('page-list-reset-btn-0'));
+      fireEvent.click(screen.getByTestId('delete-confirm-confirm-btn'));
+
+      await waitFor(() => expect(updateSpellContent).toHaveBeenCalled());
+      expect(JSON.parse(vi.mocked(updateSpellContent).mock.calls[0][2].pagesContent)).toEqual([original]);
+      expect(screen.getByTestId('spell-edit-save-btn')).toBeDisabled();
+    });
+
+    it('adding a page is a change to save', async () => {
+      renderForm();
+      await screen.findByTestId('spell-edit-form');
+      expect(screen.getByTestId('spell-edit-save-btn')).toBeDisabled();
+      fireEvent.click(screen.getByTestId('page-list-add-btn'));
+      expect(screen.getByTestId('spell-edit-save-btn')).not.toBeDisabled();
+    });
+
+    it('leaving with unsaved edits asks first; leaving without saving goes', async () => {
+      renderForm();
+      await screen.findByTestId('spell-edit-form');
+      fireEvent.change(screen.getByTestId('spell-edit-title-input'), { target: { value: 'Renamed' } });
+      fireEvent.click(screen.getByTestId('spell-edit-back-btn'));
+
+      fireEvent.click(await screen.findByTestId('delete-confirm-cancel-btn'));
+      expect(screen.getByTestId('spell-edit-form')).toBeInTheDocument();
+
+      fireEvent.click(screen.getByTestId('spell-edit-back-btn'));
+      fireEvent.click(await screen.findByTestId('delete-confirm-confirm-btn'));
+      expect(await screen.findByTestId('spell-page')).toBeInTheDocument();
+    });
+
+    it('leaving with nothing to save just goes', async () => {
+      renderForm();
+      await screen.findByTestId('spell-edit-form');
+      fireEvent.click(screen.getByTestId('spell-edit-back-btn'));
+      expect(await screen.findByTestId('spell-page')).toBeInTheDocument();
+      expect(screen.queryByTestId('delete-confirm-confirm-btn')).not.toBeInTheDocument();
     });
   });
 });
