@@ -56,13 +56,10 @@ export const SpellStorageManager = () => {
     ]);
 
     const nextRows: SpellRow[] = spells.map((spell) => {
-      // Everything actually stored on the spell's own record -- pagesContent, the
-      // pristine originalPagesContent backup (TCORE-90's "reset to original" source),
-      // and its cover image. Blob measures a plain string's UTF-8 byte length just as
-      // well as a real binary's, so this needs no separate string-vs-blob branching.
-      const contentBytes = [spell.pagesContent, spell.originalPagesContent]
-        .reduce((sum, text) => sum + (text ? new Blob([text]).size : 0), 0)
-        + (spell.cover?.size ?? 0);
+      // Everything actually stored on the spell's own record -- its pages, the pristine
+      // original pages backup (the "reset to original" source), both measured as the list
+      // reads it (see getSpellsFromDB) -- and its cover image.
+      const contentBytes = (spell.listedPages?.bytes ?? 0) + (spell.cover?.size ?? 0);
       const pdfBytes = pdfSizes[spell.id] ?? 0;
       const audioBytes = audioSummary.bySpell[spell.id]?.totalBytes ?? 0;
       return {

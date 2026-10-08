@@ -96,7 +96,7 @@ export const SpellList: React.FC<SpellListProps> = ({ query = '', filter = 'loca
   const filtered = byQuery.filter(d => {
     if (docFilter === 'reading') return (d.progress?.currentPage ?? 0) > 0;
     if (docFilter === 'pdf') return pdfIds.has(d.id);
-    if (docFilter === 'unprocessed') return !d.pagesContent;
+    if (docFilter === 'unprocessed') return !(d.listedPages?.present ?? d.pagesContent);
     return true;
   });
   const { visible, hasMore, sentinelRef } = useInfiniteList(filtered);

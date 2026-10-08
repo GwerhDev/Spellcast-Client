@@ -92,6 +92,9 @@ export interface Spell {
   // src/db/originalPdfs.ts (TCORE-90). Whether one exists for this spell is looked up there,
   // keyed by `id`, not stored on this record.
   originalPagesContent?: string;
+  // On a spell read as part of a list (getSpellsFromDB), whose pages aren't read: whether it
+  // has pages, how many, and how many bytes they take (its pages and its original pages).
+  listedPages?: { present: boolean; count: number; bytes: number };
   // TCORE-97: social/feed metadata, all optional -- prefilled from the PDF's own Info/XMP
   // dictionary at import time (see extractPdfMetadata in pdfUtils.ts), always editable.
   description?: string;

@@ -82,6 +82,21 @@ describe('db/index.ts CRUD', () => {
     expect(mine[0].title).toBe('Mine');
   });
 
+  // A list never holds every spell's pages (images and all) in memory: only whether a spell
+  // has them, how many, and their size.
+  it('getSpellsFromDB lists spells without their pages, with their count and size', async () => {
+    const { saveSpellToDB, getSpellsFromDB, getSpellById } = await importDb();
+    const pages = JSON.stringify([{ type: 'doc', content: [] }, { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'say "type":"doc"' }] }] }]);
+    const id = await saveSpellToDB(seedSpell({ userId: 'user-1', pagesContent: pages }));
+
+    const [listed] = await getSpellsFromDB('user-1');
+    expect(listed.pagesContent).toBeUndefined();
+    expect(listed.originalPagesContent).toBeUndefined();
+    expect(listed.listedPages).toEqual({ present: true, count: 2, bytes: new TextEncoder().encode(pages).length });
+    // Read on its own, a spell has its pages.
+    expect((await getSpellById(id, 'user-1'))?.pagesContent).toBe(pages);
+  });
+
   it('getSpellsFromDB returns an empty list for a user with no spells', async () => {
     const { getSpellsFromDB } = await importDb();
     expect(await getSpellsFromDB('nobody')).toEqual([]);

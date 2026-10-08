@@ -133,13 +133,21 @@ const migrateEmbeddedPdfsToOwnStore = async (db: IDBDatabase): Promise<void> => 
   pdfMigrationAttempted = true;
 
   try {
-    const allSpells = await new Promise<(Spell & { pdf?: Blob; originalPdf?: Blob })[]>((resolve, reject) => {
-      const req = db.transaction(SPELLS_STORE_NAME, 'readonly').objectStore(SPELLS_STORE_NAME).getAll();
-      req.onsuccess = () => resolve(req.result ?? []);
+    // One record at a time (a cursor, not getAll), keeping only those still carrying a PDF
+    // and only what's needed of them: every spell whole at once (pages and all) could take
+    // more memory than the page has.
+    const legacyRecords = await new Promise<{ id: string; originalPdf?: Blob }[]>((resolve, reject) => {
+      const found: { id: string; originalPdf?: Blob }[] = [];
+      const req = db.transaction(SPELLS_STORE_NAME, 'readonly').objectStore(SPELLS_STORE_NAME).openCursor();
+      req.onsuccess = () => {
+        const cursor = req.result;
+        if (!cursor) { resolve(found); return; }
+        const spell = cursor.value as (Spell & { pdf?: Blob; originalPdf?: Blob }) | null;
+        if (spell && (spell.pdf || spell.originalPdf)) found.push({ id: spell.id, originalPdf: spell.originalPdf });
+        cursor.continue();
+      };
       req.onerror = () => reject(req.error);
     });
-
-    const legacyRecords = allSpells.filter((s) => s.pdf || s.originalPdf);
     if (legacyRecords.length === 0) return;
 
     let migratedCount = 0;
@@ -152,7 +160,7 @@ const migrateEmbeddedPdfsToOwnStore = async (db: IDBDatabase): Promise<void> => 
           await setOriginalPdf(record.id, record.originalPdf);
         }
         // Re-read the CURRENT record inside this readwrite transaction rather than
-        // writing back the `getAll()` snapshot from above -- that snapshot can be stale
+        // writing back the snapshot from above -- that snapshot can be stale
         // by the time we get here (this loop iteration already awaited a separate
         // transaction to copy the blob out), and a real user action (e.g. reading a page)
         // can have written newer progress/content to this exact record in that window.
@@ -373,52 +381,54 @@ export const saveSpellToDB = async (spell: Omit<Spell, 'id' | 'createdAt' | 'pro
   });
 };
 
+// A spell as a list shows it: without its pages (all of a spell's pages, images included,
+// can be hundreds of MB), only whether it has them, how many, and their size. Counted without
+// parsing them: each page is a document (`"type":"doc"`, only ever a page's root -- in text
+// or an image's data a quote is escaped or can't appear).
+const asListed = (spell: Spell): Spell => {
+  const { pagesContent, originalPagesContent, ...rest } = spell;
+  const bytes = [pagesContent, originalPagesContent].reduce((sum, text) => sum + (text ? new Blob([text]).size : 0), 0);
+  const count = pagesContent ? pagesContent.split('"type":"doc"').length - 1 : 0;
+  return { ...rest, listedPages: { present: !!pagesContent, count, bytes } };
+};
+
+// The user's spells, as listed (see asListed). Read one record at a time (a cursor, not
+// getAll), each one's pages dropped as it's read: all of them at once could take more memory
+// than the page has, and the browser would kill it.
 const readSpellsFromStore = async (userId: string | undefined): Promise<Spell[]> => {
   const db = await openDB();
   const transaction = db.transaction(SPELLS_STORE_NAME, 'readonly');
   const spellStore = transaction.objectStore(SPELLS_STORE_NAME);
-  const spellIndex = spellStore.index('userId');
 
-  return new Promise((resolve, reject) => {
-    const getAllRequest = spellIndex.getAll(userId);
-
-    getAllRequest.onerror = () => {
-      const err = getAllRequest.error;
-      console.error('[IndexedDB] getSpellsFromDB getAll(userId) failed:', err?.name, err?.message);
-      reject(err);
-    };
-
-    getAllRequest.onsuccess = () => {
-      // WebKit/Safari can return null entries from IDBIndex.getAll() for records
-      // deleted concurrently between its key snapshot and value fetch (e.g. a
-      // delete + refetch racing across the components that share this store).
-      // Drop those before anything downstream (e.g. sort by createdAt) touches them.
-      const exact = (getAllRequest.result as (Spell | null)[]).filter((s): s is Spell => s != null);
-      // Fast path: the userId index matched (types agree), or there's no user to
-      // filter by. Otherwise fall back to a full scan with a type-tolerant match
-      // so spells saved under a differently-typed id (historical data) still
-      // list instead of silently disappearing. Only runs when the index is empty.
-      if (exact.length > 0 || userId == null) {
-        resolve(exact);
-        return;
-      }
-      const scanRequest = spellStore.getAll();
-      scanRequest.onerror = () => {
-        const err = scanRequest.error;
-        console.error('[IndexedDB] getSpellsFromDB fallback scan failed:', err?.name, err?.message);
+  const collect = (source: IDBObjectStore | IDBIndex, query: IDBValidKey | undefined, keep: (spell: Spell) => boolean, label: string) =>
+    new Promise<Spell[]>((resolve, reject) => {
+      const found: Spell[] = [];
+      const request = source.openCursor(query);
+      request.onerror = () => {
+        const err = request.error;
+        console.error(`[IndexedDB] getSpellsFromDB ${label} failed:`, err?.name, err?.message);
         reject(err);
       };
-      scanRequest.onsuccess = () => {
-        const matched = (scanRequest.result as (Spell | null)[])
-          .filter((s): s is Spell => s != null)
-          .filter((s) => sameUser(s.userId, userId));
-        if (matched.length > 0) {
-          console.warn(`[IndexedDB] Listed ${matched.length} spell(s) via type-tolerant userId fallback (stored id type differs from session id).`);
-        }
-        resolve(matched);
+      request.onsuccess = () => {
+        const cursor = request.result;
+        if (!cursor) { resolve(found); return; }
+        // WebKit/Safari can hand back null entries for records deleted concurrently.
+        const spell = cursor.value as Spell | null;
+        if (spell != null && keep(spell)) found.push(asListed(spell));
+        cursor.continue();
       };
-    };
-  });
+    });
+
+  // Fast path: the userId index matched (types agree), or there's no user to filter by.
+  // Otherwise a full scan with a type-tolerant match, so spells saved under a differently-
+  // typed id (historical data) still list instead of silently disappearing.
+  const exact = await collect(spellStore.index('userId'), userId, () => true, 'index scan');
+  if (exact.length > 0 || userId == null) return exact;
+  const matched = await collect(spellStore, undefined, (s) => sameUser(s.userId, userId), 'fallback scan');
+  if (matched.length > 0) {
+    console.warn(`[IndexedDB] Listed ${matched.length} spell(s) via type-tolerant userId fallback (stored id type differs from session id).`);
+  }
+  return matched;
 };
 
 export const getSpellsFromDB = async (userId: string | undefined): Promise<Spell[]> => {

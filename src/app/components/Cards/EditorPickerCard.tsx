@@ -23,9 +23,11 @@ interface EditorPickerCardProps {
 
 export const EditorPickerCard = ({ doc, onClick, show3D }: EditorPickerCardProps) => {
   const totalPages = useMemo(() => {
+    // A listed spell (see getSpellsFromDB) comes without its pages, only their count.
+    if (doc.listedPages) return doc.listedPages.present ? doc.listedPages.count : null;
     if (!doc.pagesContent) return null;
     try { return JSON.parse(doc.pagesContent).length; } catch { return null; }
-  }, [doc.pagesContent]);
+  }, [doc.listedPages, doc.pagesContent]);
 
   const activeCoverFrameId = useAppSelector(state => state.casterInventory.activeCoverFrameId);
   const resolvedCoverFrameId = resolveCoverFrameId(doc.coverFrameId, activeCoverFrameId);
