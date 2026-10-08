@@ -62,6 +62,9 @@ export interface PageFrame {
   height: number;
   margins: PageMargins;
   cover: boolean;
+  // A page read from the PDF as a picture of the whole page (see extractPdfPages): exactly
+  // the PDF page's size, never taller.
+  whole: boolean;
 }
 
 type PageAttrs = Partial<PageMargins> & { pageWidth?: number; pageHeight?: number; displayWidth?: number; displayHeight?: number };
@@ -79,5 +82,8 @@ export const pageFrame = (page: JSONContent | undefined, index: number): PageFra
     marginBottom: a.marginBottom ?? DEFAULT_PAGE_MARGINS.marginBottom,
     marginLeft: a.marginLeft ?? DEFAULT_PAGE_MARGINS.marginLeft,
   };
-  return { width, height, margins, cover };
+  const first = page?.content?.[0];
+  const whole = first?.type === 'image' && a.displayWidth !== undefined && (first.attrs as Record<string, unknown> | undefined)?.width === a.displayWidth
+    && a.marginTop === 0 && a.marginRight === 0 && a.marginBottom === 0 && a.marginLeft === 0;
+  return { width, height, margins, cover, whole };
 };

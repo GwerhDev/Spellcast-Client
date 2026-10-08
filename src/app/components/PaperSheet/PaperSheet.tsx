@@ -16,7 +16,7 @@ interface PaperSheetProps {
 // A spell page as a sheet of paper, the one the reader and the editor both draw: the page's
 // size and margins, its zoom, and how its cover and PDF graphics sit on it -- so a page looks
 // the same in either. Grows past its nominal height when its content is taller, so nothing
-// is clipped at the bottom.
+// is clipped at the bottom -- except a page drawn whole, which is exactly its PDF page.
 export const PaperSheet = React.forwardRef<HTMLDivElement, PaperSheetProps>(({ frame, zoom, className, style, children }, ref) => {
   const sheetRef = useRef<HTMLDivElement | null>(null);
   const [sheetHeight, setSheetHeight] = useState(0);
@@ -32,21 +32,22 @@ export const PaperSheet = React.forwardRef<HTMLDivElement, PaperSheetProps>(({ f
     return () => ro.disconnect();
   }, []);
 
-  const { width, height, margins, cover } = frame;
+  const { width, height, margins, cover, whole } = frame;
   return (
-    <div className={s.zoomWrapper} style={{ width: `${width * zoom}px`, height: `${Math.max(sheetHeight, height) * zoom}px` }}>
+    <div className={s.zoomWrapper} style={{ width: `${width * zoom}px`, height: `${(whole ? height : Math.max(sheetHeight, height)) * zoom}px` }}>
       <div
         ref={(el) => {
           sheetRef.current = el;
           if (typeof ref === 'function') ref(el);
           else if (ref) ref.current = el;
         }}
-        className={[s.sheet, cover ? s.coverPage : '', className ?? ''].filter(Boolean).join(' ')}
+        className={[s.sheet, cover ? s.coverPage : '', whole ? s.wholePage : '', className ?? ''].filter(Boolean).join(' ')}
         data-cover-page={cover || undefined}
         style={{
           ...style,
           width: `${width}px`,
-          minHeight: `${height}px`,
+          height: whole ? `${height}px` : undefined,
+          minHeight: whole ? undefined : `${height}px`,
           transform: `scale(${zoom})`,
           transformOrigin: 'top center',
           paddingTop: margins.marginTop,

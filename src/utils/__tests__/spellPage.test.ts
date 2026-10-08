@@ -28,7 +28,7 @@ describe('isCoverPage', () => {
 describe('pageFrame', () => {
   it('is the page as on its PDF: its size and its margins', () => {
     expect(pageFrame(pageOf(text('Hi')), 2)).toEqual({
-      width: 794, height: 1123, cover: false,
+      width: 794, height: 1123, cover: false, whole: false,
       margins: { marginTop: 124, marginRight: 137, marginBottom: 20, marginLeft: 136 },
     });
   });
@@ -38,7 +38,7 @@ describe('pageFrame', () => {
   });
 
   it('a page written here gets the defaults', () => {
-    expect(pageFrame({ type: 'doc', content: [] }, 0)).toEqual({ width: 800, height: 1131, cover: false, margins: DEFAULT_PAGE_MARGINS });
+    expect(pageFrame({ type: 'doc', content: [] }, 0)).toEqual({ width: 800, height: 1131, cover: false, whole: false, margins: DEFAULT_PAGE_MARGINS });
   });
 });
 
@@ -56,5 +56,21 @@ describe('dropCoverOverText', () => {
     expect(dropCoverOverText(coverPage)).toBe(coverPage);
     const logoPage = [pageOf(image({ title: 'pdf-graphic', width: 120 }), text('Title'))];
     expect(dropCoverOverText(logoPage)).toBe(logoPage);
+  });
+});
+
+
+describe('pageFrame: a page drawn whole', () => {
+  const dims = { pageWidth: 595, pageHeight: 842, displayWidth: 793, displayHeight: 1123 };
+  const noMargins = { marginTop: 0, marginRight: 0, marginBottom: 0, marginLeft: 0 };
+
+  it('is a page with no margins whose first block is its picture, as wide as the page', () => {
+    const page = { type: 'doc', attrs: { ...dims, ...noMargins }, content: [image({ width: 793 }), { type: 'paragraph' }] };
+    expect(pageFrame(page, 0)).toMatchObject({ whole: true, height: 1123 });
+  });
+
+  it('a page with margins, or a smaller image, is not', () => {
+    expect(pageFrame({ type: 'doc', attrs: dims, content: [image({ width: 793 })] }, 1).whole).toBe(false);
+    expect(pageFrame({ type: 'doc', attrs: { ...dims, ...noMargins }, content: [image({ width: 300 })] }, 1).whole).toBe(false);
   });
 });

@@ -39,6 +39,21 @@
   display: none;
 }
 
+/* A page drawn whole (see pageFrame): the sheet is its PDF page's size and the picture of
+   it fills it; nothing after the picture adds to it. */
+.wholePage {
+  overflow: hidden;
+}
+
+.wholePage :is(:global(.ProseMirror), [data-page-body]) > img:first-child {
+  display: block;
+  width: 100%;
+  max-width: none;
+  height: var(--paper-height);
+  margin: 0;
+  border-radius: 0;
+}
+
 /* A graphic cropped from the PDF page (a decorative header, an ornament): as wide as the
    page it was cropped from, over the text's margins, so it's at the page's own scale. */
 .sheet img[title="pdf-graphic"] {

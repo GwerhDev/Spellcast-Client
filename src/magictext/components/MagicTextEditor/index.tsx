@@ -108,7 +108,10 @@ export function MagicTextEditor({
 
   const editor = useEditor({
     extensions: [
-      StarterKit.configure({ link: false, underline: false } as Record<string, unknown>),
+      // No trailing paragraph added after a page's last block: a page is as its PDF has it (a
+      // page drawn whole is exactly as tall as its sheet, and an added line made it taller).
+      // The gap cursor still lets one type after a final image or table.
+      StarterKit.configure({ link: false, underline: false, trailingNode: false } as Record<string, unknown>),
       TTSMarkExtension,
       VariableExtension.configure({ translations: t.variableNode }),
       Underline,
