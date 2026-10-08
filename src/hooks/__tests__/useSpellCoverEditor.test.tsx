@@ -28,21 +28,17 @@ describe('useSpellCoverEditor', () => {
     expect(store.getState().spellReader.listVersion).toBe(before);
   });
 
-  it("a new cover also replaces page 1's cover, and refreshes the reader and the lists", async () => {
+  // The cover is the spell's thumbnail only: its pages stay as the PDF has them.
+  it('a new cover is saved as the thumbnail, leaving the pages as they are, and refreshes the reader and the lists', async () => {
     const cover = new Blob(['img']);
+    const pages = JSON.stringify([{ type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Page one' }] }] }]);
     vi.spyOn(pdfUtils, 'downscaleImageBlob').mockResolvedValue(cover);
-    vi.spyOn(pdfUtils, 'blobToDataUrl').mockResolvedValue('data:image/png;base64,AAA');
-    vi.spyOn(pdfUtils, 'applyCoverToPage1').mockReturnValue([{ type: 'doc', content: [] }]);
-    vi.spyOn(db, 'getSpellById').mockResolvedValue({ id: 'doc-1', title: 'My Book', userId: 'user-1', createdAt: new Date(), pagesContent: '[]' } as never);
+    vi.spyOn(db, 'getSpellById').mockResolvedValue({ id: 'doc-1', title: 'My Book', userId: 'user-1', createdAt: new Date(), pagesContent: pages } as never);
     const save = vi.spyOn(db, 'updateSpellFull').mockResolvedValue(undefined);
     const { store, editor } = setup();
     const { listVersion, contentVersion } = store.getState().spellReader;
     await act(async () => { await editor.setCoverFromImage(new File(['x'], 'cover.png')); });
-    expect(save).toHaveBeenCalledWith('doc-1', 'user-1', expect.objectContaining({
-      title: 'My Book',
-      cover,
-      pagesContent: JSON.stringify([{ type: 'doc', content: [] }]),
-    }));
+    expect(save).toHaveBeenCalledWith('doc-1', 'user-1', expect.objectContaining({ title: 'My Book', cover, pagesContent: pages }));
     expect(store.getState().spellReader.listVersion).toBe(listVersion + 1);
     expect(store.getState().spellReader.contentVersion).toBe(contentVersion + 1);
   });

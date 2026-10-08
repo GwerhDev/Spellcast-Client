@@ -24,7 +24,7 @@ import { IconButton } from '../../components/Buttons/IconButton';
 import { resetSpellState, setSpellDetails, setSpellTitle as setSpellTitleAction } from '../../../store/spellSlice';
 import { resetSpellReader } from '../../../store/spellReaderSlice';
 import { textToSpeechService } from '../../../services/tts';
-import { renderPageToCover, extractPdfPages, injectCoverIntoPages, emptyPageContent, blobToDataUrl, extractPdfMetadata, applyCoverToPage1, downscaleImageBlob } from '../../../utils/pdfUtils';
+import { renderPageToCover, extractPdfPages, emptyPageContent, blobToDataUrl, extractPdfMetadata, downscaleImageBlob } from '../../../utils/pdfUtils';
 import { useLanguage } from '../../../i18n';
 import { useGoBack } from '../../../hooks/useGoBack';
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
@@ -180,10 +180,9 @@ export const SpellCreateForm: React.FC = () => {
           setMetadataExpanded(true);
         }
 
-        // TCORE-122: page 1 is always rendered as the default cover (previously only when
-        // that page had no extractable text) -- the user can immediately see and replace it
-        // via the Cover field in Additional details, so a "wrong" default costs one click
-        // instead of leaving spells with a text-heavy first page coverless forever.
+        // The spell's cover: page 1 rendered as a thumbnail for the cards, shown (and
+        // replaceable) in Additional details. Only the cover -- the pages are the PDF's as
+        // read, page 1 too.
         const coverBlob = await renderPageToCover(pdf);
         const coverDataUrl = coverBlob ? await blobToDataUrl(coverBlob) : null;
         if (coverDataUrl) {
@@ -192,31 +191,22 @@ export const SpellCreateForm: React.FC = () => {
         }
         setCover(coverBlob);
 
-        const coverNode: JSONContent = coverDataUrl
-          ? { type: 'image', attrs: { src: coverDataUrl, alt: null, title: null } }
-          : emptyContent;
-        const initialPages = Array.from({ length: pdf.numPages }, (_, i) =>
-          i === 0 ? { type: 'doc', content: [coverNode] } as JSONContent : emptyContent
-        );
+        const initialPages = Array.from({ length: pdf.numPages }, () => emptyContent);
         setPagesContent(initialPages);
 
         const rawPages = await extractPdfPages(
           pdf,
           (current, total) => setPdfProgress({ current, total }),
           (pageNum, content) => {
-            const pageContent: JSONContent = pageNum === 1 && coverDataUrl
-              ? { ...content, content: [{ type: 'image', attrs: { src: coverDataUrl, alt: null, title: null } }, ...(content.content ?? [])] }
-              : content;
             setPagesContent(prev => {
               const next = [...prev];
-              next[pageNum - 1] = pageContent;
+              next[pageNum - 1] = content;
               return next;
             });
           },
         );
-        const allPagesContent = await injectCoverIntoPages(rawPages, coverBlob);
-        originalPagesRef.current = allPagesContent;
-        setPagesContent(allPagesContent);
+        originalPagesRef.current = rawPages;
+        setPagesContent(rawPages);
       } catch (error) {
         console.error('Failed to extract text from PDF:', error);
       } finally {
@@ -246,16 +236,11 @@ export const SpellCreateForm: React.FC = () => {
     setPagesContent(updatedPagesContent);
   };
 
-  // TCORE-122: applies a new cover Blob to both the state the save flow persists (`cover`)
-  // and the cover image node shown as the first thing on page 1 -- same dual-write shape
-  // the PDF-import path above already does when it finds a coverBlob. The page 1 update
-  // itself is shared with SpellEditForm's applyCover via applyCoverToPage1 (review
-  // follow-up), so both forms keep the reader in sync with the cover the same way.
+  // A new cover: the spell's thumbnail only -- its pages stay as the PDF has them.
   const applyCover = async (blob: Blob) => {
     const dataUrl = await blobToDataUrl(blob);
     setCover(blob);
     setCoverUrl(dataUrl);
-    setPagesContent((prev) => applyCoverToPage1(prev, dataUrl));
   };
 
   // Downscaled before it ever reaches applyCover -- an unprocessed upload can be several MB,

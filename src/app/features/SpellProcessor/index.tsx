@@ -6,7 +6,6 @@ import { setPageText, setSpellLoaded, setSentences } from '../../../store/spellR
 import { getSpellById, updateSpellProgress } from '../../../db';
 import { useAppSelector } from '../../../store/hooks';
 import { SpellProgress } from '../../../interfaces/index';
-import { injectCoverIntoPages } from '../../../utils/pdfUtils';
 
 const extractSentencesFromJSON = (text: string): string[] => {
   try {
@@ -65,9 +64,7 @@ export const SpellProcessor = () => {
       if (cancelled) return;
       if (doc?.pagesContent) {
         const parsed = JSON.parse(doc.pagesContent) as JSONContent[];
-        const withCover = await injectCoverIntoPages(parsed, doc.cover ?? null);
-        if (cancelled) return;
-        setLoaded({ spellId, pages: withCover.map((p) => JSON.stringify(p)) });
+        setLoaded({ spellId, pages: parsed.map((p) => JSON.stringify(p)) });
       } else {
         setLoaded({ spellId, pages: [] });
       }

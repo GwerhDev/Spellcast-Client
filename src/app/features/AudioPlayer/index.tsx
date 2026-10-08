@@ -531,7 +531,7 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
 
   useEffect(() => {
     if (selectedVoice.type !== 'ai' || !currentPageText) return;
-    // Cover pages (see injectCoverIntoPages in pdfUtils) carry no readable text, so
+    // Pages with nothing written on them (a picture, a cover) carry no readable text, so
     // `sentences` comes back empty -- skip straight to the next page instead of
     // synthesizing/playing empty audio.
     if (sentences.length === 0) {

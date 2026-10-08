@@ -1,7 +1,6 @@
 import * as pdfjsLib from 'pdfjs-dist';
 import type { TextItem } from 'pdfjs-dist/types/src/display/api';
 import type { JSONContent } from '@tiptap/core';
-import { isCoverNode, pageHasText, dropCoverOverText } from './spellPage';
 
 export const emptyPageContent: JSONContent = {
   type: 'doc',
@@ -45,36 +44,6 @@ export const blobToDataUrl = (blob: Blob): Promise<string> =>
     reader.readAsDataURL(blob);
   });
 
-// A cover image node: marked as one, so the reader and editor know page 1's first image is
-// the cover (see isCoverNode) rather than a logo the page starts with.
-const coverNodeOf = (src: string): JSONContent => ({ type: 'image', attrs: { src, alt: null, title: null, cover: true } });
-
-export const injectCoverIntoPages = async (pages: JSONContent[], coverBlob: Blob | null): Promise<JSONContent[]> => {
-  if (!coverBlob || pages.length === 0) return pages;
-  const firstNode = pages[0]?.content?.[0];
-  // Not over an image page 1 already starts with (a cover, or the scan of the page itself):
-  // it would show twice.
-  if (firstNode?.type === 'image' && (firstNode.attrs as Record<string, unknown> | undefined)?.title !== 'pdf-graphic') return pages;
-  // Only a page 1 with nothing written on it gets the cover -- its text counted however
-  // deep it is (a PDF's columns, boxes, tables). Empty paragraphs from emptyPageContent
-  // don't count as text.
-  if (pageHasText(pages[0])) return pages;
-  try {
-    const coverDataUrl = await blobToDataUrl(coverBlob);
-    const updated = [...pages];
-    updated[0] = {
-      ...pages[0],
-      content: [
-        coverNodeOf(coverDataUrl),
-        ...(pages[0].content || []),
-      ],
-    };
-    return updated;
-  } catch {
-    return pages;
-  }
-};
-
 export const renderPageToCover = async (pdf: pdfjsLib.PDFDocumentProxy): Promise<Blob | null> => {
   try {
     const page = await pdf.getPage(1);
@@ -90,29 +59,6 @@ export const renderPageToCover = async (pdf: pdfjsLib.PDFDocumentProxy): Promise
   } catch {
     return null;
   }
-};
-
-// TCORE-122 (review follow-up): applies a newly picked cover to whatever is shown as the
-// first thing on page 1 -- shared by SpellCreateForm and SpellEditForm's applyCover, so a
-// cover picked while editing an already-saved spell updates the reader's page 1 the exact
-// same way it does at creation time, not just the cover Blob/thumbnail. Replaces an
-// existing cover image node in place, or prepends a new one when page 1 has none yet --
-// unless page 1 has text: then the cover is only the spell's thumbnail, and the page stays
-// as written (without a cover left over it, see dropCoverOverText).
-export const applyCoverToPage1 = (pages: JSONContent[], coverDataUrl: string): JSONContent[] => {
-  if (pages.length === 0) return pages;
-  const page1 = pages[0];
-  const coverNode = coverNodeOf(coverDataUrl);
-  const firstNode = page1?.content?.[0];
-  const hasCoverNode = isCoverNode(firstNode);
-  const written = hasCoverNode ? { ...page1, content: (page1.content ?? []).slice(1) } : page1;
-  if (pageHasText(written)) return dropCoverOverText(pages);
-  const content = hasCoverNode
-    ? [coverNode, ...(page1.content ?? []).slice(1)]
-    : [coverNode, ...(page1.content ?? [])];
-  const updated = [...pages];
-  updated[0] = { ...page1, content };
-  return updated;
 };
 
 // TCORE-122 (review follow-up): caps an uploaded cover image before it's persisted as a
@@ -617,6 +563,26 @@ const detectDecorativeRegionsFromCanvas = (
 
 // One page of the PDF (1-based), read the same way extractPdfPages reads them all: for
 // reading a single page again from the stored PDF (the editor's per-page reset).
+// How wide (px) a page drawn whole is kept: sharp on a zoomed-in, high-density screen.
+const WHOLE_PAGE_MAX_WIDTH = 1600;
+
+// A page drawn whole, as an image for its sheet (JPEG), or null if it can't be drawn.
+const renderWholePage = async (page: pdfjsLib.PDFPageProxy): Promise<string | null> => {
+  try {
+    const viewport = page.getViewport({ scale: 1 });
+    const scaled = page.getViewport({ scale: Math.min(3, WHOLE_PAGE_MAX_WIDTH / viewport.width) });
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(scaled.width);
+    canvas.height = Math.round(scaled.height);
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+    await page.render({ canvasContext: ctx, viewport: scaled, canvas }).promise;
+    return canvas.toDataURL('image/jpeg', 0.9);
+  } catch {
+    return null;
+  }
+};
+
 export const extractPdfPage = async (pdf: pdfjsLib.PDFDocumentProxy, pageNumber: number): Promise<JSONContent> => {
   const single = { numPages: 1, getPage: () => pdf.getPage(pageNumber) } as unknown as pdfjsLib.PDFDocumentProxy;
   const [page] = await extractPdfPages(single);
@@ -641,10 +607,20 @@ export const extractPdfPages = async (
 
     const pageDims = { pageWidth: Math.round(pageViewport.width), pageHeight: Math.round(pageViewport.height), displayWidth, displayHeight };
 
-    if (content.items.length === 0) {
-      const emptyPage = { ...emptyPageContent, attrs: pageDims };
-      allPagesContent.push(emptyPage);
-      onPageExtracted?.(pageNum, emptyPage);
+    // Nothing written on it -- no text, or only blank text (a cover, a full-page picture or
+    // drawing): the page as it is, drawn whole over the whole sheet -- or, if it can't be
+    // drawn, an empty page.
+    if (!(content.items as TextItem[]).some(i => typeof i.str === 'string' && i.str.trim())) {
+      const src = await renderWholePage(page);
+      const wholePage: JSONContent = src
+        ? {
+          type: 'doc',
+          attrs: { ...pageDims, marginTop: 0, marginRight: 0, marginBottom: 0, marginLeft: 0 },
+          content: [{ type: 'image', attrs: { src, alt: null, title: null, width: displayWidth } }],
+        }
+        : { ...emptyPageContent, attrs: pageDims };
+      allPagesContent.push(wholePage);
+      onPageExtracted?.(pageNum, wholePage);
       onProgress?.(pageNum, pdf.numPages);
       continue;
     }

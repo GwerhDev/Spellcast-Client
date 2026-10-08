@@ -1,17 +1,16 @@
 import * as pdfjsLib from 'pdfjs-dist';
 import workerSrc from 'pdfjs-dist/build/pdf.worker?url';
-import type { JSONContent } from '../magictext';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { getSpellById, updateSpellCoverFrame, updateSpellFull } from '../db';
 import { getOriginalPdf } from '../db/originalPdfs';
 import { coverFrameChanged, invalidateContent, invalidateSpellList } from '../store/spellReaderSlice';
-import { applyCoverToPage1, blobToDataUrl, downscaleImageBlob, renderPageToCover } from '../utils/pdfUtils';
+import { downscaleImageBlob, renderPageToCover } from '../utils/pdfUtils';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
 // Changes a spell's cover and cover frame from outside the editor (the spell's detail),
-// saving right away. A new cover also replaces the cover image on page 1, the same as the
-// editor does, so the reader and the cards all show it; every list is refreshed after.
+// saving right away. The cover is the spell's thumbnail only -- its pages stay as the PDF has
+// them; every list is refreshed after.
 export const useSpellCoverEditor = (spellId: string | null) => {
   const dispatch = useAppDispatch();
   const userId = useAppSelector(state => state.session.userData?.id);
@@ -29,11 +28,9 @@ export const useSpellCoverEditor = (spellId: string | null) => {
     if (!spellId || !userId) return;
     const spell = await getSpellById(spellId, userId);
     if (!spell) return;
-    const pages = spell.pagesContent ? JSON.parse(spell.pagesContent) as JSONContent[] : [];
-    const updatedPages = applyCoverToPage1(pages, await blobToDataUrl(blob));
     await updateSpellFull(spellId, userId, {
       title: spell.title,
-      pagesContent: JSON.stringify(updatedPages),
+      pagesContent: spell.pagesContent ?? '[]',
       cover: blob,
       originalPagesContent: spell.originalPagesContent,
     });

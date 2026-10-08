@@ -12,7 +12,7 @@ import {
 } from '../../../store/spellUploadSlice';
 import { saveSpellToDB, updateSpellFull, updateSpellMetadata, getSpellById, deleteSpellFromDB } from '../../../db';
 import { setOriginalPdf } from '../../../db/originalPdfs';
-import { renderPageToCover, extractPdfPages, injectCoverIntoPages, blobToDataUrl, extractPdfMetadata } from '../../../utils/pdfUtils';
+import { renderPageToCover, extractPdfPages, blobToDataUrl, extractPdfMetadata } from '../../../utils/pdfUtils';
 import { invalidateContent, invalidateSpellList } from '../../../store/spellReaderSlice';
 import { isQuotaExceededError } from '../../../utils/storageQuota';
 import { useLanguage } from '../../../i18n';
@@ -45,9 +45,8 @@ export const SpellUploadWorker: React.FC = () => {
         const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
         const meta = await extractPdfMetadata(pdf);
 
-        // TCORE-122: page 1 is always rendered as the default cover (previously only when
-        // that page had no extractable text) -- see SpellCreateForm for the same change and
-        // rationale. The user can replace it via the Cover field in Additional details.
+        // The spell's cover: page 1 rendered as a thumbnail for the cards, replaceable from
+        // Additional details. Only the cover -- the pages are the PDF's as read, page 1 too.
         const coverBlob = await renderPageToCover(pdf);
 
         if (coverBlob) {
@@ -70,7 +69,7 @@ export const SpellUploadWorker: React.FC = () => {
           // has no title of its own, its title. The PDF itself is already the stored one.
           previousSpell = await getSpellById(next.targetDocId, next.userId) ?? null;
           const keptCover = previousSpell?.cover ?? null;
-          const pagesContent = await injectCoverIntoPages(rawPages, keptCover ?? coverBlob);
+          const pagesContent = rawPages;
           await updateSpellFull(next.targetDocId, next.userId, {
             title: next.pagesOnly ? (previousSpell?.title ?? next.title) : (meta.title || previousSpell?.title || next.title),
             pagesContent: JSON.stringify(pagesContent),
@@ -82,7 +81,7 @@ export const SpellUploadWorker: React.FC = () => {
           dispatch(invalidateSpellList());
           dispatch(setUploadDone({ id: next.id }));
         } else if (next.targetDocId) {
-          const pagesContent = await injectCoverIntoPages(rawPages, coverBlob);
+          const pagesContent = rawPages;
           previousSpell = await getSpellById(next.targetDocId, next.userId) ?? null;
           await updateSpellFull(next.targetDocId, next.userId, {
             title: next.title,
@@ -97,7 +96,7 @@ export const SpellUploadWorker: React.FC = () => {
           dispatch(invalidateContent());
           dispatch(setUploadDone({ id: next.id }));
         } else {
-          const pagesContent = await injectCoverIntoPages(rawPages, coverBlob);
+          const pagesContent = rawPages;
           createdSpellId = await saveSpellToDB({
             // Same merge-if-empty prefill SpellCreateForm does: prefer the PDF's own
             // embedded title, but never clobber one the user already typed over the

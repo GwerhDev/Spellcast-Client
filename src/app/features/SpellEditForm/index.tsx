@@ -9,7 +9,7 @@ import { getSpellById, updateSpellContent, updateSpellFull } from '../../../db';
 import { hasOriginalPdf, getOriginalPdf } from '../../../db/originalPdfs';
 import * as pdfjsLib from 'pdfjs-dist';
 import workerSrc from 'pdfjs-dist/build/pdf.worker?url';
-import { renderPageToCover, blobToDataUrl, applyCoverToPage1, downscaleImageBlob, extractPdfPage, injectCoverIntoPages } from '../../../utils/pdfUtils';
+import { renderPageToCover, blobToDataUrl, downscaleImageBlob, extractPdfPage } from '../../../utils/pdfUtils';
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 import { setShowEditorSettings } from '../../../store/editorSlice';
 import { invalidateContent, invalidateSpellList } from '../../../store/spellReaderSlice';
@@ -335,20 +335,18 @@ export const SpellEditForm: React.FC = () => {
   // pagesContent are currently in memory -- including a title edit or page edit the user
   // hasn't explicitly saved yet. That was already true before this fix; what wasn't handled
   // is that it leaves `hasChanges` stale afterwards (review follow-up): the in-memory state
-  // (now with the new cover node applied to page 1 too, see applyCoverToPage1) IS what just
-  // got persisted, so resetting hasChanges/saveStatus here is what keeps the Save button and
+  // IS what just got persisted, so resetting hasChanges/saveStatus here is what keeps the Save button and
   // "Saved" indicator honest about there being nothing left to save, the same way handleSave
   // does for its own write.
   const applyCover = async (blob: Blob) => {
     if (!id || !userData.id) return;
+    // The spell's thumbnail only -- its pages stay as the PDF has them.
     const dataUrl = await blobToDataUrl(blob);
     setCoverUrl(dataUrl);
-    const updatedPages = applyCoverToPage1(pagesContent, dataUrl);
-    setPagesContent(updatedPages);
     try {
       await updateSpellFull(id, userData.id, {
         title: spellTitle,
-        pagesContent: JSON.stringify(updatedPages),
+        pagesContent: JSON.stringify(pagesContent),
         cover: blob,
         originalPagesContent: originalPages ? JSON.stringify(originalPages) : undefined,
       });
@@ -409,9 +407,7 @@ export const SpellEditForm: React.FC = () => {
         const blob = await getOriginalPdf(id);
         if (blob) {
           const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(await blob.arrayBuffer()) }).promise;
-          let page = await extractPdfPage(pdf, index + 1);
-          // Page 1 keeps its cover, as at import (only over a page with no text of its own).
-          if (index === 0 && coverUrl) [page] = await injectCoverIntoPages([page], await (await fetch(coverUrl)).blob());
+          const page = await extractPdfPage(pdf, index + 1);
           fresh = page;
           // The stored original is this reading of it from now on.
           setOriginalPages(prev => (prev ? prev.map((p, i) => (i === index ? page : p)) : prev));

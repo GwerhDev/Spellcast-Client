@@ -37,21 +37,6 @@ const renderPageToCoverMock = vi.fn<() => Promise<Blob | null>>(() => Promise.re
 vi.mock('../../../../utils/pdfUtils', () => ({
   renderPageToCover: (...args: unknown[]) => renderPageToCoverMock(...(args as [])),
   blobToDataUrl: vi.fn((blob: Blob | null) => Promise.resolve(blob ? `data:image/png;base64,${(blob as unknown as { name?: string })?.name ?? 'x'}` : null)),
-  // Real (pure) implementation -- same as SpellCreateForm's test mock, so the "page 1 node
-  // actually updates" assertions below exercise the real replace-or-prepend logic.
-  applyCoverToPage1: (pages: { content?: { type: string; attrs?: Record<string, unknown> }[] }[], coverDataUrl: string) => {
-    if (pages.length === 0) return pages;
-    const page1 = pages[0];
-    const coverNode = { type: 'image', attrs: { src: coverDataUrl, alt: null, title: null } };
-    const firstNode = page1?.content?.[0];
-    const hasCoverNode = firstNode?.type === 'image' && firstNode?.attrs?.title !== 'pdf-graphic';
-    const content = hasCoverNode
-      ? [coverNode, ...(page1.content ?? []).slice(1)]
-      : [coverNode, ...(page1.content ?? [])];
-    const updated = [...pages];
-    updated[0] = { ...page1, content };
-    return updated;
-  },
   // Identity -- see SpellCreateForm's test mock for why downscaling itself isn't tested here.
   downscaleImageBlob: vi.fn((blob: Blob) => Promise.resolve(blob)),
 }));
@@ -316,9 +301,10 @@ describe('SpellEditForm', () => {
       expect(updateSpellFull).not.toHaveBeenCalled();
     });
 
-    // Review follow-up: applyCover used to only update the cover Blob/thumbnail, leaving
-    // the reader (page 1's own image node) showing the old cover after an edit-time change.
-    it('uploading a new cover also updates page 1\'s own image node, not just the cover Blob/thumbnail', async () => {
+    // The cover is the spell's thumbnail only: page 1 stays as the PDF has it.
+    it('uploading a new cover saves it as the thumbnail, leaving page 1 as it is', async () => {
+      const page1 = { type: 'doc', content: [{ type: 'image', attrs: { src: 'data:image/png;base64,PAGE', alt: null, title: null } }, { type: 'paragraph' }] };
+      vi.mocked(getSpellById).mockResolvedValue({ ...mockDoc, pagesContent: JSON.stringify([page1]) } as never);
       renderForm();
       await screen.findByTestId('spell-edit-form');
       fireEvent.click(screen.getByTestId('spell-metadata-toggle'));
@@ -328,31 +314,8 @@ describe('SpellEditForm', () => {
 
       await waitFor(() => expect(updateSpellFull).toHaveBeenCalled());
       const call = vi.mocked(updateSpellFull).mock.calls[0][2];
-      const savedPage1 = JSON.parse(call.pagesContent as string)[0];
-      expect(savedPage1.content[0]).toMatchObject({ type: 'image', attrs: { src: expect.stringContaining('data:image/png;base64,') } });
-      // The page's other content (the original paragraph) is kept, not discarded.
-      expect(savedPage1.content[1]).toMatchObject({ type: 'paragraph' });
-    });
-
-    it('replaces an existing cover image node in place instead of stacking a second one', async () => {
-      vi.mocked(getSpellById).mockResolvedValue({
-        ...mockDoc,
-        pagesContent: JSON.stringify([
-          { type: 'doc', content: [{ type: 'image', attrs: { src: 'data:image/png;base64,OLD', alt: null, title: null } }, { type: 'paragraph' }] },
-        ]),
-      } as never);
-      renderForm();
-      await screen.findByTestId('spell-edit-form');
-      fireEvent.click(screen.getByTestId('spell-metadata-toggle'));
-      const file = new File(['x'], 'cover.png', { type: 'image/png' });
-      const input = document.querySelector('input[accept="image/*"]') as HTMLInputElement;
-      fireEvent.change(input, { target: { files: [file] } });
-
-      await waitFor(() => expect(updateSpellFull).toHaveBeenCalled());
-      const call = vi.mocked(updateSpellFull).mock.calls[0][2];
-      const savedPage1 = JSON.parse(call.pagesContent as string)[0];
-      expect(savedPage1.content).toHaveLength(2);
-      expect(savedPage1.content[0].attrs.src).not.toBe('data:image/png;base64,OLD');
+      expect(call.cover).toBe(file);
+      expect(JSON.parse(call.pagesContent as string)[0]).toEqual(page1);
     });
 
     // Review follow-up: applyCover writes the full record (title + pagesContent) via

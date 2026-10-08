@@ -68,7 +68,9 @@ const mkPdf = (pages: ReturnType<typeof mkPage>[]) => ({
 });
 
 describe('extractPdfPages', () => {
-  it('produces an empty page node (with page dimension attrs) when there is no text', async () => {
+  // A page with nothing written on it (a cover, a full-page picture) is the page as it is:
+  // drawn whole, over the whole sheet.
+  it('draws a page with no text whole, over the whole sheet', async () => {
     const pdf = mkPdf([mkPage({ items: [], pageWidth: 200, pageHeight: 300 })]);
     const onProgress = vi.fn();
     const onPageExtracted = vi.fn();
@@ -77,10 +79,17 @@ describe('extractPdfPages', () => {
 
     expect(pages).toHaveLength(1);
     expect(pages[0].type).toBe('doc');
-    expect(pages[0].content).toEqual([{ type: 'paragraph' }]);
-    expect(pages[0].attrs).toMatchObject({ pageWidth: 200, pageHeight: 300 });
+    expect(pages[0].content).toHaveLength(1);
+    expect(pages[0].content![0]).toMatchObject({ type: 'image', attrs: { src: expect.stringMatching(/^data:image\/jpeg/), width: Math.round(200 * 96 / 72) } });
+    expect(pages[0].attrs).toMatchObject({ pageWidth: 200, pageHeight: 300, marginTop: 0, marginRight: 0, marginBottom: 0, marginLeft: 0 });
     expect(onProgress).toHaveBeenCalledWith(1, 1);
     expect(onPageExtracted).toHaveBeenCalledWith(1, pages[0]);
+  });
+
+  it('draws a page whose only text is blank whole too (a cover with an empty text layer)', async () => {
+    const pdf = mkPdf([mkPage({ items: [{ str: '   ', transform: [1, 0, 0, 1, 10, 10], width: 5, height: 1 } as never], pageWidth: 200, pageHeight: 300 })]);
+    const [page] = await extractPdfPages(pdf as never);
+    expect(page.content).toEqual([expect.objectContaining({ type: 'image' })]);
   });
 
   it('extracts a single line of text as one paragraph, preserving left-to-right order', async () => {

@@ -4,6 +4,7 @@ import { renderWithProviders, makeStore } from '../../../../test/renderWithProvi
 import { SpellUploadWorker } from '../index';
 import { enqueueUpload } from '../../../../store/spellUploadSlice';
 import type { PdfMetadata } from '../../../../utils/pdfUtils';
+import * as pdfUtils from '../../../../utils/pdfUtils';
 
 // pdfjs-dist requires DOMMatrix (not in jsdom)
 vi.mock('pdfjs-dist', () => ({
@@ -22,7 +23,6 @@ const extractPdfMetadataMock = vi.fn<() => Promise<PdfMetadata>>(() => Promise.r
 vi.mock('../../../../utils/pdfUtils', () => ({
   renderPageToCover: vi.fn(() => Promise.resolve(null)),
   extractPdfPages: vi.fn(() => Promise.resolve([{ type: 'doc', content: [] }])),
-  injectCoverIntoPages: vi.fn((pages) => Promise.resolve(pages)),
   blobToDataUrl: vi.fn(() => Promise.resolve('data:image/png;base64,')),
   extractPdfMetadata: (...args: unknown[]) => extractPdfMetadataMock(...(args as [])),
 }));
@@ -83,6 +83,22 @@ describe('SpellUploadWorker', () => {
     const payload = saveSpellToDBMock.mock.calls[0][0] as Record<string, unknown>;
     expect(payload).not.toHaveProperty('pdf');
     expect(payload).not.toHaveProperty('originalPdf');
+  });
+
+  // The cover is the spell's thumbnail only: the pages saved are the PDF's as read, page 1
+  // too -- nothing put on it.
+  it('creation path: saves the pages as read, the cover only as the thumbnail', async () => {
+    const thumbnail = new Blob(['thumb'], { type: 'image/jpeg' });
+    const read = [{ type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Page one' }] }] }];
+    vi.mocked(pdfUtils.renderPageToCover).mockResolvedValue(thumbnail);
+    vi.mocked(pdfUtils.extractPdfPages).mockResolvedValue(read as never);
+    const store = makeStore();
+    store.dispatch(enqueue());
+    renderWithProviders(<SpellUploadWorker />, { store });
+    await waitFor(() => expect(saveSpellToDBMock).toHaveBeenCalled());
+    const saved = saveSpellToDBMock.mock.calls[0][0];
+    expect(saved.cover).toBe(thumbnail);
+    expect(JSON.parse(saved.pagesContent as string)).toEqual(read);
   });
 
   it('creation path: saves the original PDF to the separate store only when saveOriginal is true', async () => {
