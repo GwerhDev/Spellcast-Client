@@ -357,6 +357,31 @@ describe('SpellEditForm', () => {
       expect(screen.getByTestId('spell-edit-save-btn')).toBeDisabled();
     });
 
+    // Saving the reset on its own would also save the other edits, without asking.
+    it('with other edits not saved, a reset joins them instead of saving them', async () => {
+      vi.mocked(getSpellById).mockResolvedValue({ ...mockDoc, originalPagesContent: JSON.stringify([original]) } as never);
+      renderForm();
+      await screen.findByTestId('spell-edit-form');
+      fireEvent.change(screen.getByTestId('spell-edit-title-input'), { target: { value: 'Renamed, not saved' } });
+      fireEvent.click(await screen.findByTestId('page-list-reset-btn-0'));
+      fireEvent.click(screen.getByTestId('delete-confirm-confirm-btn'));
+
+      await waitFor(() => expect(screen.queryByTestId('delete-confirm-confirm-btn')).not.toBeInTheDocument());
+      expect(updateSpellContent).not.toHaveBeenCalled();
+      expect(screen.getByTestId('spell-edit-save-btn')).not.toBeDisabled();
+    });
+
+    it('a reset that can\'t be saved (no title) stays a change to save, not lost', async () => {
+      vi.mocked(getSpellById).mockResolvedValue({ ...mockDoc, title: '', originalPagesContent: JSON.stringify([original]) } as never);
+      renderForm();
+      await screen.findByTestId('spell-edit-form');
+      fireEvent.click(await screen.findByTestId('page-list-reset-btn-0'));
+      fireEvent.click(screen.getByTestId('delete-confirm-confirm-btn'));
+
+      await waitFor(() => expect(screen.getByTestId('spell-edit-save-btn')).not.toBeDisabled());
+      expect(updateSpellContent).not.toHaveBeenCalled();
+    });
+
     it('adding a page is a change to save', async () => {
       renderForm();
       await screen.findByTestId('spell-edit-form');

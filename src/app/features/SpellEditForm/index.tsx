@@ -309,9 +309,9 @@ export const SpellEditForm: React.FC = () => {
   };
 
   // Saves the spell as it is now -- with `pages` in place of the form's pages when given (a
-  // change saved right away, before the form's state has it).
-  const saveNow = async (pages: JSONContent[] = pagesContent) => {
-    if (!spellTitle || pages.length === 0 || !logged || !id) return;
+  // change saved right away, before the form's state has it). Whether it was saved.
+  const saveNow = async (pages: JSONContent[] = pagesContent): Promise<boolean> => {
+    if (!spellTitle || pages.length === 0 || !logged || !id) return false;
     try {
       await updateSpellContent(id, userData.id!, {
         title: spellTitle,
@@ -326,19 +326,30 @@ export const SpellEditForm: React.FC = () => {
       dispatch(invalidateContent());
       dispatch(invalidateSpellList());
       setTimeout(() => setSaveStatus('idle'), 2000);
+      return true;
     } catch (err) {
       console.error('Failed to save spell:', err);
+      return false;
     }
   };
 
-  const handleSave = () => saveNow();
+  const handleSave = () => { void saveNow(); };
+
+  // A confirmed reset: saved right away when it's the only change, so nothing is left to
+  // save. With other edits not saved yet it joins them instead -- saved with them, never
+  // behind the caster's back -- and one that can't be saved (no title) stays a change to save.
+  const applyReset = async (pages: JSONContent[]) => {
+    setPagesContent(pages);
+    if (hasChanges || !(await saveNow(pages))) setHasChanges(true);
+  };
 
   // Unsaved edits: leaving the page asks first (in the app), or the browser does (reloading,
   // closing the tab).
   const blocker = useBlocker(hasChanges);
   useEffect(() => {
     if (!hasChanges) return;
-    const warn = (e: BeforeUnloadEvent) => { e.preventDefault(); };
+    // returnValue too: what Safari (and older browsers) still need to ask.
+    const warn = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ''; };
     window.addEventListener('beforeunload', warn);
     return () => window.removeEventListener('beforeunload', warn);
   }, [hasChanges]);
@@ -412,10 +423,7 @@ export const SpellEditForm: React.FC = () => {
       if (queued) return;
     }
     if (!originalPages) return;
-    // Saved right away, as a reset from the PDF is.
-    const restored = originalPages.map(p => ({ ...p }));
-    setPagesContent(restored);
-    await saveNow(restored);
+    await applyReset(originalPages.map(p => ({ ...p })));
   };
 
   const handleResetPage = async (index: number) => {
@@ -437,9 +445,7 @@ export const SpellEditForm: React.FC = () => {
     if (!fresh) return;
     const updated = [...pagesContent];
     updated[index] = fresh;
-    setPagesContent(updated);
-    // Saved right away: a reset is done once confirmed, nothing left to save.
-    await saveNow(updated);
+    await applyReset(updated);
   };
 
   if (isLoading) return <div data-testid="spell-edit-form-loading" className={s.container}><Spinner isLoading /></div>;

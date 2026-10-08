@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { downscaleImageBlob } from '../pdfUtils';
 
-// TCORE-122 review follow-up: this test env (happy-dom) has no createImageBitmap/canvas
+// This test env (happy-dom) has no createImageBitmap/canvas
 // rendering support, so the actual downscale path isn't exercisable here -- see
 // pdfUtils.test.ts's header comment for the same limitation on renderPageToCover. What IS
 // verifiable without a real canvas is the fallback contract: a blob that can't be
