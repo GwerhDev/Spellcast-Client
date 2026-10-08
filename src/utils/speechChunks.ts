@@ -8,13 +8,14 @@
 // characters -- which tracks speaking time far better than a word count -- that the player
 // sizes from how fast the voice in use actually speaks (see speechChunkBudget).
 
-// How long a piece should take to say: far enough under the ~15s freeze for any voice.
-export const TARGET_CHUNK_SECONDS = 8;
+// How long a piece should take to say: under the ~15s freeze with room to spare for any voice,
+// yet long enough that most sentences are said whole and a long one is cut only a few times.
+export const TARGET_CHUNK_SECONDS = 12;
 // Before the voice in use has been timed: a pace slow voices still keep up with.
 export const DEFAULT_CHARS_PER_SECOND = 11;
 // No budget outside these, however fast or slow a voice turns out to be.
-export const MIN_CHUNK_CHARS = 60;
-export const MAX_CHUNK_CHARS = 220;
+export const MIN_CHUNK_CHARS = 90;
+export const MAX_CHUNK_CHARS = 320;
 // No piece shorter than this share of the budget, so a cut never leaves a word or two
 // hanging on their own.
 const MIN_SHARE = 0.3;
