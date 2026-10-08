@@ -108,15 +108,18 @@ export const HomeStage = ({ coverUrl, immersive, idle, main, secondary, corner, 
       )}
     </AnimatePresence>
     <div data-testid="home-stage-scroller" className={s.scroller}>
-      {/* With a spell loaded, everything above the quick start -- the scene and its corner
-          (the altar's settings) -- stays in view at the top while the page scrolls, the
-          quick start passing under it. */}
-      <div data-testid="home-stage-main" className={immersive ? s.mainSticky : s.main} style={sceneMinHeight ? { minHeight: sceneMinHeight } : undefined}>
-        {corner && (
+      {/* The page's top right corner (the altar's settings): over everything, and with a spell
+          loaded, always in view at the top as the page scrolls. */}
+      {corner && (
+        <div className={immersive ? s.cornerAnchorSticky : s.cornerAnchor}>
           <div data-testid="home-stage-corner" className={`${s.corner} ${immersive && idle ? s.cornerHidden : ''}`}>
             {corner}
           </div>
-        )}
+        </div>
+      )}
+      {/* With a spell loaded, the scene stays in view at the top while the page scrolls, the
+          quick start rising over it (after it on the page, it's drawn over it). */}
+      <div data-testid="home-stage-main" className={immersive ? s.mainSticky : s.main} style={sceneMinHeight ? { minHeight: sceneMinHeight } : undefined}>
         {main}
       </div>
       <div

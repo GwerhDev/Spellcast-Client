@@ -60,16 +60,16 @@ describe('HomeStage', () => {
     expect(screen.getByTestId('home-stage-secondary')).toHaveAttribute('inert');
   });
 
-  // With a spell loaded the scene stays at the top while the quick start scrolls under it;
-  // with nothing loaded it's an ordinary page.
+  // With a spell loaded the scene stays at the top while the quick start rises over it, and
+  // the corner (the altar's settings) stays in view over both; with nothing loaded it's an
+  // ordinary page.
   it('immersive, the scene and its corner stay in view at the top; not otherwise', () => {
     const { rerender } = render(stage({ corner: <span data-testid="corner-btn" /> }));
     expect(screen.getByTestId('home-stage-main').className).not.toMatch(/mainSticky/);
     rerender(stage({ immersive: true, corner: <span data-testid="corner-btn" /> }));
     const main = screen.getByTestId('home-stage-main');
     expect(main.className).toMatch(/mainSticky/);
-    // The corner (the altar's settings) is part of the scene, so it stays with it.
-    expect(main).toContainElement(screen.getByTestId('corner-btn'));
+    expect(screen.getByTestId('home-stage-corner').parentElement!.className).toMatch(/cornerAnchorSticky/);
     expect(main).toContainElement(screen.getByTestId('main'));
     expect(main).not.toContainElement(screen.getByTestId('secondary'));
   });

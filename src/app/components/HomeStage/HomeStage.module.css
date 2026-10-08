@@ -77,23 +77,37 @@
   position: relative;
 }
 
-/* A spell loaded: the scene stays at the top of the page as it scrolls, over the content
-   below, which passes under it. */
+/* A spell loaded: the scene stays at the top of the page as it scrolls, and the content
+   below rises over it (after it on the page, it's drawn over it). */
 .mainSticky {
   flex: 1 0 auto;
   display: flex;
   flex-direction: column;
   position: sticky;
   top: 0;
-  z-index: 2;
 }
 
-/* A layer over the whole stage (see HomeStage's `layer`): over the secondary content (z-index
-   1, before it), under the scene (2) unless raised. It takes no pointer events. */
+/* Where the page's top right corner hangs from (it takes no room): over everything on the
+   page, and with a spell loaded, kept at the top as the page scrolls. */
+.cornerAnchor {
+  position: relative;
+  height: 0;
+  z-index: 1;
+}
+
+.cornerAnchorSticky {
+  position: sticky;
+  top: 0;
+  height: 0;
+  z-index: 1;
+}
+
+/* A layer over the whole stage (see HomeStage's `layer`): after the scene and the content
+   below, it's drawn over both; under the page's corner unless raised. It takes no pointer
+   events. */
 .layer {
   position: absolute;
   inset: 0;
-  z-index: 1;
   pointer-events: none;
 }
 
@@ -103,7 +117,6 @@
 
 .secondary {
   position: relative;
-  z-index: 1;
   transition: opacity 0.6s ease, transform 0.6s ease;
 }
 
@@ -134,8 +147,7 @@
   }
 }
 
-/* The scene's top right corner (e.g. the altar's settings): part of the scene, so it stays
-   with it when it's sticky. */
+/* The page's top right corner (e.g. the altar's settings), hanging from its anchor. */
 .corner {
   position: absolute;
   top: 0.75rem;
