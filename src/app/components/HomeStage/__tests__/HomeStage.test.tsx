@@ -60,18 +60,31 @@ describe('HomeStage', () => {
     expect(screen.getByTestId('home-stage-secondary')).toHaveAttribute('inert');
   });
 
-  // With a spell loaded the scene stays at the top while the quick start rises over it, and
-  // the corner (the altar's settings) stays in view over both; with nothing loaded it's an
-  // ordinary page.
-  it('immersive, the scene and its corner stay in view at the top; not otherwise', () => {
+  // With a spell loaded the secondary content is docked at the bottom of the view, peeking,
+  // and the corner (the altar's settings) stays in view at the top; with nothing loaded it's
+  // an ordinary page.
+  it('immersive, the secondary content is docked and the corner stays in view; not otherwise', () => {
     const { rerender } = render(stage({ corner: <span data-testid="corner-btn" /> }));
-    expect(screen.getByTestId('home-stage-main').className).not.toMatch(/mainSticky/);
+    expect(screen.getByTestId('home-stage-secondary')).not.toHaveAttribute('data-docked');
     rerender(stage({ immersive: true, corner: <span data-testid="corner-btn" /> }));
-    const main = screen.getByTestId('home-stage-main');
-    expect(main.className).toMatch(/mainSticky/);
+    expect(screen.getByTestId('home-stage-secondary')).toHaveAttribute('data-docked');
+    expect(screen.getByTestId('home-stage-secondary').className).toMatch(/dock/);
     expect(screen.getByTestId('home-stage-corner').parentElement!.className).toMatch(/cornerAnchorSticky/);
-    expect(main).toContainElement(screen.getByTestId('main'));
-    expect(main).not.toContainElement(screen.getByTestId('secondary'));
+    expect(screen.getByTestId('home-stage-main')).not.toContainElement(screen.getByTestId('secondary'));
+  });
+
+  // Peeking, three quarters of its peeking part show: it sits down by what's below that part
+  // and a quarter of it, and the scene leaves the part that shows free.
+  it('docked, peeks three quarters of its peeking part, the scene leaving that much free', () => {
+    const offset = vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(200);
+    const rect = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+      const bottom = this.hasAttribute('data-dock-peek') ? 584 : 600;
+      return { top: 0, bottom, left: 0, right: 0, width: 0, height: 0, x: 0, y: 0, toJSON: () => ({}) } as DOMRect;
+    });
+    onTestFinished(() => { offset.mockRestore(); rect.mockRestore(); });
+    render(stage({ immersive: true, secondary: <div><div data-dock-reveal /><div data-dock-peek /></div> }));
+    expect(screen.getByTestId('home-stage-secondary').style.getPropertyValue('--dock-hidden')).toBe('66px');
+    expect(screen.getByTestId('home-stage-main').style.paddingBottom).toBe('150px');
   });
 
   // The cover stays put while the page scrolls: its layer is as tall as what the page shows.
@@ -91,23 +104,15 @@ describe('HomeStage', () => {
     expect(screen.getByTestId('home-stage-attached').style.height).toBe('100vh');
   });
 
-  // A long sentence on the altar runs past the scene: the content below makes room for it,
-  // the scene keeping the height it fills the page with, so it doesn't rise.
-  it('immersive, moves the secondary content down by the scene\'s overflow, keeping the scene\'s height', () => {
-    const client = vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(900);
-    const offset = vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(300);
-    onTestFinished(() => { client.mockRestore(); offset.mockRestore(); });
-    const page = (props: Partial<React.ComponentProps<typeof HomeStage>>) => (
-      <div style={{ overflowY: 'auto' }}>{stage(props)}</div>
-    );
-    const { rerender } = render(page({ immersive: true }));
-    expect(screen.getByTestId('home-stage-secondary').style.marginTop).toBe('');
-    expect(screen.getByTestId('home-stage-main').style.minHeight).toBe('');
-    rerender(page({ immersive: true, sceneOverflow: 120 }));
-    expect(screen.getByTestId('home-stage-secondary').style.marginTop).toBe('120px');
-    expect(screen.getByTestId('home-stage-main').style.minHeight).toBe('600px');
-    rerender(page({ immersive: false, sceneOverflow: 120 }));
-    expect(screen.getByTestId('home-stage-secondary').style.marginTop).toBe('');
+  // A long sentence on the altar runs past the scene: the page gets that much longer below
+  // it (scrolling down to the rest of it), the scene keeping its place.
+  it('immersive, makes room below the scene for its overflow', () => {
+    const { rerender } = render(stage({ immersive: true }));
+    expect(screen.getByTestId('home-stage-main').style.marginBottom).toBe('0px');
+    rerender(stage({ immersive: true, sceneOverflow: 120 }));
+    expect(screen.getByTestId('home-stage-main').style.marginBottom).toBe('120px');
+    rerender(stage({ immersive: false, sceneOverflow: 120 }));
+    expect(screen.getByTestId('home-stage-main').style.marginBottom).toBe('');
   });
 
   it('draws a layer over the stage, raised over the scene when asked', () => {

@@ -77,16 +77,6 @@
   position: relative;
 }
 
-/* A spell loaded: the scene stays at the top of the page as it scrolls, and the content
-   below rises over it (after it on the page, it's drawn over it). */
-.mainSticky {
-  flex: 1 0 auto;
-  display: flex;
-  flex-direction: column;
-  position: sticky;
-  top: 0;
-}
-
 /* Where the page's top right corner hangs from (it takes no room): over everything on the
    page, and with a spell loaded, kept at the top as the page scrolls. */
 .cornerAnchor {
@@ -120,12 +110,59 @@
   transition: opacity 0.6s ease, transform 0.6s ease;
 }
 
+/* Docked at the bottom of the view (a spell loaded): an anchor stuck there, taking no
+   room, the secondary content hanging from it, over the scene. */
+.dockAnchor {
+  position: sticky;
+  bottom: 0;
+  height: 0;
+  z-index: 1;
+}
+
+/* Peeking: down by --dock-hidden (set inline), what's above its peeking part hidden. A band
+   above it counts as pointing at it: coming near, it rises whole. */
+.dock {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  transform: translateY(var(--dock-hidden, 0px));
+  transition: opacity 0.6s ease, transform 0.45s ease;
+}
+
+.dock::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 100%;
+  height: 3rem;
+}
+
+.dock :global([data-dock-reveal]) {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.dock:is(:hover, :focus-within) {
+  transform: none;
+}
+
+.dock:is(:hover, :focus-within) :global([data-dock-reveal]) {
+  opacity: 1;
+}
+
 /* The pointer rests: the secondary content fades and sinks away (still there, just out of
    the way), and comes back the moment it moves. */
 .secondaryHidden {
   opacity: 0;
   transform: translateY(16px);
   pointer-events: none;
+}
+
+/* Docked, it goes down out of view. */
+.dock.secondaryHidden {
+  transform: translateY(100%);
 }
 
 /* A soft dark veil over the center, above the glow: whatever the cover's brightness, the
@@ -144,6 +181,14 @@
 
   .secondaryHidden {
     transform: none;
+  }
+
+  .dock {
+    transition: opacity 0.3s ease;
+  }
+
+  .dock.secondaryHidden {
+    transform: translateY(var(--dock-hidden, 0px));
   }
 }
 

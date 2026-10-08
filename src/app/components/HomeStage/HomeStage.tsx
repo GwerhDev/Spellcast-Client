@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FocusEvent, type ReactNode } from 'react';
+import React, { useEffect, useRef, useState, type FocusEvent, type ReactNode } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import s from './HomeStage.module.css';
 
@@ -33,7 +33,7 @@ interface HomeStageProps {
   // secondary content while the pointer rests.
   corner?: ReactNode;
   // How far the scene's content runs down past it, in px (e.g. a long sentence on the
-  // altar): the secondary content moves down that much, the scene staying where it is.
+  // altar): the page gets that much more room below, the scene staying where it is.
   sceneOverflow?: number;
   // A layer over the whole stage (e.g. a 3D scene drawing the secondary content's objects):
   // over the secondary content, under the scene (the altar) -- or over it too while
@@ -44,7 +44,10 @@ interface HomeStageProps {
 
 // The home page as a stage: with a spell loaded, its cover fills the whole page (blurred,
 // dimmed, glowing behind the center, the altar's own treatment at page size) and the
-// secondary content below fades away while the pointer rests, leaving the scene alone.
+// secondary content is docked at the bottom of the view, peeking: three quarters of its
+// `[data-dock-peek]` part showing, what's above it (`[data-dock-reveal]`, e.g. a link)
+// hidden. Pointed at, or near (a band above it counts), or with keyboard focus in it, it
+// rises whole; while the pointer rests it goes down out of view, leaving the scene alone.
 // The backdrop spans the whole stage, and what it shows sits in a layer as tall as the
 // page's visible area, stuck to its top: the page scrolls, the cover stays put (attached),
 // filling the visible area edge to edge however far down the page is.
@@ -69,23 +72,32 @@ export const HomeStage = ({ coverUrl, immersive, idle, main, secondary, corner, 
     observer.observe(scroller);
     return () => observer.disconnect();
   }, []);
-  // The secondary content's height: with it, the scene's height when it fills the page.
   const secondaryRef = useRef<HTMLDivElement>(null);
-  const [secondaryHeight, setSecondaryHeight] = useState<number | null>(null);
+  // Making room for the scene's overflow below it, the page gets longer below the scene; the
+  // scene keeps its height (it would otherwise grow and, centered, move), so it stays where
+  // it is, and the page scrolls down to the rest of it.
+  const overflow = immersive ? sceneOverflow : 0;
+  // Docked (immersive): how far it sits down while peeking -- what's below its peeking part,
+  // and a quarter of that part -- and how much of it shows then (three quarters of that
+  // part; what's above it is hidden), which the scene leaves free below it.
+  const [peek, setPeek] = useState<{ hidden: number; shown: number } | null>(null);
   useEffect(() => {
-    const el = secondaryRef.current;
-    if (!el || typeof ResizeObserver === 'undefined') return;
-    const measure = () => setSecondaryHeight(el.offsetHeight);
+    const dock = secondaryRef.current;
+    if (!immersive || !dock || typeof ResizeObserver === 'undefined') { setPeek(null); return; }
+    const measure = () => {
+      const part = dock.querySelector<HTMLElement>('[data-dock-peek]');
+      if (!part) { setPeek(null); return; }
+      // Rects, not offsets: both moved alike by the dock's own shift, the difference stands.
+      const below = dock.getBoundingClientRect().bottom - part.getBoundingClientRect().bottom;
+      setPeek({ hidden: Math.round(below + part.offsetHeight / 4), shown: Math.round(part.offsetHeight * 3 / 4) });
+    };
     measure();
     const observer = new ResizeObserver(measure);
-    observer.observe(el);
+    observer.observe(dock);
+    const part = dock.querySelector('[data-dock-peek]');
+    if (part) observer.observe(part);
     return () => observer.disconnect();
-  }, []);
-  // Making room for the scene's overflow below it, the secondary content moves down; the
-  // scene keeps the height it fills the page with (it would otherwise give that room up and,
-  // centered, rise), so it stays where it is.
-  const overflow = immersive ? sceneOverflow : 0;
-  const sceneMinHeight = overflow > 0 && viewHeight != null && secondaryHeight != null ? viewHeight - secondaryHeight : undefined;
+  }, [immersive]);
   return (
   <div ref={stageRef} data-testid="home-stage" className={`${s.stage} ${immersive ? s.immersive : ''}`}>
     {/* Fades in as a spell loads and out as it's unloaded (or crossfades to the next). */}
@@ -117,16 +129,21 @@ export const HomeStage = ({ coverUrl, immersive, idle, main, secondary, corner, 
           </div>
         </div>
       )}
-      {/* With a spell loaded, the scene stays in view at the top while the page scrolls, the
-          quick start rising over it (after it on the page, it's drawn over it). */}
-      <div data-testid="home-stage-main" className={immersive ? s.mainSticky : s.main} style={sceneMinHeight ? { minHeight: sceneMinHeight } : undefined}>
+      <div
+        data-testid="home-stage-main"
+        className={s.main}
+        style={immersive ? { paddingBottom: peek?.shown ?? 0, marginBottom: overflow } : undefined}
+      >
         {main}
       </div>
+      {/* Docked, it hangs from the bottom of the view (an anchor stuck there, taking no room). */}
+      <div className={immersive ? s.dockAnchor : undefined}>
       <div
         ref={secondaryRef}
         data-testid="home-stage-secondary"
-        style={overflow > 0 ? { marginTop: overflow } : undefined}
-        className={`${s.secondary} ${secondaryHidden ? s.secondaryHidden : ''}`}
+        data-docked={immersive || undefined}
+        style={immersive ? { '--dock-hidden': `${peek?.hidden ?? 0}px` } as React.CSSProperties : undefined}
+        className={`${s.secondary} ${immersive ? s.dock : ''} ${secondaryHidden ? s.secondaryHidden : ''}`}
         // inert, not aria-hidden: hidden from assistive technology all the same, and it also
         // takes focus out of it (a card clicked keeps focus) -- aria-hidden over a focused
         // element is invalid ARIA, and the browser blocks it.
@@ -135,6 +152,7 @@ export const HomeStage = ({ coverUrl, immersive, idle, main, secondary, corner, 
         onBlur={handleBlur}
       >
         {secondary}
+      </div>
       </div>
     </div>
     {layer && (

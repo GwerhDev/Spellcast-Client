@@ -99,14 +99,14 @@ export const QuickStart: React.FC = () => {
   return (
     <>
       <div className={s.container}>
-        <div className={s.header}>
+        <div className={s.header} data-dock-reveal>
           <span className={s.grimoireLink} onClick={() => navigate('/grimoire')}>
             <FontAwesomeIcon icon={faBuildingColumns} />
             {t.nav.grimoire}
             <FontAwesomeIcon icon={faArrowRight} />
           </span>
         </div>
-        <div className={s.carouselWrapper} ref={carouselWrapperRef}>
+        <div className={s.carouselWrapper} ref={carouselWrapperRef} data-dock-peek>
           <Coverflow
             testId="quick-start"
             items={items}

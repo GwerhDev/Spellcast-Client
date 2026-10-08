@@ -116,14 +116,14 @@ export const QuickStart3DStrip: React.FC<{ model: QuickStart3DModel }> = ({ mode
   return (
     <>
       <div className={s.container} data-testid="quick-start-3d">
-        <div className={s.header}>
+        <div className={s.header} data-dock-reveal>
           <span className={s.grimoireLink} onClick={seeAll}>
             <FontAwesomeIcon icon={faBuildingColumns} />
             {t.nav.grimoire}
             <FontAwesomeIcon icon={faArrowRight} />
           </span>
         </div>
-        <div ref={rootRef} className={s.row} data-layout={row.compact ? 'compact' : 'wide'}>
+        <div ref={rootRef} className={s.row} data-layout={row.compact ? 'compact' : 'wide'} data-dock-peek>
           {row.showArrows && (
             <IconButton data-testid="quick-start-3d-prev" icon={faChevronLeft} variant="transparent" className={s.nav} title={t.common.previous} onClick={() => row.step(-1)} />
           )}
