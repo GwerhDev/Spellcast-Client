@@ -80,4 +80,35 @@ describe('useReaderFullscreen', () => {
     unmount();
     expect(exitFullscreen).toHaveBeenCalledTimes(1);
   });
+
+  // The browser can take a moment to answer: a caster who left before it did shouldn't be
+  // left in the browser's fullscreen with the reader back to normal.
+  describe('leaving before the browser answers', () => {
+    let grant: () => void = () => {};
+    beforeEach(() => {
+      requestFullscreen.mockImplementation(() => new Promise<void>(resolve => {
+        grant = () => { setFullscreenElement(document.documentElement); resolve(); };
+      }));
+    });
+
+    it('leaves the fullscreen the browser grants late', async () => {
+      const { result } = renderHook(() => useReaderFullscreen());
+      await toggle(result);
+      await toggle(result);
+      expect(result.current.isFullscreen).toBe(false);
+      await act(async () => { grant(); });
+      expect(exitFullscreen).toHaveBeenCalledTimes(1);
+      expect(fullscreenElement).toBeNull();
+      expect(result.current.isFullscreen).toBe(false);
+    });
+
+    it('leaving the reader meanwhile leaves it too', async () => {
+      const { result, unmount } = renderHook(() => useReaderFullscreen());
+      await toggle(result);
+      unmount();
+      await act(async () => { grant(); });
+      expect(exitFullscreen).toHaveBeenCalledTimes(1);
+      expect(fullscreenElement).toBeNull();
+    });
+  });
 });

@@ -10,6 +10,9 @@ export const useReaderFullscreen = () => {
   // Whether the browser's fullscreen is the one this reader asked for (so it's this reader's
   // to leave, and its ending ends the reader's mode).
   const ownsBrowserFullscreenRef = useRef(false);
+  // What the caster wants right now: the browser can answer the request after they changed
+  // their mind (left, or left the reader), and then the fullscreen it grants is left at once.
+  const wantedRef = useRef(false);
 
   useEffect(() => {
     const onChange = () => {
@@ -20,6 +23,7 @@ export const useReaderFullscreen = () => {
     };
     document.addEventListener('fullscreenchange', onChange);
     return () => {
+      wantedRef.current = false;
       document.removeEventListener('fullscreenchange', onChange);
       if (ownsBrowserFullscreenRef.current && document.fullscreenElement) {
         ownsBrowserFullscreenRef.current = false;
@@ -29,14 +33,20 @@ export const useReaderFullscreen = () => {
   }, []);
 
   const enter = useCallback(() => {
+    wantedRef.current = true;
     setIsFullscreen(true);
     if (!document.fullscreenEnabled || document.fullscreenElement || !document.documentElement.requestFullscreen) return;
     document.documentElement.requestFullscreen()
-      .then(() => { ownsBrowserFullscreenRef.current = true; })
+      .then(() => {
+        // Left before the browser answered: leave the fullscreen it just granted.
+        if (!wantedRef.current) { document.exitFullscreen?.().catch(() => {}); return; }
+        ownsBrowserFullscreenRef.current = true;
+      })
       .catch(() => { /* turned down: the reader's own mode stays */ });
   }, []);
 
   const exit = useCallback(() => {
+    wantedRef.current = false;
     setIsFullscreen(false);
     if (!ownsBrowserFullscreenRef.current) return;
     ownsBrowserFullscreenRef.current = false;
