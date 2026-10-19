@@ -215,6 +215,8 @@ export const en = {
     create: 'Create',
     createSpell: 'Create spell',
     createAll: 'Create all spells',
+    importSpell: 'Import spell',
+    importAll: 'Import all spells',
     createDesc: 'Write a new spell',
     editDesc: 'Modify existing spell',
     selectSpell: 'Select a spell',

@@ -37,41 +37,91 @@ describe('ImportOption', () => {
     expect(screen.getByTestId('import-option-file-input')).toHaveAttribute('accept', '.pdf,.spell');
   });
 
-  it('routes a selected .spell file straight to importFile, without entering the PDF review flow', async () => {
+  // A .spell goes through the same review as a PDF: listed first, imported from its card or
+  // the button below.
+  it('lists a selected .spell file as a card, importing it only when asked', async () => {
     renderWithProviders(<ImportOption />, { preloadedState: loggedInState });
     selectFiles([spellFile()]);
 
+    expect(await screen.findByTestId('spell-create-input')).toBeInTheDocument();
+    expect(importFileMock).not.toHaveBeenCalled();
+    expect(screen.getByTestId('import-option-create-all')).toHaveTextContent('Import spell');
+    fireEvent.click(screen.getByTestId('import-option-create-all'));
     await waitFor(() => expect(importFileMock).toHaveBeenCalledWith(expect.objectContaining({ name: 'book.spell' })));
-    expect(screen.queryByTestId('import-option-files')).not.toBeInTheDocument();
   });
 
-  it('a single selected PDF still goes through the existing redux-backed review flow', async () => {
+  it('offers creating a single PDF with the button below too', async () => {
     renderWithProviders(<ImportOption />, { preloadedState: loggedInState });
     selectFiles([pdfFile()]);
 
-    expect(await screen.findByTestId('import-option-files')).toBeInTheDocument();
-    expect(importFileMock).not.toHaveBeenCalled();
+    expect(await screen.findByTestId('import-option-create-all')).toHaveTextContent('Create spell');
   });
 
-  it('a mixed PDF + .spell selection imports the .spell immediately and still routes the PDF normally', async () => {
-    renderWithProviders(<ImportOption />, { preloadedState: loggedInState });
+  it('lists PDFs and .spell files together, creating them all from one button', async () => {
+    const { store } = renderWithProviders(<ImportOption />, { preloadedState: loggedInState });
     selectFiles([pdfFile(), spellFile()]);
 
-    await waitFor(() => expect(importFileMock).toHaveBeenCalledWith(expect.objectContaining({ name: 'book.spell' })));
-    expect(await screen.findByTestId('import-option-files')).toBeInTheDocument();
+    await waitFor(() => expect(screen.getAllByTestId('spell-create-input')).toHaveLength(2));
+    expect(importFileMock).not.toHaveBeenCalled();
+    expect(screen.getByTestId('import-option-create-all')).toHaveTextContent('Create all spells');
+    fireEvent.click(screen.getByTestId('import-option-create-all'));
+    await waitFor(() => expect(importFileMock).toHaveBeenCalledTimes(1));
+    expect(store.getState().spellUpload.queue).toHaveLength(1);
   });
 
-  // Leaving (the modal closing, or the app opening the spell just created) must not leave
-  // the picked PDF behind for the next import.
-  it('drops a picked PDF when it goes away, so the next import starts empty', async () => {
+  // Done, the spell isn't opened for the caster: the card offers its detail and its editor.
+  describe('once a spell is made', () => {
+    const app = (
+      <Routes>
+        <Route path="/" element={<ImportOption />} />
+        <Route path="/spell/:id" element={<div data-testid="spell-page" />} />
+        <Route path="/editor/:id" element={<div data-testid="editor-page" />} />
+      </Routes>
+    );
+
+    it('a created PDF stays listed, with its detail and editor a click away', async () => {
+      const { store } = renderWithProviders(app, { preloadedState: loggedInState });
+      selectFiles([pdfFile()]);
+      fireEvent.click(await screen.findByTestId('import-option-create-all'));
+      await waitFor(() => expect(store.getState().spellUpload.queue).toHaveLength(1));
+      act(() => { store.dispatch(setUploadDone({ id: store.getState().spellUpload.queue[0].id, resultDocId: 'spell-new' })); });
+
+      expect(screen.queryByTestId('spell-page')).not.toBeInTheDocument();
+      fireEvent.click(await screen.findByTestId('spell-create-input-open-btn'));
+      expect(await screen.findByTestId('spell-page')).toBeInTheDocument();
+    });
+
+    it('an imported .spell offers editing it', async () => {
+      importFileMock.mockResolvedValue('spell-imported');
+      renderWithProviders(app, { preloadedState: loggedInState });
+      selectFiles([spellFile()]);
+      fireEvent.click(await screen.findByTestId('import-option-create-all'));
+
+      expect(await screen.findByTestId('spell-create-input-open-btn')).toBeInTheDocument();
+      expect(screen.queryByTestId('spell-page')).not.toBeInTheDocument();
+      fireEvent.click(screen.getByTestId('spell-create-input-edit-btn'));
+      expect(await screen.findByTestId('editor-page')).toBeInTheDocument();
+    });
+
+    it('a .spell that fails to import shows why, and the button comes back', async () => {
+      importFileMock.mockResolvedValue(null);
+      renderWithProviders(app, { preloadedState: loggedInState });
+      selectFiles([spellFile()]);
+      fireEvent.click(await screen.findByTestId('import-option-create-all'));
+
+      expect(await screen.findByTestId('spell-create-input-error')).toBeInTheDocument();
+      expect(screen.getByTestId('import-option-create-all')).toBeInTheDocument();
+      expect(screen.queryByTestId('spell-create-input-open-btn')).not.toBeInTheDocument();
+    });
+  });
+
+  // Leaving (the modal closing) drops what was picked: the next import starts empty.
+  it('starts empty again after leaving', async () => {
     const { store, unmount } = renderWithProviders(<ImportOption />, { preloadedState: loggedInState });
     selectFiles([pdfFile()]);
     expect(await screen.findByTestId('import-option-files')).toBeInTheDocument();
-    expect(store.getState().spell.isLoaded).toBe(true);
 
     unmount();
-    expect(store.getState().spell.isLoaded).toBe(false);
-
     renderWithProviders(<ImportOption />, { store });
     expect(screen.getByTestId('import-option-dropzone')).toBeInTheDocument();
   });

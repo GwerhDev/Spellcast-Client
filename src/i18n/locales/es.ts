@@ -217,6 +217,8 @@ export const es: Translations = {
     create: 'Crear',
     createSpell: 'Crear Spell',
     createAll: 'Crear todos los Spells',
+    importSpell: 'Importar Spell',
+    importAll: 'Importar todos los Spells',
     createDesc: 'Escribe un nuevo Spell',
     editDesc: 'Modifica un Spell existente',
     selectSpell: 'Selecciona un Spell',

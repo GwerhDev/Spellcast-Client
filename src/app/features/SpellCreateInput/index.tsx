@@ -1,15 +1,19 @@
 import s from '../../components/Inputs/SpellCreateInput.module.css';
 import { useEffect, useRef, useState } from 'react';
-import { faUpload, faFileCircleCheck, faFilePdf, faFileWord, faTrash, faHourglassHalf, faCheck } from '@fortawesome/free-solid-svg-icons';
+import { faUpload, faFileCircleCheck, faFilePdf, faFileWord, faTrash, faHourglassHalf, faScroll, faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import { SpellState } from '../../../interfaces';
 import { useAppSelector } from '../../../store/hooks';
 import { enqueueUpload } from '../../../store/spellUploadSlice';
 import { useLanguage } from '../../../i18n';
+import { useSpellImport } from '../../../hooks/useSpellImport';
 
 interface SpellCreateInputProps {
   spell: SpellState;
+  // A .spell file: imported as it is (a spell already), instead of created from a PDF.
+  spellFile?: File;
   onRemove?: () => void;
   onDone?: (resultDocId?: string) => void;
   // Creating it failed: the card shows why and offers creating it again.
@@ -18,7 +22,12 @@ interface SpellCreateInputProps {
 }
 
 export const SpellCreateInput = (props: SpellCreateInputProps) => {
-  const { spell, onRemove, onDone, onError, autoCreate } = props;
+  const { spell, spellFile, onRemove, onDone, onError, autoCreate } = props;
+  const navigate = useNavigate();
+  const { importFile } = useSpellImport();
+  // A .spell file being imported, and the spell it became.
+  const [importing, setImporting] = useState(false);
+  const [importedId, setImportedId] = useState<string | null>(null);
   const [saveOriginal, setSaveOriginal] = useState(true);
   const [jobId, setJobId] = useState<string | null>(null);
   const { t } = useLanguage();
@@ -61,12 +70,29 @@ export const SpellCreateInput = (props: SpellCreateInputProps) => {
   const getFileTypeIcon = (type: string | null | undefined) => {
     switch (type) {
       case 'pdf': return faFilePdf;
+      case 'spell': return faScroll;
       case 'doc': return faFileWord;
       default: return faFileCircleCheck;
     }
   };
 
+  const handleImport = async () => {
+    if (!spellFile || importing || importedId) return;
+    setFailure(null);
+    setImporting(true);
+    const id = await importFile(spellFile);
+    setImporting(false);
+    if (id) {
+      setImportedId(id);
+      onDoneRef.current?.(id);
+    } else {
+      setFailure(t.spell.importError);
+      onErrorRef.current?.();
+    }
+  };
+
   const handleCreate = () => {
+    if (spellFile) { void handleImport(); return; }
     if (!spell.fileContent || !userData?.id || jobId) return;
     setFailure(null);
     const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -85,6 +111,9 @@ export const SpellCreateInput = (props: SpellCreateInputProps) => {
     : 0;
 
   const isActive = job && (job.status === 'queued' || job.status === 'processing');
+  // The spell it became, once created (from its PDF) or imported (a .spell): opened from here.
+  const resultId = importedId ?? (job?.status === 'done' ? job.resultDocId ?? null : null);
+  const busy = !!jobId || importing || !!importedId;
 
   return (
     <div data-testid="spell-create-input" className={`${s.container} ${isActive ? s.containerActive : ''}`}>
@@ -105,10 +134,10 @@ export const SpellCreateInput = (props: SpellCreateInputProps) => {
             {formatBytes(spell.size || 0)}
             {spell.totalPages > 0 && ` · ${spell.totalPages} ${spell.totalPages === 1 ? t.spell.pageSingular : t.spell.pagePlural}`}
           </small>
-          {failure && !jobId && (
+          {failure && !busy && (
             <small data-testid="spell-create-input-error" className={s.error} role="alert">{failure}</small>
           )}
-          {!jobId && (
+          {!busy && !spellFile && (
             <div className={s.toggleGroup}>
               <button
                 type="button"
@@ -126,18 +155,25 @@ export const SpellCreateInput = (props: SpellCreateInputProps) => {
         </div>
       </div>
       <div className={s.actionCol}>
-        {job?.status === 'processing' ? (
+        {resultId ? (
+          <>
+            <button data-testid="spell-create-input-open-btn" onClick={() => navigate(`/spell/${resultId}`)} className={s.continueButton} title={t.reader.spellInfo}>
+              <FontAwesomeIcon icon={faScroll} />
+            </button>
+            <button data-testid="spell-create-input-edit-btn" onClick={() => navigate(`/editor/${resultId}`)} className={s.continueButton} title={t.spell.editSpell}>
+              <FontAwesomeIcon icon={faWandMagicSparkles} />
+            </button>
+          </>
+        ) : importing || job?.status === 'processing' ? (
           <>
             <div className={s.processingSpinner} />
-            <span className={s.processingPct}>{pct}%</span>
+            {!importing && <span className={s.processingPct}>{pct}%</span>}
           </>
         ) : job?.status === 'queued' ? (
           <FontAwesomeIcon icon={faHourglassHalf} className={s.queuedIcon} />
-        ) : job?.status === 'done' ? (
-          <FontAwesomeIcon icon={faCheck} className={s.doneIcon} />
-        ) : (
+        ) : job?.status === 'done' ? null : (
           <>
-            <button data-testid="spell-create-input-upload-btn" onClick={handleCreate} className={s.continueButton} title={t.editor.createSpell}>
+            <button data-testid="spell-create-input-upload-btn" onClick={handleCreate} className={s.continueButton} title={spellFile ? t.editor.importSpell : t.editor.createSpell}>
               <FontAwesomeIcon icon={faUpload} />
             </button>
             {onRemove && (
