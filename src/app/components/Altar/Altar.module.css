@@ -382,6 +382,11 @@
   text-align: center;
   font-size: 0.98rem;
   line-height: 1.4;
+}
+
+/* The theme's own bright text, in the panel or on the page. Scoped to the altar so it wins
+   over the paragraphs' muted color around it (Start's `.createContainer p`). */
+.container .sentence {
   color: var(--text-color-accent);
 }
 
