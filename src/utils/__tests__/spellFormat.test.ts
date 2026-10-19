@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import JSZip from 'jszip';
 import { openContainer, writeContainer } from '../spellContainer';
 import {
   exportSpellToBlob,
@@ -91,7 +90,8 @@ describe('exportSpellToBlob', () => {
     const bytes = new Uint8Array(await (await exported()).arrayBuffer());
     expect(new TextDecoder().decode(bytes.slice(0, 5))).toBe('SPELL');
     expect(bytes[5]).toBe(SPELL_FORMAT_VERSION);
-    await expect(JSZip.loadAsync(bytes)).rejects.toThrow();
+    // A ZIP starts with "PK\x03\x04".
+    expect(Array.from(bytes.slice(0, 4))).not.toEqual([0x50, 0x4b, 0x03, 0x04]);
   });
 
   it('writes one entry per page and the manifest, never the reader progress', async () => {
@@ -242,9 +242,9 @@ describe('importSpellFromFile', () => {
     asFile(await writeContainer(m, Object.entries(files).map(([path, content]) => ({ path, data: new TextEncoder().encode(content), compress: true })), { version }));
 
   it('rejects anything that is not a .spell, a ZIP included', async () => {
-    const zip = new JSZip();
-    zip.file('manifest.json', JSON.stringify(manifest()));
-    await expect(importSpellFromFile(asFile(await zip.generateAsync({ type: 'blob' })), 'user-1')).rejects.toThrow(SpellImportError);
+    // The start of a ZIP (a local file header), as an old .spell had.
+    const zipStart = new Uint8Array([0x50, 0x4b, 0x03, 0x04, 0x14, 0x00, 0x00, 0x00, 0x08, 0x00, ...new TextEncoder().encode('manifest.json')]);
+    await expect(importSpellFromFile(asFile(new Blob([zipStart])), 'user-1')).rejects.toThrow(SpellImportError);
     await expect(importSpellFromFile(asFile(new Blob(['hello'])), 'user-1')).rejects.toThrow('Not a .spell file.');
   });
 
@@ -296,6 +296,20 @@ describe('importSpellFromFile', () => {
     expect(await saved.cover.text()).toBe('cover-bytes');
     expect(saved).not.toHaveProperty('progress');
     expect(setOriginalPdfMock).not.toHaveBeenCalled();
+  });
+
+  // An image type outside the usual ones still comes back as it was.
+  it('round-trips an image of an unusual type exactly', async () => {
+    // The same bytes under two types, too: each comes back with its own.
+    const pagesContent = JSON.stringify([
+      imagePage('data:image/jpg;base64,' + btoa('jpg-bytes')), imagePage('data:image/bmp;base64,' + btoa('bmp-bytes')),
+      imagePage('data:image/x-unusual;base64,' + btoa('jpg-bytes')),
+    ]);
+    getSpellByIdMock.mockResolvedValue({ ...baseSpell, pagesContent, cover: new Blob(['c'], { type: 'image/x-icon' }) });
+    await importSpellFromFile(asFile(await exported()), 'user-1');
+    const saved = saveSpellToDBMock.mock.calls[0][0];
+    expect(saved.pagesContent).toBe(pagesContent);
+    expect(saved.cover.type).toBe('image/x-icon');
   });
 
   it('round-trips a bundled original PDF into the dedicated store', async () => {

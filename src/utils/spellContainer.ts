@@ -7,9 +7,12 @@
 //   index length (uint32, big-endian)  index (deflate)
 //   entries, one after the other
 //
-// The index is JSON: the manifest and each entry's path, content hash (sha256), place and
-// whether it's compressed. Each entry is compressed (unless it's already compressed data, like
-// an image) and checked against its hash when read, so a damaged file is told apart.
+// The index is JSON: the manifest and each entry's path, content hash (sha256), size, place,
+// whether it's compressed and, for an image or an audio, its media type (kept as it was, so
+// it comes back the same). Each entry is compressed (unless it's already compressed data, like
+// an image) and checked against its hash when read, so a damaged file is told apart; it's
+// never decompressed past its size, so a file that would inflate to more than it says (a
+// "zip bomb") fails instead of filling the memory.
 //
 // A spell is free: nothing is encrypted. The PROTECTED flag and the protection block are kept
 // for a protected file (a public canonical with the backend's key, or a caster's own with their
@@ -35,15 +38,23 @@ export interface ContainerEntry {
   data: Uint8Array;
   // Already-compressed data (images, audio, PDFs) is stored as it is.
   compress: boolean;
+  // Its media type, when it has one to keep (an image's, an audio's).
+  type?: string;
 }
 
 interface IndexEntry {
   path: string;
   sha256: string;
+  // Its content's size, uncompressed.
+  size: number;
   offset: number;
   length: number;
   compressed: boolean;
+  type?: string;
 }
+
+// The index is at most this big, uncompressed.
+const MAX_INDEX_SIZE = 64 * 1024 * 1024;
 
 interface ContainerIndex<M> {
   manifest: M;
@@ -56,7 +67,27 @@ export const sha256Hex = async (data: Uint8Array): Promise<string> => hex(await 
 const streamThrough = async (data: Uint8Array, stream: CompressionStream | DecompressionStream): Promise<Uint8Array> =>
   new Uint8Array(await new Response(new Blob([data as BlobPart]).stream().pipeThrough(stream)).arrayBuffer());
 const compress = (data: Uint8Array) => streamThrough(data, new CompressionStream('deflate-raw'));
-const decompress = (data: Uint8Array) => streamThrough(data, new DecompressionStream('deflate-raw'));
+
+// Decompressed, but never past `max` bytes: past it, it's not what it says it is.
+const decompress = async (data: Uint8Array, max: number): Promise<Uint8Array> => {
+  const reader = new Blob([data as BlobPart]).stream().pipeThrough(new DecompressionStream('deflate-raw')).getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.length;
+    if (total > max) {
+      await reader.cancel();
+      throw new SpellContainerError('This .spell file inflates past its stated size.');
+    }
+    chunks.push(value);
+  }
+  const out = new Uint8Array(total);
+  let at = 0;
+  for (const chunk of chunks) { out.set(chunk, at); at += chunk.length; }
+  return out;
+};
 
 /** Writes the entries and the manifest into a .spell container (an unprotected one). */
 export async function writeContainer<M>(manifest: M, entries: ContainerEntry[], { version }: { version: number }): Promise<Blob> {
@@ -70,7 +101,10 @@ export async function writeContainer<M>(manifest: M, entries: ContainerEntry[], 
   let offset = 0;
   for (const entry of entries) {
     const stored = entry.compress ? await compress(entry.data) : entry.data;
-    index.push({ path: entry.path, sha256: await sha256Hex(entry.data), offset, length: stored.length, compressed: entry.compress });
+    index.push({
+      path: entry.path, sha256: await sha256Hex(entry.data), size: entry.data.length,
+      offset, length: stored.length, compressed: entry.compress, ...(entry.type ? { type: entry.type } : {}),
+    });
     parts.push(stored);
     offset += stored.length;
   }
@@ -89,6 +123,8 @@ export interface OpenedContainer<M> {
   // An entry's content (decompressed and checked against its hash), or null if the container
   // has no such entry.
   read: (path: string) => Promise<Uint8Array | null>;
+  // An entry's media type, as it was written (undefined: none was kept).
+  typeOf: (path: string) => string | undefined;
 }
 
 /** Reads a .spell container's header: its version and, if it's protected, how. Throws
@@ -126,7 +162,7 @@ export async function openContainer<M>(bytes: Uint8Array): Promise<OpenedContain
 
   let index: ContainerIndex<M>;
   try {
-    index = JSON.parse(new TextDecoder().decode(await decompress(bytes.slice(indexStart, dataStart)))) as ContainerIndex<M>;
+    index = JSON.parse(new TextDecoder().decode(await decompress(bytes.slice(indexStart, dataStart), MAX_INDEX_SIZE))) as ContainerIndex<M>;
   } catch {
     throw new SpellContainerError('This .spell file is damaged.');
   }
@@ -140,7 +176,7 @@ export async function openContainer<M>(bytes: Uint8Array): Promise<OpenedContain
     let data: Uint8Array;
     try {
       const stored = bytes.slice(start, start + entry.length);
-      data = entry.compressed ? await decompress(stored) : stored;
+      data = entry.compressed ? await decompress(stored, entry.size) : stored;
     } catch {
       throw new SpellContainerError(`This .spell file is damaged (${path}).`);
     }
@@ -148,5 +184,8 @@ export async function openContainer<M>(bytes: Uint8Array): Promise<OpenedContain
     return data;
   };
 
-  return { version, protection, manifest: index.manifest, paths: index.entries.map(entry => entry.path), read };
+  return {
+    version, protection, manifest: index.manifest, paths: index.entries.map(entry => entry.path), read,
+    typeOf: (path) => byPath.get(path)?.type,
+  };
 }

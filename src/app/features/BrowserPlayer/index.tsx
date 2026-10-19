@@ -211,7 +211,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
       title: spellTitle ?? '',
       artist: isLoaded ? `${t.spell.page} ${currentPage} ${t.spell.of} ${totalPages}` : '',
       album: 'Spellcast',
-      artwork: coverUrl ? [{ src: coverUrl, type: 'image/jpeg' }] : [],
+      artwork: coverUrl ? [{ src: coverUrl }] : [], // its type read from the image itself (a cover can be WebP or JPEG)
     });
   };
 

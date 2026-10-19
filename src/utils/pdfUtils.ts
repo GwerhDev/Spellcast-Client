@@ -148,7 +148,8 @@ export const extractPageImages = async (page: pdfjsLib.PDFPageProxy): Promise<st
         } else {
           continue;
         }
-        dataUrls.push(canvasToWebpDataUrl(canvas, 0.85, { type: 'image/png' }));
+        // Lossless, as the PNG it used to be: a screenshot's or a diagram's small text stays sharp.
+        dataUrls.push(canvasToWebpDataUrl(canvas, 1, { type: 'image/png' }));
       } catch {
         // skip unrenderable image
       }

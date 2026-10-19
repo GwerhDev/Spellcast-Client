@@ -101,10 +101,13 @@ const bytesToBase64 = (bytes: Uint8Array): string => {
   return btoa(binary);
 };
 
-// An image written into a page (a base64 data URL), and how a page refers to its file in the
-// ZIP instead: `spell-asset:{sha256}.{ext}`, the file being assets/{sha256}.{ext}.
+// An image written into a page (a base64 data URL), and how a page refers to its entry
+// instead: `spell-asset:{sha256}.{ext}`, the entry being assets/{sha256}.{ext}. An image whose
+// type isn't the one its extension stands for (image/jpg, image/bmp...) says it too
+// (`;type=image/jpg`): the same bytes can be there under different types, and each comes back
+// as it was.
 const DATA_URL = /^data:([^;,]+);base64,(.*)$/s;
-const ASSET_REF = /^spell-asset:([0-9a-f]{64}\.[a-z0-9]+)$/;
+const ASSET_REF = /^spell-asset:([0-9a-f]{64}\.[a-z0-9]+)(?:;type=([^;]+))?$/;
 const assetPath = (name: string) => `assets/${name}`;
 
 // Every attribute value of a node and its children, deep: images live in nodes' attrs (an
@@ -129,10 +132,10 @@ const mapAttrs = async (node: unknown, map: (value: string) => Promise<string>):
 class Entries {
   readonly list: ContainerEntry[] = [];
   private readonly paths = new Set<string>();
-  add(path: string, data: Uint8Array, compress: boolean) {
+  add(path: string, data: Uint8Array, compress: boolean, type?: string) {
     if (this.paths.has(path)) return;
     this.paths.add(path);
-    this.list.push({ path, data, compress });
+    this.list.push({ path, data, compress, type });
   }
 }
 
@@ -143,9 +146,10 @@ const pageToFile = async (page: unknown, entries: Entries): Promise<string> => {
     const match = DATA_URL.exec(value);
     if (!match) return value;
     const bytes = base64ToBytes(match[2]);
-    const name = `${await sha256Hex(bytes)}.${imageExtension(match[1])}`;
+    const ext = imageExtension(match[1]);
+    const name = `${await sha256Hex(bytes)}.${ext}`;
     entries.add(assetPath(name), bytes, false);
-    return `spell-asset:${name}`;
+    return imageType(ext) === match[1] ? `spell-asset:${name}` : `spell-asset:${name};type=${match[1]}`;
   });
   return JSON.stringify(withRefs);
 };
@@ -191,7 +195,7 @@ export async function exportSpellToBlob(
   let cover: string | null = null;
   if (spell.cover) {
     cover = `cover.${imageExtension(spell.cover.type)}`;
-    entries.add(cover, new Uint8Array(await spell.cover.arrayBuffer()), false);
+    entries.add(cover, new Uint8Array(await spell.cover.arrayBuffer()), false, spell.cover.type || undefined);
   }
 
   // Only look up the PDF store at all when actually requested — it's the one genuinely
@@ -274,14 +278,15 @@ const readPages = async (container: Container, folder: string, count: number): P
       const match = ASSET_REF.exec(value);
       if (!match) return value;
       const name = match[1];
-      let dataUrl = dataUrls.get(name);
-      if (dataUrl === undefined) {
+      let base64 = dataUrls.get(name);
+      if (base64 === undefined) {
         const bytes = await container.read(assetPath(name));
         if (!bytes) throw new SpellImportError(`Not a valid .spell file: missing ${assetPath(name)}.`);
-        dataUrl = `data:${imageType(name.slice(name.lastIndexOf('.') + 1))};base64,${bytesToBase64(bytes)}`;
-        dataUrls.set(name, dataUrl);
+        base64 = bytesToBase64(bytes);
+        dataUrls.set(name, base64);
       }
-      return dataUrl;
+      const type = match[2] ?? imageType(name.slice(name.lastIndexOf('.') + 1));
+      return `data:${type};base64,${base64}`;
     });
     pages.push(JSON.stringify(page));
   }
@@ -320,7 +325,7 @@ export async function importSpellFromFile(file: File, userId: string): Promise<s
     ? await guarded(() => readPages(container, 'original/pages', manifest.originalPageCount!))
     : null;
   const cover = manifest.cover
-    ? await guarded(() => readBlob(container, manifest.cover!, imageType(manifest.cover!.slice(manifest.cover!.lastIndexOf('.') + 1))))
+    ? await guarded(() => readBlob(container, manifest.cover!, container.typeOf(manifest.cover!) ?? imageType(manifest.cover!.slice(manifest.cover!.lastIndexOf('.') + 1))))
     : null;
   const originalPdf = manifest.hasOriginalPdf ? await guarded(() => readBlob(container, 'original/original.pdf', 'application/pdf')) : null;
 

@@ -591,7 +591,7 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
       title:  spellTitle ?? '',
       artist: isLoaded && audioReadyPage !== null ? `${t.spell.page} ${audioReadyPage} ${t.spell.of} ${totalPages}` : '',
       album:  'Spellcast',
-      artwork: coverUrl ? [{ src: coverUrl, type: 'image/jpeg' }] : [],
+      artwork: coverUrl ? [{ src: coverUrl }] : [], // its type read from the image itself (a cover can be WebP or JPEG)
     });
   }, [spellTitle, audioReadyPage, totalPages, coverUrl, coverSettled]);
 
