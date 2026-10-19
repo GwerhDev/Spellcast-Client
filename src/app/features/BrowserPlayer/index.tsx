@@ -553,7 +553,8 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
       case 'HEADSET_PLAY':
       case 'RESUME_REQUESTED': {
         if (playing || awaitingStartRef.current) return;
-        if (event.type === 'HEADSET_PLAY') dispatch(addSignalNotice({ message: t.player.playedFromHeadset }));
+        // From the headset: the caster's own action, as a click is (see useAttentionGuard).
+        if (event.type === 'HEADSET_PLAY') { dispatch(addSignalNotice({ message: t.player.playedFromHeadset })); dispatch(recordReaderActivity()); }
         if (sents.length === 0 || idx < 0 || idx >= sents.length) {
           dispatch(play());
           // Nothing to speak here. While the pages are still being read that's expected:
@@ -612,7 +613,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
       case 'CLICK_PAUSE':
       case 'HEADSET_PAUSE': {
         if (!playing && !awaitingStartRef.current) return;
-        if (event.type === 'HEADSET_PAUSE') dispatch(addSignalNotice({ message: t.player.pausedFromHeadset }));
+        if (event.type === 'HEADSET_PAUSE') { dispatch(addSignalNotice({ message: t.player.pausedFromHeadset })); dispatch(recordReaderActivity()); }
         dispatch(pause());
         await stopEngineAndConfirmPaused();
         return;

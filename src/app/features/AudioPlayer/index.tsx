@@ -557,8 +557,9 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
   useEffect(() => {
     if (!('mediaSession' in navigator)) return;
 
-    navigator.mediaSession.setActionHandler('play',           () => { dispatch(addSignalNotice({ message: t.player.playedFromHeadset })); handlePlayRef.current(); });
-    navigator.mediaSession.setActionHandler('pause',          () => { dispatch(addSignalNotice({ message: t.player.pausedFromHeadset })); handlePauseRef.current(); });
+    // From the headset: the caster's own action, as a click is (see useAttentionGuard).
+    navigator.mediaSession.setActionHandler('play',           () => { dispatch(addSignalNotice({ message: t.player.playedFromHeadset })); dispatch(recordReaderActivity()); handlePlayRef.current(); });
+    navigator.mediaSession.setActionHandler('pause',          () => { dispatch(addSignalNotice({ message: t.player.pausedFromHeadset })); dispatch(recordReaderActivity()); handlePauseRef.current(); });
     navigator.mediaSession.setActionHandler('nexttrack',      handleNext);
     navigator.mediaSession.setActionHandler('previoustrack',  handlePrevious);
 

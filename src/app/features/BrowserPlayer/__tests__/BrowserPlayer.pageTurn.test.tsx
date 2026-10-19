@@ -200,3 +200,23 @@ describe('BrowserPlayer on a page with no text', () => {
     expect(store.getState().browserPlayer.isPlaying).toBe(true);
   });
 });
+
+// A press on the headset is the caster acting, like a click: the attention guard's count
+// starts over from it (see useAttentionGuard).
+describe('BrowserPlayer headset presses', () => {
+  it('a headset pause or play counts as the caster\'s own action', async () => {
+    pages = [textPage('One sentence. Another one.')];
+    const { store } = renderWithProviders(<Reader />, { preloadedState: stateFor({ autoPlayOnLoad: true, totalPages: 1 }) as never });
+    await settle();
+    expect(store.getState().browserPlayer.isPlaying).toBe(true);
+
+    const before = store.getState().spellReader.activitySeq;
+    await act(async () => { mediaHandlers.pause(); });
+    await settle();
+    expect(store.getState().spellReader.activitySeq).toBe(before + 1);
+
+    await act(async () => { mediaHandlers.play(); });
+    await settle();
+    expect(store.getState().spellReader.activitySeq).toBe(before + 2);
+  });
+});
