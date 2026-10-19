@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useZoom } from '../../../hooks/useZoom';
 import { useGoBack } from '../../../hooks/useGoBack';
+import { useReaderFullscreen } from '../../../hooks/useReaderFullscreen';
 import { ZoomOverlay } from '../../components/Zoom/ZoomOverlay';
 import { useDispatch, useSelector } from 'react-redux';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -116,7 +117,8 @@ export const SpellReader = () => {
     : {};
   const pageBgVars = usePageBackground(spellId);
   const [editedText, setEditedText] = useState<JSONContent>(emptyContent);
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  // The reader filling the window, and the browser's fullscreen with it (see useReaderFullscreen).
+  const { isFullscreen, toggle: toggleFullscreen } = useReaderFullscreen();
   const [showInfoModal, setShowInfoModal] = useState(false);
   // The page list, shown or hidden from the top bar: its column beside the page on a wide
   // screen, over the page on a phone.
@@ -308,7 +310,7 @@ export const SpellReader = () => {
           {isLoaded && <IconButton data-testid="spell-reader-info-btn" icon={faInfoCircle} variant='transparent' title={t.reader.spellInfo} onClick={() => setShowInfoModal(true)} />}
           {isLoaded && <IconButton icon={faEdit} variant='transparent' title={t.spell.editSpell} onClick={handleEdit} />}
           {isLoaded && <IconButton icon={faGear} variant='transparent' title={t.reader.readerSettings} onClick={() => dispatch(setShowReaderSettings(true))} />}
-          {isLoaded && <IconButton icon={isFullscreen ? faCompress : faExpand} variant='transparent' title={isFullscreen ? t.reader.exitFullscreen : t.reader.enterFullscreen} onClick={() => setIsFullscreen(prev => !prev)} />}
+          {isLoaded && <IconButton icon={isFullscreen ? faCompress : faExpand} variant='transparent' title={isFullscreen ? t.reader.exitFullscreen : t.reader.enterFullscreen} onClick={toggleFullscreen} />}
         </div>
       </div>
       <div className={s.bodyWrapper}>
