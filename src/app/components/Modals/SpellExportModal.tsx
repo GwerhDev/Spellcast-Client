@@ -12,9 +12,13 @@ interface SpellExportModalProps {
   isExporting: boolean;
   onClose: () => void;
   onExport: (options: { includeSource: boolean; includeAudio: boolean }) => void;
+  // For more than one spell (a download of several): its own heading and button, instead of
+  // "Export {title}" and "Export".
+  heading?: string;
+  confirmText?: string;
 }
 
-export const SpellExportModal: React.FC<SpellExportModalProps> = ({ show, title, isExporting, onClose, onExport }) => {
+export const SpellExportModal: React.FC<SpellExportModalProps> = ({ show, title, isExporting, onClose, onExport, heading, confirmText }) => {
   const { t } = useLanguage();
   const [includeSource, setIncludeSource] = useState(false);
   const [includeAudio, setIncludeAudio] = useState(false);
@@ -22,7 +26,7 @@ export const SpellExportModal: React.FC<SpellExportModalProps> = ({ show, title,
   if (!show) return null;
 
   return (
-    <CustomModal compact show={show} onClose={onClose} title={t.spell.exportTitle.replace('{title}', title)}>
+    <CustomModal compact show={show} onClose={onClose} title={heading ?? t.spell.exportTitle.replace('{title}', title)}>
       <div className={s.container} data-testid="spell-export-modal">
         <div className={s.toggles}>
           <ToggleRow
@@ -47,7 +51,7 @@ export const SpellExportModal: React.FC<SpellExportModalProps> = ({ show, title,
             onClick={() => onExport({ includeSource, includeAudio })}
             disabled={isExporting}
           >
-            {isExporting ? `${t.spell.exportButton}…` : t.spell.exportButton}
+            {isExporting ? `${confirmText ?? t.spell.exportButton}…` : (confirmText ?? t.spell.exportButton)}
           </PrimaryButton>
         </div>
       </div>

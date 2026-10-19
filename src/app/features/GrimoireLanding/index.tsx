@@ -5,7 +5,7 @@ import { useLanguage } from '../../../i18n';
 import { SegmentedTabs } from '../../components/Tabs/SegmentedTabs';
 import { SpellList, GrimoireFilter } from '../SpellList';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCloud, faHardDrive, faLayerGroup, faMagnifyingGlass, faPlus, faCheckSquare, faTrash, faXmark, faBuildingColumns, faArrowsRotate, faCheckDouble, faSquare } from '@fortawesome/free-solid-svg-icons';
+import { faCloud, faHardDrive, faLayerGroup, faMagnifyingGlass, faPlus, faCheckSquare, faTrash, faXmark, faBuildingColumns, faArrowsRotate, faCheckDouble, faSquare, faDownload } from '@fortawesome/free-solid-svg-icons';
 import { SectionHeader } from '../../components/SectionHeader';
 import { EmptyState } from '../../components/EmptyState';
 import { ImportOption } from '../../components/Start/ImportOption';
@@ -16,6 +16,9 @@ import { SecondaryButton } from '../../components/Buttons/SecondaryButton';
 import { useDeleteSpells } from '../../../hooks/useDeleteSpells';
 import { useAppSelector } from '../../../store/hooks';
 import { useUpdateSpellsFromPdf } from '../../../hooks/useUpdateSpellsFromPdf';
+import { useDownloadSpells } from '../../../hooks/useDownloadSpells';
+import { SpellExportModal } from '../../components/Modals/SpellExportModal';
+import { getSpellsFromDB } from '../../../db';
 
 export const GrimoireLanding = () => {
   const { t } = useLanguage();
@@ -41,6 +44,19 @@ export const GrimoireLanding = () => {
   const [showUpdateFromPdfModal, setShowUpdateFromPdfModal] = useState(false);
   const [isQueueingUpdate, setIsQueueingUpdate] = useState(false);
   const updateFromPdf = useUpdateSpellsFromPdf();
+  // Downloading spells as .spell files: the selected ones, or the whole Grimoire (every spell
+  // of the caster's, whatever the search or tab). Asks first what to include.
+  const { download, isDownloading } = useDownloadSpells();
+  const [downloadTarget, setDownloadTarget] = useState<{ ids: string[]; heading: string } | null>(null);
+  const openDownloadSelected = () => setDownloadTarget({
+    ids: selectedIds,
+    heading: selectedIds.length === 1 ? t.grimoire.downloadSelectedTitleOne : t.grimoire.downloadSelectedTitle.replace('{n}', String(selectedIds.length)),
+  });
+  const openDownloadGrimoire = async () => {
+    const ids = (await getSpellsFromDB(userData.id)).map(spell => spell.id);
+    if (ids.length === 0) return;
+    setDownloadTarget({ ids, heading: t.grimoire.downloadGrimoireTitle.replace('{n}', String(ids.length)) });
+  };
 
   const tabs = [
     { id: 'all',   label: t.common.all,  icon: faLayerGroup },
@@ -189,6 +205,16 @@ export const GrimoireLanding = () => {
           <FontAwesomeIcon icon={selectionActive ? faXmark : faCheckSquare} />
           {selectionActive ? t.grimoire.cancelSelection : t.grimoire.selectMode}
         </button>
+        <button
+          data-testid="download-grimoire-btn"
+          className={s.toolbarBtn}
+          onClick={openDownloadGrimoire}
+          disabled={isDownloading}
+          title={t.grimoire.downloadGrimoire}
+        >
+          <FontAwesomeIcon icon={faDownload} />
+          {t.grimoire.downloadGrimoire}
+        </button>
       </div>
 
       {filter === 'cloud' ? (
@@ -223,6 +249,15 @@ export const GrimoireLanding = () => {
           >
             {allSelected ? t.grimoire.unselectAll : t.grimoire.selectAll}
           </SecondaryButton>
+          <SecondaryButton
+            data-testid="bulk-download-btn"
+            className={s.bulkAction}
+            icon={faDownload}
+            disabled={isDownloading || selectedIds.length === 0}
+            onClick={openDownloadSelected}
+          >
+            {t.grimoire.downloadSelected}
+          </SecondaryButton>
           <PrimaryButton
             data-testid="bulk-update-from-pdf-btn"
             className={s.bulkAction}
@@ -252,6 +287,18 @@ export const GrimoireLanding = () => {
           onConfirm={handleBulkDeleteConfirm}
           title={t.spell.deleteTitle}
           message={selectedIds.length === 1 ? t.grimoire.deleteSelectedConfirmOne : t.grimoire.deleteSelectedConfirm.replace('{n}', String(selectedIds.length))}
+        />
+      )}
+
+      {downloadTarget && (
+        <SpellExportModal
+          show
+          title=""
+          heading={downloadTarget.heading}
+          confirmText={t.grimoire.download}
+          isExporting={isDownloading}
+          onClose={() => { if (!isDownloading) setDownloadTarget(null); }}
+          onExport={async (options) => { await download(downloadTarget.ids, options); setDownloadTarget(null); }}
         />
       )}
 

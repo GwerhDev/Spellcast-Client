@@ -15,6 +15,11 @@ vi.mock('../../../../hooks/useUpdateSpellsFromPdf', () => ({
   useUpdateSpellsFromPdf: () => updateFromPdfMock,
 }));
 
+const downloadMock = vi.fn();
+vi.mock('../../../../hooks/useDownloadSpells', () => ({
+  useDownloadSpells: () => ({ download: downloadMock, isDownloading: false }),
+}));
+
 const mockSpell = {
   id: 'spell-1',
   title: 'My Spell',
@@ -144,6 +149,31 @@ describe('GrimoireLanding', () => {
 
       await waitFor(() => expect(updateFromPdfMock).toHaveBeenCalledWith(['spell-1']));
       await waitFor(() => expect(screen.queryByTestId('bulk-bar')).not.toBeInTheDocument());
+    });
+  });
+
+  describe('downloading spells as .spell files', () => {
+    beforeEach(() => {
+      downloadMock.mockReset().mockResolvedValue(undefined);
+      vi.spyOn(db, 'getSpellsFromDB').mockResolvedValue([mockSpell, mockSpell2] as never);
+    });
+
+    it('downloads the selected spells, asking first what to include', async () => {
+      renderWithProviders(<GrimoireLanding />, { store: loggedStore() });
+      fireEvent.click(screen.getByTestId('select-mode-btn'));
+      fireEvent.click(await screen.findByTestId('spell-card-spell-2'));
+      fireEvent.click(screen.getByTestId('bulk-download-btn'));
+      expect(downloadMock).not.toHaveBeenCalled();
+      fireEvent.click(await screen.findByTestId('spell-export-confirm-btn'));
+      await waitFor(() => expect(downloadMock).toHaveBeenCalledWith(['spell-2'], { includeSource: false, includeAudio: false }));
+    });
+
+    it('downloads the whole Grimoire, whatever is searched', async () => {
+      renderWithProviders(<GrimoireLanding />, { store: loggedStore() });
+      fireEvent.change(screen.getByTestId('grimoire-search'), { target: { value: 'Another' } });
+      fireEvent.click(screen.getByTestId('download-grimoire-btn'));
+      fireEvent.click(await screen.findByTestId('spell-export-confirm-btn'));
+      await waitFor(() => expect(downloadMock).toHaveBeenCalledWith(['spell-1', 'spell-2'], { includeSource: false, includeAudio: false }));
     });
   });
 });
