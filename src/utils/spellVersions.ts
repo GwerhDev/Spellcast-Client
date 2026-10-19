@@ -57,10 +57,10 @@ const sameFiles = (a: Record<string, string>, b: Record<string, string>) => {
 };
 
 // A seal's id: the sha256 of what it is (its files sorted by path, so the same content gives
-// the same id wherever it's made).
-const sealIdOf = async (seal: Omit<SealRecord, 'id'>) => {
-  const files = Object.keys(seal.files).sort().map(path => [path, seal.files[path]]);
-  return sha256Hex(encode(JSON.stringify({ ...seal, files })));
+// the same id wherever it's made). Not the spell's id: that one is local to this device.
+const sealIdOf = async ({ parentIds, files, message, createdAt }: Omit<SealRecord, 'id'>) => {
+  const sorted = Object.keys(files).sort().map(path => [path, files[path]]);
+  return sha256Hex(encode(JSON.stringify({ parentIds, files: sorted, message, createdAt })));
 };
 
 const makeSeal = async (spellId: string, parentIds: string[], files: Record<string, string>, message: string): Promise<SealRecord> => {
@@ -77,7 +77,7 @@ const currentState = async (spellId: string): Promise<RepositoryState | null> =>
   const repo = await getRepo(spellId);
   if (!repo) return null;
   const version = await getVersion(spellId, repo.currentVersion);
-  const head = version ? await getSeal(version.headSealId) : undefined;
+  const head = version ? await getSeal(spellId, version.headSealId) : undefined;
   return head ? { currentVersion: repo.currentVersion, head } : null;
 };
 
@@ -131,21 +131,31 @@ const pageFiles = (files: Record<string, string>) => Object.keys(files).filter(p
 // The cover's file and content, as one value to compare.
 const coverOf = (files: Record<string, string>) => Object.entries(files).filter(([path]) => path.startsWith('cover.')).map(e => e.join('=')).join();
 
+// A seal's details (title, description, author, tags, language) as one value to compare: its
+// spell.json also says where its pages and cover are, which changes with them.
+const detailsOf = async (spellId: string, seal: SealRecord): Promise<string> => {
+  const blob = seal.files[META_PATH] ? await getBlob(spellId, seal.files[META_PATH]) : undefined;
+  if (!blob) return '';
+  const { title, description, author, tags, language } = JSON.parse(new TextDecoder().decode(blob.data)) as WorkMeta;
+  return JSON.stringify([title, description, author, tags, language]);
+};
+
 /** The chronicle of a version (the current one if none given): its seals, newest first. */
 export async function spellChronicle(spell: Spell, versionName?: string): Promise<ChronicleEntry[]> {
   const { currentVersion } = await spellRepository(spell);
   const version = await getVersion(spell.id, versionName ?? currentVersion);
   const entries: ChronicleEntry[] = [];
-  let seal = version ? await getSeal(version.headSealId) : undefined;
+  let seal = version ? await getSeal(spell.id, version.headSealId) : undefined;
   while (seal) {
-    const parent = seal.parentIds[0] ? await getSeal(seal.parentIds[0]) : undefined;
+    const parent = seal.parentIds[0] ? await getSeal(spell.id, seal.parentIds[0]) : undefined;
     const pages = pageFiles(seal.files);
     entries.push({
       seal,
       first: !parent,
       pagesChanged: parent ? pages.filter(path => seal!.files[path] !== parent.files[path]).length : 0,
       pageCountChanged: !!parent && pages.length !== pageFiles(parent.files).length,
-      detailsChanged: !!parent && seal.files[META_PATH] !== parent.files[META_PATH] && pages.every(path => seal!.files[path] === parent.files[path]),
+      detailsChanged: !!parent && seal.files[META_PATH] !== parent.files[META_PATH]
+        && await detailsOf(spell.id, seal) !== await detailsOf(spell.id, parent),
       coverChanged: !!parent && coverOf(seal.files) !== coverOf(parent.files),
     });
     seal = parent;
@@ -194,14 +204,15 @@ const sealSource = (spellId: string, seal: SealRecord): SpellFileSource => {
 };
 
 /**
- * Switches the spell to another version: that version's latest seal, as work to put in the
- * spell's record (the caller writes it). Whatever wasn't sealed on the version it leaves is
- * not kept: seal it first if it's wanted.
+ * Switches the spell to another version: that version's latest seal, as work handed to `write`
+ * to put in the spell's record. The spell is on that version only once it's written: a write
+ * that fails leaves it on the one it was, with its work as it was. Whatever wasn't sealed on
+ * the version it leaves is not kept: seal it first if it's wanted.
  */
-export async function spellSwitchVersion(spell: Spell, name: string): Promise<SpellWork> {
+export async function spellSwitchVersion(spell: Spell, name: string, write: (work: SpellWork) => Promise<void>): Promise<SpellWork> {
   await spellRepository(spell);
   const version = await getVersion(spell.id, name);
-  const seal = version ? await getSeal(version.headSealId) : undefined;
+  const seal = version ? await getSeal(spell.id, version.headSealId) : undefined;
   if (!version || !seal) throw new SpellVersionError(`There's no version named "${name}".`);
   const source = sealSource(spell.id, seal);
   const metaBytes = await source.read(META_PATH);
@@ -209,6 +220,7 @@ export async function spellSwitchVersion(spell: Spell, name: string): Promise<Sp
   const meta = JSON.parse(new TextDecoder().decode(metaBytes)) as WorkMeta;
   if (meta.cover) await source.read(meta.cover); // its type known before the cover is read back
   const { work } = await readWork(source, meta);
+  await write(work);
   await setCurrentVersion(spell.id, name);
   return work;
 }

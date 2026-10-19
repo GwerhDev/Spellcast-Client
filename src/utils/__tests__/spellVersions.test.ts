@@ -101,7 +101,9 @@ describe('spellVersions', () => {
     const draft = spellWith([page('draft text')], { title: 'Draft title' });
     await versions.spellSeal(draft);
 
-    const back = await versions.spellSwitchVersion(draft, 'source');
+    const write = vi.fn(async () => {});
+    const back = await versions.spellSwitchVersion(draft, 'source', write);
+    expect(write).toHaveBeenCalledWith(back);
     expect(back.pagesContent).toBe(JSON.stringify(sourcePages));
     expect(back.title).toBe('A Spell');
     expect(back.author).toBe('Jane');
@@ -109,9 +111,49 @@ describe('spellVersions', () => {
     expect(await back.cover?.text()).toBe('cover');
     expect((await versions.spellVersions(source)).current).toBe('source');
 
-    const forth = await versions.spellSwitchVersion(source, 'draft');
+    const forth = await versions.spellSwitchVersion(source, 'draft', write);
     expect(forth.title).toBe('Draft title');
     expect(forth.pagesContent).toBe(JSON.stringify([page('draft text')]));
+  });
+
+  // The work written to the spell's record failing (no room left, say): still on the version it
+  // was, so its next seal doesn't go on the other one.
+  it('a switch whose work could not be written stays on the version it was', async () => {
+    const { versions } = await load();
+    const spell = spellWith([page('one')]);
+    await versions.spellRepository(spell);
+    await versions.spellVersion(spell, 'draft');
+    const failing = vi.fn(async () => { throw new Error('QuotaExceededError'); });
+    await expect(versions.spellSwitchVersion(spell, 'source', failing)).rejects.toThrow('QuotaExceededError');
+    expect((await versions.spellVersions(spell)).current).toBe('draft');
+  });
+
+  // A spell's id is local to this device: the same content sealed in another spell (the same
+  // .spell imported twice, or on another device) is the same seal, kept for each.
+  it('a seal\'s id is the same for the same content in another spell, and each spell keeps its own', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-10-19T12:00:00Z'));
+    try {
+      const { versions, repo } = await load();
+      const one = spellWith([page('same')]);
+      const other = spellWith([page('same')], { id: 'spell-2' });
+      const a = await versions.spellRepository(one);
+      const b = await versions.spellRepository(other);
+      expect(b.head.id).toBe(a.head.id);
+      await repo.deleteSpellRepository(other.id);
+      expect(await repo.getSeal(one.id, a.head.id)).toMatchObject({ spellId: one.id });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('the chronicle tells the details changed even when pages changed too', async () => {
+    const { versions } = await load();
+    await versions.spellRepository(spellWith([page('one')]));
+    const both = spellWith([page('one, edited')], { title: 'Renamed' });
+    await versions.spellSeal(both);
+    const [latest] = await versions.spellChronicle(both);
+    expect(latest).toMatchObject({ pagesChanged: 1, detailsChanged: true });
   });
 
   it('deleting a spell\'s repository removes it all', async () => {
@@ -120,7 +162,7 @@ describe('spellVersions', () => {
     const { head } = await versions.spellRepository(spell);
     await repo.deleteSpellRepository(spell.id);
     expect(await repo.getRepo(spell.id)).toBeUndefined();
-    expect(await repo.getSeal(head.id)).toBeUndefined();
+    expect(await repo.getSeal(spell.id, head.id)).toBeUndefined();
     expect(await repo.getVersions(spell.id)).toEqual([]);
     expect(await repo.getBlob(spell.id, head.files['pages/0001.json'])).toBeUndefined();
   });

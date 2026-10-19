@@ -61,8 +61,7 @@ export function useSpellVersions(spellId: string | undefined, userId: string | u
   /** Switches to a version: its latest seal becomes the spell's work, and the editor reloads it. */
   const switchTo = useCallback((name: string) => run(async () => {
     const spell = await readSpell();
-    const work = await spellSwitchVersion(spell, name);
-    await updateSpellFull(spell.id, userId!, work);
+    await spellSwitchVersion(spell, name, work => updateSpellFull(spell.id, userId!, work));
     setUnsealed(false);
     await readVersions(spell);
     dispatch(invalidateContent());

@@ -22,7 +22,8 @@ export interface BlobRecord {
 }
 
 // A seal: the files a version had (path -> sha256), its parent seal(s) and when it was made.
-// Its id is the sha256 of the rest. No author: a seal never says who made it.
+// Its id is the sha256 of the rest but the spell (whose id is local to this device). No
+// author: a seal never says who made it. Kept per spell: two spells can hold the same seal.
 export interface SealRecord {
   id: string;
   spellId: string;
@@ -53,7 +54,7 @@ const openDB = (): Promise<IDBDatabase> => {
     request.onupgradeneeded = () => {
       const db = request.result;
       if (!db.objectStoreNames.contains(BLOBS)) db.createObjectStore(BLOBS, { keyPath: 'key' });
-      if (!db.objectStoreNames.contains(SEALS)) db.createObjectStore(SEALS, { keyPath: 'id' }).createIndex('spellId', 'spellId');
+      if (!db.objectStoreNames.contains(SEALS)) db.createObjectStore(SEALS, { keyPath: ['spellId', 'id'] }).createIndex('spellId', 'spellId');
       if (!db.objectStoreNames.contains(VERSIONS)) db.createObjectStore(VERSIONS, { keyPath: ['spellId', 'name'] }).createIndex('spellId', 'spellId');
       if (!db.objectStoreNames.contains(REPOS)) db.createObjectStore(REPOS, { keyPath: 'spellId' });
     };
@@ -86,8 +87,8 @@ export const blobKey = (spellId: string, sha256: string) => `${spellId}:${sha256
 export const getRepo = async (spellId: string): Promise<RepoRecord | undefined> =>
   result((await openDB()).transaction(REPOS).objectStore(REPOS).get(spellId));
 
-export const getSeal = async (id: string): Promise<SealRecord | undefined> =>
-  result((await openDB()).transaction(SEALS).objectStore(SEALS).get(id));
+export const getSeal = async (spellId: string, id: string): Promise<SealRecord | undefined> =>
+  result((await openDB()).transaction(SEALS).objectStore(SEALS).get([spellId, id]));
 
 export const getVersion = async (spellId: string, name: string): Promise<VersionRecord | undefined> =>
   result((await openDB()).transaction(VERSIONS).objectStore(VERSIONS).get([spellId, name]));

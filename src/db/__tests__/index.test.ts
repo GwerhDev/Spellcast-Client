@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { IDBFactory } from 'fake-indexeddb';
+import { IDBFactory, IDBKeyRange } from 'fake-indexeddb';
 // fake-indexeddb clones stored values with Node's structuredClone(), which only
 // round-trips Node's OWN Blob class -- happy-dom's global `Blob` (the one `new
 // Blob(...)` resolves to in this test environment) is a different class that
@@ -15,6 +15,8 @@ import { DB_NAME, DB_VERSION, SPELLS_STORE_NAME } from '../../config/api';
 // track and delete specific database names by hand.
 beforeEach(() => {
   globalThis.indexedDB = new IDBFactory();
+  // Deleting a spell's versions takes a key range (its sealed files, by key prefix).
+  globalThis.IDBKeyRange = IDBKeyRange;
   vi.resetModules();
 });
 
@@ -600,6 +602,21 @@ describe('db/index.ts CRUD', () => {
     await deleteSpellFromDB(id, 'user-1');
 
     expect(await getOriginalPdf(id)).toBeNull();
+  });
+
+  // Its seals, versions and sealed files: nothing else would ever reach them again.
+  it('deleteSpellFromDB also deletes the spell\'s versions', async () => {
+    const { saveSpellToDB, deleteSpellFromDB, getSpellById } = await importDb();
+    const { spellRepository } = await import('../../utils/spellVersions');
+    const { getRepo, getVersions } = await import('../spellRepository');
+    const id = await saveSpellToDB(seedSpell({ userId: 'user-1', pagesContent: JSON.stringify([{ type: 'doc', content: [] }]) }));
+    await spellRepository((await getSpellById(id, 'user-1'))!);
+    expect(await getRepo(id)).toBeDefined();
+
+    await deleteSpellFromDB(id, 'user-1');
+
+    expect(await getRepo(id)).toBeUndefined();
+    expect(await getVersions(id)).toEqual([]);
   });
 
   it('deleteSpellFromDB also clears the spell\'s cached audio, instead of leaving it orphaned forever (TCORE-118)', async () => {
