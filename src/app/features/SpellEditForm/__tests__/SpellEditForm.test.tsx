@@ -12,6 +12,36 @@ vi.mock('../../../../db', () => ({
   updateSpellFull: vi.fn(),
 }));
 
+// The spell's versions (useSpellVersions), as the editor sees them: a stand-in whose sealed state
+// follows the editor's edits and seals, the repository itself tested on its own.
+const versionsMock = {
+  initiallyUnsealed: false,
+  seal: vi.fn(() => Promise.resolve()),
+  switchTo: vi.fn<(name: string) => Promise<void>>(() => Promise.resolve()),
+  createVersion: vi.fn<(name: string) => Promise<void>>(() => Promise.resolve()),
+  chronicle: vi.fn(() => Promise.resolve([
+    { seal: { id: 's2', createdAt: '2026-10-19T18:40:00Z' }, first: false, pagesChanged: 2, pageCountChanged: false, detailsChanged: false, coverChanged: false },
+    { seal: { id: 's1', createdAt: '2026-10-19T17:00:00Z' }, first: true, pagesChanged: 0, pageCountChanged: false, detailsChanged: false, coverChanged: false },
+  ])),
+};
+vi.mock('../../../../hooks/useSpellVersions', async () => {
+  const React = await vi.importActual<typeof import('react')>('react');
+  return {
+    useSpellVersions: () => {
+      const [unsealed, setUnsealed] = React.useState(versionsMock.initiallyUnsealed);
+      return {
+        unsealed, current: 'source', names: ['source', 'draft'],
+        refresh: () => Promise.resolve(),
+        seal: async () => { await versionsMock.seal(); setUnsealed(false); },
+        switchTo: async (name: string) => { await versionsMock.switchTo(name); setUnsealed(false); },
+        createVersion: versionsMock.createVersion,
+        chronicle: versionsMock.chronicle,
+        markUnsealed: React.useCallback(() => setUnsealed(true), []),
+      };
+    },
+  };
+});
+
 vi.mock('../../../../db/originalPdfs', () => ({
   hasOriginalPdf: vi.fn(),
   getOriginalPdf: vi.fn(),
@@ -335,10 +365,12 @@ describe('SpellEditForm', () => {
 
       await waitFor(() => expect(updateSpellFull).toHaveBeenCalled());
       // The in-memory title WAS included in this write (updateSpellFull is a full-record
-      // write) -- so the pending edit is no longer unsaved, and the button reflects that.
+      // write) -- so the pending edit is saved now ("Saved"), though not sealed: Save stays
+      // there to seal it.
       const call = vi.mocked(updateSpellFull).mock.calls[0][2];
       expect(call.title).toBe('Renamed while uploading cover');
-      await waitFor(() => expect(screen.getByTestId('spell-edit-save-btn')).toBeDisabled());
+      expect(await screen.findByText(/^Saved$/)).toBeInTheDocument();
+      expect(screen.getByTestId('spell-edit-save-btn')).not.toBeDisabled();
     });
   });
 
@@ -410,6 +442,94 @@ describe('SpellEditForm', () => {
       fireEvent.click(screen.getByTestId('spell-edit-back-btn'));
       expect(await screen.findByTestId('spell-page')).toBeInTheDocument();
       expect(screen.queryByTestId('delete-confirm-confirm-btn')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('versions', () => {
+    beforeEach(() => {
+      versionsMock.initiallyUnsealed = false;
+      versionsMock.seal.mockClear();
+      versionsMock.switchTo.mockClear();
+      versionsMock.createVersion.mockClear();
+    });
+
+    it('Save saves the edits and seals them; then there is nothing to save', async () => {
+      renderForm();
+      await screen.findByTestId('spell-edit-form');
+      fireEvent.change(screen.getByTestId('spell-edit-title-input'), { target: { value: 'Renamed' } });
+      fireEvent.click(screen.getByTestId('spell-edit-save-btn'));
+      await waitFor(() => expect(versionsMock.seal).toHaveBeenCalledTimes(1));
+      expect(updateSpellContent).toHaveBeenCalled();
+      await waitFor(() => expect(screen.getByTestId('spell-edit-save-btn')).toBeDisabled());
+    });
+
+    it('work saved but not sealed (autosaved): Save only seals it', async () => {
+      versionsMock.initiallyUnsealed = true;
+      renderForm();
+      await screen.findByTestId('spell-edit-form');
+      expect(screen.getByTestId('spell-edit-save-btn')).not.toBeDisabled();
+      fireEvent.click(screen.getByTestId('spell-edit-save-btn'));
+      await waitFor(() => expect(versionsMock.seal).toHaveBeenCalledTimes(1));
+      expect(updateSpellContent).not.toHaveBeenCalled();
+    });
+
+    it('switches version right away when everything is sealed', async () => {
+      renderForm();
+      await screen.findByTestId('spell-edit-form');
+      fireEvent.click(screen.getByTestId('version-selector'));
+      fireEvent.click(screen.getByTestId('version-option-draft'));
+      await waitFor(() => expect(versionsMock.switchTo).toHaveBeenCalledWith('draft'));
+      expect(screen.queryByTestId('switch-version-modal')).not.toBeInTheDocument();
+    });
+
+    it('with changes not sealed, asks first: discarding switches without saving them', async () => {
+      renderForm();
+      await screen.findByTestId('spell-edit-form');
+      fireEvent.change(screen.getByTestId('spell-edit-title-input'), { target: { value: 'Unsealed' } });
+      fireEvent.click(screen.getByTestId('version-selector'));
+      fireEvent.click(screen.getByTestId('version-option-draft'));
+      expect(await screen.findByTestId('switch-version-modal')).toBeInTheDocument();
+      expect(versionsMock.switchTo).not.toHaveBeenCalled();
+      fireEvent.click(screen.getByTestId('switch-version-discard'));
+      await waitFor(() => expect(versionsMock.switchTo).toHaveBeenCalledWith('draft'));
+      expect(updateSpellContent).not.toHaveBeenCalled();
+      expect(versionsMock.seal).not.toHaveBeenCalled();
+    });
+
+    it('with changes not sealed, sealing first saves and seals them, then switches', async () => {
+      renderForm();
+      await screen.findByTestId('spell-edit-form');
+      fireEvent.change(screen.getByTestId('spell-edit-title-input'), { target: { value: 'Kept' } });
+      fireEvent.click(screen.getByTestId('version-selector'));
+      fireEvent.click(screen.getByTestId('version-option-draft'));
+      fireEvent.click(await screen.findByTestId('switch-version-seal'));
+      await waitFor(() => expect(versionsMock.switchTo).toHaveBeenCalledWith('draft'));
+      expect(updateSpellContent).toHaveBeenCalled();
+      expect(versionsMock.seal).toHaveBeenCalledTimes(1);
+    });
+
+    it('makes a new version with the name given, never one already taken', async () => {
+      renderForm();
+      await screen.findByTestId('spell-edit-form');
+      fireEvent.click(screen.getByTestId('version-selector'));
+      fireEvent.click(screen.getByTestId('version-new'));
+      const input = document.getElementById('new-version-name') as HTMLInputElement;
+      fireEvent.change(input, { target: { value: 'draft' } });
+      expect(screen.getByTestId('new-version-taken')).toBeInTheDocument();
+      expect(screen.getByTestId('new-version-create')).toBeDisabled();
+      fireEvent.change(input, { target: { value: ' revision ' } });
+      fireEvent.click(screen.getByTestId('new-version-create'));
+      await waitFor(() => expect(versionsMock.createVersion).toHaveBeenCalledWith('revision'));
+    });
+
+    it('shows the chronicle of the current version, newest first', async () => {
+      renderForm();
+      await screen.findByTestId('spell-edit-form');
+      fireEvent.click(screen.getByTestId('spell-edit-chronicle-btn'));
+      const items = await screen.findAllByTestId('chronicle-item');
+      expect(items).toHaveLength(2);
+      expect(items[0].textContent).toContain('2 pages changed');
+      expect(items[1].textContent).toContain('First seal');
     });
   });
 });

@@ -6,6 +6,7 @@ import { sameUser } from "../utils/grimoire";
 import { dropCoverOverText } from "../utils/spellPage";
 import { getStoredProgress, getAllStoredProgress, setStoredProgress, setStoredProgressMany, deleteStoredProgress, clearStoredProgress } from "./spellProgress";
 import { deleteSpellCosmetics, clearSpellCosmetics } from "./spellCosmetics";
+import { deleteSpellRepository, clearSpellRepositories } from "./spellRepository";
 import { getStoredCoverFrame, getAllStoredCoverFrames, setStoredCoverFrame, deleteStoredCoverFrame, clearStoredCoverFrames, type CoverFrameRecord } from "./spellCoverFrames";
 
 // The pre-rename (TCORE-78) store name, frozen on purpose: it names whatever a
@@ -80,6 +81,9 @@ export const clearAllData = async (): Promise<void> => {
   });
   await clearSpellCosmetics().catch((err) => {
     console.error('[IndexedDB] Failed to clear spells\' cosmetics:', err);
+  });
+  await clearSpellRepositories().catch((err) => {
+    console.error('[IndexedDB] Failed to clear spells\' versions:', err);
   });
 };
 
@@ -592,6 +596,10 @@ export const deleteSpellFromDB = async (id: string, userId: string | undefined):
   await deleteSpellCosmetics(id).catch((err) => {
     console.error(`[IndexedDB] Failed to delete the cosmetics of removed spell "${id}":`, err);
   });
+  // Its seals, versions and sealed files: nothing else reaches them.
+  await deleteSpellRepository(id).catch((err) => {
+    console.error(`[IndexedDB] Failed to delete the versions of removed spell "${id}":`, err);
+  });
 };
 
 export const updateSpellContent = async (
@@ -630,7 +638,11 @@ export const updateSpellContent = async (
 export const updateSpellFull = async (
   id: string,
   userId: string,
-  updates: { title: string; pagesContent: string; cover?: Blob; originalPagesContent?: string }
+  // The details too, when given (a version switched to brings its own).
+  updates: {
+    title: string; pagesContent: string; cover?: Blob; originalPagesContent?: string;
+    description?: string; author?: string; tags?: string[]; language?: string;
+  }
 ): Promise<void> => {
   const db = await openDB();
   const transaction = db.transaction(SPELLS_STORE_NAME, 'readwrite');

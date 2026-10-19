@@ -1,0 +1,49 @@
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { VersionSelector } from '../VersionSelector';
+
+const labels = { title: 'Version', newVersion: 'New version…' };
+const renderSelector = (over = {}) => {
+  const props = { current: 'source', versions: ['source', 'draft'], onSwitch: vi.fn(), onNew: vi.fn(), labels, ...over };
+  render(<VersionSelector {...props} />);
+  return props;
+};
+
+describe('VersionSelector', () => {
+  it('shows the current version and opens the list on click', () => {
+    renderSelector();
+    expect(screen.getByTestId('version-selector').textContent).toContain('source');
+    expect(screen.queryByTestId('version-option-draft')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('version-selector'));
+    expect(screen.getByTestId('version-option-source')).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByTestId('version-option-draft')).toHaveAttribute('aria-checked', 'false');
+  });
+
+  it('picking another version switches to it and closes; the current one does nothing', () => {
+    const props = renderSelector();
+    fireEvent.click(screen.getByTestId('version-selector'));
+    fireEvent.click(screen.getByTestId('version-option-source'));
+    expect(props.onSwitch).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByTestId('version-selector'));
+    fireEvent.click(screen.getByTestId('version-option-draft'));
+    expect(props.onSwitch).toHaveBeenCalledWith('draft');
+    expect(screen.queryByTestId('version-option-draft')).not.toBeInTheDocument();
+  });
+
+  it('offers a new version', () => {
+    const props = renderSelector();
+    fireEvent.click(screen.getByTestId('version-selector'));
+    fireEvent.click(screen.getByTestId('version-new'));
+    expect(props.onNew).toHaveBeenCalled();
+  });
+
+  it('closes on Escape and on a click outside', () => {
+    renderSelector();
+    fireEvent.click(screen.getByTestId('version-selector'));
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.queryByTestId('version-new')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('version-selector'));
+    fireEvent.mouseDown(document.body);
+    expect(screen.queryByTestId('version-new')).not.toBeInTheDocument();
+  });
+});

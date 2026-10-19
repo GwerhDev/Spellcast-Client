@@ -39,6 +39,25 @@ export interface SpellManifest {
   language?: string;
 }
 
+// A spell's work, what its files hold (not its id, owner or the reader's progress).
+export interface SpellWork {
+  title: string;
+  pagesContent: string;
+  originalPagesContent?: string;
+  cover?: Blob;
+  description?: string;
+  author?: string;
+  tags?: string[];
+  language?: string;
+}
+
+// Where a spell's work is in its files: how many pages, original pages, and its cover's file.
+export interface SpellWorkLayout {
+  pageCount: number;
+  originalPageCount: number | null;
+  cover: string | null;
+}
+
 export interface ExportSpellOptions {
   /**
    * Bundle original/original.pdf, when one is stored for this spell. Gates ONLY the PDF
@@ -129,7 +148,7 @@ const mapAttrs = async (node: unknown, map: (value: string) => Promise<string>):
 };
 
 // The entries being written, each path once (an image shared by pages is one entry).
-class Entries {
+export class Entries {
   readonly list: ContainerEntry[] = [];
   private readonly paths = new Set<string>();
   add(path: string, data: Uint8Array, compress: boolean, type?: string) {
@@ -168,6 +187,23 @@ const writePages = async (pagesContent: string, folder: string, entries: Entries
   return files;
 };
 
+// A spell's work into its files: its pages, original pages, images and cover. The same files,
+// byte for byte, for the same work: a .spell's entries and a seal's files alike.
+export const writeWork = async (work: SpellWork): Promise<{ entries: Entries; pageFiles: Uint8Array[]; layout: SpellWorkLayout }> => {
+  // Images shared by pages (or by a page and its original) are written once.
+  const entries = new Entries();
+  const pageFiles = await writePages(work.pagesContent, 'pages', entries);
+  const originalPageFiles = work.originalPagesContent
+    ? await writePages(work.originalPagesContent, 'original/pages', entries)
+    : null;
+  let cover: string | null = null;
+  if (work.cover) {
+    cover = `cover.${imageExtension(work.cover.type)}`;
+    entries.add(cover, new Uint8Array(await work.cover.arrayBuffer()), false, work.cover.type || undefined);
+  }
+  return { entries, pageFiles, layout: { pageCount: pageFiles.length, originalPageCount: originalPageFiles ? originalPageFiles.length : null, cover } };
+};
+
 /**
  * Reads a Spell (and, optionally, its cached audio) from IndexedDB and assembles a
  * .spell in memory. Never includes `progress` — a reader's personal position is
@@ -184,19 +220,7 @@ export async function exportSpellToBlob(
   const includeSource = options.includeSource ?? false;
   const includeAudio = options.includeAudio ?? false;
 
-  // Images shared by pages (or by a page and its original) are written once.
-  const entries = new Entries();
-
-  const pageFiles = await writePages(spell.pagesContent ?? '[]', 'pages', entries);
-  const originalPageFiles = spell.originalPagesContent
-    ? await writePages(spell.originalPagesContent, 'original/pages', entries)
-    : null;
-
-  let cover: string | null = null;
-  if (spell.cover) {
-    cover = `cover.${imageExtension(spell.cover.type)}`;
-    entries.add(cover, new Uint8Array(await spell.cover.arrayBuffer()), false, spell.cover.type || undefined);
-  }
+  const { entries, pageFiles, layout } = await writeWork({ ...spell, pagesContent: spell.pagesContent ?? '[]' });
 
   // Only look up the PDF store at all when actually requested — it's the one genuinely
   // heavy, opt-in part of a .spell export.
@@ -224,9 +248,7 @@ export async function exportSpellToBlob(
     formatVersion: SPELL_FORMAT_VERSION,
     title: spell.title,
     exportedAt: new Date().toISOString(),
-    pageCount: pageFiles.length,
-    originalPageCount: originalPageFiles ? originalPageFiles.length : null,
-    cover,
+    ...layout,
     hasOriginalPdf: !!originalPdf,
     voices: Array.from(voices),
     description: spell.description,
@@ -254,19 +276,26 @@ export class SpellImportError extends Error {}
 
 type Container = OpenedContainer<SpellManifest>;
 
-const readText = async (container: Container, path: string): Promise<string | null> => {
+// Somewhere a spell's files are read from: a .spell container, or a sealed version's stored
+// files (see db/spellRepository).
+export interface SpellFileSource {
+  read: (path: string) => Promise<Uint8Array | null>;
+  typeOf: (path: string) => string | undefined;
+}
+
+const readText = async (container: SpellFileSource, path: string): Promise<string | null> => {
   const data = await container.read(path);
   return data ? decode(data) : null;
 };
 
-const readBlob = async (container: Container, path: string, mimeType?: string): Promise<Blob | null> => {
+const readBlob = async (container: SpellFileSource, path: string, mimeType?: string): Promise<Blob | null> => {
   const data = await container.read(path);
   return data ? new Blob([data as BlobPart], mimeType ? { type: mimeType } : undefined) : null;
 };
 
 // The pages of folder/0001.json... back into a pagesContent: each image reference back into
 // the image itself (a data URL, as it was written in the page).
-const readPages = async (container: Container, folder: string, count: number): Promise<{ pagesContent: string; files: Uint8Array[] }> => {
+const readPages = async (container: SpellFileSource, folder: string, count: number): Promise<{ pagesContent: string; files: Uint8Array[] }> => {
   const dataUrls = new Map<string, string>();
   const files: Uint8Array[] = [];
   const pages: string[] = [];
@@ -291,6 +320,25 @@ const readPages = async (container: Container, folder: string, count: number): P
     pages.push(JSON.stringify(page));
   }
   return { pagesContent: `[${pages.join(',')}]`, files };
+};
+
+// A spell's work back from its files, as it was written (see writeWork).
+export const readWork = async (
+  source: SpellFileSource,
+  layout: SpellWorkLayout & Omit<SpellWork, 'pagesContent' | 'originalPagesContent' | 'cover'>,
+): Promise<{ work: SpellWork; pageFiles: Uint8Array[] }> => {
+  const { pagesContent, files: pageFiles } = await readPages(source, 'pages', layout.pageCount);
+  const original = layout.originalPageCount != null ? await readPages(source, 'original/pages', layout.originalPageCount) : null;
+  const cover = layout.cover
+    ? await readBlob(source, layout.cover, source.typeOf(layout.cover) ?? imageType(layout.cover.slice(layout.cover.lastIndexOf('.') + 1)))
+    : null;
+  return {
+    work: {
+      title: layout.title, pagesContent, originalPagesContent: original?.pagesContent, cover: cover ?? undefined,
+      description: layout.description, author: layout.author, tags: layout.tags, language: layout.language,
+    },
+    pageFiles,
+  };
 };
 
 /**
@@ -320,21 +368,16 @@ export async function importSpellFromFile(file: File, userId: string): Promise<s
     }
   };
 
-  const { pagesContent, files: pageFiles } = await guarded(() => readPages(container, 'pages', manifest.pageCount));
-  const original = manifest.originalPageCount != null
-    ? await guarded(() => readPages(container, 'original/pages', manifest.originalPageCount!))
-    : null;
-  const cover = manifest.cover
-    ? await guarded(() => readBlob(container, manifest.cover!, container.typeOf(manifest.cover!) ?? imageType(manifest.cover!.slice(manifest.cover!.lastIndexOf('.') + 1))))
-    : null;
+  const { work, pageFiles } = await guarded(() => readWork(container, manifest));
+  const { pagesContent, originalPagesContent, cover } = work;
   const originalPdf = manifest.hasOriginalPdf ? await guarded(() => readBlob(container, 'original/original.pdf', 'application/pdf')) : null;
 
   const newSpellId = await saveSpellToDB({
     title: manifest.title,
     userId,
     pagesContent,
-    originalPagesContent: original?.pagesContent,
-    cover: cover ?? undefined,
+    originalPagesContent,
+    cover,
     description: manifest.description,
     author: manifest.author,
     tags: manifest.tags,

@@ -23,7 +23,7 @@ import { PageListPlace } from '../../components/SpellCreateForm/PageListOverlay'
 import { usePageListToggle } from '../../../hooks/usePageListToggle';
 import { SpellEditor } from '../../components/Editors/SpellEditor';
 import { isCoverPage } from '../../../utils/spellPage';
-import { faArrowLeft, faCloudUpload, faGear, faSave, faTriangleExclamation, faFilePdf, faLayerGroup } from '@fortawesome/free-solid-svg-icons';
+import { faArrowLeft, faCloudUpload, faGear, faSave, faTriangleExclamation, faFilePdf, faLayerGroup, faClockRotateLeft } from '@fortawesome/free-solid-svg-icons';
 import { PdfProcessingStatus } from '../../components/PdfProcessingStatus';
 import { IconButton } from '../../components/Buttons/IconButton';
 import { DeleteConfirmModal } from '../../components/Modals/DeleteConfirmModal';
@@ -35,6 +35,11 @@ import { EmptyState } from '../../components/EmptyState';
 import type { TTSPlayPayload } from '../../../magictext/types';
 import { useLanguage } from '../../../i18n';
 import { useGoBack } from '../../../hooks/useGoBack';
+import { useSpellVersions } from '../../../hooks/useSpellVersions';
+import { VersionSelector } from '../../components/VersionSelector/VersionSelector';
+import { ChronicleModal, type ChronicleItem } from '../../components/Modals/ChronicleModal';
+import { NewVersionModal } from '../../components/Modals/NewVersionModal';
+import type { ChronicleEntry } from '../../../utils/spellVersions';
 
 const emptyContent: JSONContent = {
   type: 'doc',
@@ -53,7 +58,7 @@ export const SpellEditForm: React.FC = () => {
   const goBackFromMissing = useGoBack('/editor');
   const dispatch = useDispatch();
   const { userData, logged } = useAppSelector((state) => state.session);
-  const { t } = useLanguage();
+  const { t, language: uiLanguage } = useLanguage();
   const autoSave = useAppSelector((state) => state.editor.autoSave);
   const activeCredential = useAppSelector(selectCurrentCredential);
   const aiVoices = activeCredential?.voices ?? [];
@@ -68,6 +73,16 @@ export const SpellEditForm: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const [hasChanges, setHasChanges] = useState(false);
+  // The spell's versions (see useSpellVersions): Save seals the work on the current one.
+  const versions = useSpellVersions(id, userData.id);
+  const { markUnsealed, refresh: refreshVersions } = versions;
+  // An edit, saved or not, is work not sealed yet.
+  useEffect(() => { if (hasChanges) markUnsealed(); }, [hasChanges, markUnsealed]);
+  const [showChronicle, setShowChronicle] = useState(false);
+  const [chronicleItems, setChronicleItems] = useState<ChronicleItem[] | null>(null);
+  const [showNewVersion, setShowNewVersion] = useState(false);
+  // A version asked to switch to while this one has changes not sealed: what to do with them.
+  const [pendingSwitch, setPendingSwitch] = useState<string | null>(null);
 
   // TCORE-103: editing the same social/feed metadata TCORE-97 introduced at creation time.
   const [description, setDescription] = useState('');
@@ -140,6 +155,9 @@ export const SpellEditForm: React.FC = () => {
       // PDF's page 1 same as SpellCreateForm's import, so re-sync the preview here too.
       Promise.resolve(doc.cover ? blobToDataUrl(doc.cover) : null).then(setCoverUrl);
       setHasChanges(false);
+      // What's stored now may or may not be what's sealed (an update from the PDF, a version
+      // switched to): read again.
+      void refreshVersions().catch((err) => console.error('Failed to read the spell\'s versions:', err));
     });
     //eslint-disable-next-line
   }, [contentVersion]);
@@ -205,6 +223,8 @@ export const SpellEditForm: React.FC = () => {
         applyMetadataFromDoc(doc);
         setCoverUrl(doc.cover ? await blobToDataUrl(doc.cover) : null);
         hasLoaded.current = true;
+        // Its versions (made the first time: source, with a first seal of the work as it is).
+        void refreshVersions().catch((err) => console.error('Failed to read the spell\'s versions:', err));
       } catch {
         setError('Failed to load spell.');
       } finally {
@@ -212,7 +232,7 @@ export const SpellEditForm: React.FC = () => {
       }
     };
     load();
-  }, [id, logged, userData.id]);
+  }, [id, logged, userData.id, refreshVersions]);
 
   // TCORE-103: gates the "Update from PDF" action -- same pattern as SpellDetail's "PDF"
   // tag (TCORE-90), re-checked on contentVersion since a "replace content" upload can
@@ -333,7 +353,66 @@ export const SpellEditForm: React.FC = () => {
     }
   };
 
-  const handleSave = () => { void saveNow(); };
+  const reportVersionsError = (err: unknown) => {
+    console.error('Spell versions:', err);
+    dispatch(addApiResponse({ message: t.versions.error, type: 'error' }));
+  };
+
+  // Save seals: the work, saved first if it has changes not saved yet, sealed on the current
+  // version. Whether it was sealed.
+  const sealNow = async (): Promise<boolean> => {
+    if (hasChanges && !(await saveNow())) return false;
+    try {
+      await versions.seal();
+      return true;
+    } catch (err) {
+      reportVersionsError(err);
+      return false;
+    }
+  };
+
+  const handleSave = () => { void sealNow(); };
+
+  // Switching versions replaces the work with that version's: what's not sealed here is left
+  // out (asked first, see pendingSwitch). A pending autosave would write it back over: dropped.
+  const switchVersion = async (name: string) => {
+    setPendingSwitch(null);
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    setHasChanges(false);
+    try {
+      await versions.switchTo(name);
+    } catch (err) {
+      reportVersionsError(err);
+    }
+  };
+  const requestSwitch = (name: string) => {
+    if (hasChanges || versions.unsealed) setPendingSwitch(name);
+    else void switchVersion(name);
+  };
+
+  const summaryOf = (entry: ChronicleEntry): string => {
+    if (entry.first) return t.versions.firstSeal;
+    const parts = [
+      entry.pagesChanged > 0 && (entry.pagesChanged === 1 ? t.versions.pageChanged : t.versions.pagesChanged.replace('{n}', String(entry.pagesChanged))),
+      entry.pageCountChanged && t.versions.pageCountChanged,
+      entry.detailsChanged && t.versions.detailsChanged,
+      entry.coverChanged && t.versions.coverChanged,
+    ].filter(Boolean) as string[];
+    const text = parts.length ? parts.join(' · ') : t.versions.changed;
+    return text.charAt(0).toUpperCase() + text.slice(1);
+  };
+
+  const openChronicle = () => {
+    setChronicleItems(null);
+    setShowChronicle(true);
+    versions.chronicle()
+      .then(entries => setChronicleItems(entries.map(entry => ({
+        id: entry.seal.id,
+        date: new Date(entry.seal.createdAt).toLocaleString(uiLanguage, { dateStyle: 'medium', timeStyle: 'short' }),
+        summary: summaryOf(entry),
+      }))))
+      .catch((err) => { setShowChronicle(false); reportVersionsError(err); });
+  };
 
   // A confirmed reset: saved right away when it's the only change, so nothing is left to
   // save. With other edits not saved yet it joins them instead -- saved with them, never
@@ -463,14 +542,27 @@ export const SpellEditForm: React.FC = () => {
       <div className={s.pageInfoContainer}>
         <IconButton data-testid="spell-edit-back-btn" icon={faArrowLeft} className={s.backButton} variant='transparent' title={t.common.back} onClick={goBack} />
         <span className={s.titleContainer}>
-          <input
-            data-testid="spell-edit-title-input"
-            className={s.spellTitle}
-            type="text"
-            placeholder={t.spell.titlePlaceholder}
-            value={spellTitle}
-            onChange={(e) => { setSpellTitle(e.target.value); setHasChanges(true); }}
-          />
+          <span className={s.titleSizer} data-value={spellTitle || t.spell.titlePlaceholder}>
+            <input
+              data-testid="spell-edit-title-input"
+              className={s.spellTitle}
+              type="text"
+              size={1}
+              placeholder={t.spell.titlePlaceholder}
+              value={spellTitle}
+              onChange={(e) => { setSpellTitle(e.target.value); setHasChanges(true); }}
+            />
+          </span>
+          {versions.current && (
+            <VersionSelector
+              current={versions.current}
+              versions={versions.names}
+              onSwitch={requestSwitch}
+              onNew={() => setShowNewVersion(true)}
+              disabled={isProcessingPdf}
+              labels={{ title: t.versions.title, newVersion: t.versions.newVersion }}
+            />
+          )}
         </span>
 
         {isProcessingPdf && processingCollapsed && (
@@ -507,7 +599,8 @@ export const SpellEditForm: React.FC = () => {
           aria-pressed={showOriginal}
           onClick={() => setShowOriginal(v => !v)}
         />
-        <IconButton data-testid="spell-edit-save-btn" icon={faSave} variant='transparent' title={t.common.save} disabled={!hasChanges || isProcessingPdf} onClick={handleSave} />
+        <IconButton data-testid="spell-edit-save-btn" icon={faSave} variant='transparent' title={t.common.save} disabled={!(hasChanges || versions.unsealed) || isProcessingPdf} onClick={handleSave} />
+        <IconButton data-testid="spell-edit-chronicle-btn" icon={faClockRotateLeft} variant='transparent' title={t.versions.chronicle} disabled={!versions.current} onClick={openChronicle} />
         <IconButton icon={faCloudUpload} disabled variant='transparent' title={t.nav.cloud} onClick={() => {}} />
         <IconButton icon={faGear} variant='transparent' onClick={() => dispatch(setShowEditorSettings(true))} />
       </div>
@@ -618,6 +711,40 @@ export const SpellEditForm: React.FC = () => {
         message={t.spell.unsavedChangesMessage}
         confirmText={t.spell.leaveWithoutSaving}
       />
+
+      <ChronicleModal
+        show={showChronicle}
+        title={t.versions.chronicleTitle.replace('{name}', versions.current ?? '')}
+        items={chronicleItems}
+        onClose={() => setShowChronicle(false)}
+      />
+
+      <NewVersionModal
+        show={showNewVersion}
+        taken={versions.names}
+        onClose={() => setShowNewVersion(false)}
+        onCreate={(name) => { setShowNewVersion(false); versions.createVersion(name).catch(reportVersionsError); }}
+        labels={{
+          title: t.versions.newVersionTitle, name: t.versions.name, placeholder: t.versions.namePlaceholder,
+          create: t.versions.create, cancel: t.common.cancel, taken: t.versions.nameTaken,
+        }}
+      />
+
+      <CustomModal compact show={pendingSwitch !== null} onClose={() => setPendingSwitch(null)} title={t.versions.unsealedTitle}>
+        <div className={s.importModalBody} data-testid="switch-version-modal">
+          <p>{t.versions.unsealedMessage.replace('{name}', pendingSwitch ?? '')}</p>
+          <div className={s.importModalActions}>
+            <SecondaryButton onClick={() => setPendingSwitch(null)}>{t.common.cancel}</SecondaryButton>
+            <SecondaryButton data-testid="switch-version-discard" onClick={() => { if (pendingSwitch) void switchVersion(pendingSwitch); }}>{t.versions.discardAndSwitch}</SecondaryButton>
+            <PrimaryButton
+              data-testid="switch-version-seal"
+              onClick={async () => { const name = pendingSwitch; if (name && await sealNow()) await switchVersion(name); else setPendingSwitch(null); }}
+            >
+              {t.versions.sealAndSwitch}
+            </PrimaryButton>
+          </div>
+        </div>
+      </CustomModal>
 
       <CustomModal compact show={showResetAllModal} onClose={() => setShowResetAllModal(false)} title={t.spell.resetAllTitle}>
         <div className={s.importModalBody}>
