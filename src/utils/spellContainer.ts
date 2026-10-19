@@ -53,6 +53,13 @@ interface IndexEntry {
   type?: string;
 }
 
+const isCount = (value: unknown): value is number => Number.isSafeInteger(value) && (value as number) >= 0;
+const isIndexEntry = (entry: unknown): entry is IndexEntry => {
+  const e = entry as Partial<IndexEntry> | null;
+  return !!e && typeof e.path === 'string' && typeof e.sha256 === 'string' && typeof e.compressed === 'boolean'
+    && isCount(e.size) && isCount(e.offset) && isCount(e.length) && (e.type === undefined || typeof e.type === 'string');
+};
+
 // The index is at most this big, uncompressed.
 const MAX_INDEX_SIZE = 64 * 1024 * 1024;
 
@@ -166,6 +173,10 @@ export async function openContainer<M>(bytes: Uint8Array): Promise<OpenedContain
   } catch {
     throw new SpellContainerError('This .spell file is damaged.');
   }
+
+  // Every entry says where it is, how big it is and what it should hash to: without its size
+  // its decompression couldn't be capped.
+  if (!Array.isArray(index?.entries) || !index.entries.every(isIndexEntry)) throw new SpellContainerError('This .spell file is damaged.');
 
   const byPath = new Map(index.entries.map(entry => [entry.path, entry]));
   const read = async (path: string): Promise<Uint8Array | null> => {

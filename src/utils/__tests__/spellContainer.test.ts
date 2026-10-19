@@ -19,6 +19,22 @@ const asProtected = (bytes: Uint8Array, protection: object): Uint8Array => {
   return out;
 };
 
+// The same file with its index changed (as a hand-made or damaged file could have it).
+type PlainIndex = { manifest: unknown; entries: Record<string, unknown>[] };
+const rewriteIndex = async (bytes: Uint8Array, change: (index: PlainIndex) => void): Promise<Uint8Array> => {
+  const indexLength = new DataView(bytes.buffer, bytes.byteOffset).getUint32(9);
+  const indexBytes = bytes.slice(13, 13 + indexLength);
+  const plain = JSON.parse(new TextDecoder().decode(await new Response(new Blob([indexBytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer())) as PlainIndex;
+  change(plain);
+  const newIndex = new Uint8Array(await new Response(new Blob([enc(JSON.stringify(plain))]).stream().pipeThrough(new CompressionStream('deflate-raw'))).arrayBuffer());
+  const out = new Uint8Array(13 + newIndex.length + (bytes.length - 13 - indexLength));
+  out.set(bytes.slice(0, 9), 0);
+  new DataView(out.buffer).setUint32(9, newIndex.length);
+  out.set(newIndex, 13);
+  out.set(bytes.slice(13 + indexLength), 13 + newIndex.length);
+  return out;
+};
+
 describe('spellContainer', () => {
   it('starts with "SPELL", the version, no flags and an empty protection block', async () => {
     const bytes = await bytesOf(await write([{ path: 'a', text: 'x' }]));
@@ -79,18 +95,16 @@ describe('spellContainer', () => {
     const big = new Uint8Array(4 * 1024 * 1024); // compresses to a few KB
     const bytes = await bytesOf(await writeContainer({}, [{ path: 'bomb', data: big, compress: true }], { version: 1 }));
     // Rewrite the index to state a tiny size for it.
-    const view = new DataView(bytes.buffer);
-    const indexLength = view.getUint32(9);
-    const indexBytes = bytes.slice(13, 13 + indexLength);
-    const plain = JSON.parse(new TextDecoder().decode(await new Response(new Blob([indexBytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer()));
-    plain.entries[0].size = 10;
-    const newIndex = new Uint8Array(await new Response(new Blob([new TextEncoder().encode(JSON.stringify(plain))]).stream().pipeThrough(new CompressionStream('deflate-raw'))).arrayBuffer());
-    const out = new Uint8Array(13 + newIndex.length + (bytes.length - 13 - indexLength));
-    out.set(bytes.slice(0, 9), 0);
-    new DataView(out.buffer).setUint32(9, newIndex.length);
-    out.set(newIndex, 13);
-    out.set(bytes.slice(13 + indexLength), 13 + newIndex.length);
+    const out = await rewriteIndex(bytes, index => { index.entries[0].size = 10; });
     const opened = await openContainer(out);
     await expect(opened.read('bomb')).rejects.toThrow(SpellContainerError);
+  });
+
+  // Without its size an entry's decompression couldn't be capped: such an index is damaged.
+  it('turns down an index whose entry has no size, or a negative one', async () => {
+    const bytes = await bytesOf(await write([{ path: 'a', text: 'x' }]));
+    await expect(openContainer(await rewriteIndex(bytes, index => { delete index.entries[0].size; }))).rejects.toThrow(SpellContainerError);
+    await expect(openContainer(await rewriteIndex(bytes, index => { index.entries[0].size = -1; }))).rejects.toThrow(SpellContainerError);
+    await expect(openContainer(await rewriteIndex(bytes, index => { index.entries[0].offset = 'x'; }))).rejects.toThrow(SpellContainerError);
   });
 });
