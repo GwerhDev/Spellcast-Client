@@ -10,6 +10,12 @@ export interface RadialMenuItem {
   onSelect: () => void;
   // A destructive option (e.g. delete): turns red instead of the accent on hover.
   danger?: boolean;
+  // A way out (e.g. unloading what's loaded): drawn in its own color at all times, set apart
+  // from the options that work on it.
+  exit?: boolean;
+  // Where it sits (degrees, as the menu's arc), instead of its place along the arc: e.g. a
+  // few options apart from the rest.
+  angle?: number;
 }
 
 interface RadialMenuProps {
@@ -49,12 +55,15 @@ export const RadialMenu = ({ open, items, onClose, radius = 110, startAngle = 16
     };
   }, [open, onClose, anchorRef]);
 
-  const step = items.length > 1 ? (endAngle - startAngle) / (items.length - 1) : 0;
+  // The options without an angle of their own share the arc.
+  const onArc = items.filter(item => item.angle === undefined);
+  const step = onArc.length > 1 ? (endAngle - startAngle) / (onArc.length - 1) : 0;
 
   return (
     <div ref={menuRef} id={id} data-testid="radial-menu" role="menu" aria-hidden={!open} className={`${s.menu} ${open ? s.open : ''}`}>
       {items.map((item, i) => {
-        const angle = ((startAngle + step * i) * Math.PI) / 180;
+        const degrees = item.angle ?? startAngle + step * onArc.indexOf(item);
+        const angle = (degrees * Math.PI) / 180;
         const x = Math.round(Math.cos(angle) * radius);
         const y = Math.round(Math.sin(angle) * radius);
         return (
@@ -64,7 +73,7 @@ export const RadialMenu = ({ open, items, onClose, radius = 110, startAngle = 16
             role="menuitem"
             tabIndex={open ? 0 : -1}
             data-testid={`radial-menu-item-${item.id}`}
-            className={`${s.item} ${item.danger ? s.itemDanger : ''}`}
+            className={`${s.item} ${item.danger ? s.itemDanger : ''} ${item.exit ? s.itemExit : ''}`}
             style={{ '--x': `${x}px`, '--y': `${y}px`, '--i': i } as React.CSSProperties}
             onClick={() => { onClose(); item.onSelect(); }}
           >

@@ -544,6 +544,12 @@
   height: calc(1.3rem * 1.4 * 4);
 }
 
+/* Room below the center for the actions ring's options under it (Import, Dispel), between
+   the center and the sentence. */
+.immersive .stage {
+  margin-bottom: 4.5rem;
+}
+
 .immersive .nowTitle {
   font-size: 1.25rem;
 }

@@ -86,6 +86,29 @@
   color: var(--color-danger);
 }
 
+/* A way out: in its own color at all times, not only on hover. */
+.itemExit .itemIcon {
+  color: var(--color-secondary-accent);
+  border-color: color-mix(in srgb, var(--color-secondary-accent) 55%, transparent);
+}
+
+.itemExit .itemLabel {
+  color: var(--color-secondary-accent);
+}
+
+.itemExit:hover .itemIcon,
+.itemExit:focus-visible .itemIcon {
+  color: var(--app-white);
+  background: color-mix(in srgb, var(--color-secondary-accent) 70%, var(--component-background));
+  border-color: var(--color-secondary-accent);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--color-secondary-accent) 55%, transparent);
+}
+
+.item.itemExit:hover .itemLabel,
+.item.itemExit:focus-visible .itemLabel {
+  color: var(--color-secondary-accent);
+}
+
 .itemLabel {
   font-size: 0.72rem;
   font-weight: 600;

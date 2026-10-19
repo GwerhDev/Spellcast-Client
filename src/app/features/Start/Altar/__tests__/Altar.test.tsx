@@ -480,7 +480,7 @@ describe('Altar', () => {
       // The spell's info and Import first (no Write), the spell's own actions, and unloading it last.
       const order = Array.from(screen.getByTestId('radial-menu').querySelectorAll('[data-testid^="radial-menu-item-"]'))
         .map(el => el.getAttribute('data-testid')!.replace('radial-menu-item-', ''));
-      expect(order).toEqual(['info', 'import', 'reader', 'edit', 'unload']);
+      expect(order).toEqual(['info', 'reader', 'edit', 'import', 'unload']);
       // Escape doesn't close it.
       fireEvent.keyDown(document, { key: 'Escape' });
       expect(ringOpen()).toBe(true);

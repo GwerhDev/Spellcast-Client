@@ -228,19 +228,20 @@ export const Altar = ({ onWrite, onImport, immersive = false, idle = false, onFo
   };
 
   // Immersive, the loaded spell's actions ring the center like the Spellcast button's menu
-  // does -- above it, clear of the sentence below -- instead of sitting in the corners. First
-  // the spell's info (its page) and that menu's Import (the Spellcast button isn't shown with
-  // a spell); not Write, which has nothing to do with the spell loaded. Short labels, so the
-  // ring stays tight around the center.
+  // does, instead of sitting in the corners. Above it, what works on the spell: its info (its
+  // page), the reader and the editor. Below it, side by side (the stage leaves them room
+  // above the sentence, see Altar.module.css): that menu's Import (the Spellcast button isn't
+  // shown with a spell) and Dispel, a way out in its own color. Not Write, which has nothing
+  // to do with the spell loaded. Short labels, so the ring stays tight around the center.
   const ringActions = immersive && hasSpell && !dropping;
   const actionItems: RadialMenuItem[] = [
     { id: 'info', label: t.start.spellInfo, icon: faScroll, onSelect: () => navigate(`/spell/${spellId}`) },
-    { id: 'import', label: t.start.importTab, icon: faUpload, onSelect: onImport },
     { id: 'reader', label: t.spell.reader, icon: faBookOpenReader, onSelect: () => navigate(`/spell/${spellId}/reader`) },
     ...(inGrimoire ? [
       { id: 'edit', label: t.nav.editor, icon: faWandMagicSparkles, onSelect: () => navigate(`/editor/${spellId}`) },
     ] : []),
-    { id: 'unload', label: t.player.unload, icon: faEject, onSelect: () => unloadSpell() },
+    { id: 'import', label: t.start.importTab, icon: faUpload, onSelect: onImport, angle: 122 },
+    { id: 'unload', label: t.player.unload, icon: faEject, onSelect: () => unloadSpell(), exit: true, angle: 58 },
   ];
 
   const hintText = importing ? t.start.readImporting : dropping ? t.start.readDropRelease : t.start.readDropHint;
@@ -294,8 +295,8 @@ export const Altar = ({ onWrite, onImport, immersive = false, idle = false, onFo
                   items={actionItems}
                   onClose={keepActions}
                   radius={125}
-                  startAngle={185}
-                  endAngle={355}
+                  startAngle={210}
+                  endAngle={330}
                 />
               </motion.div>
             )}
