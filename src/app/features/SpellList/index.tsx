@@ -27,6 +27,8 @@ interface SpellListProps {
   selectedIds?: string[];
   onToggleSelect?: (id: string) => void;
   onSelectableIdsChange?: (ids: string[]) => void;
+  // How many spells the caster has in this list, whatever the search (0 while loading).
+  onSpellCountChange?: (count: number) => void;
   // A file manager's gestures (see listSelection): a click on a card with Ctrl/⌘ or Shift,
   // a box dragged across the list's empty space (the cards it touches), and a click there.
   onItemModifiedClick?: (id: string, modifiers: SelectionModifiers) => void;
@@ -35,7 +37,7 @@ interface SpellListProps {
   onEmptyClick?: (additive: boolean) => void;
 }
 
-export const SpellList: React.FC<SpellListProps> = ({ query = '', filter = 'local', docFilter = 'all', selectionMode, selectedIds = [], onToggleSelect, onSelectableIdsChange, onItemModifiedClick, onBoxStart, onBoxChange, onEmptyClick }) => {
+export const SpellList: React.FC<SpellListProps> = ({ query = '', filter = 'local', docFilter = 'all', selectionMode, selectedIds = [], onToggleSelect, onSelectableIdsChange, onSpellCountChange, onItemModifiedClick, onBoxStart, onBoxChange, onEmptyClick }) => {
   // A card click opens the spell's detail in a modal (the same one the player's cover
   // opens), where all of its actions live.
   const [detailSpellId, setDetailSpellId] = useState<string | null>(null);
@@ -118,6 +120,9 @@ export const SpellList: React.FC<SpellListProps> = ({ query = '', filter = 'loca
     onSelectableIdsChangeRef.current?.(filtered.map(d => d.id));
     //eslint-disable-next-line
   }, [documents, query, docFilter, pdfIds]);
+  const onSpellCountChangeRef = useRef(onSpellCountChange);
+  onSpellCountChangeRef.current = onSpellCountChange;
+  useEffect(() => { onSpellCountChangeRef.current?.(documents.length); }, [documents]);
 
   if (isLoading) return (
     <div className={s.container}>

@@ -38,6 +38,8 @@ export const GrimoireLanding = () => {
   // The spells matching the search and tab, in the grid's order: what a Shift+click's run
   // and a box follow.
   const [selectableIds, setSelectableIds] = useState<string[]>([]);
+  // With no spells in the grimoire, there's nothing to select or download.
+  const [spellCount, setSpellCount] = useState(0);
   // What was selected when a box started with Ctrl/Shift held: the box adds to it.
   const boxBaseRef = useRef<string[]>([]);
   const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
@@ -196,25 +198,29 @@ export const GrimoireLanding = () => {
           <FontAwesomeIcon icon={faPlus} />
           {t.grimoire.addSpells}
         </button>
-        <button
-          data-testid="select-mode-btn"
-          className={`${s.toolbarBtn} ${selectionActive ? s.toolbarBtnActive : ''}`}
-          onClick={toggleSelectionMode}
-          title={selectionActive ? t.grimoire.cancelSelection : t.grimoire.selectMode}
-        >
-          <FontAwesomeIcon icon={selectionActive ? faXmark : faCheckSquare} />
-          {selectionActive ? t.grimoire.cancelSelection : t.grimoire.selectMode}
-        </button>
-        <button
-          data-testid="download-grimoire-btn"
-          className={s.toolbarBtn}
-          onClick={openDownloadGrimoire}
-          disabled={isDownloading}
-          title={t.grimoire.downloadGrimoire}
-        >
-          <FontAwesomeIcon icon={faDownload} />
-          {t.grimoire.downloadGrimoire}
-        </button>
+        {(spellCount > 0 || selectionActive) && (
+          <>
+            <button
+              data-testid="select-mode-btn"
+              className={`${s.toolbarBtn} ${selectionActive ? s.toolbarBtnActive : ''}`}
+              onClick={toggleSelectionMode}
+              title={selectionActive ? t.grimoire.cancelSelection : t.grimoire.selectMode}
+            >
+              <FontAwesomeIcon icon={selectionActive ? faXmark : faCheckSquare} />
+              {selectionActive ? t.grimoire.cancelSelection : t.grimoire.selectMode}
+            </button>
+            <button
+              data-testid="download-grimoire-btn"
+              className={s.toolbarBtn}
+              onClick={openDownloadGrimoire}
+              disabled={isDownloading}
+              title={t.grimoire.downloadGrimoire}
+            >
+              <FontAwesomeIcon icon={faDownload} />
+              {t.grimoire.downloadGrimoire}
+            </button>
+          </>
+        )}
       </div>
 
       {filter === 'cloud' ? (
@@ -227,6 +233,7 @@ export const GrimoireLanding = () => {
           selectedIds={selectedIds}
           onToggleSelect={toggleSelect}
           onSelectableIdsChange={setSelectableIds}
+          onSpellCountChange={setSpellCount}
           onItemModifiedClick={handleItemModifiedClick}
           onBoxStart={handleBoxStart}
           onBoxChange={handleBoxChange}
