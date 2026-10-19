@@ -45,7 +45,7 @@ describe('ImportOption', () => {
 
     expect(await screen.findByTestId('spell-create-input')).toBeInTheDocument();
     expect(importFileMock).not.toHaveBeenCalled();
-    expect(screen.getByTestId('import-option-create-all')).toHaveTextContent('Import spell');
+    expect(screen.getByTestId('import-option-create-all')).toHaveTextContent('Import Spell');
     fireEvent.click(screen.getByTestId('import-option-create-all'));
     await waitFor(() => expect(importFileMock).toHaveBeenCalledWith(expect.objectContaining({ name: 'book.spell' })));
   });
@@ -54,7 +54,7 @@ describe('ImportOption', () => {
     renderWithProviders(<ImportOption />, { preloadedState: loggedInState });
     selectFiles([pdfFile()]);
 
-    expect(await screen.findByTestId('import-option-create-all')).toHaveTextContent('Create spell');
+    expect(await screen.findByTestId('import-option-create-all')).toHaveTextContent('Create Spell');
   });
 
   it('lists PDFs and .spell files together, creating them all from one button', async () => {
@@ -63,7 +63,7 @@ describe('ImportOption', () => {
 
     await waitFor(() => expect(screen.getAllByTestId('spell-create-input')).toHaveLength(2));
     expect(importFileMock).not.toHaveBeenCalled();
-    expect(screen.getByTestId('import-option-create-all')).toHaveTextContent('Create all spells');
+    expect(screen.getByTestId('import-option-create-all')).toHaveTextContent('Create all Spells');
     fireEvent.click(screen.getByTestId('import-option-create-all'));
     await waitFor(() => expect(importFileMock).toHaveBeenCalledTimes(1));
     expect(store.getState().spellUpload.queue).toHaveLength(1);

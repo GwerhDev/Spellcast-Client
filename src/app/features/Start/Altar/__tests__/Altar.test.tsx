@@ -597,9 +597,9 @@ describe('Altar', () => {
       mockImportFile.mockReturnValue(new Promise(resolve => { finish = resolve; }));
       renderWithProviders(<Read />);
       fireEvent.drop(screen.getByTestId('altar'), fileDrag([spellFile()]));
-      await waitFor(() => expect(screen.getByTestId('altar-hint')).toHaveTextContent('Importing spell'));
+      await waitFor(() => expect(screen.getByTestId('altar-hint')).toHaveTextContent('Importing Spell'));
       await act(async () => { finish(null); });
-      expect(screen.getByTestId('altar-hint')).not.toHaveTextContent('Importing spell');
+      expect(screen.getByTestId('altar-hint')).not.toHaveTextContent('Importing Spell');
     });
   });
 
