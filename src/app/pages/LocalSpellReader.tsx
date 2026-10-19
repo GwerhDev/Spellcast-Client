@@ -43,7 +43,9 @@ export const LocalSpellReader: React.FC = () => {
     let cancelled = false;
     const loadSpell = async () => {
       if (!id) { setError('No document ID provided.'); setIsLoading(false); return; }
-      if (!logged) { setError('You must be logged in to view this document.'); setIsLoading(false); return; }
+      // No session yet (it's still being read, the app's loader over the page): still loading,
+      // not an error -- signing out sends to the login, so this only waits for it to come in.
+      if (!logged) return;
 
       if (id === spellId) {
         setIsLoading(false);

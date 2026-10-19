@@ -35,11 +35,20 @@ describe('LocalSpellReader', () => {
     expect(screen.getByTestId('local-spell-reader-error-back-btn')).toBeInTheDocument();
   });
 
-  it('shows a standardized (EmptyState) error panel when the user is not logged in', async () => {
+  // Entering the reader straight from the address bar, the session is still being read (the
+  // app's loader over the page): that's not an error yet.
+  it('keeps loading while the session is not in yet, then loads its spell', async () => {
+    const doc = { id: 'doc-1', userId: 'user-1', title: 'Doc one', pagesContent: JSON.stringify(['a']) };
+    vi.spyOn(db, 'getSpellById').mockResolvedValue(doc as never);
     const store = makeStore();
     renderPage(store);
+    await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)); });
+    expect(screen.queryByTestId('local-spell-reader-error')).not.toBeInTheDocument();
+    expect(store.getState().spellReader.spellId).toBeNull();
 
-    expect(await screen.findByTestId('local-spell-reader-error')).toBeInTheDocument();
+    act(() => { store.dispatch(setSession({ logged: true, userData: { id: 'user-1', username: 'Test', loader: false } })); });
+    await waitFor(() => expect(store.getState().spellReader.spellId).toBe('doc-1'));
+    expect(screen.queryByTestId('local-spell-reader-error')).not.toBeInTheDocument();
   });
 
   describe('its spell in the player', () => {

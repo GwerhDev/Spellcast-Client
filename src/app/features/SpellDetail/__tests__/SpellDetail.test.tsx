@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { screen, fireEvent, waitFor } from '@testing-library/react';
+import { screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { Routes, Route } from 'react-router-dom';
 import { renderWithProviders, makeStore } from '../../../../test/renderWithProviders';
 import { SpellDetail } from '../index';
@@ -54,6 +54,21 @@ describe('SpellDetail', () => {
       await screen.findByTestId('spell-detail-title');
       expect(screen.queryByTestId('spell-detail-pdf-tag')).not.toBeInTheDocument();
     });
+  });
+
+  // Entering the page straight from the address bar, the session is still being read (the
+  // app's loader over the page): that's not a missing spell yet.
+  it('keeps loading while the session is not in yet, then shows the spell', async () => {
+    vi.spyOn(db, 'getSpellById').mockResolvedValue(mockDoc as never);
+    const store = makeStore();
+    renderDetail(store);
+    await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)); });
+    expect(screen.queryByTestId('spell-detail-error')).not.toBeInTheDocument();
+    expect(screen.getByTestId('spell-detail-loading')).toBeInTheDocument();
+
+    act(() => { store.dispatch({ type: 'session/setSession', payload: { logged: true, userData: { id: 'user-1', loader: false } } }); });
+    expect(await screen.findByTestId('spell-detail-title')).toBeInTheDocument();
+    expect(screen.queryByTestId('spell-detail-error')).not.toBeInTheDocument();
   });
 
   it('shows loading state while fetching', () => {

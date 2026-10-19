@@ -64,7 +64,10 @@ export const SpellDetail: React.FC = () => {
 
   useEffect(() => {
     const load = async () => {
-      if (!id || !logged) { setIsLoading(false); return; }
+      if (!id) { setIsLoading(false); return; }
+      // No session yet (it's still being read, the app's loader over the page): still loading,
+      // not "Spell not found" -- that would flash under the loader before the spell shows.
+      if (!logged) return;
       try {
         const spellDoc = await getSpellById(id, userData.id);
         if (!spellDoc) { setError('Spell not found.'); setIsLoading(false); return; }
