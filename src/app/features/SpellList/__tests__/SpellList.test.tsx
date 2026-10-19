@@ -42,6 +42,21 @@ describe('SpellList', () => {
     expect(skeletons.length).toBe(10);
   });
 
+  // Entering the page straight from the address bar, the session is still being read (the
+  // app's loader over the page): that's not an empty grimoire yet.
+  it('keeps loading while the session is not in yet, then lists the spells', async () => {
+    vi.spyOn(db, 'getSpellsFromDB').mockResolvedValue([mockDoc] as never);
+    const store = makeStore();
+    renderWithProviders(<SpellList />, { store });
+    await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)); });
+    expect(screen.queryByTestId('spell-list-empty')).not.toBeInTheDocument();
+    expect(screen.getAllByTestId('skeleton-card').length).toBeGreaterThan(0);
+
+    act(() => { store.dispatch({ type: 'session/setSession', payload: { logged: true, userData: { id: 'user-1', loader: false } } }); });
+    expect(await screen.findByTestId('spell-card-doc-1')).toBeInTheDocument();
+    expect(screen.queryByTestId('spell-list-empty')).not.toBeInTheDocument();
+  });
+
   it('shows empty state when no documents', async () => {
     vi.spyOn(db, 'getSpellsFromDB').mockResolvedValue([]);
     renderWithProviders(<SpellList />, { store: loggedStore() });

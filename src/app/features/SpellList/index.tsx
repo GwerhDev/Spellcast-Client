@@ -64,7 +64,9 @@ export const SpellList: React.FC<SpellListProps> = ({ query = '', filter = 'loca
   });
 
   const fetchLocal = async () => {
-    if (!logged) { setIsLoading(false); return; }
+    // No session yet (it's still being read, the app's loader over the page): still loading,
+    // not an empty list -- "No spells found" before knowing would flash under the loader.
+    if (!logged) return;
     try {
       // No going back to the loading state on a refetch (isLoading starts true, for the
       // first load only): the skeleton replaces everything this renders, including the
