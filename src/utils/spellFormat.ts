@@ -1,30 +1,36 @@
-import JSZip from 'jszip';
 import type { TimelineEntry } from '../services/tts';
+import { openContainer, sha256Hex, SpellContainerError, writeContainer, type ContainerEntry, type OpenedContainer } from './spellContainer';
 import { getSpellById, saveSpellToDB } from '../db';
 import { getOriginalPdf, setOriginalPdf } from '../db/originalPdfs';
 import { getCachedAudioEntriesForSpell, setCachedAudio, type CachedAudioEntry } from '../db/audioCache';
 
-// .spell is a ZIP container (TCORE-78): manifest.json + spell.json (required) +
-// original/ (optional: originalPagesContent.json always when present, original.pdf only
-// when explicitly requested) + renders/<voice>/ (optional, audio+timeline pairs, always
-// co-located — never packaged separately). Bumping this invalidates nothing on its own;
-// importSpellFromFile() rejects a manifest with a formatVersion it doesn't recognize, so
-// this only needs to change on an actual container-shape change.
+// .spell is a container of the app's own (see spellContainer): a binary, not a ZIP, open to
+// anyone who reads the format.
+// Every part of the work is an entry of its own, so an entry that doesn't change between two
+// exports is byte for byte the same (and content-addressed storage keeps it once). The
+// manifest (SpellManifest) is in the container's index; the entries:
 //
-// Bumped 1 -> 2 (TCORE-90): the original PDF moved out of the Spell record into its own
-// store (src/db/originalPdfs.ts), and the folder was renamed source/ -> original/ to match.
-// v1 files are still importable (see importSpellFromFile) — their bundled PDF, if any, is
-// simply ignored (never migrated into the new store) per the ticket's own call.
+//   pages/0001.json ...              one page per entry, its images as references
+//   original/pages/0001.json ...     the pages as first read (the "reset" source), if any
+//   original/original.pdf            the PDF it was read from, only when asked for
+//   assets/{sha256}.{ext}            each image once, as binary, named by its content
+//   cover.{ext}                      the spell's cover, if it has one
+//   renders/{voice}/{sha256}.{ext}   cached audio of a page, named by the content of the page
+//   renders/{voice}/{sha256}.timeline.json   it reads (the page entry's sha256), with its timeline
 //
-// Bumped 2 -> 3 (TCORE-97): manifest.json can now carry description/author/tags/language
-// (social/feed metadata) — unlike `progress`, this DOES travel with the work. v1/v2 files
-// are still importable; they simply predate these fields, which come back undefined.
-export const SPELL_FORMAT_VERSION = 3;
+// Only serialization: the local spell keeps its pagesContent as it is; exporting splits it
+// into these files and importing puts the very same pagesContent back together.
+export const SPELL_FORMAT_VERSION = 1;
 
 export interface SpellManifest {
   formatVersion: number;
   title: string;
   exportedAt: string;
+  pageCount: number;
+  // null: the spell has no original pages.
+  originalPageCount: number | null;
+  // The cover's file in the ZIP, or null.
+  cover: string | null;
   hasOriginalPdf: boolean;
   voices: string[];
   description?: string;
@@ -36,8 +42,8 @@ export interface SpellManifest {
 export interface ExportSpellOptions {
   /**
    * Bundle original/original.pdf, when one is stored for this spell. Gates ONLY the PDF
-   * binary (the heavy part) — original/originalPagesContent.json (needed for revert) is
-   * bundled whenever the record has it, independent of this flag.
+   * binary (the heavy part) — the original pages (needed for revert) are bundled whenever
+   * the record has them, independent of this flag.
    */
   includeSource?: boolean;
   /** Bundle renders/<voice>/ (cached audio + timelines), when any are cached for this spell. */
@@ -49,12 +55,14 @@ export interface ExportSpellResult {
   filename: string;
 }
 
+type JsonNode = { [key: string]: unknown };
+
 const sanitizeFilename = (title: string): string => {
   const cleaned = title.trim().replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim();
   return cleaned.length > 0 ? cleaned : 'spell';
 };
 
-const blobExtension = (blob: Blob): string => {
+const audioExtension = (blob: Blob): string => {
   const type = blob.type.toLowerCase();
   if (type.includes('mpeg') || type.includes('mp3')) return 'mp3';
   if (type.includes('wav')) return 'wav';
@@ -63,12 +71,103 @@ const blobExtension = (blob: Blob): string => {
   return 'audio';
 };
 
+const IMAGE_EXTENSIONS: Record<string, string> = {
+  'image/png': 'png',
+  'image/jpeg': 'jpg',
+  'image/webp': 'webp',
+  'image/gif': 'gif',
+  'image/svg+xml': 'svg',
+  'image/avif': 'avif',
+};
+const IMAGE_TYPES: Record<string, string> = Object.fromEntries(Object.entries(IMAGE_EXTENSIONS).map(([type, ext]) => [ext, type]));
+
+const imageExtension = (type: string): string => IMAGE_EXTENSIONS[type.toLowerCase()] ?? 'bin';
+const imageType = (ext: string): string => IMAGE_TYPES[ext] ?? 'application/octet-stream';
+
+const encode = (text: string) => new TextEncoder().encode(text);
+const decode = (bytes: Uint8Array) => new TextDecoder().decode(bytes);
+
+const base64ToBytes = (base64: string): Uint8Array => {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+};
+
+const bytesToBase64 = (bytes: Uint8Array): string => {
+  let binary = '';
+  const CHUNK = 0x8000;
+  for (let i = 0; i < bytes.length; i += CHUNK) binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
+  return btoa(binary);
+};
+
+// An image written into a page (a base64 data URL), and how a page refers to its file in the
+// ZIP instead: `spell-asset:{sha256}.{ext}`, the file being assets/{sha256}.{ext}.
+const DATA_URL = /^data:([^;,]+);base64,(.*)$/s;
+const ASSET_REF = /^spell-asset:([0-9a-f]{64}\.[a-z0-9]+)$/;
+const assetPath = (name: string) => `assets/${name}`;
+
+// Every attribute value of a node and its children, deep: images live in nodes' attrs (an
+// image's src), at any depth (columns, boxes, tables).
+const mapAttrs = async (node: unknown, map: (value: string) => Promise<string>): Promise<unknown> => {
+  if (Array.isArray(node)) return Promise.all(node.map(child => mapAttrs(child, map)));
+  if (!node || typeof node !== 'object') return node;
+  const out: JsonNode = {};
+  for (const [key, value] of Object.entries(node as JsonNode)) {
+    if (key === 'attrs' && value && typeof value === 'object' && !Array.isArray(value)) {
+      const attrs: JsonNode = {};
+      for (const [name, attr] of Object.entries(value as JsonNode)) attrs[name] = typeof attr === 'string' ? await map(attr) : attr;
+      out[key] = attrs;
+    } else {
+      out[key] = await mapAttrs(value, map);
+    }
+  }
+  return out;
+};
+
+// The entries being written, each path once (an image shared by pages is one entry).
+class Entries {
+  readonly list: ContainerEntry[] = [];
+  private readonly paths = new Set<string>();
+  add(path: string, data: Uint8Array, compress: boolean) {
+    if (this.paths.has(path)) return;
+    this.paths.add(path);
+    this.list.push({ path, data, compress });
+  }
+}
+
+// A page as its entry: each image taken out to assets/ (once per content), the page referring
+// to it.
+const pageToFile = async (page: unknown, entries: Entries): Promise<string> => {
+  const withRefs = await mapAttrs(page, async (value) => {
+    const match = DATA_URL.exec(value);
+    if (!match) return value;
+    const bytes = base64ToBytes(match[2]);
+    const name = `${await sha256Hex(bytes)}.${imageExtension(match[1])}`;
+    entries.add(assetPath(name), bytes, false);
+    return `spell-asset:${name}`;
+  });
+  return JSON.stringify(withRefs);
+};
+
+const pageFileName = (folder: string, index: number) => `${folder}/${String(index + 1).padStart(4, '0')}.json`;
+
+// The pages of a pagesContent into folder/0001.json..., returning each page entry's bytes.
+const writePages = async (pagesContent: string, folder: string, entries: Entries): Promise<Uint8Array[]> => {
+  const pages = JSON.parse(pagesContent) as unknown[];
+  const files: Uint8Array[] = [];
+  for (let i = 0; i < pages.length; i++) {
+    const file = encode(await pageToFile(pages[i], entries));
+    entries.add(pageFileName(folder, i), file, true);
+    files.push(file);
+  }
+  return files;
+};
+
 /**
  * Reads a Spell (and, optionally, its cached audio) from IndexedDB and assembles a
- * .spell ZIP in memory. Never includes `progress` — a reader's personal position is
- * not part of the work, and must never travel in a shared .spell — so the exported
- * object below is built by picking only the fields that belong to the work, not by
- * spreading the full record and deleting `progress` after the fact.
+ * .spell in memory. Never includes `progress` — a reader's personal position is
+ * not part of the work, and must never travel in a shared .spell.
  */
 export async function exportSpellToBlob(
   spellId: string,
@@ -81,61 +180,57 @@ export async function exportSpellToBlob(
   const includeSource = options.includeSource ?? false;
   const includeAudio = options.includeAudio ?? false;
 
-  const zip = new JSZip();
+  // Images shared by pages (or by a page and its original) are written once.
+  const entries = new Entries();
 
-  zip.file('spell.json', JSON.stringify({
-    title: spell.title,
-    pagesContent: spell.pagesContent ?? '[]',
-  }));
+  const pageFiles = await writePages(spell.pagesContent ?? '[]', 'pages', entries);
+  const originalPageFiles = spell.originalPagesContent
+    ? await writePages(spell.originalPagesContent, 'original/pages', entries)
+    : null;
 
-  // originalPagesContent is small JSON, needed for revert-to-original on the receiving
-  // end — it travels whenever present, regardless of includeSource (that toggle is only
-  // about the much heavier PDF binary below).
-  if (spell.originalPagesContent) {
-    zip.file('original/originalPagesContent.json', spell.originalPagesContent);
+  let cover: string | null = null;
+  if (spell.cover) {
+    cover = `cover.${imageExtension(spell.cover.type)}`;
+    entries.add(cover, new Uint8Array(await spell.cover.arrayBuffer()), false);
   }
 
   // Only look up the PDF store at all when actually requested — it's the one genuinely
   // heavy, opt-in part of a .spell export.
   const originalPdf = includeSource ? await getOriginalPdf(spellId) : null;
-  const hasOriginalPdf = !!originalPdf;
-  if (originalPdf) zip.file('original/original.pdf', await originalPdf.arrayBuffer());
+  if (originalPdf) entries.add('original/original.pdf', new Uint8Array(await originalPdf.arrayBuffer()), false);
 
-  let voices: string[] = [];
+  // A page's audio is named by what it reads (its page entry's content), not by its number:
+  // the same page renders the same, wherever it sits.
+  const voices = new Set<string>();
   if (includeAudio) {
-    const entries = await getCachedAudioEntriesForSpell(spellId);
-    const byVoice = new Map<string, CachedAudioEntry[]>();
-    for (const entry of entries) {
-      const list = byVoice.get(entry.voice) ?? [];
-      list.push(entry);
-      byVoice.set(entry.voice, list);
-    }
-    voices = Array.from(byVoice.keys());
-    for (const [voice, voiceEntries] of byVoice) {
-      for (const entry of voiceEntries) {
-        const ext = blobExtension(entry.blob);
-        zip.file(`renders/${voice}/page-${entry.page}.${ext}`, await entry.blob.arrayBuffer());
-        zip.file(`renders/${voice}/page-${entry.page}.timeline.json`, JSON.stringify(entry.timeline));
-      }
+    const pageHashes = await Promise.all(pageFiles.map(file => sha256Hex(file)));
+    const cached: CachedAudioEntry[] = await getCachedAudioEntriesForSpell(spellId);
+    for (const render of cached) {
+      const hash = pageHashes[render.page - 1];
+      if (!hash) continue;
+      voices.add(render.voice);
+      entries.add(`renders/${render.voice}/${hash}.${audioExtension(render.blob)}`, new Uint8Array(await render.blob.arrayBuffer()), false);
+      entries.add(`renders/${render.voice}/${hash}.timeline.json`, encode(JSON.stringify(render.timeline)), true);
     }
   }
 
-  // manifest.json goes in last so its `voices`/`hasOriginalPdf` flags reflect what was
-  // actually written above, not what was requested.
+  // The manifest is made last so it reflects what was actually written above, not what was
+  // requested.
   const manifest: SpellManifest = {
     formatVersion: SPELL_FORMAT_VERSION,
     title: spell.title,
     exportedAt: new Date().toISOString(),
-    hasOriginalPdf,
-    voices,
+    pageCount: pageFiles.length,
+    originalPageCount: originalPageFiles ? originalPageFiles.length : null,
+    cover,
+    hasOriginalPdf: !!originalPdf,
+    voices: Array.from(voices),
     description: spell.description,
     author: spell.author,
     tags: spell.tags,
     language: spell.language,
   };
-  zip.file('manifest.json', JSON.stringify(manifest));
-
-  const blob = await zip.generateAsync({ type: 'blob' });
+  const blob = await writeContainer(manifest, entries.list, { version: SPELL_FORMAT_VERSION });
   return { blob, filename: `${sanitizeFilename(spell.title)}.spell` };
 }
 
@@ -153,64 +248,88 @@ export function downloadBlob(blob: Blob, filename: string): void {
 
 export class SpellImportError extends Error {}
 
-const readZipFile = async (zip: JSZip, path: string): Promise<string | null> => {
-  const entry = zip.file(path);
-  if (!entry) return null;
-  return entry.async('string');
+type Container = OpenedContainer<SpellManifest>;
+
+const readText = async (container: Container, path: string): Promise<string | null> => {
+  const data = await container.read(path);
+  return data ? decode(data) : null;
 };
 
-const readZipBlob = async (zip: JSZip, path: string, mimeType?: string): Promise<Blob | null> => {
-  const entry = zip.file(path);
-  if (!entry) return null;
-  const arrayBuffer = await entry.async('arraybuffer');
-  return new Blob([arrayBuffer], mimeType ? { type: mimeType } : undefined);
+const readBlob = async (container: Container, path: string, mimeType?: string): Promise<Blob | null> => {
+  const data = await container.read(path);
+  return data ? new Blob([data as BlobPart], mimeType ? { type: mimeType } : undefined) : null;
+};
+
+// The pages of folder/0001.json... back into a pagesContent: each image reference back into
+// the image itself (a data URL, as it was written in the page).
+const readPages = async (container: Container, folder: string, count: number): Promise<{ pagesContent: string; files: Uint8Array[] }> => {
+  const dataUrls = new Map<string, string>();
+  const files: Uint8Array[] = [];
+  const pages: string[] = [];
+  for (let i = 0; i < count; i++) {
+    const file = await container.read(pageFileName(folder, i));
+    if (file == null) throw new SpellImportError(`Not a valid .spell file: missing ${pageFileName(folder, i)}.`);
+    files.push(file);
+    const page = await mapAttrs(JSON.parse(decode(file)), async (value) => {
+      const match = ASSET_REF.exec(value);
+      if (!match) return value;
+      const name = match[1];
+      let dataUrl = dataUrls.get(name);
+      if (dataUrl === undefined) {
+        const bytes = await container.read(assetPath(name));
+        if (!bytes) throw new SpellImportError(`Not a valid .spell file: missing ${assetPath(name)}.`);
+        dataUrl = `data:${imageType(name.slice(name.lastIndexOf('.') + 1))};base64,${bytesToBase64(bytes)}`;
+        dataUrls.set(name, dataUrl);
+      }
+      return dataUrl;
+    });
+    pages.push(JSON.stringify(page));
+  }
+  return { pagesContent: `[${pages.join(',')}]`, files };
 };
 
 /**
- * Unzips a .spell file and hydrates it into a brand-new Spell record (+ audio_pages
+ * Opens a .spell file and hydrates it into a brand-new Spell record (+ audio_pages
  * cache entries, if renders/ is present). Always creates a NEW id — ids are local to a
- * browser/user, not portable, so the imported spell never reuses whatever id it had in
- * the exporting instance (audio cache keys are built from the new id accordingly).
- * Returns the new spell's id so the caller can navigate to it / invalidate the list.
+ * browser/user's database, not part of the file. Returns the new spell's id so the caller
+ * can navigate to it / invalidate the list.
  */
 export async function importSpellFromFile(file: File, userId: string): Promise<string> {
-  // Read as ArrayBuffer rather than handing JSZip the File/Blob directly — avoids any
-  // environment-specific Blob-support detection ambiguity, at the cost of nothing (the
-  // whole file has to be read into memory either way for a ZIP central-directory parse).
-  const zip = await JSZip.loadAsync(await file.arrayBuffer());
-
-  const manifestJson = await readZipFile(zip, 'manifest.json');
-  if (!manifestJson) throw new SpellImportError('Not a valid .spell file: missing manifest.json.');
-  const manifest = JSON.parse(manifestJson) as SpellManifest & { hasSource?: boolean };
-  // v1 (TCORE-78) is still importable: its bundled PDF (if any) is intentionally dropped
-  // rather than migrated into the new store (see SPELL_FORMAT_VERSION's comment) — only
-  // its originalPagesContent JSON, if present, is worth carrying over for revert. v2
-  // (TCORE-90) predates description/author/tags/language (TCORE-97) — those simply come
-  // back undefined for either legacy version.
-  const SUPPORTED_IMPORT_VERSIONS = [1, 2, SPELL_FORMAT_VERSION];
-  if (!SUPPORTED_IMPORT_VERSIONS.includes(manifest.formatVersion)) {
-    throw new SpellImportError(`Unsupported .spell format version: ${manifest.formatVersion}.`);
+  let container: Container;
+  try {
+    container = await openContainer<SpellManifest>(new Uint8Array(await file.arrayBuffer()));
+  } catch (error) {
+    if (error instanceof SpellContainerError) throw new SpellImportError(error.message);
+    throw error;
   }
-  const sourceFolder = manifest.formatVersion === 1 ? 'source' : 'original';
+  const { manifest } = container;
+  if (container.version !== SPELL_FORMAT_VERSION || manifest.formatVersion !== SPELL_FORMAT_VERSION) {
+    throw new SpellImportError(`Unsupported .spell format version: ${manifest.formatVersion ?? container.version}.`);
+  }
 
-  const spellJson = await readZipFile(zip, 'spell.json');
-  if (!spellJson) throw new SpellImportError('Not a valid .spell file: missing spell.json.');
-  const { title, pagesContent } = JSON.parse(spellJson) as { title: string; pagesContent: string };
+  // A damaged entry surfaces as an import error too.
+  const guarded = async <T,>(read: () => Promise<T>): Promise<T> => {
+    try { return await read(); } catch (error) {
+      if (error instanceof SpellContainerError) throw new SpellImportError(error.message);
+      throw error;
+    }
+  };
 
-  const originalPagesContent = await readZipFile(zip, `${sourceFolder}/originalPagesContent.json`);
-  // v1 only: its bundled PDF, if any, is never read back at all. v2 and v3 both use the
-  // original/ folder shape, so both must be read here -- gating this on
-  // `formatVersion === SPELL_FORMAT_VERSION` would silently stop reading v2 files' PDFs
-  // the moment the constant bumps for an unrelated reason (exactly what TCORE-97 did).
-  const originalPdf = manifest.formatVersion !== 1
-    ? await readZipBlob(zip, 'original/original.pdf', 'application/pdf')
+  const { pagesContent, files: pageFiles } = await guarded(() => readPages(container, 'pages', manifest.pageCount));
+  const original = manifest.originalPageCount != null
+    ? await guarded(() => readPages(container, 'original/pages', manifest.originalPageCount!))
     : null;
+  const cover = manifest.cover
+    ? await guarded(() => readBlob(container, manifest.cover!, imageType(manifest.cover!.slice(manifest.cover!.lastIndexOf('.') + 1))))
+    : null;
+  const originalPdf = manifest.hasOriginalPdf ? await guarded(() => readBlob(container, 'original/original.pdf', 'application/pdf')) : null;
 
   const newSpellId = await saveSpellToDB({
-    title,
+    title: manifest.title,
     userId,
     pagesContent,
-    originalPagesContent: originalPagesContent ?? undefined,
+    originalPagesContent: original?.pagesContent,
+    cover: cover ?? undefined,
     description: manifest.description,
     author: manifest.author,
     tags: manifest.tags,
@@ -219,28 +338,27 @@ export async function importSpellFromFile(file: File, userId: string): Promise<s
 
   if (originalPdf) await setOriginalPdf(newSpellId, originalPdf);
 
+  // Each render goes to every page that reads that content (pages are 1-based for the cache).
+  const pagesByHash = new Map<string, number[]>();
+  for (let i = 0; i < pageFiles.length; i++) {
+    const hash = await sha256Hex(pageFiles[i]);
+    pagesByHash.set(hash, [...(pagesByHash.get(hash) ?? []), i + 1]);
+  }
   for (const voice of manifest.voices) {
-    const voiceFolder = zip.folder(`renders/${voice}`);
-    if (!voiceFolder) continue;
-    const timelineFiles = Object.keys(zip.files).filter(
-      (path) => path.startsWith(`renders/${voice}/`) && path.endsWith('.timeline.json'),
-    );
-    for (const timelinePath of timelineFiles) {
-      const pageMatch = timelinePath.match(/page-(\d+)\.timeline\.json$/);
-      if (!pageMatch) continue;
-      const page = Number(pageMatch[1]);
-      const timelineJson = await readZipFile(zip, timelinePath);
+    const prefix = `renders/${voice}/`;
+    const timelinePaths = container.paths.filter(path => path.startsWith(prefix) && path.endsWith('.timeline.json'));
+    for (const timelinePath of timelinePaths) {
+      const hash = timelinePath.slice(prefix.length, -'.timeline.json'.length);
+      const pages = pagesByHash.get(hash);
+      if (!pages) continue;
+      const timelineJson = await guarded(() => readText(container, timelinePath));
       if (!timelineJson) continue;
       const timeline = JSON.parse(timelineJson) as TimelineEntry[];
-
-      const audioPath = Object.keys(zip.files).find(
-        (path) => path.startsWith(`renders/${voice}/page-${page}.`) && !path.endsWith('.timeline.json'),
-      );
+      const audioPath = container.paths.find(path => path.startsWith(`${prefix}${hash}.`) && !path.endsWith('.timeline.json'));
       if (!audioPath) continue;
-      const audioBlob = await readZipBlob(zip, audioPath);
+      const audioBlob = await guarded(() => readBlob(container, audioPath));
       if (!audioBlob) continue;
-
-      await setCachedAudio(newSpellId, page, voice, audioBlob, timeline);
+      for (const page of pages) await setCachedAudio(newSpellId, page, voice, audioBlob, timeline);
     }
   }
 

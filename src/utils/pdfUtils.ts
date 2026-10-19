@@ -44,6 +44,23 @@ export const blobToDataUrl = (blob: Blob): Promise<string> =>
     reader.readAsDataURL(blob);
   });
 
+// Images are stored as WebP: far lighter than PNG or JPEG at the same look (a page's images
+// are stored, read and shared with it). Quality 1 is lossless (for graphics with sharp edges
+// and transparency). A browser that can't encode WebP (Safari) hands back a PNG instead; then
+// the fallback format is used, as before.
+export const canvasToWebpDataUrl = (canvas: HTMLCanvasElement, quality: number, fallback: { type: string; quality?: number }): string => {
+  const webp = canvas.toDataURL('image/webp', quality);
+  return webp.startsWith('data:image/webp') ? webp : canvas.toDataURL(fallback.type, fallback.quality);
+};
+
+const canvasToBlob = (canvas: HTMLCanvasElement, type: string, quality?: number) =>
+  new Promise<Blob | null>((resolve) => canvas.toBlob((b) => resolve(b), type, quality));
+
+export const canvasToWebpBlob = async (canvas: HTMLCanvasElement, quality: number, fallback: { type: string; quality?: number }): Promise<Blob | null> => {
+  const webp = await canvasToBlob(canvas, 'image/webp', quality);
+  return webp && webp.type === 'image/webp' ? webp : canvasToBlob(canvas, fallback.type, fallback.quality);
+};
+
 export const renderPageToCover = async (pdf: pdfjsLib.PDFDocumentProxy): Promise<Blob | null> => {
   try {
     const page = await pdf.getPage(1);
@@ -55,7 +72,7 @@ export const renderPageToCover = async (pdf: pdfjsLib.PDFDocumentProxy): Promise
     canvas.height = scaled.height;
     const ctx = canvas.getContext('2d')!;
     await page.render({ canvasContext: ctx as CanvasRenderingContext2D, viewport: scaled, canvas }).promise;
-    return new Promise((resolve) => canvas.toBlob((b) => resolve(b), 'image/jpeg', 0.75));
+    return canvasToWebpBlob(canvas, 0.75, { type: 'image/jpeg', quality: 0.75 });
   } catch {
     return null;
   }
@@ -66,7 +83,7 @@ export const renderPageToCover = async (pdf: pdfjsLib.PDFDocumentProxy): Promise
 // counting fully against the same per-spell storage quota TCORE-117 already tracks for
 // audio/PDFs, for a cover that's only ever displayed at thumbnail size. Downscales to at
 // most `maxDimension` on the longer side (never upscales a smaller image) and re-encodes as
-// JPEG, matching renderPageToCover's own format/quality so covers are consistently sized
+// WebP, matching renderPageToCover's own format/quality so covers are consistently sized
 // regardless of source. Falls back to the original file if decoding/encoding fails for any
 // reason (corrupt image, unsupported format) -- a not-yet-downscaled cover beats none.
 export const downscaleImageBlob = async (
@@ -85,7 +102,7 @@ export const downscaleImageBlob = async (
     const ctx = canvas.getContext('2d')!;
     ctx.drawImage(bitmap, 0, 0, width, height);
     bitmap.close();
-    const downscaled = await new Promise<Blob | null>((resolve) => canvas.toBlob((b) => resolve(b), 'image/jpeg', quality));
+    const downscaled = await canvasToWebpBlob(canvas, quality, { type: 'image/jpeg', quality });
     return downscaled ?? blob;
   } catch {
     return blob;
@@ -131,7 +148,7 @@ export const extractPageImages = async (page: pdfjsLib.PDFPageProxy): Promise<st
         } else {
           continue;
         }
-        dataUrls.push(canvas.toDataURL('image/png'));
+        dataUrls.push(canvasToWebpDataUrl(canvas, 0.85, { type: 'image/png' }));
       } catch {
         // skip unrenderable image
       }
@@ -386,7 +403,8 @@ const cropCanvasRegion = (
     }
     ctx.putImageData(img, 0, 0);
 
-    return out.toDataURL('image/png');
+    // Lossless: a graphic's edges and transparency kept as they are.
+    return canvasToWebpDataUrl(out, 1, { type: 'image/png' });
   } catch {
     return null;
   }
@@ -566,18 +584,42 @@ const detectDecorativeRegionsFromCanvas = (
 // How wide (px) a page drawn whole is kept: sharp on a zoomed-in, high-density screen.
 const WHOLE_PAGE_MAX_WIDTH = 1600;
 
-// A page drawn whole, as an image for its sheet (JPEG), or null if it can't be drawn.
+// The widest image drawn on a page, in its own pixels (0 if none): a scanned page is one image
+// over the whole page, and drawing it any wider than that adds weight, not detail.
+const widestImageOnPage = async (page: pdfjsLib.PDFPageProxy): Promise<number> => {
+  try {
+    const opList = await page.getOperatorList();
+    let widest = 0;
+    for (let i = 0; i < opList.fnArray.length; i++) {
+      if (opList.fnArray[i] !== pdfjsLib.OPS.paintImageXObject) continue;
+      // [objId, width, height]: its size comes with the operator, before the image itself
+      // is ready.
+      const width = Number(opList.argsArray[i]?.[1]);
+      if (Number.isFinite(width)) widest = Math.max(widest, width);
+    }
+    return widest;
+  } catch {
+    return 0;
+  }
+};
+
+// A page drawn whole, as an image for its sheet (WebP, or JPEG where the browser can't encode
+// WebP), or null if it can't be drawn. As wide as the image it shows (a scan), never wider than
+// WHOLE_PAGE_MAX_WIDTH, nor narrower than the sheet itself.
 const renderWholePage = async (page: pdfjsLib.PDFPageProxy): Promise<string | null> => {
   try {
     const viewport = page.getViewport({ scale: 1 });
-    const scaled = page.getViewport({ scale: Math.min(3, WHOLE_PAGE_MAX_WIDTH / viewport.width) });
+    const sheetWidth = viewport.width * (96 / 72);
+    const imageWidth = await widestImageOnPage(page);
+    const width = imageWidth > 0 ? Math.min(WHOLE_PAGE_MAX_WIDTH, Math.max(sheetWidth, imageWidth)) : WHOLE_PAGE_MAX_WIDTH;
+    const scaled = page.getViewport({ scale: Math.min(3, width / viewport.width) });
     const canvas = document.createElement('canvas');
     canvas.width = Math.round(scaled.width);
     canvas.height = Math.round(scaled.height);
     const ctx = canvas.getContext('2d');
     if (!ctx) return null;
     await page.render({ canvasContext: ctx, viewport: scaled, canvas }).promise;
-    return canvas.toDataURL('image/jpeg', 0.9);
+    return canvasToWebpDataUrl(canvas, 0.8, { type: 'image/jpeg', quality: 0.9 });
   } catch {
     return null;
   }
@@ -1286,7 +1328,8 @@ const cropVectorGraphic = (canvas: HTMLCanvasElement, pageHeight: number, scale:
       if (whiteness > 200) img.data[i + 3] = Math.round(img.data[i + 3] * Math.min(1, (255 - whiteness) / 55));
     }
     ctx.putImageData(img, 0, 0);
-    return out.toDataURL('image/png');
+    // Lossless: a graphic's edges and transparency kept as they are.
+    return canvasToWebpDataUrl(out, 1, { type: 'image/png' });
   } catch {
     return null;
   }

@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import type { Editor } from '@tiptap/react'
 import { ImageIcon } from './icons'
 import { useTranslations } from '../../i18n'
+import { imageFileToDataUrl } from '../../utils/imageFileToDataUrl'
 
 interface Props {
   editor: Editor
@@ -55,12 +56,7 @@ export function ImagePopover({ editor }: Props) {
 
   const handleFile = (file: File) => {
     setFileName(file.name)
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      const result = e.target?.result as string
-      setPreview(result)
-    }
-    reader.readAsDataURL(file)
+    void imageFileToDataUrl(file).then(setPreview)
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
