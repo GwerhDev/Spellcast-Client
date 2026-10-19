@@ -7,7 +7,7 @@ import { getSpellById } from '../../../db';
 import { useDeleteSpells } from '../../../hooks/useDeleteSpells';
 import { useSpellCoverEditor } from '../../../hooks/useSpellCoverEditor';
 import { usePlaySpell } from '../../../hooks/usePlaySpell';
-import { goToNextPage, goToPreviousPage } from '../../../store/spellReaderSlice';
+import { goToNextPage, goToPreviousPage, recordReaderActivity } from '../../../store/spellReaderSlice';
 import { SpellTransport } from '../SpellTransport/SpellTransport';
 import { coverFrames } from '../../../config/assets';
 import { hasOriginalPdf } from '../../../db/originalPdfs';
@@ -300,8 +300,8 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
                   onMount={() => mountSpell(doc)}
                   onUnmount={() => unloadSpell()}
                   onTogglePlay={togglePlayback}
-                  onPrevious={() => dispatch(goToPreviousPage())}
-                  onNext={() => dispatch(goToNextPage())}
+                  onPrevious={() => { dispatch(recordReaderActivity()); dispatch(goToPreviousPage()); }}
+                  onNext={() => { dispatch(recordReaderActivity()); dispatch(goToNextPage()); }}
                   labels={{
                     mount: t.player.mountSpell,
                     unmount: t.player.unloadSpell,

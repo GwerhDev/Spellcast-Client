@@ -205,6 +205,8 @@ export const SpellReader = () => {
   }, [editedText, fitToWidth]);
 
   const handleEdit = () => { navigate(`/editor/${spellId}/${currentPage}`); };
+  // A page picked by the caster: their own action (see useAttentionGuard).
+  const turnToPage = (idx: number) => { dispatch(recordReaderActivity()); dispatch(goToPage(idx + 1)); };
   const handleSentenceClick = (clickedIndex: number) => {
     dispatch(recordReaderActivity());
     if (selectedVoice.type === 'browser') {
@@ -347,7 +349,7 @@ export const SpellReader = () => {
               <PageList
                 pages={Array.from({ length: totalPages }, () => '')}
                 currentPage={currentPage - 1}
-                onPageClick={(idx) => dispatch(goToPage(idx + 1))}
+                onPageClick={turnToPage}
               />
             </motion.div>
           )}
@@ -359,7 +361,7 @@ export const SpellReader = () => {
             <PageList
               pages={Array.from({ length: totalPages }, () => '')}
               currentPage={currentPage - 1}
-              onPageClick={(idx) => dispatch(goToPage(idx + 1))}
+              onPageClick={turnToPage}
               column
             />
           </PageListOverlay>

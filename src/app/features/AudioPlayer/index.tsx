@@ -18,7 +18,7 @@ import {
   clearPendingSeek,
 } from '../../../store/audioPlayerSlice';
 import { setSoundBgVolume, setMasterVolume } from '../../../store/casterInventorySlice';
-import { goToNextPage, goToPreviousPage, setShowSearcher } from '../../../store/spellReaderSlice';
+import { goToNextPage, goToPreviousPage, recordReaderActivity, setShowSearcher } from '../../../store/spellReaderSlice';
 import { PlaybackControls } from '../../components/Players/AudioPlayer/PlaybackControls/PlaybackControls';
 import { VolumeControls } from '../../components/Players/AudioPlayer/VolumeControls/VolumeControls';
 import { VoiceSelectorButton } from '../../components/Players/shared/VoiceSelectorButton/VoiceSelectorButton';
@@ -279,8 +279,10 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
     }
   };
 
+  // Turned by the caster (buttons, headset): their own action (see useAttentionGuard).
   const handlePrevious = () => {
     if (isLoaded) {
+      dispatch(recordReaderActivity());
       dispatch(goToPreviousPage());
     } else {
       dispatch(playPrevious());
@@ -289,6 +291,7 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
 
   const handleNext = () => {
     if (isLoaded) {
+      dispatch(recordReaderActivity());
       dispatch(goToNextPage());
     } else {
       dispatch(playNext());

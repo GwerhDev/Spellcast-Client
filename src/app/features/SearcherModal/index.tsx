@@ -6,7 +6,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import type { JSONContent } from '../../../magictext';
 import { RootState } from '../../../store';
-import { goToPage, setShowSearcher } from '../../../store/spellReaderSlice';
+import { goToPage, recordReaderActivity, setShowSearcher } from '../../../store/spellReaderSlice';
 import { getSpellById } from '../../../db';
 import { useAppSelector } from '../../../store/hooks';
 import { CustomModal } from '../../components/Modals/CustomModal';
@@ -82,6 +82,8 @@ export const SearcherModal: React.FC = () => {
   };
 
   const handlePageSelection = (page: number) => {
+    // Picked by the caster: their own action (see useAttentionGuard).
+    dispatch(recordReaderActivity());
     dispatch(goToPage(page));
     dispatch(setShowSearcher(false));
     if (spellId) navigate(`/spell/${spellId}/reader`);

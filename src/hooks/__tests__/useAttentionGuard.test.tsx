@@ -4,7 +4,7 @@ import { Provider } from 'react-redux';
 import { configureStore, combineReducers } from '@reduxjs/toolkit';
 import spellReaderReducer, { setAttentionGuardEnabled, setAttentionGuardInterval, recordReaderActivity, goToNextPage, setShowAttentionGuard, setSpellInfo } from '../../store/spellReaderSlice';
 import audioPlayerReducer, { play as playAudio } from '../../store/audioPlayerSlice';
-import browserPlayerReducer, { play as playBrowser } from '../../store/browserPlayerSlice';
+import browserPlayerReducer, { play as playBrowser, pause as pauseBrowserPlayer, requestTogglePlay as requestBrowserTogglePlay } from '../../store/browserPlayerSlice';
 import voiceReducer, { setSelectedVoice } from '../../store/voiceSlice';
 import { useAttentionGuard } from '../useAttentionGuard';
 
@@ -110,20 +110,71 @@ describe('useAttentionGuard', () => {
     expect(store.getState().spellReader.showAttentionGuard).toBe(true);
   });
 
-  it('page navigation also counts as activity and resets the timer', async () => {
+  // The reading turns its own pages: that's not the caster doing anything, so the count
+  // goes on across them.
+  it('fires N minutes into playback even as the reading turns several pages on its own', async () => {
     const store = makeStore();
     store.dispatch(setAttentionGuardEnabled(true));
-    store.dispatch(setAttentionGuardInterval(5));
+    store.dispatch(setAttentionGuardInterval(4));
     store.dispatch(playBrowser());
-    // goToNextPage needs somewhere to go.
-    store.dispatch(setSpellInfo({ totalPages: 5 }));
+    store.dispatch(setSpellInfo({ totalPages: 10 }));
 
     renderGuard(store);
-    await act(async () => { await vi.advanceTimersByTimeAsync(4 * oneMinuteMs); });
-    act(() => { store.dispatch(goToNextPage()); });
-    await act(async () => { await vi.advanceTimersByTimeAsync(4 * oneMinuteMs); });
-
+    for (let k = 0; k < 3; k++) {
+      await act(async () => { await vi.advanceTimersByTimeAsync(oneMinuteMs); });
+      act(() => { store.dispatch(goToNextPage()); });
+    }
     expect(store.getState().spellReader.showAttentionGuard).toBe(false);
+    await act(async () => { await vi.advanceTimersByTimeAsync(oneMinuteMs); });
+    expect(store.getState().spellReader.showAttentionGuard).toBe(true);
+  });
+
+  // isPlaying can drop for an instant between sentences or pages: the count holds through it.
+  it('a blink in playback between sentences does not start the count over', async () => {
+    const store = makeStore();
+    store.dispatch(setAttentionGuardEnabled(true));
+    store.dispatch(setAttentionGuardInterval(4));
+    store.dispatch(playBrowser());
+
+    renderGuard(store);
+    await act(async () => { await vi.advanceTimersByTimeAsync(3 * oneMinuteMs); });
+    act(() => { store.dispatch(pauseBrowserPlayer()); });
+    act(() => { store.dispatch(playBrowser()); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(oneMinuteMs); });
+    expect(store.getState().spellReader.showAttentionGuard).toBe(true);
+  });
+
+  // Time not playing doesn't count: N minutes of playback, not of the clock.
+  it('counts only time spent playing', async () => {
+    const store = makeStore();
+    store.dispatch(setAttentionGuardEnabled(true));
+    store.dispatch(setAttentionGuardInterval(4));
+    store.dispatch(playBrowser());
+
+    renderGuard(store);
+    await act(async () => { await vi.advanceTimersByTimeAsync(2 * oneMinuteMs); });
+    act(() => { store.dispatch(pauseBrowserPlayer()); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(10 * oneMinuteMs); });
+    act(() => { store.dispatch(playBrowser()); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(1.5 * oneMinuteMs); });
+    expect(store.getState().spellReader.showAttentionGuard).toBe(false);
+    await act(async () => { await vi.advanceTimersByTimeAsync(0.5 * oneMinuteMs); });
+    expect(store.getState().spellReader.showAttentionGuard).toBe(true);
+  });
+
+  it('a play/pause request from the caster starts the count over', async () => {
+    const store = makeStore();
+    store.dispatch(setAttentionGuardEnabled(true));
+    store.dispatch(setAttentionGuardInterval(4));
+    store.dispatch(playBrowser());
+
+    renderGuard(store);
+    await act(async () => { await vi.advanceTimersByTimeAsync(3 * oneMinuteMs); });
+    act(() => { store.dispatch(requestBrowserTogglePlay()); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(3 * oneMinuteMs); });
+    expect(store.getState().spellReader.showAttentionGuard).toBe(false);
+    await act(async () => { await vi.advanceTimersByTimeAsync(oneMinuteMs); });
+    expect(store.getState().spellReader.showAttentionGuard).toBe(true);
   });
 
   describe('handleContinue', () => {

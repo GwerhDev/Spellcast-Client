@@ -16,6 +16,7 @@ import {
 import { setSoundBgVolume, setMasterVolume } from '../../../store/casterInventorySlice';
 import {
   goToNextPage,
+  recordReaderActivity,
   goToPreviousPage,
   setShowSearcher,
   setCurrentSentenceIndex,
@@ -147,8 +148,9 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
 
   const handleTitle = () => navigate(`/spell/${spellId}/reader`);
   const handleSearcher = () => dispatch(setShowSearcher(true));
-  const handlePrevious = () => { if (isLoaded) dispatch(goToPreviousPage()); };
-  const handleNext = () => { if (isLoaded) dispatch(goToNextPage()); };
+  // Turned by the caster (buttons, headset): their own action (see useAttentionGuard).
+  const handlePrevious = () => { if (isLoaded) { dispatch(recordReaderActivity()); dispatch(goToPreviousPage()); } };
+  const handleNext = () => { if (isLoaded) { dispatch(recordReaderActivity()); dispatch(goToNextPage()); } };
   const isPrevDisabled = isLoaded ? currentPage === 1 : true;
   const isNextDisabled = isLoaded ? currentPage === totalPages : true;
 
