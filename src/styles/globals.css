@@ -360,8 +360,11 @@ body.fullscreen-reader .audioplayer-container {
   margin-top: -0.5rem;
 }
 
+/* Shown, nothing in it is clipped: its popups (the volume) open above it. Clipping is only
+   for folding it away. */
 body.fullscreen-reader.fullscreen-player-visible .audioplayer-container {
   max-height: 200px;
+  overflow: visible;
   opacity: 1;
   pointer-events: auto;
   margin-top: 0;

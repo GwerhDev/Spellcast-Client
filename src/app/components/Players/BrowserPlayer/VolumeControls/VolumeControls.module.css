@@ -38,21 +38,26 @@
   z-index: 100;
 }
 
+/* Vertical as the browser lays it out (writing-mode, min at the bottom), not a horizontal
+   slider turned on its side: a turned one takes its unturned room, and Firefox lays it out
+   and hit-tests it apart from where it's drawn. */
 .verticalSlider {
-  width: 100px;
-  height: 4px;
+  writing-mode: vertical-lr;
+  direction: rtl;
+  width: 4px;
+  height: 100px;
+  margin: 0;
   -webkit-appearance: none;
   appearance: none;
   background: transparent;
   outline: none;
-  transform: rotate(-90deg);
-  transform-origin: 50% 50%;
+  cursor: pointer;
 }
 
 .verticalSlider::-webkit-slider-runnable-track {
-  width: 100%;
-  height: 4px;
-  background: linear-gradient(to right, var(--color-primary) var(--volume-value), var(--color-dark-500) var(--volume-value));
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(to top, var(--color-primary) var(--volume-value), var(--color-dark-500) var(--volume-value));
   border-radius: 999px;
 }
 
@@ -64,7 +69,7 @@
   background: var(--color-primary);
   border-radius: 50%;
   cursor: pointer;
-  margin-top: -4px;
+  margin-left: -4px;
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 22%, transparent);
   transition: box-shadow 0.15s ease;
 }
@@ -75,9 +80,9 @@
 }
 
 .verticalSlider::-moz-range-track {
-  width: 100%;
-  height: 4px;
-  background: linear-gradient(to right, var(--color-primary) var(--volume-value), var(--color-dark-500) var(--volume-value));
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(to top, var(--color-primary) var(--volume-value), var(--color-dark-500) var(--volume-value));
   border-radius: 999px;
 }
 
@@ -161,21 +166,22 @@
 
 /* Vertical slider shared by mixer faders */
 .mixerVerticalSlider {
-  width: 90px;
-  height: 4px;
+  writing-mode: vertical-lr;
+  direction: rtl;
+  width: 4px;
+  height: 90px;
+  margin: 0;
   -webkit-appearance: none;
   appearance: none;
   background: transparent;
   outline: none;
-  transform: rotate(-90deg);
-  transform-origin: 50% 50%;
   cursor: pointer;
 }
 
 .mixerVerticalSlider::-webkit-slider-runnable-track {
-  width: 100%;
-  height: 4px;
-  background: linear-gradient(to right, var(--color-primary) var(--mixer-pct), var(--color-dark-500) var(--mixer-pct));
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(to top, var(--color-primary) var(--mixer-pct), var(--color-dark-500) var(--mixer-pct));
   border-radius: 999px;
 }
 
@@ -187,7 +193,7 @@
   background: var(--color-primary);
   border-radius: 50%;
   cursor: pointer;
-  margin-top: -4px;
+  margin-left: -4px;
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 22%, transparent);
   transition: box-shadow 0.15s ease;
 }
@@ -198,9 +204,9 @@
 }
 
 .mixerVerticalSlider::-moz-range-track {
-  width: 100%;
-  height: 4px;
-  background: linear-gradient(to right, var(--color-primary) var(--mixer-pct), var(--color-dark-500) var(--mixer-pct));
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(to top, var(--color-primary) var(--mixer-pct), var(--color-dark-500) var(--mixer-pct));
   border-radius: 999px;
 }
 

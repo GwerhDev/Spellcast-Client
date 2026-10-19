@@ -145,6 +145,9 @@ export const SpellReader = () => {
       document.body.classList.add('fullscreen-player-visible');
       if (playerTimerRef.current) clearTimeout(playerTimerRef.current);
       playerTimerRef.current = setTimeout(() => {
+        // Not while the caster is on the player (the volume, say): it stays until the pointer
+        // moves off it (that move shows it again, and the wait starts over).
+        if (document.querySelector('.audioplayer-container:hover')) return;
         document.body.classList.remove('fullscreen-player-visible');
       }, 2000);
     };
