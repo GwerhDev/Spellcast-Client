@@ -80,6 +80,10 @@ export const Altar = ({ onWrite, onImport, immersive = false, idle = false, onFo
   // spell's own page.
   const inGrimoire = hasSpell && isInCasterGrimoire(spellUserId, userId);
   const coverUrl = useSpellCoverUrl(spellId, userId);
+  // Immersive, the altar is on the page itself: it takes the cover's light-on-cover colors only
+  // while the page shows the cover behind it (the altar's settings), the page's own otherwise.
+  const backdrop = useAppSelector(state => state.altar.backdrop);
+  const panelCoverUrl = immersive && backdrop !== 'cover' ? null : coverUrl;
   // Nothing loaded and nothing being dragged: the button shows the Spellcast mark and opens
   // the menu; something dragged over turns it back into a play button.
   const dropping = spellDragActive || fileDragActive;
@@ -248,7 +252,7 @@ export const Altar = ({ onWrite, onImport, immersive = false, idle = false, onFo
 
   return (
     <AltarPanel
-      coverUrl={coverUrl}
+      coverUrl={panelCoverUrl}
       immersive={immersive}
       onFooterOverflow={onFooterOverflow}
       highlighted={dropping}

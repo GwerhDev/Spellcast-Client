@@ -6,7 +6,7 @@ import { setSpellFile, setSpellLoaded, setSentences, setCurrentSentenceIndex } f
 import { play, pause } from '../../../../../store/browserPlayerSlice';
 import { play as playAudio, setAiTimeline, setCurrentTime } from '../../../../../store/audioPlayerSlice';
 import { setSelectedVoice } from '../../../../../store/voiceSlice';
-import { setReadOnConjure } from '../../../../../store/altarSlice';
+import { setReadOnConjure, setAltarBackdrop } from '../../../../../store/altarSlice';
 import { Routes, Route } from 'react-router-dom';
 import { Altar } from '../index';
 import { SPELL_DRAG_TYPE } from '../../../../../config/consts';
@@ -301,6 +301,34 @@ describe('Altar', () => {
     renderWithProviders(<Read />, { store });
     await screen.findByTestId('altar-cover');
     expect(screen.getByTestId('altar').className).not.toMatch(/noCover/);
+  });
+
+  // Immersive, the altar sits on the page: the light-on-cover colors are for the cover shown
+  // behind it, and with the page showing nothing behind it (the default) they'd be light text
+  // on a light theme's page.
+  describe('immersive, with a cover', () => {
+    const withCover = () => {
+      mockGetSpellById.mockResolvedValue({ id: 'spell-1', title: 'Spell one', cover: new Blob(['x']) });
+      const store = makeStore();
+      store.dispatch(setSpellFile({ id: 'spell-1', title: 'Spell one' }));
+      return store;
+    };
+
+    it('takes the page\'s own colors while the page shows nothing behind it', async () => {
+      const store = withCover();
+      renderWithProviders(<Read immersive />, { store });
+      await waitFor(() => expect(mockGetSpellById).toHaveBeenCalled());
+      await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)); });
+      expect(screen.getByTestId('altar').className).toMatch(/noCover/);
+      expect(screen.getByTestId('altar').className).not.toMatch(/hasCover/);
+    });
+
+    it('takes the cover\'s colors while the page shows the cover behind it', async () => {
+      const store = withCover();
+      store.dispatch(setAltarBackdrop('cover'));
+      renderWithProviders(<Read immersive />, { store });
+      await waitFor(() => expect(screen.getByTestId('altar').className).toMatch(/hasCover/));
+    });
   });
 
   describe('open-in-reader shortcut', () => {
