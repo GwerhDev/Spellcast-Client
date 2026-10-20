@@ -1,8 +1,13 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { addApiResponse } from '../store/apiResponsesSlice';
 import { useLanguage } from '../i18n';
 import { exportSpellToBlob, downloadBlob, type ExportSpellOptions } from '../utils/spellFormat';
+import { listAccessKeys, protectionFor, type AccessKeyInfo } from '../services/accessKeys';
+
+// What to download, as the caster chose it: the parts to bundle, and what protects it (a
+// password, access keys by id).
+type DownloadChoice = Omit<ExportSpellOptions, 'protectWith'> & { password?: string; keyIds?: string[] };
 
 // The browser's directory picker (File System Access API: Chrome, Edge), where it has one.
 interface WritableFile { write: (data: Blob) => Promise<void>; close: () => Promise<void> }
@@ -38,9 +43,25 @@ export function useDownloadSpells() {
   const { t } = useLanguage();
   const userId = useAppSelector((state) => state.session.userData.id);
   const [isDownloading, setIsDownloading] = useState(false);
+  // The access keys a download can be protected with.
+  const [keys, setKeys] = useState<AccessKeyInfo[]>([]);
+  useEffect(() => {
+    if (!userId) return;
+    let cancelled = false;
+    listAccessKeys(userId).then(list => { if (!cancelled) setKeys(list); }, () => {});
+    return () => { cancelled = true; };
+  }, [userId]);
 
-  const download = async (ids: string[], options: ExportSpellOptions): Promise<void> => {
+  const download = async (ids: string[], { password, keyIds, ...parts }: DownloadChoice): Promise<void> => {
     if (!userId || ids.length === 0) return;
+    let options: ExportSpellOptions;
+    try {
+      options = { ...parts, protectWith: await protectionFor(userId, { password, keyIds }) };
+    } catch (error) {
+      console.error('Failed to protect the download:', error);
+      dispatch(addApiResponse({ message: t.grimoire.downloadFailed.replace('{n}', String(ids.length)), type: 'error' }));
+      return;
+    }
     const picker = ids.length > 1 ? directoryPicker() : undefined;
     let dir: DirectoryHandle | null = null;
     if (picker) {
@@ -83,5 +104,5 @@ export function useDownloadSpells() {
     }
   };
 
-  return { download, isDownloading };
+  return { download, isDownloading, accessKeys: keys };
 }

@@ -19,9 +19,11 @@ interface TabModalProps {
   onClose: () => void;
   title: string;
   tabs: TabDef[];
+  // Shared by every tab, under them (e.g. the modal's actions).
+  footer?: React.ReactNode;
 }
 
-export const TabModal: React.FC<TabModalProps> = ({ show, onClose, title, tabs }) => {
+export const TabModal: React.FC<TabModalProps> = ({ show, onClose, title, tabs, footer }) => {
   const [activeTab, setActiveTab] = useState(0);
 
   if (!show) return null;
@@ -55,6 +57,7 @@ export const TabModal: React.FC<TabModalProps> = ({ show, onClose, title, tabs }
               {tabs[activeTab]?.content}
             </div>
           </div>
+          {footer && <div className={s.footer} data-testid="tab-modal-footer">{footer}</div>}
         </div>
       </div>
     </div>,

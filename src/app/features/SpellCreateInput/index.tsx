@@ -9,6 +9,7 @@ import { useAppSelector } from '../../../store/hooks';
 import { enqueueUpload } from '../../../store/spellUploadSlice';
 import { useLanguage } from '../../../i18n';
 import { useSpellImport } from '../../../hooks/useSpellImport';
+import { SpellUnlockModal } from '../../components/Modals/SpellUnlockModal';
 
 interface SpellCreateInputProps {
   spell: SpellState;
@@ -18,13 +19,16 @@ interface SpellCreateInputProps {
   onDone?: (resultDocId?: string) => void;
   // Creating it failed: the card shows why and offers creating it again.
   onError?: () => void;
+  // Given up on (a protected .spell whose password wasn't given): nothing to show, the card
+  // is as it was.
+  onCancel?: () => void;
   autoCreate?: boolean;
 }
 
 export const SpellCreateInput = (props: SpellCreateInputProps) => {
-  const { spell, spellFile, onRemove, onDone, onError, autoCreate } = props;
+  const { spell, spellFile, onRemove, onDone, onError, onCancel, autoCreate } = props;
   const navigate = useNavigate();
-  const { importFile } = useSpellImport();
+  const { importFile, unlockPrompt } = useSpellImport();
   // A .spell file being imported, and the spell it became.
   const [importing, setImporting] = useState(false);
   const [importedId, setImportedId] = useState<string | null>(null);
@@ -38,6 +42,8 @@ export const SpellCreateInput = (props: SpellCreateInputProps) => {
   onDoneRef.current = onDone;
   const onErrorRef = useRef(onError);
   onErrorRef.current = onError;
+  const onCancelRef = useRef(onCancel);
+  onCancelRef.current = onCancel;
   // Why the last attempt failed, shown until the next one starts.
   const [failure, setFailure] = useState<string | null>(null);
 
@@ -85,9 +91,11 @@ export const SpellCreateInput = (props: SpellCreateInputProps) => {
     if (id) {
       setImportedId(id);
       onDoneRef.current?.(id);
-    } else {
+    } else if (id === null) {
       setFailure(t.spell.importError);
       onErrorRef.current?.();
+    } else {
+      onCancelRef.current?.();
     }
   };
 
@@ -187,6 +195,13 @@ export const SpellCreateInput = (props: SpellCreateInputProps) => {
       {isActive && (
         <div className={s.progressBar} style={{ width: `${pct}%` }} />
       )}
+      <SpellUnlockModal
+        fileName={unlockPrompt?.fileName ?? null}
+        wrong={!!unlockPrompt?.wrong}
+        busy={!!unlockPrompt?.busy}
+        onSubmit={(password) => unlockPrompt?.submit(password)}
+        onCancel={() => unlockPrompt?.cancel()}
+      />
     </div>
   );
 };

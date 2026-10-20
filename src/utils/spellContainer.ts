@@ -7,6 +7,10 @@
 //   index length (uint32, big-endian)  index (deflate)
 //   entries, one after the other
 //
+// A protected file (the PROTECTED flag) has, after its protection block, everything else --
+// index length, index and entries -- encrypted as one, bound to the header before it (see
+// spellProtection and docs/spell-protection.md).
+//
 // The index is JSON: the manifest and each entry's path, content hash (sha256), size, place,
 // whether it's compressed and, for an image or an audio, its media type (kept as it was, so
 // it comes back the same). Each entry is compressed (unless it's already compressed data, like
@@ -14,22 +18,15 @@
 // never decompressed past its size, so a file that would inflate to more than it says (a
 // "zip bomb") fails instead of filling the memory.
 //
-// A spell is free: nothing is encrypted. The PROTECTED flag and the protection block are kept
-// for a protected file (a public canonical with the backend's key, or a caster's own with their
-// key): what it takes to open it -- a key id, or a salt and derivation parameters -- without
-// the format changing. This version writes none, and doesn't open a protected one yet.
+// A spell is free: nothing is encrypted unless the caster protects it, with a password, an
+// access key, or both.
+
+import { protect, unseal, type ProtectWith, type SpellProtection, type UnlockWith } from './spellProtection';
 
 const MAGIC = new TextEncoder().encode('SPELL');
 // "SPELL", the version and the flags.
 const HEAD_LENGTH = MAGIC.length + 2;
 export const PROTECTED_FLAG = 0x01;
-
-// What a protected file takes to open: a key id (a key held elsewhere), or a salt and
-// derivation parameters (a key from a passphrase). Open-ended: its scheme says which.
-export type SpellProtection =
-  | { scheme: 'key'; keyId: string }
-  | { scheme: 'passphrase'; kdf: string; iterations: number; salt: string }
-  | { scheme: string; [field: string]: unknown };
 
 export class SpellContainerError extends Error {}
 
@@ -96,13 +93,29 @@ const decompress = async (data: Uint8Array, max: number): Promise<Uint8Array> =>
   return out;
 };
 
-/** Writes the entries and the manifest into a .spell container (an unprotected one). */
-export async function writeContainer<M>(manifest: M, entries: ContainerEntry[], { version }: { version: number }): Promise<Blob> {
-  const head = new Uint8Array(HEAD_LENGTH + 2);
+const concat = (parts: Uint8Array[]) => {
+  const out = new Uint8Array(parts.reduce((total, part) => total + part.length, 0));
+  let at = 0;
+  for (const part of parts) { out.set(part, at); at += part.length; }
+  return out;
+};
+
+/** Writes the entries and the manifest into a .spell container -- protected with a password
+ * and/or access keys, if `protectWith` is given. */
+export async function writeContainer<M>(
+  manifest: M,
+  entries: ContainerEntry[],
+  { version, protectWith }: { version: number; protectWith?: ProtectWith },
+): Promise<Blob> {
+  const protection = protectWith ? await protect(protectWith) : null;
+  const protectionBytes = protection ? new TextEncoder().encode(JSON.stringify(protection.protection)) : new Uint8Array(0);
+  if (protectionBytes.length > 0xffff) throw new SpellContainerError('Too many ways to open this .spell file.');
+  const head = new Uint8Array(HEAD_LENGTH + 2 + protectionBytes.length);
   head.set(MAGIC, 0);
   head[MAGIC.length] = version;
-  head[MAGIC.length + 1] = 0; // flags: not protected
-  // An empty protection block (its length, 0, is the last two bytes).
+  head[MAGIC.length + 1] = protection ? PROTECTED_FLAG : 0;
+  new DataView(head.buffer).setUint16(HEAD_LENGTH, protectionBytes.length);
+  head.set(protectionBytes, HEAD_LENGTH + 2);
   const parts: Uint8Array[] = [];
   const index: IndexEntry[] = [];
   let offset = 0;
@@ -118,7 +131,9 @@ export async function writeContainer<M>(manifest: M, entries: ContainerEntry[], 
   const indexBytes = await compress(new TextEncoder().encode(JSON.stringify({ manifest, entries: index } satisfies ContainerIndex<M>)));
   const length = new Uint8Array(4);
   new DataView(length.buffer).setUint32(0, indexBytes.length);
-  return new Blob([head, length, indexBytes, ...parts] as BlobPart[], { type: 'application/octet-stream' });
+  const body = [length, indexBytes, ...parts];
+  const stored = protection ? [await protection.seal(concat(body), head)] : body;
+  return new Blob([head, ...stored] as BlobPart[], { type: 'application/octet-stream' });
 }
 
 export interface OpenedContainer<M> {
@@ -153,15 +168,21 @@ const readHeader = (bytes: Uint8Array) => {
     } catch {
       throw new SpellContainerError('This .spell file is damaged.');
     }
+    if (typeof protection?.iv !== 'string' || !Array.isArray(protection.slots)) throw new SpellContainerError('This .spell file is damaged.');
   }
-  return { version, protection, indexLengthAt, view };
+  return { version, protection, bodyStart: indexLengthAt };
 };
 
-/** Opens a .spell container. Throws SpellContainerError when it isn't one, is damaged, or is
- * protected (not opened yet by this version). */
-export async function openContainer<M>(bytes: Uint8Array): Promise<OpenedContainer<M>> {
-  const { version, protection, indexLengthAt, view } = readHeader(bytes);
-  if (protection) throw new SpellContainerError('This .spell file is protected, and this version of Spellcast can\'t open it yet.');
+/** Opens a .spell container; a protected one with what `unlock` gives (a password, access
+ * keys). Throws SpellContainerError when it isn't one or is damaged, SpellLockedError when
+ * it's protected and nothing given opens it, SpellTamperedError when it was altered. */
+export async function openContainer<M>(file: Uint8Array, unlock: UnlockWith = {}): Promise<OpenedContainer<M>> {
+  const { version, protection, bodyStart } = readHeader(file);
+  // A protected one's body, opened: the rest is read as an unprotected one's.
+  const bytes = protection ? await unseal(protection, file.subarray(bodyStart), file.subarray(0, bodyStart), unlock) : file.subarray(bodyStart);
+  if (bytes.length < 4) throw new SpellContainerError('This .spell file is incomplete.');
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const indexLengthAt = 0;
   const indexStart = indexLengthAt + 4;
   const indexLength = view.getUint32(indexLengthAt);
   const dataStart = indexStart + indexLength;

@@ -1,23 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { openContainer, writeContainer, SpellContainerError, PROTECTED_FLAG } from '../spellContainer';
+import { SpellLockedError, SpellTamperedError, type AccessKey, type ProtectWith } from '../spellProtection';
 
 const enc = (text: string) => new TextEncoder().encode(text);
 const bytesOf = async (blob: Blob) => new Uint8Array(await blob.arrayBuffer());
 const write = (entries: { path: string; text: string; compress?: boolean }[], manifest: unknown = { title: 't' }) =>
   writeContainer(manifest, entries.map(e => ({ path: e.path, data: enc(e.text), compress: e.compress ?? true })), { version: 1 });
-
-// The same file, its header saying it's protected (as a protected one will).
-const asProtected = (bytes: Uint8Array, protection: object): Uint8Array => {
-  const block = enc(JSON.stringify(protection));
-  const rest = bytes.slice(9); // after "SPELL", version, flags and the (empty) protection length
-  const out = new Uint8Array(9 + block.length + rest.length);
-  out.set(bytes.slice(0, 7), 0);
-  out[6] = PROTECTED_FLAG;
-  new DataView(out.buffer).setUint16(7, block.length);
-  out.set(block, 9);
-  out.set(rest, 9 + block.length);
-  return out;
-};
 
 // The same file with its index changed (as a hand-made or damaged file could have it).
 type PlainIndex = { manifest: unknown; entries: Record<string, unknown>[] };
@@ -60,13 +48,6 @@ describe('spellContainer', () => {
     expect(new TextDecoder('latin1').decode(bytes)).toContain('raw image bytes');
   });
 
-  // Kept for the protected files to come (a canonical with the backend's key, a caster's own
-  // with their key): read, and turned down by this version rather than misread.
-  it("a protected file's protection is read, and the file isn't opened yet", async () => {
-    const bytes = asProtected(await bytesOf(await write([{ path: 'a', text: 'x' }])), { scheme: 'passphrase', kdf: 'PBKDF2-SHA256', iterations: 600000, salt: 'c2FsdA==' });
-    await expect(openContainer(bytes)).rejects.toThrow(/protected/);
-  });
-
   it('a damaged entry fails clearly, on its own', async () => {
     const bytes = await bytesOf(await write([{ path: 'a', text: 'first' }, { path: 'b', text: 'second entry', compress: false }]));
     bytes[bytes.length - 1] ^= 0xff;
@@ -106,5 +87,72 @@ describe('spellContainer', () => {
     await expect(openContainer(await rewriteIndex(bytes, index => { delete index.entries[0].size; }))).rejects.toThrow(SpellContainerError);
     await expect(openContainer(await rewriteIndex(bytes, index => { index.entries[0].size = -1; }))).rejects.toThrow(SpellContainerError);
     await expect(openContainer(await rewriteIndex(bytes, index => { index.entries[0].offset = 'x'; }))).rejects.toThrow(SpellContainerError);
+  });
+
+  describe('protected', () => {
+    const SECRET = 'a secret page, never readable without the password';
+    const key = (id: string): AccessKey => ({ id, key: crypto.getRandomValues(new Uint8Array(32)) });
+    const KEY = key('key-1');
+    const protectedFile = async (protectWith: ProtectWith) => bytesOf(await writeContainer(
+      { title: 'Hidden title' }, [{ path: 'pages/0001.json', data: enc(SECRET), compress: false }], { version: 1, protectWith },
+    ));
+    const secretOf = async (bytes: Uint8Array, unlock: Parameters<typeof openContainer>[1]) => {
+      const opened = await openContainer<{ title: string }>(bytes, unlock);
+      return { title: opened.manifest.title, page: new TextDecoder().decode((await opened.read('pages/0001.json'))!) };
+    };
+    const lockedBy = async (bytes: Uint8Array, unlock: Parameters<typeof openContainer>[1]) => {
+      try { await openContainer(bytes, unlock); } catch (error) { return error; }
+      throw new Error('it opened');
+    };
+
+    it('with a password: flagged, nothing of it readable, opened only with that password', async () => {
+      const bytes = await protectedFile({ password: 'correct horse' });
+      expect(bytes[6]).toBe(PROTECTED_FLAG);
+      const text = new TextDecoder('latin1').decode(bytes);
+      expect(text).not.toContain('secret page');
+      expect(text).not.toContain('Hidden title');
+      expect(text).not.toContain('correct horse');
+      expect(await secretOf(bytes, { password: 'correct horse' })).toEqual({ title: 'Hidden title', page: SECRET });
+
+      const none = await lockedBy(bytes, {});
+      expect(none).toBeInstanceOf(SpellLockedError);
+      expect(none).toMatchObject({ wrong: false, password: true, keyIds: [] });
+      expect(await lockedBy(bytes, { password: 'wrong horse' })).toMatchObject({ wrong: true });
+    });
+
+    it('a password typed in another normalization (an accent as two characters) is the same', async () => {
+      const bytes = await protectedFile({ password: 'contrase\u00f1a' });
+      expect((await secretOf(bytes, { password: 'contrasen\u0303a' })).page).toBe(SECRET);
+    });
+
+    it('with an access key: opened with that key only', async () => {
+      const bytes = await protectedFile({ keys: [KEY] });
+      expect(await secretOf(bytes, { keys: [key('other'), KEY] })).toEqual({ title: 'Hidden title', page: SECRET });
+      const locked = await lockedBy(bytes, { keys: [key('other')], password: 'anything' });
+      expect(locked).toMatchObject({ password: false, keyIds: ['key-1'] });
+      // The same id, another key.
+      expect(await lockedBy(bytes, { keys: [key('key-1')] })).toBeInstanceOf(SpellLockedError);
+    });
+
+    it('with both, opened with either', async () => {
+      const bytes = await protectedFile({ password: 'correct horse', keys: [KEY] });
+      expect((await secretOf(bytes, { password: 'correct horse' })).page).toBe(SECRET);
+      expect((await secretOf(bytes, { keys: [KEY] })).page).toBe(SECRET);
+      expect((await secretOf(bytes, { password: 'wrong horse', keys: [KEY] })).page).toBe(SECRET);
+      expect(await lockedBy(bytes, {})).toMatchObject({ password: true, keyIds: ['key-1'] });
+    });
+
+    it('altered, in its content or its header, is told apart', async () => {
+      const bytes = await protectedFile({ keys: [KEY] });
+      const body = bytes.slice(); body[body.length - 1] ^= 0x01;
+      expect(await lockedBy(body, { keys: [KEY] })).toBeInstanceOf(SpellTamperedError);
+      const header = bytes.slice(); header[5] = 2; // the version, bound to the content
+      expect(await lockedBy(header, { keys: [KEY] })).toBeInstanceOf(SpellTamperedError);
+    });
+
+    it('needs a password or an access key', async () => {
+      await expect(protectedFile({})).rejects.toThrow();
+      await expect(protectedFile({ password: '' })).rejects.toThrow();
+    });
   });
 });

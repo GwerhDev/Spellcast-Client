@@ -1,5 +1,6 @@
 import type { TimelineEntry } from '../services/tts';
 import { openContainer, sha256Hex, SpellContainerError, writeContainer, type ContainerEntry, type OpenedContainer } from './spellContainer';
+import { SpellTamperedError, type ProtectWith, type UnlockWith } from './spellProtection';
 import { parseDataUrl } from './spellImages';
 import { getSpellById, saveSpellToDB } from '../db';
 import { getOriginalPdf, setOriginalPdf } from '../db/originalPdfs';
@@ -68,6 +69,8 @@ export interface ExportSpellOptions {
   includeSource?: boolean;
   /** Bundle renders/<voice>/ (cached audio + timelines), when any are cached for this spell. */
   includeAudio?: boolean;
+  /** Protect the file with a password and/or access keys (none: it's free, as always). */
+  protectWith?: ProtectWith;
 }
 
 export interface ExportSpellResult {
@@ -250,7 +253,7 @@ export async function exportSpellToBlob(
     tags: spell.tags,
     language: spell.language,
   };
-  const blob = await writeContainer(manifest, entries.list, { version: SPELL_FORMAT_VERSION });
+  const blob = await writeContainer(manifest, entries.list, { version: SPELL_FORMAT_VERSION, protectWith: options.protectWith });
   return { blob, filename: `${sanitizeFilename(spell.title)}.spell` };
 }
 
@@ -339,14 +342,16 @@ export const readWork = async (
  * Opens a .spell file and hydrates it into a brand-new Spell record (+ audio_pages
  * cache entries, if renders/ is present). Always creates a NEW id — ids are local to a
  * browser/user's database, not part of the file. Returns the new spell's id so the caller
- * can navigate to it / invalidate the list.
+ * can navigate to it / invalidate the list. A protected one is opened with what `unlock`
+ * gives; when nothing in it opens the file, it throws SpellLockedError (saying what would).
  */
-export async function importSpellFromFile(file: File, userId: string): Promise<string> {
+export async function importSpellFromFile(file: File, userId: string, unlock: UnlockWith = {}): Promise<string> {
   let container: Container;
   try {
-    container = await openContainer<SpellManifest>(new Uint8Array(await file.arrayBuffer()));
+    container = await openContainer<SpellManifest>(new Uint8Array(await file.arrayBuffer()), unlock);
   } catch (error) {
-    if (error instanceof SpellContainerError) throw new SpellImportError(error.message);
+    // A protected one not opened (SpellLockedError) goes back as it is: what opens it is asked for.
+    if (error instanceof SpellContainerError || error instanceof SpellTamperedError) throw new SpellImportError(error.message);
     throw error;
   }
   const { manifest } = container;

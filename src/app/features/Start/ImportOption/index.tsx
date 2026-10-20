@@ -32,7 +32,10 @@ interface PendingFile {
 export const ImportOption: React.FC = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([]);
-  const [createAllTriggered, setCreateAllTriggered] = useState(false);
+  // The cards Create all was asked for, as they were then: one added after waits for its own
+  // review, as any other.
+  const [createAllIds, setCreateAllIds] = useState<Set<string> | null>(null);
+  const createAllTriggered = createAllIds !== null;
   const [doneCount, setDoneCount] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
   const addMoreInputRef = useRef<HTMLInputElement>(null);
@@ -110,9 +113,10 @@ export const ImportOption: React.FC = () => {
   const removePending = (id: string) =>
     setPendingFiles(prev => prev.filter(f => f.id !== id));
 
-  // One of them failed: the buttons come back, so the failed ones can be created again
-  // (Create all skips the ones already created or still going) or more files added.
-  const handleCardError = () => setCreateAllTriggered(false);
+  // One of them failed, or was given up on (a password not given): the buttons come back, so
+  // it can be created again (Create all skips the ones already created or still going) or
+  // more files added.
+  const handleCardStopped = () => setCreateAllIds(null);
 
   const hasAnyFile = pendingFiles.length > 0;
   const allDone = hasAnyFile && doneCount >= pendingFiles.length;
@@ -120,14 +124,14 @@ export const ImportOption: React.FC = () => {
   const resetAll = () => {
     setPendingFiles([]);
     setDoneCount(0);
-    setCreateAllTriggered(false);
+    setCreateAllIds(null);
   };
 
   // Every card creates (or imports) its own spell: they all stay listed with their own
   // progress until done, each PDF with its own "save original" choice.
   const handleCreateAll = () => {
     if (!userData?.id) return;
-    setCreateAllTriggered(true);
+    setCreateAllIds(new Set(pendingFiles.map(f => f.id)));
   };
 
   // The button for them all says what it does: Create for PDFs, Import for .spell files.
@@ -137,12 +141,15 @@ export const ImportOption: React.FC = () => {
     ? (allSpellFiles ? t.editor.importSpell : t.editor.createSpell)
     : allSpellFiles ? t.editor.importAll : t.editor.createAll;
 
-  if (isProcessing) return (
-    <div className={s.processing}>
+  // Reading a PDF: in the list's place while there's none, else under it -- the cards stay
+  // mounted, whatever they're doing (an import asking for its password) carries on.
+  const processing = isProcessing && (
+    <div className={s.processing} data-testid="import-option-processing">
       <div className={s.processingSpinner} />
       <span>{t.spell.processingPdf}</span>
     </div>
   );
+  if (processing && !hasAnyFile) return processing;
 
   return hasAnyFile ? (
     <div data-testid="import-option-files" className={s.container}>
@@ -152,12 +159,14 @@ export const ImportOption: React.FC = () => {
           spell={{ ...f, currentPage: 0, isLoaded: true }}
           spellFile={f.spellFile}
           onRemove={() => removePending(f.id)}
-          autoCreate={createAllTriggered}
-          onError={handleCardError}
+          autoCreate={!!createAllIds?.has(f.id)}
+          onError={handleCardStopped}
+          onCancel={handleCardStopped}
           onDone={() => setDoneCount(prev => prev + 1)}
         />
       ))}
-      {!createAllTriggered && !allDone && (
+      {processing}
+      {!createAllTriggered && !allDone && !isProcessing && (
         <>
           <input
             ref={addMoreInputRef}
@@ -174,7 +183,7 @@ export const ImportOption: React.FC = () => {
           </button>
         </>
       )}
-      {!createAllTriggered && !allDone && (
+      {!createAllTriggered && !allDone && !isProcessing && (
         <SecondaryButton data-testid="import-option-create-all" className={s.fullWidthBtn} icon={allPdfs ? faUpload : faFileImport} text={createAllLabel} onClick={handleCreateAll} />
       )}
       {allDone && (

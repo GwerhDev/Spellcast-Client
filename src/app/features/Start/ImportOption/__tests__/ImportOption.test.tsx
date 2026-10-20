@@ -115,6 +115,37 @@ describe('ImportOption', () => {
     });
   });
 
+  // A protected .spell whose password the caster gave up on: nothing failed, the buttons come
+  // back (Create all is over) so it can be imported again or more files added.
+  it('giving up on a password brings the buttons back, with no error', async () => {
+    importFileMock.mockResolvedValue(undefined);
+    renderWithProviders(<ImportOption />, { preloadedState: loggedInState });
+    selectFiles([spellFile()]);
+    fireEvent.click(await screen.findByTestId('import-option-create-all'));
+    await waitFor(() => expect(importFileMock).toHaveBeenCalledTimes(1));
+    expect(await screen.findByTestId('import-option-create-all')).toBeInTheDocument();
+    expect(screen.getByTestId('import-option-add-more')).toBeInTheDocument();
+    expect(screen.queryByTestId('spell-create-input-error')).not.toBeInTheDocument();
+  });
+
+  // The cards stay as they are while a PDF added is read: one importing (asking for its
+  // password) carries on, and none starts over.
+  it('reading a PDF added keeps the cards there are, under them', async () => {
+    const pdfjs = await import('pdfjs-dist');
+    let finish!: () => void;
+    vi.mocked(pdfjs.getDocument).mockReturnValueOnce({ promise: new Promise(resolve => { finish = () => resolve({ numPages: 2 }); }) } as never);
+    renderWithProviders(<ImportOption />, { preloadedState: loggedInState });
+    selectFiles([spellFile()]);
+    const card = await screen.findByTestId('spell-create-input');
+    selectFiles([pdfFile()]);
+    expect(await screen.findByTestId('import-option-processing')).toBeInTheDocument();
+    expect(screen.getByTestId('spell-create-input')).toBe(card);
+    await act(async () => { finish(); });
+    await waitFor(() => expect(screen.getAllByTestId('spell-create-input')).toHaveLength(2));
+    expect(screen.getAllByTestId('spell-create-input')).toContain(card);
+    expect(importFileMock).not.toHaveBeenCalled();
+  });
+
   // Leaving (the modal closing) drops what was picked: the next import starts empty.
   it('starts empty again after leaving', async () => {
     const { store, unmount } = renderWithProviders(<ImportOption />, { preloadedState: loggedInState });

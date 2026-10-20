@@ -2,6 +2,8 @@ import type { Translations } from '../types';
 
 export const es: Translations = {
   common: {
+    showPassword: 'Mostrar la contraseña',
+    hidePassword: 'Ocultar la contraseña',
     loading: 'Cargando…',
     all: 'Todos',
     none: 'Ninguno',
@@ -136,6 +138,7 @@ export const es: Translations = {
     exportIncludeSource: 'Incluir archivo original',
     exportIncludeSourceDesc: 'Incluye el PDF original. Se recomienda desactivarlo al compartir contenido con copyright.',
     exportIncludeAudio: 'Incluir narración de audio',
+    exportContentTab: 'Contenido',
     exportIncludeAudioDesc: 'Incluye el audio y los timelines guardados en caché para cada voz usada en este Spell.',
     exportButton: 'Exportar',
     exportError: 'No se pudo exportar este Spell.',
@@ -285,6 +288,26 @@ export const es: Translations = {
     block: 'Página {n}, un bloque',
     unsealedMessage: 'Esta versión tiene cambios sin sellar. Séllalos antes de fusionar otra versión en ella.',
     sealAndContinue: 'Sellar y continuar',
+  },
+  protect: {
+    title: 'Protección',
+    password: 'Proteger con contraseña',
+    passwordDesc: 'Se pide al importarlo, en cualquier dispositivo o app que lea archivos .spell.',
+    passwordField: 'Contraseña',
+    confirmField: 'Repite la contraseña',
+    generate: 'Generar una',
+    copy: 'Copiar la contraseña',
+    copied: 'Copiada',
+    mismatch: 'Las contraseñas no coinciden.',
+    warning: 'Si se pierde la contraseña, el Spell no se puede abrir: nadie puede recuperarla, ni siquiera Spellcast.',
+    accessKey: 'Proteger con una llave de acceso',
+    namedKey: 'Proteger con la llave «{name}»',
+    keyDesc: 'Se abre sin contraseña donde tengas tu cuenta.',
+    unlockTitle: 'Spell protegido',
+    unlockMessage: '«{name}» está protegido. Ingresa su contraseña para importarlo.',
+    wrongPassword: 'Esa no es su contraseña.',
+    unlock: 'Abrir',
+    noKey: '«{name}» está protegido con una llave de acceso que no está en tu cuenta.',
   },
   editor: {
     tagline: 'Dale forma a tus palabras',

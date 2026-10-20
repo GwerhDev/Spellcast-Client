@@ -11,6 +11,7 @@ import { useAppDispatch, useAppSelector } from '../../../../store/hooks';
 import { addApiResponse } from '../../../../store/apiResponsesSlice';
 import { getSpellById } from '../../../../db';
 import { useSpellImport } from '../../../../hooks/useSpellImport';
+import { SpellUnlockModal } from '../../../components/Modals/SpellUnlockModal';
 import { usePlaySpell } from '../../../../hooks/usePlaySpell';
 import type { Spell } from '../../../../interfaces';
 import { useSpellCoverUrl } from '../../../../hooks/useSpellCoverUrl';
@@ -51,7 +52,7 @@ export const Altar = ({ onWrite, onImport, immersive = false, idle = false, onFo
   // Conjuring a spell here: reading it at once, or only conjured, paused (the altar's settings).
   const readOnConjure = useAppSelector(state => state.altar.readOnConjure);
   const conjure = (spell: Spell) => (readOnConjure ? readSpell(spell) : mountSpell(spell));
-  const { importFile } = useSpellImport();
+  const { importFile, unlockPrompt } = useSpellImport();
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const centerRef = useRef<HTMLDivElement>(null);
@@ -339,6 +340,13 @@ export const Altar = ({ onWrite, onImport, immersive = false, idle = false, onFo
         <AltarHint text={hintText} busy={importing} hidden={showMenu} />
       )}
     >
+      <SpellUnlockModal
+        fileName={unlockPrompt?.fileName ?? null}
+        wrong={!!unlockPrompt?.wrong}
+        busy={!!unlockPrompt?.busy}
+        onSubmit={(password) => unlockPrompt?.submit(password)}
+        onCancel={() => unlockPrompt?.cancel()}
+      />
     </AltarPanel>
   );
 };

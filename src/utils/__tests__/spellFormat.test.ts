@@ -7,7 +7,9 @@ import {
   SpellImportError,
   SPELL_FORMAT_VERSION,
   type SpellManifest,
+  type ExportSpellOptions,
 } from '../spellFormat';
+import { SpellLockedError } from '../spellProtection';
 import type { Spell } from '../../interfaces';
 import type { CachedAudioEntry } from '../../db/audioCache';
 
@@ -334,3 +336,36 @@ describe('importSpellFromFile', () => {
     expect(page2[4]).toEqual([{ start: 0 }]);
   });
 });
+
+describe('a protected .spell', () => {
+  const KEY = { id: 'key-1', key: crypto.getRandomValues(new Uint8Array(32)) };
+  const lockedFile = async (protectWith: ExportSpellOptions['protectWith']) => {
+    getSpellByIdMock.mockResolvedValue({ ...baseSpell, pagesContent: JSON.stringify([imagePage(IMG_A, 'A hidden page')]) });
+    return asFile(await exported({ protectWith }));
+  };
+
+  it('imports with its password, exactly as it was', async () => {
+    const file = await lockedFile({ password: 'correct horse' });
+    expect(new TextDecoder('latin1').decode(new Uint8Array(await file.arrayBuffer()))).not.toContain('My Spell');
+    await expect(importSpellFromFile(file, 'user-1')).rejects.toBeInstanceOf(SpellLockedError);
+    await expect(importSpellFromFile(file, 'user-1', { password: 'wrong' })).rejects.toMatchObject({ wrong: true });
+    expect(saveSpellToDBMock).not.toHaveBeenCalled();
+    await importSpellFromFile(file, 'user-1', { password: 'correct horse' });
+    expect(saveSpellToDBMock).toHaveBeenCalledWith(expect.objectContaining({ title: 'My Spell', pagesContent: JSON.stringify([imagePage(IMG_A, 'A hidden page')]) }));
+  });
+
+  it('with a password and a key, imports with either', async () => {
+    const file = await lockedFile({ password: 'correct horse', keys: [KEY] });
+    await importSpellFromFile(file, 'user-1', { keys: [KEY] });
+    await importSpellFromFile(file, 'user-1', { password: 'correct horse' });
+    expect(saveSpellToDBMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('altered, is told apart as an import error', async () => {
+    const bytes = new Uint8Array(await (await lockedFile({ keys: [KEY] })).arrayBuffer());
+    bytes[bytes.length - 3] ^= 0x01;
+    await expect(importSpellFromFile(asFile(new Blob([bytes])), 'user-1', { keys: [KEY] })).rejects.toThrow(SpellImportError);
+    expect(saveSpellToDBMock).not.toHaveBeenCalled();
+  });
+});
+

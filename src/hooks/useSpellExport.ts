@@ -1,8 +1,13 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { addApiResponse } from '../store/apiResponsesSlice';
 import { useLanguage } from '../i18n';
 import { exportSpellToBlob, downloadBlob, type ExportSpellOptions } from '../utils/spellFormat';
+import { listAccessKeys, protectionFor, type AccessKeyInfo } from '../services/accessKeys';
+
+// What to download, as the caster chose it: the parts to bundle, and what protects it (a
+// password, access keys by id).
+type DownloadChoice = Omit<ExportSpellOptions, 'protectWith'> & { password?: string; keyIds?: string[] };
 
 interface ExportTarget {
   id: string;
@@ -22,15 +27,24 @@ export function useSpellExport() {
   const { userData } = useAppSelector((state) => state.session);
   const [target, setTarget] = useState<ExportTarget | null>(null);
   const [isExporting, setIsExporting] = useState(false);
+  // The access keys an export can be protected with.
+  const [keys, setKeys] = useState<AccessKeyInfo[]>([]);
+  useEffect(() => {
+    if (!userData.id) return;
+    let cancelled = false;
+    listAccessKeys(userData.id).then(list => { if (!cancelled) setKeys(list); }, () => {});
+    return () => { cancelled = true; };
+  }, [userData.id]);
 
   const openExportModal = (spell: ExportTarget) => setTarget(spell);
   const closeExportModal = () => { if (!isExporting) setTarget(null); };
 
-  const handleExport = async (options: ExportSpellOptions) => {
+  const handleExport = async ({ password, keyIds, ...parts }: DownloadChoice) => {
     if (!target || !userData.id) return;
     setIsExporting(true);
     try {
-      const { blob, filename } = await exportSpellToBlob(target.id, userData.id, options);
+      const protectWith = await protectionFor(userData.id, { password, keyIds });
+      const { blob, filename } = await exportSpellToBlob(target.id, userData.id, { ...parts, protectWith });
       downloadBlob(blob, filename);
       setTarget(null);
     } catch (error) {
@@ -41,5 +55,5 @@ export function useSpellExport() {
     }
   };
 
-  return { exportTarget: target, openExportModal, closeExportModal, handleExport, isExporting };
+  return { exportTarget: target, openExportModal, closeExportModal, handleExport, isExporting, accessKeys: keys };
 }

@@ -7,22 +7,27 @@ interface ToggleRowProps {
   value: boolean;
   onChange: (v: boolean) => void;
   soon?: boolean;
+  // The "soon" tag's text (translated by the caller).
+  soonLabel?: string;
   children?: React.ReactNode;
+  // The switch's test id.
+  testId?: string;
 }
 
-export const ToggleRow: React.FC<ToggleRowProps> = ({ label, description, value, onChange, soon, children }) => (
+export const ToggleRow: React.FC<ToggleRowProps> = ({ label, description, value, onChange, soon, soonLabel = 'soon', children, testId }) => (
   <div className={`${s.rowGroup} ${soon ? s.rowSoon : ''}`}>
     <div className={s.row}>
       <div className={s.rowText}>
         <div className={s.rowLabelRow}>
           <span className={s.rowLabel}>{label}</span>
-          {soon && <span className={s.soonTag}>soon</span>}
+          {soon && <span className={s.soonTag}>{soonLabel}</span>}
         </div>
         <span className={s.rowDesc}>{description}</span>
       </div>
       <button
         type="button"
         role="switch"
+        data-testid={testId}
         aria-checked={value}
         className={`${s.toggle} ${value ? s.toggleOn : ''}`}
         onClick={() => !soon && onChange(!value)}

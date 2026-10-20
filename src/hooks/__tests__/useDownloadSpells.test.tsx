@@ -12,6 +12,15 @@ vi.mock('../../utils/spellFormat', () => ({
   downloadBlob: (...args: unknown[]) => downloadBlobMock(...args),
 }));
 
+// The caster's access keys (none yet, until their account keeps them): one, to test the
+// download is wired to protect with it.
+const KEY = { id: 'key-1', key: new Uint8Array(32).fill(7) };
+vi.mock('../../services/accessKeys', () => ({
+  listAccessKeys: async () => [{ id: 'key-1', name: 'Home', createdAt: '' }],
+  protectionFor: async (_userId: string, { password, keyIds = [] }: { password?: string; keyIds?: string[] }) =>
+    (password || keyIds.length ? { password, keys: [KEY].filter(k => keyIds.includes(k.id)) } : undefined),
+}));
+
 // A directory the caster picked, in memory: what's in it, by name.
 const makeDirectory = (existing: string[] = []) => {
   const files = new Map<string, number>(existing.map(name => [name, 1]));
@@ -50,6 +59,16 @@ describe('useDownloadSpells', () => {
     expect(picker).not.toHaveBeenCalled();
     expect(exportSpellToBlobMock).toHaveBeenCalledWith('a', 'user-1', { includeAudio: true });
     expect(downloadBlobMock).toHaveBeenCalledWith(expect.any(Blob), 'Same.spell');
+  });
+
+  it('protects each file as chosen: a password, and the access keys picked', async () => {
+    const { result } = render();
+    await vi.waitFor(() => expect(result.current.accessKeys).toHaveLength(1));
+    const [key] = result.current.accessKeys;
+    await act(async () => { await result.current.download(['a'], { password: 'pw', keyIds: [key.id] }); });
+    const [, , options] = exportSpellToBlobMock.mock.calls[0];
+    expect(options.protectWith.password).toBe('pw');
+    expect(options.protectWith.keys).toEqual([KEY]);
   });
 
   it('several go into the picked directory, never overwriting what is there', async () => {

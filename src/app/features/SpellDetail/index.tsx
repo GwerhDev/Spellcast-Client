@@ -54,7 +54,7 @@ export const SpellDetail: React.FC = () => {
   // .spell export UI is hidden for now (not ready to ship this phase) — kept wired but
   // commented out so it's a one-line re-enable later. See the export button below and
   // the SpellExportModal render near the end of this file.
-  // const { exportTarget, openExportModal, closeExportModal, handleExport, isExporting } = useSpellExport();
+  // const { exportTarget, openExportModal, closeExportModal, handleExport, isExporting, accessKeys } = useSpellExport();
   const headerRef = useRef<HTMLDivElement>(null);
   // 3D cover corners: the same gate QuickStart/SpellList/EditorSelectLanding use -- see
   // useCoverFrame3DSection/useCoverFrame3DGate for the actual conditions.
@@ -277,6 +277,7 @@ export const SpellDetail: React.FC = () => {
           show={!!exportTarget}
           title={exportTarget.title}
           isExporting={isExporting}
+          accessKeys={accessKeys}
           onClose={closeExportModal}
           onExport={handleExport}
         />

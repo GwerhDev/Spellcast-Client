@@ -48,7 +48,7 @@ export const GrimoireLanding = () => {
   const updateFromPdf = useUpdateSpellsFromPdf();
   // Downloading spells as .spell files: the selected ones, or the whole Grimoire (every spell
   // of the caster's, whatever the search or tab). Asks first what to include.
-  const { download, isDownloading } = useDownloadSpells();
+  const { download, isDownloading, accessKeys } = useDownloadSpells();
   const [downloadTarget, setDownloadTarget] = useState<{ ids: string[]; heading: string } | null>(null);
   const openDownloadSelected = () => setDownloadTarget({
     ids: selectedIds,
@@ -304,6 +304,7 @@ export const GrimoireLanding = () => {
           heading={downloadTarget.heading}
           confirmText={t.grimoire.download}
           isExporting={isDownloading}
+          accessKeys={accessKeys}
           onClose={() => { if (!isDownloading) setDownloadTarget(null); }}
           onExport={async (options) => { await download(downloadTarget.ids, options); setDownloadTarget(null); }}
         />

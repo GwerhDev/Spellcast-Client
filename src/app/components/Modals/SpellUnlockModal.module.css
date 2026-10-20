@@ -1,0 +1,68 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 0.5rem 0 0.25rem;
+}
+
+/* The lock, and what's asked for. */
+.intro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  text-align: center;
+}
+
+.lock {
+  width: 3rem;
+  height: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 1.2rem;
+  color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 14%, transparent);
+}
+
+.message {
+  margin: 0;
+  max-width: 28rem;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: var(--text-color);
+}
+
+/* The password, and what went wrong with it, no wider than a password needs. */
+.field {
+  width: 100%;
+  max-width: 24rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.error {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.65rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  color: var(--color-danger-100);
+  background: color-mix(in srgb, var(--color-danger) 14%, transparent);
+}
+
+.error svg {
+  flex-shrink: 0;
+}
+
+.buttons {
+  width: 100%;
+  max-width: 24rem;
+  display: flex;
+  gap: 0.75rem;
+}

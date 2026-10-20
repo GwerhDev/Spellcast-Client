@@ -177,7 +177,7 @@ describe('GrimoireLanding', () => {
       fireEvent.click(screen.getByTestId('bulk-download-btn'));
       expect(downloadMock).not.toHaveBeenCalled();
       fireEvent.click(await screen.findByTestId('spell-export-confirm-btn'));
-      await waitFor(() => expect(downloadMock).toHaveBeenCalledWith(['spell-2'], { includeSource: false, includeAudio: false }));
+      await waitFor(() => expect(downloadMock).toHaveBeenCalledWith(['spell-2'], { includeSource: false, includeAudio: false, keyIds: [] }));
     });
 
     it('downloads the whole Grimoire, whatever is searched', async () => {
@@ -185,7 +185,7 @@ describe('GrimoireLanding', () => {
       fireEvent.change(screen.getByTestId('grimoire-search'), { target: { value: 'Another' } });
       fireEvent.click(await screen.findByTestId('download-grimoire-btn'));
       fireEvent.click(await screen.findByTestId('spell-export-confirm-btn'));
-      await waitFor(() => expect(downloadMock).toHaveBeenCalledWith(['spell-1', 'spell-2'], { includeSource: false, includeAudio: false }));
+      await waitFor(() => expect(downloadMock).toHaveBeenCalledWith(['spell-1', 'spell-2'], { includeSource: false, includeAudio: false, keyIds: [] }));
     });
   });
 });
