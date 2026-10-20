@@ -93,8 +93,9 @@ describe('spellContainer', () => {
     const SECRET = 'a secret page, never readable without the password';
     const key = (id: string): AccessKey => ({ id, key: crypto.getRandomValues(new Uint8Array(32)) });
     const KEY = key('key-1');
+    // Few iterations: the derivations are real, only shorter.
     const protectedFile = async (protectWith: ProtectWith) => bytesOf(await writeContainer(
-      { title: 'Hidden title' }, [{ path: 'pages/0001.json', data: enc(SECRET), compress: false }], { version: 1, protectWith },
+      { title: 'Hidden title' }, [{ path: 'pages/0001.json', data: enc(SECRET), compress: false }], { version: 1, protectWith: { iterations: 1000, ...protectWith } },
     ));
     const secretOf = async (bytes: Uint8Array, unlock: Parameters<typeof openContainer>[1]) => {
       const opened = await openContainer<{ title: string }>(bytes, unlock);

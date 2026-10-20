@@ -93,8 +93,9 @@ To open it:
 4. If decryption fails (the tag doesn't match), the password is wrong.
 
 Everything happens on the device. The password and the key derived from it are never sent
-anywhere and never stored. Spellcast writes 600,000 iterations, and refuses to derive with
-more than 6,000,000, so a crafted file can't hang the reader.
+anywhere and never stored. Spellcast writes one password slot, with 600,000 iterations. As a
+reader, it tries at most the first 4 password slots, and skips any slot with more than
+6,000,000 iterations, so a crafted file can't hang the reader.
 
 A password that's lost can't be recovered, by anyone. That's why Spellcast asks for it twice
 and warns about this before it protects a file.

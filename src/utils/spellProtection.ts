@@ -8,6 +8,11 @@ export const CONTENT_CIPHER = 'AES-256-GCM';
 export const PASSWORD_KDF = 'PBKDF2-SHA256';
 // OWASP's recommendation for PBKDF2-HMAC-SHA256.
 export const PASSWORD_ITERATIONS = 600_000;
+// What a reader derives at most for a password: no slot past this many iterations, and no
+// more than this many password slots (one is all Spellcast writes). A file made to take hours
+// of derivations -- hundreds of slots, each slow -- can't hang the page.
+export const MAX_PASSWORD_ITERATIONS = 10 * PASSWORD_ITERATIONS;
+export const MAX_PASSWORD_SLOTS = 4;
 
 // A way to open the file: the content key, wrapped. Open-ended: a type this version doesn't
 // know is left alone (another way to open it).
@@ -34,6 +39,9 @@ export interface AccessKey {
 export interface ProtectWith {
   password?: string;
   keys?: AccessKey[];
+  // The password's iterations: PASSWORD_ITERATIONS, unless fewer are asked for (only tests do,
+  // to run fast).
+  iterations?: number;
 }
 
 /** What to open a protected file with: a password, and the access keys at hand. */
@@ -85,7 +93,7 @@ const decrypt = async (key: CryptoKey, iv: Uint8Array, data: Uint8Array, aad?: U
  * told apart too.
  */
 export async function protect(
-  { password, keys = [] }: ProtectWith,
+  { password, keys = [], iterations = PASSWORD_ITERATIONS }: ProtectWith,
 ): Promise<{ protection: SpellProtection; seal: (content: Uint8Array, aad: Uint8Array) => Promise<Uint8Array> }> {
   if (!password && !keys.length) throw new Error('A protected file needs a password or an access key.');
   const contentKey = random(32);
@@ -93,8 +101,8 @@ export async function protect(
   if (password) {
     const salt = random(16);
     const iv = random(12);
-    const wrapped = await encrypt(await passwordKey(password, salt, PASSWORD_ITERATIONS), iv, contentKey);
-    slots.push({ type: 'password', kdf: PASSWORD_KDF, iterations: PASSWORD_ITERATIONS, salt: base64(salt), iv: base64(iv), wrappedKey: base64(wrapped) });
+    const wrapped = await encrypt(await passwordKey(password, salt, iterations), iv, contentKey);
+    slots.push({ type: 'password', kdf: PASSWORD_KDF, iterations, salt: base64(salt), iv: base64(iv), wrappedKey: base64(wrapped) });
   }
   for (const access of keys) {
     const iv = random(12);
@@ -128,9 +136,9 @@ const contentKeyOf = async (protection: SpellProtection, { password, keys = [] }
     if (key) return key;
   }
   if (password) {
-    for (const slot of passwordSlots) {
+    for (const slot of passwordSlots.slice(0, MAX_PASSWORD_SLOTS)) {
       // Only the derivation this version knows, and never one so long it would hang.
-      if (slot.kdf !== PASSWORD_KDF || !Number.isSafeInteger(slot.iterations) || slot.iterations < 1 || slot.iterations > 10 * PASSWORD_ITERATIONS) continue;
+      if (slot.kdf !== PASSWORD_KDF || !Number.isSafeInteger(slot.iterations) || slot.iterations < 1 || slot.iterations > MAX_PASSWORD_ITERATIONS) continue;
       const key = await unwrap(await passwordKey(password, unbase64(slot.salt), slot.iterations), slot);
       if (key) return key;
     }

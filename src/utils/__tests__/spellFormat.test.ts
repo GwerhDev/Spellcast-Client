@@ -341,7 +341,8 @@ describe('a protected .spell', () => {
   const KEY = { id: 'key-1', key: crypto.getRandomValues(new Uint8Array(32)) };
   const lockedFile = async (protectWith: ExportSpellOptions['protectWith']) => {
     getSpellByIdMock.mockResolvedValue({ ...baseSpell, pagesContent: JSON.stringify([imagePage(IMG_A, 'A hidden page')]) });
-    return asFile(await exported({ protectWith }));
+    // Few iterations: the derivations are real, only shorter.
+    return asFile(await exported({ protectWith: protectWith && { iterations: 1000, ...protectWith } }));
   };
 
   it('imports with its password, exactly as it was', async () => {
