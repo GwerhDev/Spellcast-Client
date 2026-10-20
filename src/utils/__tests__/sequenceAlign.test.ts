@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { alignByContent, mergeSequences } from '../sequenceAlign';
+import { describe, it, expect, vi } from 'vitest';
+import { alignByContent, mergeSequences, MAX_SIMILARITY_PAIRS } from '../sequenceAlign';
 
 const kinds = (a: string[], b: string[]) => alignByContent(a, b).byFrom.map(pair => (pair ? `${pair.kind}:${pair.to}` : 'removed'));
 
@@ -42,6 +42,18 @@ describe('alignByContent', () => {
     const b = ['a', 'x2', 'b'];
     const { byFrom } = alignByContent(a, b, (i, j) => (like[a[i]] === b[j] ? 0.9 : 0));
     expect(byFrom.map(p => (p ? `${p.kind}:${p.to}` : 'removed'))).toEqual(['same:0', 'removed', 'changed:1', 'same:2']);
+  });
+
+  // Every item read again (nothing the same, no anchors): comparing each with each other one
+  // would freeze the page; past the cap they're paired by position, likeness never asked.
+  it('pairs a gap too big to compare item by item by position', () => {
+    const n = Math.ceil(Math.sqrt(MAX_SIMILARITY_PAIRS)) + 10;
+    const a = Array.from({ length: n }, (_, i) => `a${i}`);
+    const b = Array.from({ length: n }, (_, i) => `b${i}`);
+    const similarity = vi.fn(() => 0.9);
+    const { byFrom } = alignByContent(a, b, similarity);
+    expect(similarity).not.toHaveBeenCalled();
+    expect(byFrom.every((pair, i) => pair?.kind === 'changed' && pair.to === i)).toBe(true);
   });
 
   it('its anchors are a longest common subsequence', () => {

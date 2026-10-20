@@ -47,20 +47,32 @@ const wordsOf = (node: JSONContent): string[] => {
   return (node.content ?? []).flatMap(wordsOf);
 };
 
+// Each node's words, counted once: a gap compares every item with every other one, and
+// reading a page's words again for each pair is what made a big gap slow.
+interface WordCounts { counts: Map<string, number>; total: number }
+const countedWords = new WeakMap<JSONContent, WordCounts>();
+const wordCountsOf = (node: JSONContent): WordCounts => {
+  let known = countedWords.get(node);
+  if (!known) {
+    const counts = new Map<string, number>();
+    const words = wordsOf(node);
+    for (const word of words) counts.set(word, (counts.get(word) ?? 0) + 1);
+    known = { counts, total: words.length };
+    countedWords.set(node, known);
+  }
+  return known;
+};
+
 // How alike two nodes are: the words they share over the words they have (Dice), 1 when both
 // have none (two empty pages, or the same image).
 const alike = (a: JSONContent, b: JSONContent): number => {
-  const wa = wordsOf(a);
-  const wb = wordsOf(b);
-  if (!wa.length && !wb.length) return 1;
-  const counts = new Map<string, number>();
-  for (const word of wa) counts.set(word, (counts.get(word) ?? 0) + 1);
+  const wa = wordCountsOf(a);
+  const wb = wordCountsOf(b);
+  if (!wa.total && !wb.total) return 1;
+  const [small, large] = wa.counts.size <= wb.counts.size ? [wa.counts, wb.counts] : [wb.counts, wa.counts];
   let shared = 0;
-  for (const word of wb) {
-    const left = counts.get(word) ?? 0;
-    if (left > 0) { shared++; counts.set(word, left - 1); }
-  }
-  return (2 * shared) / (wa.length + wb.length);
+  for (const [word, count] of small) shared += Math.min(count, large.get(word) ?? 0);
+  return (2 * shared) / (wa.total + wb.total);
 };
 const layoutOf = (page: JSONContent): string => keyOf(page.attrs ?? {});
 

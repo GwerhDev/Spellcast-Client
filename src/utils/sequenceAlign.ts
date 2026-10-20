@@ -7,7 +7,8 @@
 //      keeps: inserting an item at the start doesn't touch the others;
 //   2. an item left over on both sides with the same content moved ("moved");
 //   3. what's left between two anchors is paired ("changed"): by how alike they are when a
-//      `similarity` is given (the most alike, in order, none below a minimum), else by position;
+//      `similarity` is given (the most alike, in order, none below a minimum) and the gap isn't
+//      too big (MAX_SIMILARITY_PAIRS), else by position;
 //      the rest is added to `b` or removed from `a`.
 
 export type AlignKind = 'same' | 'moved' | 'changed';
@@ -84,6 +85,10 @@ export type Similarity = (from: number, to: number) => number;
 
 // Below this, two items aren't one changed into the other, but one removed and another added.
 const MIN_SIMILARITY = 0.3;
+// A gap past this many pairs (e.g. every page read again from the PDF: nothing left the same,
+// no anchors) is paired by position: comparing each item with each other one would freeze the
+// page for seconds.
+export const MAX_SIMILARITY_PAIRS = 50 * 50;
 
 // The pairs of the most total likeness between two gaps' items, in order (no crossings), each
 // pair at least MIN_SIMILARITY alike.
@@ -140,8 +145,9 @@ export function alignByContent(a: string[], b: string[], similarity?: Similarity
     const gapB: number[] = [];
     for (let i = fromA + 1; i < toA; i++) if (!byFrom[i]) gapA.push(i);
     for (let j = fromB + 1; j < toB; j++) if (!byTo[j]) gapB.push(j);
-    if (similarity) for (const [i, j] of pairBySimilarity(gapA, gapB, similarity)) link('changed', i, j);
-    else for (let p = 0; p < Math.min(gapA.length, gapB.length); p++) link('changed', gapA[p], gapB[p]);
+    if (similarity && gapA.length * gapB.length <= MAX_SIMILARITY_PAIRS) {
+      for (const [i, j] of pairBySimilarity(gapA, gapB, similarity)) link('changed', i, j);
+    } else for (let p = 0; p < Math.min(gapA.length, gapB.length); p++) link('changed', gapA[p], gapB[p]);
   }
 
   pairs.sort((p, q) => p.to - q.to);

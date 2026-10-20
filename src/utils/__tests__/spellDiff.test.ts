@@ -49,6 +49,16 @@ describe('diffSpells', () => {
     expect(diff.pages.map(d => d.kind)).toEqual(['same', 'removed', 'added', 'same']);
   });
 
+  // "Update from the PDF" reads every page again: none the same, no anchors. Fast all the same.
+  it('a big spell with every page changed is compared quickly, each page against the one in its place', () => {
+    const words = (seed: number) => Array.from({ length: 40 }, (_, k) => `w${(seed * 7 + k) % 500}`).join(' ');
+    const pages = (edited: boolean) => Array.from({ length: 300 }, (_, i) => page(...Array.from({ length: 8 }, (_, b) => `${words(i * 8 + b)}${edited ? ' edited' : ''}`)));
+    const started = performance.now();
+    const diff = diffSpells(snap(pages(false)), snap(pages(true)));
+    expect(performance.now() - started).toBeLessThan(1500);
+    expect(diff.pages.every((d, i) => d.kind === 'changed' && d.from === i && d.to === i)).toBe(true);
+  });
+
   it("a changed page's blocks, aligned the same way, and its layout", () => {
     const before = page('a', 'the second line', 'c');
     const after: JSONContent = { ...page('new', 'a', 'the second line, edited', 'c'), attrs: { marginTop: 0 } };
