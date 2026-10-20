@@ -254,5 +254,93 @@ describe('resolveMerge', () => {
     const resolved = resolveMerge(merge, ['theirs', 'both', 'theirs']);
     expect(resolved.pages).toEqual([P1, page('a', 'second part, ours', 'second part, theirs', 'third part, theirs'), page('two, edited'), P3]);
   });
-});
 
+  // Dissonances in the same place: one about what's there in the merge (ours kept it) and one
+  // putting back in front of it what ours removed -- or several put back there. Every choice
+  // comes out as chosen, each element where it was.
+  describe('dissonances in the same place', () => {
+    const ONE = 'The old house stood at the end of the lane, dark for many years.';
+    const TWO = 'Nobody in the village remembered who had lived there before.';
+    const THREE = 'Its door was painted white, and the paint was peeling off.';
+    const FOUR = 'One winter night a light was seen in the upper window.';
+    const edit = (text: string, side: string) => `${text} Edited by ${side}.`;
+    type Choice = 'ours' | 'theirs' | 'both';
+    // For each dissonance (by what it's about), what it leaves in the result for each choice.
+    const check = (merge: ReturnType<typeof mergeSpells>, keyOf: (d: typeof merge.dissonances[number]) => string,
+      leaves: Record<string, Partial<Record<Choice, unknown[]>>>, build: (parts: Record<string, unknown[]>) => unknown) => {
+      const keys = merge.dissonances.map(keyOf);
+      expect([...keys].sort()).toEqual(Object.keys(leaves).sort());
+      const combos = keys.reduce<Choice[][]>((acc, key) =>
+        acc.flatMap(combo => (Object.keys(leaves[key]) as Choice[]).map(choice => [...combo, choice])), [[]]);
+      for (const combo of combos) {
+        const parts = Object.fromEntries(keys.map((key, k) => [key, leaves[key][combo[k]]!]));
+        expect({ combo, result: resolveMerge(merge, combo) }).toEqual({ combo, result: build(parts) });
+      }
+    };
+    // What a dissonance is about: TWO or THREE, as its text starts.
+    const textIn = (node: JSONContent): string => node.text ?? (node.content ?? []).map(textIn).join('');
+    const about = (d: Parameters<typeof canKeepBoth>[0]) => (textIn(((d as { theirs: JSONContent | null }).theirs ?? (d as { ours: JSONContent }).ours)).startsWith(TWO) ? 'two' : 'three');
+
+    it('a block ours removed and theirs edited, before one both edited', () => {
+      const merge = mergeSpells(
+        snap([page(ONE, TWO, THREE)]),
+        snap([page(ONE, edit(THREE, 'ours'))]),
+        snap([page(ONE, edit(TWO, 'theirs'), edit(THREE, 'theirs'))]),
+      );
+      check(merge, about, {
+        two: { ours: [], theirs: [edit(TWO, 'theirs')] },
+        three: { ours: [edit(THREE, 'ours')], theirs: [edit(THREE, 'theirs')], both: [edit(THREE, 'ours'), edit(THREE, 'theirs')] },
+      }, parts => ({ ...merge.merged, pages: [page(ONE, ...(parts.two as string[]), ...(parts.three as string[]))] }));
+    });
+
+    it('a block ours removed and theirs edited, before one theirs removed and ours edited', () => {
+      const merge = mergeSpells(
+        snap([page(ONE, TWO, THREE)]),
+        snap([page(ONE, edit(THREE, 'ours'))]),
+        snap([page(ONE, edit(TWO, 'theirs'))]),
+      );
+      check(merge, about, {
+        two: { ours: [], theirs: [edit(TWO, 'theirs')] },
+        three: { ours: [edit(THREE, 'ours')], theirs: [] },
+      }, parts => ({ ...merge.merged, pages: [page(ONE, ...(parts.two as string[]), ...(parts.three as string[]))] }));
+    });
+
+    it('several blocks ours removed and theirs edited, put back in their order', () => {
+      const merge = mergeSpells(
+        snap([page(ONE, TWO, THREE, FOUR)]),
+        snap([page(ONE, FOUR)]),
+        snap([page(ONE, edit(TWO, 'theirs'), edit(THREE, 'theirs'), FOUR)]),
+      );
+      check(merge, about, {
+        two: { ours: [], theirs: [edit(TWO, 'theirs')] },
+        three: { ours: [], theirs: [edit(THREE, 'theirs')] },
+      }, parts => ({ ...merge.merged, pages: [page(ONE, ...(parts.two as string[]), ...(parts.three as string[]), FOUR)] }));
+    });
+
+    it('a page ours removed and theirs edited, before one theirs removed and ours edited', () => {
+      const [p1, p2, p3] = [page(ONE), page(TWO), page(THREE)];
+      const merge = mergeSpells(
+        snap([p1, p2, p3]),
+        snap([p1, page(edit(THREE, 'ours'))]),
+        snap([p1, page(edit(TWO, 'theirs'))]),
+      );
+      check(merge, about, {
+        two: { ours: [], theirs: [page(edit(TWO, 'theirs'))] },
+        three: { ours: [page(edit(THREE, 'ours'))], theirs: [] },
+      }, parts => ({ ...merge.merged, pages: [p1, ...parts.two, ...parts.three] }));
+    });
+
+    it('several pages ours removed and theirs edited, put back in their order', () => {
+      const [p1, p2, p3, p4] = [page(ONE), page(TWO), page(THREE), page(FOUR)];
+      const merge = mergeSpells(
+        snap([p1, p2, p3, p4]),
+        snap([p1, p4]),
+        snap([p1, page(edit(TWO, 'theirs')), page(edit(THREE, 'theirs')), p4]),
+      );
+      check(merge, about, {
+        two: { ours: [], theirs: [page(edit(TWO, 'theirs'))] },
+        three: { ours: [], theirs: [page(edit(THREE, 'theirs'))] },
+      }, parts => ({ ...merge.merged, pages: [p1, ...parts.two, ...parts.three, p4] }));
+    });
+  });
+});

@@ -305,7 +305,7 @@ export function resolveMerge(merge: SpellMerge, resolutions: (Resolution | undef
   });
 
   const result: SpellSnapshot = { ...merge.merged, pages: merge.merged.pages.map(page => ({ ...page, content: [...(page.content ?? [])] })) };
-  const indexed = dissonances.map((dissonance, i) => ({ dissonance, resolution: resolutions[i]! }));
+  const indexed = dissonances.map((dissonance, i) => ({ dissonance, resolution: resolutions[i]!, i }));
 
   for (const { dissonance, resolution } of indexed) {
     if (resolution === 'ours') continue;
@@ -320,9 +320,14 @@ export function resolveMerge(merge: SpellMerge, resolutions: (Resolution | undef
   }
 
   // Blocks, then pages: a block's place is in the merged pages as they are, before pages are
-  // put in or taken out. Last place first, so an earlier one stays where it is.
-  const byPlace = <T extends { at: number }>(items: T[]) => [...items].sort((a, b) => b.at - a.at);
-  const blocks = indexed.filter((x): x is { dissonance: Extract<Dissonance, { part: 'block' }>; resolution: Resolution } => x.dissonance.part === 'block');
+  // put in or taken out. Last place first, so an earlier one stays where it is. In one place,
+  // what's there already (replaced, taken out, kept with theirs after it) goes before what's
+  // put back in front of it (removed on our side), and those put back the last one first, so
+  // they end up in their order.
+  const putBack = (d: { ours: unknown }) => d.ours === null;
+  const byPlace = <T extends { at: number; i: number; dissonance: { ours: unknown } }>(items: T[]) => [...items].sort((a, b) =>
+    b.at - a.at || Number(putBack(a.dissonance)) - Number(putBack(b.dissonance)) || b.i - a.i);
+  const blocks = indexed.filter((x): x is { dissonance: Extract<Dissonance, { part: 'block' }>; resolution: Resolution; i: number } => x.dissonance.part === 'block');
   for (const { dissonance, resolution } of byPlace(blocks.map(x => ({ ...x, at: x.dissonance.page * 1e6 + x.dissonance.at })))) {
     if (resolution === 'ours') continue;
     const content = result.pages[dissonance.page].content!;
@@ -332,7 +337,7 @@ export function resolveMerge(merge: SpellMerge, resolutions: (Resolution | undef
     else if (dissonance.theirs === null) content.splice(dissonance.at, 1);
     else content[dissonance.at] = dissonance.theirs;
   }
-  const pages = indexed.filter((x): x is { dissonance: Extract<Dissonance, { part: 'page' }>; resolution: Resolution } => x.dissonance.part === 'page');
+  const pages = indexed.filter((x): x is { dissonance: Extract<Dissonance, { part: 'page' }>; resolution: Resolution; i: number } => x.dissonance.part === 'page');
   for (const { dissonance, resolution } of byPlace(pages.map(x => ({ ...x, at: x.dissonance.at })))) {
     if (resolution === 'ours') continue;
     if (dissonance.ours === null) result.pages.splice(dissonance.at, 0, dissonance.theirs!);
