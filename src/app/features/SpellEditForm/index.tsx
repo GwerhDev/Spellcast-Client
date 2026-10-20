@@ -39,6 +39,8 @@ import { useShowOriginalPdf } from '../../../hooks/useShowOriginalPdf';
 import { useSpellVersions } from '../../../hooks/useSpellVersions';
 import { VersionSelector } from '../../components/VersionSelector/VersionSelector';
 import { ChronicleModal, type ChronicleItem } from '../../components/Modals/ChronicleModal';
+import { SpellDiffModal } from '../../components/Modals/SpellDiffModal';
+import type { SpellChanges } from '../../../utils/spellVersions';
 import { NewVersionModal } from '../../components/Modals/NewVersionModal';
 import type { ChronicleEntry } from '../../../utils/spellVersions';
 
@@ -81,6 +83,8 @@ export const SpellEditForm: React.FC = () => {
   const [showChronicle, setShowChronicle] = useState(false);
   const [chronicleItems, setChronicleItems] = useState<ChronicleItem[] | null>(null);
   const [showNewVersion, setShowNewVersion] = useState(false);
+  // What a seal (or the work not sealed yet) changed: its title, and the changes once read.
+  const [changesView, setChangesView] = useState<{ title: string; changes: SpellChanges | null } | null>(null);
   // A version asked to switch to while this one has changes not sealed: what to do with them.
   const [pendingSwitch, setPendingSwitch] = useState<string | null>(null);
 
@@ -388,14 +392,40 @@ export const SpellEditForm: React.FC = () => {
   const summaryOf = (entry: ChronicleEntry): string => {
     if (entry.first) return t.versions.firstSeal;
     const parts = [
+      entry.pagesAdded > 0 && (entry.pagesAdded === 1 ? t.versions.pageAdded : t.versions.pagesAdded.replace('{n}', String(entry.pagesAdded))),
       entry.pagesChanged > 0 && (entry.pagesChanged === 1 ? t.versions.pageChanged : t.versions.pagesChanged.replace('{n}', String(entry.pagesChanged))),
-      entry.pageCountChanged && t.versions.pageCountChanged,
+      entry.pagesRemoved > 0 && (entry.pagesRemoved === 1 ? t.versions.pageRemoved : t.versions.pagesRemoved.replace('{n}', String(entry.pagesRemoved))),
+      entry.pagesMoved > 0 && (entry.pagesMoved === 1 ? t.versions.pageMoved : t.versions.pagesMoved.replace('{n}', String(entry.pagesMoved))),
       entry.detailsChanged && t.versions.detailsChanged,
       entry.coverChanged && t.versions.coverChanged,
     ].filter(Boolean) as string[];
     const text = parts.length ? parts.join(' · ') : t.versions.changed;
     return text.charAt(0).toUpperCase() + text.slice(1);
   };
+
+  const showChanges = (title: string, read: () => Promise<SpellChanges>) => {
+    setChangesView({ title, changes: null });
+    read()
+      .then(changes => setChangesView(view => (view ? { ...view, changes } : view)))
+      .catch((err) => {
+        setChangesView(null);
+        console.error('Spell changes:', err);
+        dispatch(addApiResponse({ message: t.diff.error, type: 'error' }));
+      });
+  };
+  const openSealChanges = (sealId: string) => {
+    const item = chronicleItems?.find(entry => entry.id === sealId);
+    showChanges(t.diff.sealTitle.replace('{date}', item?.date ?? ''), () => versions.sealChanges(sealId));
+  };
+  // The work as the editor holds it, edits not saved yet included.
+  const openUnsealedChanges = () => showChanges(t.diff.unsealedTitle, () => versions.unsealedChanges({
+    title: spellTitle,
+    pagesContent: JSON.stringify(pagesContent),
+    description: description || undefined,
+    author: author || undefined,
+    tags: parseTagsInput(tagsInput),
+    language: language || undefined,
+  }));
 
   const openChronicle = () => {
     setChronicleItems(null);
@@ -709,7 +739,17 @@ export const SpellEditForm: React.FC = () => {
         show={showChronicle}
         title={t.versions.chronicleTitle.replace('{name}', versions.current ?? '')}
         items={chronicleItems}
+        onOpen={openSealChanges}
+        unsealed={hasChanges || versions.unsealed ? { label: t.diff.unsealedRow, onOpen: openUnsealedChanges } : null}
+        openLabel={t.diff.viewChanges}
         onClose={() => setShowChronicle(false)}
+      />
+
+      <SpellDiffModal
+        show={changesView !== null}
+        title={changesView?.title ?? ''}
+        changes={changesView?.changes ?? null}
+        onClose={() => setChangesView(null)}
       />
 
       <NewVersionModal

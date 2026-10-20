@@ -3,8 +3,10 @@ import { useAppDispatch } from '../store/hooks';
 import { getSpellById, updateSpellFull } from '../db';
 import { invalidateContent, invalidateSpellList } from '../store/spellReaderSlice';
 import {
-  spellChronicle, spellIsSealed, spellSeal, spellSwitchVersion, spellVersion, spellVersions, type ChronicleEntry,
+  spellChronicle, spellIsSealed, spellSeal, spellSealChanges, spellSwitchVersion, spellUnsealedChanges, spellVersion, spellVersions,
+  type ChronicleEntry, type SpellChanges,
 } from '../utils/spellVersions';
+import type { Spell } from '../interfaces';
 
 /**
  * A spell's versions in the editor (see utils/spellVersions): whether its work has changes not
@@ -70,8 +72,16 @@ export function useSpellVersions(spellId: string | undefined, userId: string | u
 
   const chronicle = useCallback((): Promise<ChronicleEntry[]> => run(async () => spellChronicle(await readSpell())), [run, readSpell]);
 
+  /** What a seal changed from the one before it. */
+  const sealChanges = useCallback((sealId: string): Promise<SpellChanges> => run(async () => spellSealChanges(await readSpell(), sealId)), [run, readSpell]);
+
+  /** What the work has that the latest seal doesn't: the stored work, with `editing` over it
+   * (the editor's edits not saved yet). */
+  const unsealedChanges = useCallback((editing: Partial<Spell> = {}): Promise<SpellChanges> =>
+    run(async () => spellUnsealedChanges({ ...(await readSpell()), ...editing })), [run, readSpell]);
+
   // An edit (saved or not) is work not sealed yet.
   const markUnsealed = useCallback(() => setUnsealed(true), []);
 
-  return { unsealed, current, names, refresh, seal, createVersion, switchTo, chronicle, markUnsealed };
+  return { unsealed, current, names, refresh, seal, createVersion, switchTo, chronicle, sealChanges, unsealedChanges, markUnsealed };
 }

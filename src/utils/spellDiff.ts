@@ -9,8 +9,10 @@ import { alignByContent, mergeSequences, type MergeConflict } from './sequenceAl
 // - The cover and the original pages as a whole (each known by its content's hash).
 // - Pages aligned by content: identical pages are anchors, so pages added, removed, moved and
 //   changed are told apart, and a page inserted at the start doesn't mark the others changed.
-//   A changed page is compared by its top-level blocks (paragraph, heading, image, columns,
-//   box, table), aligned the same way.
+//   Between two anchors, a page is paired with the one it's most like (words and images in
+//   common), not merely the one in its place: a page inserted next to an edited one isn't taken
+//   for it. A changed page is compared by its top-level blocks (paragraph, heading, image,
+//   columns, box, table), aligned the same way.
 
 export interface SpellSnapshot {
   title: string;
@@ -37,6 +39,29 @@ const keyOf = (node: unknown): string => JSON.stringify(node, (_key, value) =>
     : value);
 
 const blocksOf = (page: JSONContent): JSONContent[] => page.content ?? [];
+
+// What a node holds, as words (and its images, each a "word"), to tell how alike two are.
+const wordsOf = (node: JSONContent): string[] => {
+  if (node.type === 'text') return (node.text ?? '').toLowerCase().split(/[\s\p{P}]+/u).filter(Boolean);
+  if (node.type === 'image') return [`image:${String(node.attrs?.src ?? '')}`];
+  return (node.content ?? []).flatMap(wordsOf);
+};
+
+// How alike two nodes are: the words they share over the words they have (Dice), 1 when both
+// have none (two empty pages, or the same image).
+const alike = (a: JSONContent, b: JSONContent): number => {
+  const wa = wordsOf(a);
+  const wb = wordsOf(b);
+  if (!wa.length && !wb.length) return 1;
+  const counts = new Map<string, number>();
+  for (const word of wa) counts.set(word, (counts.get(word) ?? 0) + 1);
+  let shared = 0;
+  for (const word of wb) {
+    const left = counts.get(word) ?? 0;
+    if (left > 0) { shared++; counts.set(word, left - 1); }
+  }
+  return (2 * shared) / (wa.length + wb.length);
+};
 const layoutOf = (page: JSONContent): string => keyOf(page.attrs ?? {});
 
 // ── Differences ──
@@ -65,8 +90,8 @@ export interface SpellDiff {
 type Diffed = BlockDiff;
 
 // Two sequences' differences, in `b`'s order, each removed item after the one before it in `a`.
-const diffSequence = (a: string[], b: string[]): Diffed[] => {
-  const { pairs, byFrom } = alignByContent(a, b);
+const diffSequence = (a: JSONContent[], b: JSONContent[]): Diffed[] => {
+  const { pairs, byFrom } = alignByContent(a.map(keyOf), b.map(keyOf), (i, j) => alike(a[i], b[j]));
   const order: { at: number; entry: Diffed }[] = pairs.map(pair => ({ at: pair.to, entry: { kind: pair.kind, from: pair.from, to: pair.to } as Diffed }));
   a.forEach((_, i) => {
     if (byFrom[i]) return;
@@ -88,13 +113,13 @@ export function diffSpells(from: SpellSnapshot, to: SpellSnapshot): SpellDiff {
     .map(field => ({ field, from: from[field], to: to[field] }));
   const fromTags = tagSet(from.tags);
   const toTags = tagSet(to.tags);
-  const pages = diffSequence(from.pages.map(keyOf), to.pages.map(keyOf)).map((entry): PageDiff => {
+  const pages = diffSequence(from.pages, to.pages).map((entry): PageDiff => {
     if (entry.kind !== 'changed') return entry;
     const a = from.pages[entry.from];
     const b = to.pages[entry.to];
     return {
       ...entry,
-      blocks: diffSequence(blocksOf(a).map(keyOf), blocksOf(b).map(keyOf)),
+      blocks: diffSequence(blocksOf(a), blocksOf(b)),
       layoutChanged: layoutOf(a) !== layoutOf(b),
     };
   });
@@ -223,14 +248,14 @@ export function mergeSpells(base: SpellSnapshot, ours: SpellSnapshot, theirs: Sp
   const layoutDissonances: Dissonance[] = [];
   const pages = mergeSequences(base.pages, ours.pages, theirs.pages, keyOf, (basePage, oursPage, theirsPage, at) => {
     const blocks = mergeSequences(blocksOf(basePage), blocksOf(oursPage), blocksOf(theirsPage), keyOf,
-      (_b, oursBlock) => ({ item: oursBlock, conflict: true }));
+      (_b, oursBlock) => ({ item: oursBlock, conflict: true }), alike);
     if (blocks.conflicts.length) blockDissonances.push({ page: at, conflicts: blocks.conflicts });
     const layout = mergeValue(basePage.attrs ?? {}, oursPage.attrs ?? {}, theirsPage.attrs ?? {}, (a, b) => keyOf(a) === keyOf(b));
     if (layout.dissonant) layoutDissonances.push({ part: 'pageLayout', page: at, base: basePage.attrs, ours: oursPage.attrs, theirs: theirsPage.attrs });
     const page: JSONContent = { ...oursPage, content: blocks.items };
     if (Object.keys(layout.value).length || oursPage.attrs) page.attrs = layout.value;
     return { item: page, conflict: false };
-  });
+  }, alike);
   merged.pages = pages.items;
   for (const conflict of pages.conflicts) {
     dissonances.push({ part: 'page', at: conflict.at, base: conflict.base, ours: conflict.ours, theirs: conflict.theirs });

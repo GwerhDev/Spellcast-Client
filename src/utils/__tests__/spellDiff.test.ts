@@ -34,9 +34,24 @@ describe('diffSpells', () => {
     ]);
   });
 
+  // Between two anchors a page pairs with the one it's most like, not merely the one in its
+  // place: a page inserted right before an edited one isn't taken for it.
+  it('a page inserted next to an edited one: the new one added, the edited one changed', () => {
+    const chapter = page('Chapter one', 'The quick fox jumps over the dog.');
+    const diff = diffSpells(snap([chapter, P2]), snap([page('A new prologue.'), page('Chapter one', 'The slow fox jumps over the dog.'), P2]));
+    expect(diff.pages.map(d => d.kind)).toEqual(['added', 'changed', 'same']);
+    const changed = diff.pages[1];
+    expect(changed.kind === 'changed' && changed.blocks.map(b => b.kind)).toEqual(['same', 'changed']);
+  });
+
+  it('pages with nothing in common are one removed and another added, not one changed', () => {
+    const diff = diffSpells(snap([P1, page('Entirely different words here'), P3]), snap([P1, page('Nothing alike at all'), P3]));
+    expect(diff.pages.map(d => d.kind)).toEqual(['same', 'removed', 'added', 'same']);
+  });
+
   it("a changed page's blocks, aligned the same way, and its layout", () => {
-    const before = page('a', 'b', 'c');
-    const after: JSONContent = { ...page('new', 'a', 'b2', 'c'), attrs: { marginTop: 0 } };
+    const before = page('a', 'the second line', 'c');
+    const after: JSONContent = { ...page('new', 'a', 'the second line, edited', 'c'), attrs: { marginTop: 0 } };
     const [entry] = diffSpells(snap([before]), snap([after])).pages;
     expect(entry.kind).toBe('changed');
     if (entry.kind !== 'changed') return;
@@ -133,14 +148,14 @@ describe('mergeSpells', () => {
   });
 
   it('the same block changed differently on each side, or removed on one and edited on the other, is a dissonance', () => {
-    const base = snap([P1, page('a', 'b', 'c')]);
-    const ours = snap([P1, page('a', 'b-ours', 'c2')]);
-    const theirs = snap([P1, page('a', 'b-theirs')]);
+    const base = snap([P1, page('a', 'second part', 'third part')]);
+    const ours = snap([P1, page('a', 'second part, ours', 'third part, edited')]);
+    const theirs = snap([P1, page('a', 'second part, theirs')]);
     const { merged, dissonances } = mergeSpells(base, ours, theirs);
-    expect(merged.pages[1]).toEqual(page('a', 'b-ours', 'c2'));
+    expect(merged.pages[1]).toEqual(page('a', 'second part, ours', 'third part, edited'));
     expect(dissonances).toEqual([
-      { part: 'block', page: 1, at: 1, base: p('b'), ours: p('b-ours'), theirs: p('b-theirs') },
-      { part: 'block', page: 1, at: 2, base: p('c'), ours: p('c2'), theirs: null },
+      { part: 'block', page: 1, at: 1, base: p('second part'), ours: p('second part, ours'), theirs: p('second part, theirs') },
+      { part: 'block', page: 1, at: 2, base: p('third part'), ours: p('third part, edited'), theirs: null },
     ]);
   });
 

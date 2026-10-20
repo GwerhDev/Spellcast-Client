@@ -35,6 +35,15 @@ describe('alignByContent', () => {
     expect(byTo.map(p => p?.kind ?? 'added')).toEqual(['same', 'changed', 'same']);
   });
 
+  it('with a likeness, pairs what is left between anchors with what it is most like, in order', () => {
+    // x is most like x2 (not y2, the one in its place); y is like nothing.
+    const like: Record<string, string> = { x: 'x2' };
+    const a = ['a', 'y', 'x', 'b'];
+    const b = ['a', 'x2', 'b'];
+    const { byFrom } = alignByContent(a, b, (i, j) => (like[a[i]] === b[j] ? 0.9 : 0));
+    expect(byFrom.map(p => (p ? `${p.kind}:${p.to}` : 'removed'))).toEqual(['same:0', 'removed', 'changed:1', 'same:2']);
+  });
+
   it('its anchors are a longest common subsequence', () => {
     let seed = 7;
     const rand = () => { seed = (seed * 1103515245 + 12345) % 2 ** 31; return seed / 2 ** 31; };

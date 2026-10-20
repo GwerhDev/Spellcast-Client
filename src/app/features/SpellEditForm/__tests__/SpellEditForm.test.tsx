@@ -19,9 +19,14 @@ const versionsMock = {
   seal: vi.fn(() => Promise.resolve()),
   switchTo: vi.fn<(name: string) => Promise<void>>(() => Promise.resolve()),
   createVersion: vi.fn<(name: string) => Promise<void>>(() => Promise.resolve()),
+  sealChanges: vi.fn(async () => ({
+    diff: { details: [], tags: { added: [], removed: [] }, cover: null, originalPages: null, pages: [] },
+    from: { title: 'T', cover: null, originalPages: null, pages: [] }, to: { title: 'T', cover: null, originalPages: null, pages: [] },
+    cover: { from: null, to: null }, readImage: async () => null,
+  })),
   chronicle: vi.fn(() => Promise.resolve([
-    { seal: { id: 's2', createdAt: '2026-10-19T18:40:00Z' }, first: false, pagesChanged: 2, pageCountChanged: false, detailsChanged: false, coverChanged: false },
-    { seal: { id: 's1', createdAt: '2026-10-19T17:00:00Z' }, first: true, pagesChanged: 0, pageCountChanged: false, detailsChanged: false, coverChanged: false },
+    { seal: { id: 's2', createdAt: '2026-10-19T18:40:00Z' }, first: false, pagesAdded: 0, pagesRemoved: 0, pagesChanged: 2, pagesMoved: 0, detailsChanged: false, coverChanged: false },
+    { seal: { id: 's1', createdAt: '2026-10-19T17:00:00Z' }, first: true, pagesAdded: 0, pagesRemoved: 0, pagesChanged: 0, pagesMoved: 0, detailsChanged: false, coverChanged: false },
   ])),
 };
 vi.mock('../../../../hooks/useSpellVersions', async () => {
@@ -36,6 +41,8 @@ vi.mock('../../../../hooks/useSpellVersions', async () => {
         switchTo: async (name: string) => { await versionsMock.switchTo(name); setUnsealed(false); },
         createVersion: versionsMock.createVersion,
         chronicle: versionsMock.chronicle,
+        sealChanges: versionsMock.sealChanges,
+        unsealedChanges: versionsMock.sealChanges,
         markUnsealed: React.useCallback(() => setUnsealed(true), []),
       };
     },
@@ -530,6 +537,15 @@ describe('SpellEditForm', () => {
       expect(items).toHaveLength(2);
       expect(items[0].textContent).toContain('2 pages changed');
       expect(items[1].textContent).toContain('First seal');
+    });
+
+    it('opens what a seal changed from the chronicle', async () => {
+      renderForm();
+      await screen.findByTestId('spell-edit-form');
+      fireEvent.click(screen.getByTestId('spell-edit-chronicle-btn'));
+      fireEvent.click(await screen.findByTestId('chronicle-open-s2'));
+      await waitFor(() => expect(versionsMock.sealChanges).toHaveBeenCalledWith('s2'));
+      expect(await screen.findByTestId('diff-nothing')).toBeInTheDocument();
     });
   });
 });

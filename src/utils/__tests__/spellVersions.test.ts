@@ -70,6 +70,14 @@ describe('spellVersions', () => {
     expect(chronicle[1].seal.parentIds).toEqual([chronicle[2].seal.id]);
   });
 
+  it('the chronicle counts a page inserted at the start as one new page, not every page changed', async () => {
+    const { versions } = await load();
+    await versions.spellRepository(spellWith([page('one'), page('two'), page('three')]));
+    await versions.spellSeal(spellWith([page('new'), page('one'), page('two'), page('three, edited')]));
+    const [latest] = await versions.spellChronicle(spellWith([]));
+    expect(latest).toMatchObject({ pagesAdded: 1, pagesRemoved: 0, pagesChanged: 1, pagesMoved: 0 });
+  });
+
   it('an image kept across seals is stored once', async () => {
     const { versions, repo } = await load();
     const spell = spellWith([page('one', IMG)]);
@@ -312,5 +320,52 @@ describe('spellVersions', () => {
     expect(await repo.getSeal(spell.id, head.id)).toBeUndefined();
     expect(await repo.getVersions(spell.id)).toEqual([]);
     expect(await repo.getBlob(spell.id, head.files['pages/0001.json'])).toBeUndefined();
+  });
+
+  // What a seal changed, and what the work has that the latest seal doesn't (see spellDiff).
+  describe('changes', () => {
+    const loadAll = async () => ({ ...(await load()), db: await import('../../db') });
+    const savedSpell = async (pages: object[], over: { cover?: Blob; title?: string } = {}) => {
+      const { db } = await loadAll();
+      const id = await db.saveSpellToDB({ title: 'A Spell', userId: 'user-1', pagesContent: JSON.stringify(pages), ...over });
+      return (await db.getSpellById(id, 'user-1'))!;
+    };
+
+    it('a seal against the one before it: pages, details and cover; the first against nothing', async () => {
+      const { versions, db } = await loadAll();
+      const spell = await savedSpell([page('one', IMG), page('two')]);
+      const { head: first } = await versions.spellRepository(spell);
+      await db.updateSpellFull(spell.id, 'user-1', {
+        title: 'Renamed', pagesContent: JSON.stringify([page('new'), page('one', IMG), page('two, edited')]),
+        cover: new NodeBlob(['cover-bytes'], { type: 'image/webp' }) as unknown as Blob,
+      });
+      const { seal } = await versions.spellSeal((await db.getSpellById(spell.id, 'user-1'))!);
+
+      const changes = await versions.spellSealChanges(spell, seal.id);
+      expect(changes.diff.pages.map(p => p.kind)).toEqual(['added', 'same', 'changed']);
+      expect(changes.diff.details).toEqual([{ field: 'title', from: 'A Spell', to: 'Renamed' }]);
+      expect(changes.diff.cover).toEqual({ from: null, to: expect.any(String) });
+      expect(await (await changes.readImage('to', changes.cover.to!))!.text()).toBe('cover-bytes');
+      // Pages as seal files write them: images as references, never the images themselves.
+      expect(JSON.stringify(changes.to.pages)).not.toContain('base64');
+      const ref = changes.to.pages[1].content![0].attrs!.src as string;
+      expect(ref).toMatch(/^spell-asset:/);
+      expect(await (await changes.readImage('to', `assets/${ref.slice('spell-asset:'.length)}`))!.text()).toBe('image-bytes');
+
+      const firstChanges = await versions.spellSealChanges(spell, first.id);
+      expect(firstChanges.diff.pages.map(p => p.kind)).toEqual(['added', 'added']);
+    });
+
+    it('the work not sealed against the latest seal, edits not saved yet included', async () => {
+      const { versions, db } = await loadAll();
+      const spell = await savedSpell([page('one'), page('two')]);
+      await versions.spellRepository(spell);
+      const stored = (await db.getSpellById(spell.id, 'user-1'))!;
+      const nothing = await versions.spellUnsealedChanges(stored);
+      expect(nothing.diff.pages.every(p => p.kind === 'same')).toBe(true);
+
+      const changes = await versions.spellUnsealedChanges({ ...stored, pagesContent: JSON.stringify([page('one'), page('two, not saved')]) });
+      expect(changes.diff.pages.map(p => p.kind)).toEqual(['same', 'changed']);
+    });
   });
 });

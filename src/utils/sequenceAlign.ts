@@ -6,8 +6,9 @@
 //   1. the longest run of items equal in both, in order, are anchors ("same"), as the lines git
 //      keeps: inserting an item at the start doesn't touch the others;
 //   2. an item left over on both sides with the same content moved ("moved");
-//   3. what's left between two anchors is paired by position ("changed"), the rest is added to
-//      `b` or removed from `a`.
+//   3. what's left between two anchors is paired ("changed"): by how alike they are when a
+//      `similarity` is given (the most alike, in order, none below a minimum), else by position;
+//      the rest is added to `b` or removed from `a`.
 
 export type AlignKind = 'same' | 'moved' | 'changed';
 
@@ -78,8 +79,36 @@ const myers = (a: string[], b: string[]): [number, number][] => {
   return pairs.reverse();
 };
 
+// How alike `a[from]` and `b[to]` are, 0 (nothing in common) to 1 (the same).
+export type Similarity = (from: number, to: number) => number;
+
+// Below this, two items aren't one changed into the other, but one removed and another added.
+const MIN_SIMILARITY = 0.3;
+
+// The pairs of the most total likeness between two gaps' items, in order (no crossings), each
+// pair at least MIN_SIMILARITY alike.
+const pairBySimilarity = (gapA: number[], gapB: number[], similarity: Similarity): [number, number][] => {
+  const n = gapA.length;
+  const m = gapB.length;
+  const sim = gapA.map(i => gapB.map(j => similarity(i, j)));
+  const score = Array.from({ length: n + 1 }, () => new Float64Array(m + 1));
+  for (let x = 1; x <= n; x++) {
+    for (let y = 1; y <= m; y++) {
+      const pair = sim[x - 1][y - 1] >= MIN_SIMILARITY ? score[x - 1][y - 1] + sim[x - 1][y - 1] : -Infinity;
+      score[x][y] = Math.max(score[x - 1][y], score[x][y - 1], pair);
+    }
+  }
+  const pairs: [number, number][] = [];
+  for (let x = n, y = m; x > 0 && y > 0;) {
+    if (score[x][y] === score[x - 1][y]) x--;
+    else if (score[x][y] === score[x][y - 1]) y--;
+    else { pairs.push([gapA[x - 1], gapB[y - 1]]); x--; y--; }
+  }
+  return pairs.reverse();
+};
+
 /** Aligns `a` to `b` by their items' keys (see the top of this file). */
-export function alignByContent(a: string[], b: string[]): Alignment {
+export function alignByContent(a: string[], b: string[], similarity?: Similarity): Alignment {
   const byFrom: (AlignedPair | null)[] = a.map(() => null);
   const byTo: (AlignedPair | null)[] = b.map(() => null);
   const pairs: AlignedPair[] = [];
@@ -111,7 +140,8 @@ export function alignByContent(a: string[], b: string[]): Alignment {
     const gapB: number[] = [];
     for (let i = fromA + 1; i < toA; i++) if (!byFrom[i]) gapA.push(i);
     for (let j = fromB + 1; j < toB; j++) if (!byTo[j]) gapB.push(j);
-    for (let p = 0; p < Math.min(gapA.length, gapB.length); p++) link('changed', gapA[p], gapB[p]);
+    if (similarity) for (const [i, j] of pairBySimilarity(gapA, gapB, similarity)) link('changed', i, j);
+    else for (let p = 0; p < Math.min(gapA.length, gapB.length); p++) link('changed', gapA[p], gapB[p]);
   }
 
   pairs.sort((p, q) => p.to - q.to);
@@ -157,10 +187,12 @@ type Slot =
 export function mergeSequences<T>(
   base: T[], ours: T[], theirs: T[], key: (item: T) => string,
   bothChanged: (base: T, ours: T, theirs: T, at: number) => { item: T; conflict: boolean },
+  // How alike two items are (see alignByContent): what pairs a changed item with what it was.
+  alike?: (a: T, b: T) => number,
 ): SequenceMerge<T> {
   const baseKeys = base.map(key);
-  const toOurs = alignByContent(baseKeys, ours.map(key));
-  const toTheirs = alignByContent(baseKeys, theirs.map(key));
+  const toOurs = alignByContent(baseKeys, ours.map(key), alike && ((i, j) => alike(base[i], ours[j])));
+  const toTheirs = alignByContent(baseKeys, theirs.map(key), alike && ((i, j) => alike(base[i], theirs[j])));
 
   // Ours' order: its items from base, and its additions.
   const slots: Slot[] = ours.map((_, j) => {

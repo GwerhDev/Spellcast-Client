@@ -167,7 +167,7 @@ const pageToFile = async (page: unknown, entries: Entries): Promise<string> => {
   return JSON.stringify(withRefs);
 };
 
-const pageFileName = (folder: string, index: number) => `${folder}/${String(index + 1).padStart(4, '0')}.json`;
+export const pageFileName = (folder: string, index: number) => `${folder}/${String(index + 1).padStart(4, '0')}.json`;
 
 // The pages of a pagesContent into folder/0001.json..., returning each page entry's bytes.
 const writePages = async (pagesContent: string, folder: string, entries: Entries): Promise<Uint8Array[]> => {

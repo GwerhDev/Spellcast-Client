@@ -1,6 +1,9 @@
 import type { Spell } from '../interfaces';
 import { sha256Hex } from './spellContainer';
-import { readWork, writeWork, type SpellFileSource, type SpellWork, type SpellWorkLayout } from './spellFormat';
+import { pageFileName, readWork, writeWork, type SpellFileSource, type SpellWork, type SpellWorkLayout } from './spellFormat';
+import { diffSpells, type SpellDiff, type SpellSnapshot } from './spellDiff';
+import { alignByContent } from './sequenceAlign';
+import type { JSONContent } from '@tiptap/core';
 import { recordImages as recordImagesOf, imagesOf, type SpellImage } from './spellImages';
 import { getSpellById } from '../db';
 import {
@@ -159,13 +162,30 @@ export interface ChronicleEntry {
   seal: SealRecord;
   // What changed from the seal before it (none for the first).
   first: boolean;
+  // Pages added, removed, changed and moved, told apart by content (see spellDiff): a page
+  // inserted at the start doesn't count the ones after it as changed.
+  pagesAdded: number;
+  pagesRemoved: number;
   pagesChanged: number;
-  pageCountChanged: boolean;
+  pagesMoved: number;
   detailsChanged: boolean;
   coverChanged: boolean;
 }
 
-const pageFiles = (files: Record<string, string>) => Object.keys(files).filter(path => path.startsWith('pages/'));
+const pageFiles = (files: Record<string, string>) => Object.keys(files).filter(path => path.startsWith('pages/')).sort();
+// The pages a seal added, removed, changed and moved from the one before it, by their files'
+// hashes alone (none read): identical pages are anchors, as in spellDiff.
+const pageCounts = (before: string[] | null, after: string[]) => {
+  const counts = { pagesAdded: 0, pagesRemoved: 0, pagesChanged: 0, pagesMoved: 0 };
+  if (!before) return counts;
+  const { pairs, byFrom, byTo } = alignByContent(before, after);
+  counts.pagesAdded = byTo.filter(pair => !pair).length;
+  counts.pagesRemoved = byFrom.filter(pair => !pair).length;
+  counts.pagesChanged = pairs.filter(pair => pair.kind === 'changed').length;
+  counts.pagesMoved = pairs.filter(pair => pair.kind === 'moved').length;
+  return counts;
+};
+
 // The cover's file and content, as one value to compare.
 const coverOf = (files: Record<string, string>) => Object.entries(files).filter(([path]) => path.startsWith('cover.')).map(e => e.join('=')).join();
 
@@ -190,8 +210,7 @@ export const spellChronicle = (spell: Spell, versionName?: string): Promise<Chro
     entries.push({
       seal,
       first: !parent,
-      pagesChanged: parent ? pages.filter(path => seal!.files[path] !== parent.files[path]).length : 0,
-      pageCountChanged: !!parent && pages.length !== pageFiles(parent.files).length,
+      ...pageCounts(parent ? pageFiles(parent.files).map(path => parent.files[path]) : null, pages.map(path => seal!.files[path])),
       detailsChanged: !!parent && seal.files[META_PATH] !== parent.files[META_PATH]
         && await detailsOf(spell.id, seal) !== await detailsOf(spell.id, parent),
       coverChanged: !!parent && coverOf(seal.files) !== coverOf(parent.files),
@@ -273,3 +292,88 @@ export async function spellSwitchVersion(spell: Spell, name: string, write: (wor
   await setCurrentVersion(spell.id, name);
   return work;
 }
+
+// ── Changes (see spellDiff) ──
+
+export type ChangesSide = 'from' | 'to';
+
+export interface SpellChanges {
+  diff: SpellDiff;
+  from: SpellSnapshot;
+  to: SpellSnapshot;
+  // Each side's cover file (to show it), if it has one.
+  cover: Record<ChangesSide, string | null>;
+  // An image of one side (an asset a page refers to, or the cover), read when it's shown.
+  readImage: (side: ChangesSide, path: string) => Promise<Blob | null>;
+}
+
+const EMPTY: SpellSnapshot = { title: '', cover: null, originalPages: null, pages: [] };
+
+// A seal's (or the work's) files as a snapshot to compare: its pages as the files write them
+// (images as references, never the images), its cover and original pages known by content.
+const snapshotOf = async (files: Record<string, string>, read: (path: string) => Promise<Uint8Array | null>) => {
+  const metaBytes = await read(META_PATH);
+  if (!metaBytes) throw new SpellVersionError('A sealed file is missing (spell.json).');
+  const meta = JSON.parse(new TextDecoder().decode(metaBytes)) as WorkMeta;
+  const pages: JSONContent[] = [];
+  for (let i = 0; i < meta.pageCount; i++) {
+    const bytes = await read(pageFileName('pages', i));
+    if (!bytes) throw new SpellVersionError(`A sealed file is missing (${pageFileName('pages', i)}).`);
+    pages.push(JSON.parse(new TextDecoder().decode(bytes)) as JSONContent);
+  }
+  const originals = meta.originalPageCount == null ? null
+    : Array.from({ length: meta.originalPageCount }, (_, i) => files[pageFileName('original/pages', i)] ?? '').join();
+  const snapshot: SpellSnapshot = {
+    title: meta.title, description: meta.description, author: meta.author, tags: meta.tags, language: meta.language,
+    cover: meta.cover ? files[meta.cover] ?? null : null,
+    originalPages: originals,
+    pages,
+  };
+  return { snapshot, coverPath: meta.cover };
+};
+
+const sealSide = async (spell: Spell, seal: SealRecord) => {
+  const source = sealSource(spell, seal);
+  const { snapshot, coverPath } = await snapshotOf(seal.files, source.read);
+  const readImage = async (path: string) => {
+    const data = await source.read(path);
+    return data ? new Blob([data as BlobPart], { type: source.typeOf(path) ?? '' }) : null;
+  };
+  return { snapshot, coverPath, readImage };
+};
+
+const workSide = async (spell: Spell) => {
+  const { files, blobs } = await filesOf(workOf(spell));
+  const byPath = new Map(blobs.map(blob => [blob.path, blob]));
+  const read = async (path: string) => byPath.get(path)?.data ?? null;
+  const { snapshot, coverPath } = await snapshotOf(files, read);
+  const readImage = async (path: string) => {
+    const blob = byPath.get(path);
+    return blob ? new Blob([blob.data as BlobPart], { type: blob.type ?? '' }) : null;
+  };
+  return { snapshot, coverPath, readImage };
+};
+
+type Side = Awaited<ReturnType<typeof sealSide>>;
+const changesOf = (from: Side | null, to: Side): SpellChanges => ({
+  diff: diffSpells(from?.snapshot ?? EMPTY, to.snapshot),
+  from: from?.snapshot ?? EMPTY,
+  to: to.snapshot,
+  cover: { from: from?.coverPath ?? null, to: to.coverPath ?? null },
+  readImage: (side, path) => (side === 'from' ? from?.readImage(path) ?? Promise.resolve(null) : to.readImage(path)),
+});
+
+/** What a seal changed from the seal before it (from nothing, for the first). */
+export const spellSealChanges = (spell: Spell, sealId: string): Promise<SpellChanges> => withSpellLock(spell.id, async () => {
+  await ensureRepository(spell);
+  const seal = await getSeal(spell.id, sealId);
+  if (!seal) throw new SpellVersionError('That seal is not in this spell.');
+  const parent = seal.parentIds[0] ? await getSeal(spell.id, seal.parentIds[0]) : undefined;
+  return changesOf(parent ? await sealSide(spell, parent) : null, await sealSide(spell, seal));
+});
+
+/** What the work has that its current version's latest seal doesn't (the changes not sealed). */
+export const spellUnsealedChanges = (spell: Spell): Promise<SpellChanges> => withSpellLock(spell.id, async () => {
+  const { head } = await ensureRepository(spell);
+  return changesOf(await sealSide(spell, head), await workSide(spell));
+});
