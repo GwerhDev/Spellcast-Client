@@ -6,7 +6,7 @@ import { sameUser } from "../utils/grimoire";
 import { dropCoverOverText } from "../utils/spellPage";
 import { getStoredProgress, getAllStoredProgress, setStoredProgress, setStoredProgressMany, deleteStoredProgress, clearStoredProgress } from "./spellProgress";
 import { deleteSpellCosmetics, clearSpellCosmetics } from "./spellCosmetics";
-import { deleteSpellRepository, clearSpellRepositories } from "./spellRepository";
+import { deleteSpellRepository, clearSpellRepositories, keepSealedImages, withSpellLock } from "./spellRepository";
 import { getStoredCoverFrame, getAllStoredCoverFrames, setStoredCoverFrame, deleteStoredCoverFrame, clearStoredCoverFrames, type CoverFrameRecord } from "./spellCoverFrames";
 
 // The pre-rename (TCORE-78) store name, frozen on purpose: it names whatever a
@@ -602,7 +602,25 @@ export const deleteSpellFromDB = async (id: string, userId: string | undefined):
   });
 };
 
-export const updateSpellContent = async (
+// A spell's pages or cover written: one at a time per spell, its seals kept whole (an image
+// they hold that the record stops holding is kept for them first -- see keepSealedImages).
+const writeSpellWork = <T,>(id: string, userId: string, after: (before: Spell) => Pick<Spell, 'pagesContent' | 'originalPagesContent' | 'cover'>, write: () => Promise<T>) =>
+  withSpellLock(id, async () => {
+    const before = await readSpellFromStore(id, userId);
+    return keepSealedImages(id, before, before ? after(before) : {}, write);
+  });
+
+export const updateSpellContent = (
+  id: string,
+  userId: string,
+  updates: { title: string; pagesContent: string; description?: string; author?: string; tags?: string[]; language?: string }
+): Promise<void> => writeSpellWork(
+  id, userId,
+  before => ({ ...before, pagesContent: updates.pagesContent }),
+  () => writeSpellContent(id, userId, updates),
+);
+
+const writeSpellContent = async (
   id: string,
   userId: string,
   updates: { title: string; pagesContent: string; description?: string; author?: string; tags?: string[]; language?: string }
@@ -635,15 +653,19 @@ export const updateSpellContent = async (
   });
 };
 
-export const updateSpellFull = async (
-  id: string,
-  userId: string,
-  // The details too, when given (a version switched to brings its own).
-  updates: {
-    title: string; pagesContent: string; cover?: Blob; originalPagesContent?: string;
-    description?: string; author?: string; tags?: string[]; language?: string;
-  }
-): Promise<void> => {
+type FullUpdates = {
+  title: string; pagesContent: string; cover?: Blob; originalPagesContent?: string;
+  description?: string; author?: string; tags?: string[]; language?: string;
+};
+
+// The details too, when given (a version switched to brings its own).
+export const updateSpellFull = (id: string, userId: string, updates: FullUpdates): Promise<void> => writeSpellWork(
+  id, userId,
+  before => ({ ...before, ...updates }),
+  () => writeSpellFull(id, userId, updates),
+);
+
+const writeSpellFull = async (id: string, userId: string, updates: FullUpdates): Promise<void> => {
   const db = await openDB();
   const transaction = db.transaction(SPELLS_STORE_NAME, 'readwrite');
   const store = transaction.objectStore(SPELLS_STORE_NAME);

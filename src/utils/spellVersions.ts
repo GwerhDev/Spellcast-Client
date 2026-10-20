@@ -1,9 +1,11 @@
 import type { Spell } from '../interfaces';
 import { sha256Hex } from './spellContainer';
 import { readWork, writeWork, type SpellFileSource, type SpellWork, type SpellWorkLayout } from './spellFormat';
+import { recordImages as recordImagesOf, imagesOf, type SpellImage } from './spellImages';
+import { getSpellById } from '../db';
 import {
   getBlob, getRepo, getSeal, getVersion, getVersions, putBlobs, putSealAndHead, putVersionAsCurrent, setCurrentVersion,
-  type SealRecord, type VersionRecord,
+  withSpellLock, type SealRecord, type VersionRecord,
 } from '../db/spellRepository';
 
 // A spell's versions, kept locally as a repository (see db/spellRepository): sealing (the Save
@@ -13,6 +15,11 @@ import {
 //
 // A seal's files are the same as a .spell's entries (see spellFormat's writeWork) -- pages,
 // original pages, images, cover -- plus spell.json with the work's details. Audio isn't sealed.
+// Its images are stored only while the spell's record doesn't hold them (see
+// db/spellRepository): a seal's image is read from the repository, or else from the record.
+//
+// Everything here runs holding the spell's lock (withSpellLock), one at a time with the
+// writes of its record.
 
 // Every spell's first version, where the others come from.
 export const SOURCE_VERSION = 'source';
@@ -42,13 +49,40 @@ const filesOf = async (work: SpellWork) => {
   };
   const all = [...entries.list, { path: META_PATH, data: encode(JSON.stringify(meta)), type: undefined }];
   const files: Record<string, string> = {};
-  const blobs: { sha256: string; data: Uint8Array; type?: string }[] = [];
+  const blobs: SealFile[] = [];
   for (const entry of all) {
     const sha256 = await sha256Hex(entry.data);
     files[entry.path] = sha256;
-    blobs.push({ sha256, data: entry.data, type: entry.type });
+    blobs.push({ sha256, data: entry.data, type: entry.type, path: entry.path });
   }
   return { files, blobs };
+};
+
+type SealFile = SpellImage & { path: string };
+const isPageImage = (path: string) => path.startsWith('assets/');
+const isImagePath = (path: string) => isPageImage(path) || path.startsWith('cover.');
+
+// The spell's record as stored now (not as the caller last read it).
+const storedRecord = async (spell: Spell) => (await getSpellById(spell.id, spell.userId)) ?? null;
+
+// The images the spell's record holds now, by sha256. The same pages as the work being sealed
+// (the usual case) are already hashed: only the cover is read again.
+const recordImageShas = async (spell: Spell, blobs: SealFile[]): Promise<Set<string>> => {
+  const stored = await storedRecord(spell);
+  if (!stored) return new Set();
+  const samePages = (stored.pagesContent ?? '[]') === (spell.pagesContent ?? '[]') && stored.originalPagesContent === spell.originalPagesContent;
+  const images = samePages
+    ? [...blobs.filter(blob => isPageImage(blob.path)), ...await imagesOf([], [stored.cover])]
+    : await recordImagesOf(stored);
+  return new Set(images.map(image => image.sha256));
+};
+
+// A seal's files into the repository: all but the images the record holds (stored once, there).
+const storeSealFiles = async (spell: Spell, blobs: SealFile[]) => {
+  const inRecord = await recordImageShas(spell, blobs);
+  await putBlobs(spell.id, blobs
+    .filter(blob => !isImagePath(blob.path) || !inRecord.has(blob.sha256))
+    .map(({ sha256, data, type }) => ({ sha256, data, type })));
 };
 
 const sameFiles = (a: Record<string, string>, b: Record<string, string>) => {
@@ -85,37 +119,41 @@ const currentState = async (spellId: string): Promise<RepositoryState | null> =>
  * The spell's repository, made the first time it's needed: a spell from before versions (every
  * existing one) gets the source version, with a first seal of its work as it is.
  */
-export async function spellRepository(spell: Spell): Promise<RepositoryState> {
+export const spellRepository = (spell: Spell): Promise<RepositoryState> => withSpellLock(spell.id, () => ensureRepository(spell));
+
+const ensureRepository = async (spell: Spell): Promise<RepositoryState> => {
   const state = await currentState(spell.id);
   if (state) return state;
   const { files, blobs } = await filesOf(workOf(spell));
-  await putBlobs(spell.id, blobs);
+  await storeSealFiles(spell, blobs);
   const head = await makeSeal(spell.id, [], files, '');
   await putSealAndHead(head, { spellId: spell.id, name: SOURCE_VERSION, headSealId: head.id, createdAt: head.createdAt });
   return { currentVersion: SOURCE_VERSION, head };
-}
+};
 
 /** Whether the spell's work is what its current version's latest seal holds. */
-export async function spellIsSealed(spell: Spell): Promise<boolean> {
-  const { head } = await spellRepository(spell);
+export const spellIsSealed = (spell: Spell): Promise<boolean> => withSpellLock(spell.id, async () => {
+  const { head } = await ensureRepository(spell);
   const { files } = await filesOf(workOf(spell));
   return sameFiles(files, head.files);
-}
+});
 
 /**
  * Seals the spell's work on its current version (the Save button). Nothing changed since the
  * latest seal: no new seal (`created` false).
  */
-export async function spellSeal(spell: Spell, message = ''): Promise<{ seal: SealRecord; created: boolean }> {
-  const { currentVersion, head } = await spellRepository(spell);
+export const spellSeal = (spell: Spell, message = ''): Promise<{ seal: SealRecord; created: boolean }> => withSpellLock(spell.id, async () => {
+  const { currentVersion, head } = await ensureRepository(spell);
   const { files, blobs } = await filesOf(workOf(spell));
   if (sameFiles(files, head.files)) return { seal: head, created: false };
-  await putBlobs(spell.id, blobs.filter(blob => !Object.values(head.files).includes(blob.sha256)));
+  // What the latest seal already holds is kept already (in the repository or in the record).
+  const held = new Set(Object.values(head.files));
+  await storeSealFiles(spell, blobs.filter(blob => !held.has(blob.sha256)));
   const seal = await makeSeal(spell.id, [head.id], files, message);
   const version = await getVersion(spell.id, currentVersion);
   await putSealAndHead(seal, { spellId: spell.id, name: currentVersion, headSealId: seal.id, createdAt: version?.createdAt ?? seal.createdAt });
   return { seal, created: true };
-}
+});
 
 export interface ChronicleEntry {
   seal: SealRecord;
@@ -141,8 +179,8 @@ const detailsOf = async (spellId: string, seal: SealRecord): Promise<string> => 
 };
 
 /** The chronicle of a version (the current one if none given): its seals, newest first. */
-export async function spellChronicle(spell: Spell, versionName?: string): Promise<ChronicleEntry[]> {
-  const { currentVersion } = await spellRepository(spell);
+export const spellChronicle = (spell: Spell, versionName?: string): Promise<ChronicleEntry[]> => withSpellLock(spell.id, async () => {
+  const { currentVersion } = await ensureRepository(spell);
   const version = await getVersion(spell.id, versionName ?? currentVersion);
   const entries: ChronicleEntry[] = [];
   let seal = version ? await getSeal(spell.id, version.headSealId) : undefined;
@@ -161,15 +199,15 @@ export async function spellChronicle(spell: Spell, versionName?: string): Promis
     seal = parent;
   }
   return entries;
-}
+});
 
 /** The spell's versions, and which one it's on. */
-export async function spellVersions(spell: Spell): Promise<{ current: string; versions: VersionRecord[] }> {
-  const { currentVersion } = await spellRepository(spell);
+export const spellVersions = (spell: Spell): Promise<{ current: string; versions: VersionRecord[] }> => withSpellLock(spell.id, async () => {
+  const { currentVersion } = await ensureRepository(spell);
   const versions = await getVersions(spell.id);
   versions.sort((a, b) => (a.name === SOURCE_VERSION ? -1 : b.name === SOURCE_VERSION ? 1 : a.createdAt.localeCompare(b.createdAt)));
   return { current: currentVersion, versions };
-}
+});
 
 export class SpellVersionError extends Error {}
 
@@ -177,24 +215,32 @@ export class SpellVersionError extends Error {}
  * A new version from where the current one is (its latest seal), made the current one. Unsealed
  * work stays as it is, now on the new version.
  */
-export async function spellVersion(spell: Spell, name: string): Promise<VersionRecord> {
+export const spellVersion = (spell: Spell, name: string): Promise<VersionRecord> => withSpellLock(spell.id, async () => {
   const trimmed = name.trim();
   if (!trimmed) throw new SpellVersionError('A version needs a name.');
-  const { head } = await spellRepository(spell);
+  const { head } = await ensureRepository(spell);
   if (await getVersion(spell.id, trimmed)) throw new SpellVersionError(`There's already a version named "${trimmed}".`);
   const version: VersionRecord = { spellId: spell.id, name: trimmed, headSealId: head.id, createdAt: new Date().toISOString() };
   await putVersionAsCurrent(version);
   return version;
-}
+});
 
-// A seal's files, as a .spell's are read.
-const sealSource = (spellId: string, seal: SealRecord): SpellFileSource => {
+// A seal's files, as a .spell's are read: from the repository, or (an image the record still
+// holds) from the spell's record as stored now.
+const sealSource = (spell: Spell, seal: SealRecord): SpellFileSource => {
   const types = new Map<string, string | undefined>();
+  let recordImages: Promise<Map<string, SpellImage>> | null = null;
+  const fromRecord = async (sha256: string) => {
+    recordImages ??= storedRecord(spell).then(async stored => new Map(
+      (stored ? await recordImagesOf(stored) : []).map(image => [image.sha256, image]),
+    ));
+    return (await recordImages).get(sha256);
+  };
   return {
     read: async (path) => {
       const sha256 = seal.files[path];
       if (!sha256) return null;
-      const blob = await getBlob(spellId, sha256);
+      const blob = (await getBlob(spell.id, sha256)) ?? (isImagePath(path) ? await fromRecord(sha256) : undefined);
       if (!blob) throw new SpellVersionError(`A sealed file is missing (${path}).`);
       types.set(path, blob.type);
       return blob.data;
@@ -210,16 +256,19 @@ const sealSource = (spellId: string, seal: SealRecord): SpellFileSource => {
  * the version it leaves is not kept: seal it first if it's wanted.
  */
 export async function spellSwitchVersion(spell: Spell, name: string, write: (work: SpellWork) => Promise<void>): Promise<SpellWork> {
-  await spellRepository(spell);
-  const version = await getVersion(spell.id, name);
-  const seal = version ? await getSeal(spell.id, version.headSealId) : undefined;
-  if (!version || !seal) throw new SpellVersionError(`There's no version named "${name}".`);
-  const source = sealSource(spell.id, seal);
-  const metaBytes = await source.read(META_PATH);
-  if (!metaBytes) throw new SpellVersionError('A sealed file is missing (spell.json).');
-  const meta = JSON.parse(new TextDecoder().decode(metaBytes)) as WorkMeta;
-  if (meta.cover) await source.read(meta.cover); // its type known before the cover is read back
-  const { work } = await readWork(source, meta);
+  // Read holding the lock; written after, through the record's own writes (which take it).
+  const work = await withSpellLock(spell.id, async () => {
+    await ensureRepository(spell);
+    const version = await getVersion(spell.id, name);
+    const seal = version ? await getSeal(spell.id, version.headSealId) : undefined;
+    if (!version || !seal) throw new SpellVersionError(`There's no version named "${name}".`);
+    const source = sealSource(spell, seal);
+    const metaBytes = await source.read(META_PATH);
+    if (!metaBytes) throw new SpellVersionError('A sealed file is missing (spell.json).');
+    const meta = JSON.parse(new TextDecoder().decode(metaBytes)) as WorkMeta;
+    if (meta.cover) await source.read(meta.cover); // its type known before the cover is read back
+    return (await readWork(source, meta)).work;
+  });
   await write(work);
   await setCurrentVersion(spell.id, name);
   return work;

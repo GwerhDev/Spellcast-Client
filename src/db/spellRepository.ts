@@ -1,7 +1,14 @@
+import { dataUrlsIn, imagesOf, type SpellImageSource } from '../utils/spellImages';
+
 // A spell's local repository: its seals (snapshots of its files), its versions (lines of work,
 // each pointing at its latest seal) and which version it's on. Its files are stored by content
 // (sha256), once per spell however many seals hold them. The logic lives in
 // utils/spellVersions; this is only where it's kept.
+//
+// A seal's images are stored here only while the spell's record doesn't hold them: the record
+// keeps its images inline (as it always has), so an image the work still uses is never stored
+// twice. An image leaving the record that a seal holds is kept here first (keepSealedImages),
+// and one coming back to it is dropped from here.
 //
 // A database of its own (like the audio cache), so the spells' database never needs a version
 // bump for it.
@@ -84,6 +91,21 @@ const result = <T,>(request: IDBRequest<T>) => new Promise<T>((resolve, reject) 
 
 export const blobKey = (spellId: string, sha256: string) => `${spellId}:${sha256}`;
 
+// One at a time per spell, across tabs: writing its record's images and sealing it each read
+// what the other one writes (which images the record holds, which ones its seals do).
+const localLocks = new Map<string, Promise<unknown>>();
+export const withSpellLock = <T,>(spellId: string, task: () => Promise<T>): Promise<T> => {
+  const name = `spellcast-spell:${spellId}`;
+  if (typeof navigator !== 'undefined' && navigator.locks?.request) return navigator.locks.request(name, task) as Promise<T>;
+  // No Web Locks (an older browser, tests): one at a time in this tab.
+  const previous = localLocks.get(name) ?? Promise.resolve();
+  const next = previous.then(task, task);
+  const settled = next.catch(() => undefined);
+  localLocks.set(name, settled);
+  void settled.then(() => { if (localLocks.get(name) === settled) localLocks.delete(name); });
+  return next;
+};
+
 export const getRepo = async (spellId: string): Promise<RepoRecord | undefined> =>
   result((await openDB()).transaction(REPOS).objectStore(REPOS).get(spellId));
 
@@ -110,6 +132,49 @@ export const putBlobs = async (spellId: string, blobs: { sha256: string; data: U
     if (exists === undefined) store.put({ key, data: blob.data, ...(blob.type ? { type: blob.type } : {}) } satisfies BlobRecord);
     await done(tx);
   }
+};
+
+// The images the spell's seals hold, by sha256.
+const sealedImages = async (spellId: string): Promise<Set<string>> => {
+  const seals = await result((await openDB()).transaction(SEALS).objectStore(SEALS).index('spellId').getAll(spellId)) as SealRecord[];
+  const found = new Set<string>();
+  for (const seal of seals) {
+    for (const [path, sha256] of Object.entries(seal.files)) {
+      if (path.startsWith('assets/') || path.startsWith('cover.')) found.add(sha256);
+    }
+  }
+  return found;
+};
+
+const deleteBlobs = async (spellId: string, sha256s: string[]): Promise<void> => {
+  if (sha256s.length === 0) return;
+  const tx = (await openDB()).transaction(BLOBS, 'readwrite');
+  for (const sha256 of sha256s) tx.objectStore(BLOBS).delete(blobKey(spellId, sha256));
+  await done(tx);
+};
+
+/**
+ * Writes a spell's record (`write`) keeping its seals whole: an image the record stops holding
+ * that a seal holds is stored here first, and one the record holds again is dropped from here
+ * once it's written. `before` is the record as stored, `after` what's written. Call it holding
+ * the spell's lock (withSpellLock). A spell without versions is just written.
+ */
+export const keepSealedImages = async <T,>(
+  spellId: string, before: SpellImageSource | undefined, after: SpellImageSource, write: () => Promise<T>,
+): Promise<T> => {
+  if (!before || !(await getRepo(spellId))) return write();
+  const was = dataUrlsIn(before.pagesContent, before.originalPagesContent);
+  const is = dataUrlsIn(after.pagesContent, after.originalPagesContent);
+  const coverChanged = before.cover !== after.cover;
+  const gone = await imagesOf([...was].filter(url => !is.has(url)), coverChanged ? [before.cover] : []);
+  const back = await imagesOf([...is].filter(url => !was.has(url)), coverChanged ? [after.cover] : []);
+  const sealed = await sealedImages(spellId);
+  // Leaving the record and back in it at once (the cover becoming a page's image): not gone.
+  const backShas = new Set(back.map(image => image.sha256));
+  await putBlobs(spellId, gone.filter(image => sealed.has(image.sha256) && !backShas.has(image.sha256)));
+  const written = await write();
+  await deleteBlobs(spellId, [...backShas].filter(sha256 => sealed.has(sha256)));
+  return written;
 };
 
 /** Writes a seal and moves a version to it (creating the version if it's new), and makes that

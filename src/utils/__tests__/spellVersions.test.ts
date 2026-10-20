@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { IDBFactory, IDBKeyRange } from 'fake-indexeddb';
+import { Blob as NodeBlob } from 'node:buffer';
 import type { Spell } from '../../interfaces';
 
 // A fresh, empty IndexedDB and fresh modules (the repository keeps its connection) per test.
@@ -154,6 +155,112 @@ describe('spellVersions', () => {
     await versions.spellSeal(both);
     const [latest] = await versions.spellChronicle(both);
     expect(latest).toMatchObject({ pagesChanged: 1, detailsChanged: true });
+  });
+
+  // The record keeps its images inline; its seals keep only those it no longer holds, so an
+  // image is stored once wherever it's used.
+  describe('images stored once, with the spell\'s record', () => {
+    const loadAll = async () => ({ ...(await load()), db: await import('../../db'), images: await import('../spellImages') });
+    const IMG_SHA = async () => (await import('../spellContainer')).sha256Hex(new TextEncoder().encode('image-bytes'));
+    const OTHER = 'data:image/png;base64,' + btoa('other-bytes');
+
+    const savedSpell = async (pages: object[], over: { cover?: Blob } = {}) => {
+      const { db } = await loadAll();
+      const id = await db.saveSpellToDB({ title: 'A Spell', userId: 'user-1', pagesContent: JSON.stringify(pages), ...over });
+      return (await db.getSpellById(id, 'user-1'))!;
+    };
+
+    it('sealing stores no image the record holds, only its pages and details', async () => {
+      const { versions, repo } = await loadAll();
+      const spell = await savedSpell([page('one', IMG)]);
+      const { head } = await versions.spellRepository(spell);
+      expect(await repo.getBlob(spell.id, await IMG_SHA())).toBeUndefined();
+      expect(await repo.getBlob(spell.id, head.files['pages/0001.json'])).toBeDefined();
+      expect(await repo.getBlob(spell.id, head.files['spell.json'])).toBeDefined();
+    });
+
+    it('an image leaving the record that a seal holds is kept, and dropped again once it\'s back', async () => {
+      const { versions, repo, db } = await loadAll();
+      const spell = await savedSpell([page('one', IMG)]);
+      await versions.spellRepository(spell);
+
+      await db.updateSpellContent(spell.id, 'user-1', { title: 'A Spell', pagesContent: JSON.stringify([page('one, no image')]) });
+      const kept = await repo.getBlob(spell.id, await IMG_SHA());
+      expect(new TextDecoder().decode(kept!.data)).toBe('image-bytes');
+
+      // Sealed without it, then back to the seal that has it: exactly as it was.
+      const edited = (await db.getSpellById(spell.id, 'user-1'))!;
+      await versions.spellVersion(edited, 'draft');
+      await versions.spellSeal(edited);
+      await versions.spellSwitchVersion(edited, 'source', work => db.updateSpellFull(spell.id, 'user-1', work));
+      expect((await db.getSpellById(spell.id, 'user-1'))!.pagesContent).toBe(JSON.stringify([page('one', IMG)]));
+      expect(await repo.getBlob(spell.id, await IMG_SHA())).toBeUndefined();
+    });
+
+    it('switching reads an image the record still holds from the record', async () => {
+      const { versions, repo, db } = await loadAll();
+      const spell = await savedSpell([page('one', IMG)]);
+      await versions.spellRepository(spell);
+      await versions.spellVersion(spell, 'draft');
+      await db.updateSpellContent(spell.id, 'user-1', { title: 'A Spell', pagesContent: JSON.stringify([page('one, edited', IMG)]) });
+      await versions.spellSeal((await db.getSpellById(spell.id, 'user-1'))!);
+      expect(await repo.getBlob(spell.id, await IMG_SHA())).toBeUndefined();
+
+      const work = await versions.spellSwitchVersion((await db.getSpellById(spell.id, 'user-1'))!, 'source', async () => {});
+      expect(work.pagesContent).toBe(JSON.stringify([page('one', IMG)]));
+    });
+
+    it('an image no seal holds is not kept when it leaves the record', async () => {
+      const { versions, repo, db, images } = await loadAll();
+      const spell = await savedSpell([page('one')]);
+      await versions.spellRepository(spell);
+      await db.updateSpellContent(spell.id, 'user-1', { title: 'A Spell', pagesContent: JSON.stringify([page('one', OTHER)]) });
+      await db.updateSpellContent(spell.id, 'user-1', { title: 'A Spell', pagesContent: JSON.stringify([page('one')]) });
+      const [other] = await images.imagesOf([OTHER]);
+      expect(await repo.getBlob(spell.id, other.sha256)).toBeUndefined();
+    });
+
+    it('a cover replaced is kept for the seal that has it, and comes back with it', async () => {
+      const { versions, repo, db } = await loadAll();
+      const spell = await savedSpell([page('one')], { cover: new NodeBlob(['old cover'], { type: 'image/webp' }) as unknown as Blob });
+      const { head } = await versions.spellRepository(spell);
+      const coverPath = Object.keys(head.files).find(path => path.startsWith('cover.'))!;
+      expect(await repo.getBlob(spell.id, head.files[coverPath])).toBeUndefined();
+
+      await db.updateSpellFull(spell.id, 'user-1', { title: 'A Spell', pagesContent: spell.pagesContent!, cover: new NodeBlob(['new cover'], { type: 'image/webp' }) as unknown as Blob });
+      expect(await repo.getBlob(spell.id, head.files[coverPath])).toBeDefined();
+
+      const work = await versions.spellSwitchVersion((await db.getSpellById(spell.id, 'user-1'))!, 'source', async () => {});
+      expect(await work.cover?.text()).toBe('old cover');
+      expect(work.cover?.type).toBe('image/webp');
+    });
+
+    // Kept before the record is written: a write that fails midway never leaves a seal
+    // without its image.
+    it('the image is kept before the record stops holding it', async () => {
+      const { versions, repo } = await loadAll();
+      const spell = await savedSpell([page('one', IMG)]);
+      await versions.spellRepository(spell);
+      const sha = await IMG_SHA();
+      let keptFirst = false;
+      await expect(repo.withSpellLock(spell.id, () => repo.keepSealedImages(spell.id, spell, { ...spell, pagesContent: '[]' }, async () => {
+        keptFirst = !!(await repo.getBlob(spell.id, sha));
+        throw new Error('QuotaExceededError');
+      }))).rejects.toThrow('QuotaExceededError');
+      expect(keptFirst).toBe(true);
+    });
+
+    it('a spell\'s writes and seals run one at a time', async () => {
+      const { repo } = await loadAll();
+      const order: string[] = [];
+      let release!: () => void;
+      const first = repo.withSpellLock('spell-1', async () => { order.push('first in'); await new Promise<void>(r => { release = r; }); order.push('first out'); });
+      const second = repo.withSpellLock('spell-1', async () => { order.push('second'); });
+      await Promise.resolve(); await Promise.resolve();
+      release();
+      await Promise.all([first, second]);
+      expect(order).toEqual(['first in', 'first out', 'second']);
+    });
   });
 
   it('deleting a spell\'s repository removes it all', async () => {

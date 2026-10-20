@@ -1,5 +1,6 @@
 import type { TimelineEntry } from '../services/tts';
 import { openContainer, sha256Hex, SpellContainerError, writeContainer, type ContainerEntry, type OpenedContainer } from './spellContainer';
+import { parseDataUrl } from './spellImages';
 import { getSpellById, saveSpellToDB } from '../db';
 import { getOriginalPdf, setOriginalPdf } from '../db/originalPdfs';
 import { getCachedAudioEntriesForSpell, setCachedAudio, type CachedAudioEntry } from '../db/audioCache';
@@ -106,13 +107,6 @@ const imageType = (ext: string): string => IMAGE_TYPES[ext] ?? 'application/octe
 const encode = (text: string) => new TextEncoder().encode(text);
 const decode = (bytes: Uint8Array) => new TextDecoder().decode(bytes);
 
-const base64ToBytes = (base64: string): Uint8Array => {
-  const binary = atob(base64);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-  return bytes;
-};
-
 const bytesToBase64 = (bytes: Uint8Array): string => {
   let binary = '';
   const CHUNK = 0x8000;
@@ -125,7 +119,6 @@ const bytesToBase64 = (bytes: Uint8Array): string => {
 // type isn't the one its extension stands for (image/jpg, image/bmp...) says it too
 // (`;type=image/jpg`): the same bytes can be there under different types, and each comes back
 // as it was.
-const DATA_URL = /^data:([^;,]+);base64,(.*)$/s;
 const ASSET_REF = /^spell-asset:([0-9a-f]{64}\.[a-z0-9]+)(?:;type=([^;]+))?$/;
 const assetPath = (name: string) => `assets/${name}`;
 
@@ -162,13 +155,14 @@ export class Entries {
 // to it.
 const pageToFile = async (page: unknown, entries: Entries): Promise<string> => {
   const withRefs = await mapAttrs(page, async (value) => {
-    const match = DATA_URL.exec(value);
-    if (!match) return value;
-    const bytes = base64ToBytes(match[2]);
-    const ext = imageExtension(match[1]);
+    // Read as spellImages reads a record's images: the same bytes, the same sha256.
+    const parsed = parseDataUrl(value);
+    if (!parsed) return value;
+    const { type, bytes } = parsed;
+    const ext = imageExtension(type);
     const name = `${await sha256Hex(bytes)}.${ext}`;
     entries.add(assetPath(name), bytes, false);
-    return imageType(ext) === match[1] ? `spell-asset:${name}` : `spell-asset:${name};type=${match[1]}`;
+    return imageType(ext) === type ? `spell-asset:${name}` : `spell-asset:${name};type=${type}`;
   });
   return JSON.stringify(withRefs);
 };
