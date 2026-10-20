@@ -3,7 +3,7 @@ import { alignByContent, mergeSequences, type MergeConflict } from './sequenceAl
 
 // What two states of a spell differ in, and the three-way merge of two of them from their common
 // ancestor -- pure: no UI, no storage. The states are a seal's files or the work not sealed yet,
-// read into a SpellSnapshot by the caller. Design in TCORE-144.
+// read into a SpellSnapshot by the caller.
 //
 // - Details field by field; tags as a set.
 // - The cover and the original pages as a whole (each known by its content's hash).
@@ -21,7 +21,9 @@ export interface SpellSnapshot {
   // Its content's hash, or null when there's none.
   cover: string | null;
   originalPages: string | null;
-  // Each a page (a doc node).
+  // Each a page (a doc node), as a seal's files write it (spellFormat's writeWork): its images
+  // as spell-asset: references, not the images themselves. A page is compared whole by its
+  // content, and a scanned spell's images in base64 would make that hundreds of MB each time.
   pages: JSONContent[];
 }
 
@@ -114,30 +116,41 @@ export const isSameSpell = (a: SpellSnapshot, b: SpellSnapshot): boolean => {
 
 // ── Common ancestor ──
 
-/**
- * The most recent seal two seals have in common (one of them, if it's the other's ancestor),
- * walking back by their parents (`parentsOf`; undefined for a seal not known). null: none.
- */
-export function commonAncestor(a: string, b: string, parentsOf: (id: string) => readonly string[] | undefined): string | null {
-  const ofA = new Set<string>();
-  const queueA = [a];
-  while (queueA.length) {
-    const id = queueA.shift()!;
-    if (ofA.has(id)) continue;
-    ofA.add(id);
-    queueA.push(...(parentsOf(id) ?? []));
-  }
-  // The first of A's reached from B, nearest first.
+// A seal and every seal it comes from, nearest first.
+const lineOf = (from: readonly string[], parentsOf: (id: string) => readonly string[] | undefined): string[] => {
   const seen = new Set<string>();
-  const queueB = [b];
-  while (queueB.length) {
-    const id = queueB.shift()!;
+  const queue = [...from];
+  const line: string[] = [];
+  while (queue.length) {
+    const id = queue.shift()!;
     if (seen.has(id)) continue;
     seen.add(id);
-    if (ofA.has(id)) return id;
-    queueB.push(...(parentsOf(id) ?? []));
+    line.push(id);
+    queue.push(...(parentsOf(id) ?? []));
   }
-  return null;
+  return line;
+};
+
+/**
+ * The most recent seals two seals have in common (as git's merge-base): every seal both come
+ * from, but none that another of them comes from too. Usually one; more when each line merged
+ * the other's work ("criss-cross"). Not simply the first shared seal reached walking back from
+ * one side: past a merge that can be an older one, and merging from it loses changes silently.
+ */
+export function commonAncestors(a: string, b: string, parentsOf: (id: string) => readonly string[] | undefined): string[] {
+  const ofA = new Set(lineOf([a], parentsOf));
+  const shared = lineOf([b], parentsOf).filter(id => ofA.has(id));
+  // What any shared seal comes from: older than it, so not among the most recent.
+  const older = new Set(lineOf(shared.flatMap(id => parentsOf(id) ?? []), parentsOf));
+  return shared.filter(id => !older.has(id));
+}
+
+/**
+ * The most recent seal two seals have in common (one of them, if it's the other's ancestor);
+ * of several (see commonAncestors), the one nearest `b`. null: none.
+ */
+export function commonAncestor(a: string, b: string, parentsOf: (id: string) => readonly string[] | undefined): string | null {
+  return commonAncestors(a, b, parentsOf)[0] ?? null;
 }
 
 /** Whether `ancestor` is `seal` itself or one of the seals it comes from. */

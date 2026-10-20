@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { JSONContent } from '@tiptap/core';
-import { commonAncestor, diffSpells, isAncestor, isSameSpell, mergeSpells, type SpellSnapshot } from '../spellDiff';
+import { commonAncestor, commonAncestors, diffSpells, isAncestor, isSameSpell, mergeSpells, type SpellSnapshot } from '../spellDiff';
 
 const p = (text: string): JSONContent => ({ type: 'paragraph', content: [{ type: 'text', text }] });
 const page = (...blocks: (string | JSONContent)[]): JSONContent => ({ type: 'doc', attrs: { marginTop: 48 }, content: blocks.map(b => (typeof b === 'string' ? p(b) : b)) });
@@ -73,6 +73,32 @@ describe('commonAncestor', () => {
     expect(commonAncestor('s2', 'd2', parentsOf)).toBe('s2');
     expect(isAncestor('s2', 'd2', parentsOf)).toBe(true);
     expect(isAncestor('d2', 's2', parentsOf)).toBe(false);
+  });
+
+  // A: X → Y → W. C branches off Y with Z. B: X → p1, then merges C (M: p1 + Z). Going back from
+  // M, X is reached before Y -- but Y is the most recent seal they share.
+  it('is the most recent shared seal even with a merge in between, not the first one reached', () => {
+    const history: Record<string, string[]> = { X: [], Y: ['X'], W: ['Y'], Z: ['Y'], p1: ['X'], M: ['p1', 'Z'] };
+    expect(commonAncestor('W', 'M', id => history[id])).toBe('Y');
+    expect(commonAncestor('M', 'W', id => history[id])).toBe('Y');
+  });
+
+  // With an older base, a change undone on one side looks one-sided and is lost without a
+  // dissonance; with the right one, it's a dissonance (or taken), never silently dropped.
+  it('merging from that seal keeps a change undone on one side', () => {
+    const history: Record<string, string[]> = { X: [], Y: ['X'], W: ['Y'], Z: ['Y'], p1: ['X'], M: ['p1', 'Z'] };
+    const states: Record<string, SpellSnapshot> = {
+      X: snap([P1], { title: 'v0' }), Y: snap([P1], { title: 'v1' }),
+      W: snap([P1], { title: 'v0' }), M: snap([P1], { title: 'v1' }),
+    };
+    const base = commonAncestor('W', 'M', id => history[id])!;
+    expect(mergeSpells(states[base], states.W, states.M).merged.title).toBe('v0');
+  });
+
+  // Each line merged the other's work (criss-cross): two seals are equally recent.
+  it('are all the most recent shared seals when there is more than one', () => {
+    const history: Record<string, string[]> = { X: [], A1: ['X'], B1: ['X'], A2: ['A1', 'B1'], B2: ['B1', 'A1'] };
+    expect(commonAncestors('A2', 'B2', id => history[id]).sort()).toEqual(['A1', 'B1']);
   });
 
   it('is null for seals with nothing in common', () => {
