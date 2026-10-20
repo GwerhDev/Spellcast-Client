@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { JSONContent } from '@tiptap/core';
-import { commonAncestor, commonAncestors, diffSpells, isAncestor, isSameSpell, mergeSpells, type SpellSnapshot } from '../spellDiff';
+import { canKeepBoth, commonAncestor, commonAncestors, diffSpells, resolveMerge, MergeResolutionError, isAncestor, isSameSpell, mergeSpells, type SpellSnapshot } from '../spellDiff';
 
 const p = (text: string): JSONContent => ({ type: 'paragraph', content: [{ type: 'text', text }] });
 const page = (...blocks: (string | JSONContent)[]): JSONContent => ({ type: 'doc', attrs: { marginTop: 48 }, content: blocks.map(b => (typeof b === 'string' ? p(b) : b)) });
@@ -199,3 +199,60 @@ describe('mergeSpells', () => {
     expect(dissonances).toEqual([]);
   });
 });
+
+describe('resolveMerge', () => {
+  it('needs every dissonance resolved', () => {
+    const merge = mergeSpells(snap([P1], { title: 'T' }), snap([P1], { title: 'Ours' }), snap([P1], { title: 'Theirs' }));
+    expect(() => resolveMerge(merge, [])).toThrow(MergeResolutionError);
+  });
+
+  it('keeps ours or takes theirs, for details, the cover and the original pages', () => {
+    const merge = mergeSpells(
+      snap([P1], { title: 'T', author: 'Ann', cover: 'c0' }),
+      snap([P1], { title: 'Ours', author: 'Ours A', cover: 'c-ours' }),
+      snap([P1], { title: 'Theirs', author: 'Theirs A', cover: 'c-theirs' }),
+    );
+    const fields = merge.dissonances.map(d => (d.part === 'detail' ? d.field : d.part));
+    expect(fields).toEqual(['title', 'author', 'cover']);
+    const resolved = resolveMerge(merge, ['theirs', 'ours', 'theirs']);
+    expect(resolved).toMatchObject({ title: 'Theirs', author: 'Ours A', cover: 'c-theirs' });
+  });
+
+  it('a page removed on one side and edited on the other: kept, or gone, where it was', () => {
+    const edited = page('two, edited');
+    // Ours removed it, theirs edited it.
+    const removedOurs = mergeSpells(snap([P1, P2, P3]), snap([P1, P3]), snap([P1, edited, P3]));
+    expect(resolveMerge(removedOurs, ['ours']).pages).toEqual([P1, P3]);
+    expect(resolveMerge(removedOurs, ['theirs']).pages).toEqual([P1, edited, P3]);
+    // Ours edited it, theirs removed it.
+    const removedTheirs = mergeSpells(snap([P1, P2, P3]), snap([P1, edited, P3]), snap([P1, P3]));
+    expect(resolveMerge(removedTheirs, ['ours']).pages).toEqual([P1, edited, P3]);
+    expect(resolveMerge(removedTheirs, ['theirs']).pages).toEqual([P1, P3]);
+  });
+
+  it('a block changed on both sides: ours, theirs, or both (ours first)', () => {
+    const merge = mergeSpells(snap([page('a', 'second part')]), snap([page('a', 'second part, ours')]), snap([page('a', 'second part, theirs')]));
+    expect(canKeepBoth(merge.dissonances[0])).toBe(true);
+    expect(resolveMerge(merge, ['theirs']).pages).toEqual([page('a', 'second part, theirs')]);
+    expect(resolveMerge(merge, ['both']).pages).toEqual([page('a', 'second part, ours', 'second part, theirs')]);
+  });
+
+  it("a block removed on one side and edited on the other can't keep both", () => {
+    const merge = mergeSpells(snap([page('a', 'third part')]), snap([page('a', 'third part, edited')]), snap([page('a')]));
+    expect(canKeepBoth(merge.dissonances[0])).toBe(false);
+    expect(() => resolveMerge(merge, ['both'])).toThrow(MergeResolutionError);
+    expect(resolveMerge(merge, ['theirs']).pages).toEqual([page('a')]);
+    expect(resolveMerge(merge, ['ours']).pages).toEqual([page('a', 'third part, edited')]);
+  });
+
+  it('resolves several blocks and pages together, each where it was', () => {
+    const base = snap([P1, page('a', 'second part', 'third part'), P2, P3]);
+    const ours = snap([P1, page('a', 'second part, ours', 'third part, ours'), P3]);
+    const theirs = snap([P1, page('a', 'second part, theirs', 'third part, theirs'), page('two, edited'), P3]);
+    const merge = mergeSpells(base, ours, theirs);
+    expect(merge.dissonances.map(d => d.part)).toEqual(['page', 'block', 'block']);
+    const resolved = resolveMerge(merge, ['theirs', 'both', 'theirs']);
+    expect(resolved.pages).toEqual([P1, page('a', 'second part, ours', 'second part, theirs', 'third part, theirs'), page('two, edited'), P3]);
+  });
+});
+

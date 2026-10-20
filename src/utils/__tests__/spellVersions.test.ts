@@ -368,4 +368,101 @@ describe('spellVersions', () => {
       expect(changes.diff.pages.map(p => p.kind)).toEqual(['same', 'changed']);
     });
   });
+
+  // Fusing another version into the current one.
+  describe('fusing versions', () => {
+    const FIRST = 'The old house stood at the end of the lane, its windows dark for many years.';
+    const SECOND = 'Nobody in the village remembered who had lived there, or why they had left.';
+    const noWrite = async () => {};
+    const pagesOf = (work: { pagesContent: string }) => (JSON.parse(work.pagesContent) as ReturnType<typeof page>[])
+      .map(p => (p.content.at(-1) as { content: { text: string }[] }).content[0].text);
+
+    // source with one page; draft from it, then back on source.
+    const twoVersions = async () => {
+      const mod = await load();
+      const spell = spellWith([page(FIRST)]);
+      await mod.versions.spellRepository(spell);
+      await mod.versions.spellVersion(spell, 'draft');
+      return { ...mod, spell };
+    };
+    const onSource = async (versions: Awaited<ReturnType<typeof load>>['versions'], spell: Spell) =>
+      versions.spellSwitchVersion(spell, 'source', noWrite);
+
+    it('a version that is behind the other is only moved forward to it, with no new seal', async () => {
+      const { versions, repo, spell } = await twoVersions();
+      const draft = spellWith([page(FIRST), page(SECOND)]);
+      const { seal } = await versions.spellSeal(draft);
+      await onSource(versions, draft);
+
+      const plan = await versions.spellFusePlan(spell, 'draft');
+      const write = vi.fn(async () => {});
+      if (plan.kind !== 'fastForward') throw new Error(plan.kind);
+      await plan.apply(write);
+      expect(pagesOf((write.mock.calls[0] as unknown[])[0] as { pagesContent: string })).toEqual([FIRST, SECOND]);
+      expect((await repo.getVersion(spell.id, 'source'))!.headSealId).toBe(seal.id);
+      expect((await versions.spellVersions(spell)).current).toBe('source');
+      expect((await versions.spellFusePlan(draft, 'draft')).kind).toBe('upToDate');
+    });
+
+    it('a version that is in the current one already is up to date', async () => {
+      const { versions, spell } = await twoVersions();
+      await onSource(versions, spell);
+      await versions.spellSeal(spellWith([page(FIRST), page(SECOND)]));
+      expect((await versions.spellFusePlan(spell, 'draft')).kind).toBe('upToDate');
+      await expect(versions.spellFusePlan(spell, 'source')).rejects.toThrow(versions.SpellVersionError);
+    });
+
+    it('versions that went apart merge what each one changed, sealed with both as parents', async () => {
+      const { versions, repo, spell } = await twoVersions();
+      const draft = await versions.spellSeal(spellWith([page(FIRST), page(SECOND)]));
+      await onSource(versions, spell);
+      const ours = spellWith([page(FIRST)], { title: 'A Spell, renamed' });
+      const { seal: oursSeal } = await versions.spellSeal(ours);
+
+      const plan = await versions.spellFusePlan(ours, 'draft');
+      if (plan.kind !== 'merge') throw new Error(plan.kind);
+      expect(plan.merge.dissonances).toEqual([]);
+      const write = vi.fn(async () => {});
+      await plan.apply([], write);
+      const work = (write.mock.calls[0] as unknown[])[0] as { title: string; pagesContent: string };
+      expect(work.title).toBe('A Spell, renamed');
+      expect(pagesOf(work)).toEqual([FIRST, SECOND]);
+      const head = await repo.getSeal(spell.id, (await repo.getVersion(spell.id, 'source'))!.headSealId);
+      expect(head!.parentIds).toEqual([oursSeal.id, draft.seal.id]);
+      // The draft is in source now.
+      expect((await versions.spellFusePlan({ ...spell, ...work }, 'draft')).kind).toBe('upToDate');
+    });
+
+    it('nothing is sealed while a dissonance is not resolved, and each is resolved as chosen', async () => {
+      const { versions, repo, spell } = await twoVersions();
+      await versions.spellSeal(spellWith([page(`${FIRST} It was painted blue.`)]));
+      await onSource(versions, spell);
+      const ours = spellWith([page(`${FIRST} It was painted red.`)]);
+      const { seal: oursSeal } = await versions.spellSeal(ours);
+
+      const plan = await versions.spellFusePlan(ours, 'draft');
+      if (plan.kind !== 'merge') throw new Error(plan.kind);
+      expect(plan.merge.dissonances).toHaveLength(1);
+      const write = vi.fn(async () => {});
+      await expect(plan.apply([], write)).rejects.toThrow();
+      expect(write).not.toHaveBeenCalled();
+      expect((await repo.getVersion(spell.id, 'source'))!.headSealId).toBe(oursSeal.id);
+
+      await plan.apply(['theirs'], write);
+      expect(pagesOf((write.mock.calls[0] as unknown[])[0] as { pagesContent: string })).toEqual([`${FIRST} It was painted blue.`]);
+    });
+
+    it('a plan is not applied once either version moved on', async () => {
+      const { versions, spell } = await twoVersions();
+      await versions.spellSeal(spellWith([page(FIRST), page(SECOND)]));
+      await onSource(versions, spell);
+      await versions.spellSeal(spellWith([page(FIRST)], { title: 'Renamed' }));
+      const plan = await versions.spellFusePlan(spell, 'draft');
+      await versions.spellSeal(spellWith([page(FIRST)], { title: 'Renamed again' }));
+      const write = vi.fn(async () => {});
+      if (plan.kind !== 'merge') throw new Error(plan.kind);
+      await expect(plan.apply([], write)).rejects.toThrow(versions.SpellVersionError);
+      expect(write).not.toHaveBeenCalled();
+    });
+  });
 });

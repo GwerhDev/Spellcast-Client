@@ -3,17 +3,18 @@ import { useAppDispatch } from '../store/hooks';
 import { getSpellById, updateSpellFull } from '../db';
 import { invalidateContent, invalidateSpellList } from '../store/spellReaderSlice';
 import {
-  spellChronicle, spellIsSealed, spellSeal, spellSealChanges, spellSwitchVersion, spellUnsealedChanges, spellVersion, spellVersions,
-  type ChronicleEntry, type SpellChanges,
+  spellChronicle, spellFusePlan, spellIsSealed, spellSeal, spellSealChanges, spellSwitchVersion, spellUnsealedChanges, spellVersion,
+  spellVersions, type ChronicleEntry, type FusePlan, type SpellChanges,
 } from '../utils/spellVersions';
+import type { Resolution } from '../utils/spellDiff';
 import type { Spell } from '../interfaces';
 
 /**
  * A spell's versions in the editor (see utils/spellVersions): whether its work has changes not
  * sealed yet, its versions and the current one, and sealing, making a version, switching to
- * one and reading the chronicle. Everything that reads or writes the repository runs one after
- * the other (a single queue), so the last one to run always reads what's really stored: two of
- * them can never race to say whether the work is sealed.
+ * one, fusing another one into it and reading the chronicle. Everything that reads or writes
+ * the repository runs one after the other (a single queue), so the last one to run always
+ * reads what's really stored: two of them can never race to say whether the work is sealed.
  */
 export function useSpellVersions(spellId: string | undefined, userId: string | undefined) {
   const dispatch = useAppDispatch();
@@ -70,6 +71,23 @@ export function useSpellVersions(spellId: string | undefined, userId: string | u
     dispatch(invalidateSpellList());
   }), [run, readSpell, readVersions, userId, dispatch]);
 
+  /** What fusing a version into the current one takes (nothing written yet). Seal first. */
+  const fusePlan = useCallback((name: string): Promise<FusePlan> => run(async () => spellFusePlan(await readSpell(), name)), [run, readSpell]);
+
+  /** Applies a fusion's plan, its dissonances resolved: the fused work is the spell's, and the
+   * editor reloads it. */
+  const fuse = useCallback((plan: FusePlan, resolutions: (Resolution | undefined)[] = []) => run(async () => {
+    if (plan.kind === 'upToDate') return;
+    const spell = await readSpell();
+    const write = (work: Parameters<typeof updateSpellFull>[2]) => updateSpellFull(spell.id, userId!, work);
+    if (plan.kind === 'fastForward') await plan.apply(write);
+    else await plan.apply(resolutions, write);
+    setUnsealed(false);
+    await readVersions(spell);
+    dispatch(invalidateContent());
+    dispatch(invalidateSpellList());
+  }), [run, readSpell, readVersions, userId, dispatch]);
+
   const chronicle = useCallback((): Promise<ChronicleEntry[]> => run(async () => spellChronicle(await readSpell())), [run, readSpell]);
 
   /** What a seal changed from the one before it. */
@@ -83,5 +101,5 @@ export function useSpellVersions(spellId: string | undefined, userId: string | u
   // An edit (saved or not) is work not sealed yet.
   const markUnsealed = useCallback(() => setUnsealed(true), []);
 
-  return { unsealed, current, names, refresh, seal, createVersion, switchTo, chronicle, sealChanges, unsealedChanges, markUnsealed };
+  return { unsealed, current, names, refresh, seal, createVersion, switchTo, fusePlan, fuse, chronicle, sealChanges, unsealedChanges, markUnsealed };
 }

@@ -1,7 +1,7 @@
 import s from './VersionSelector.module.css';
 import { useEffect, useRef, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCheck, faChevronDown, faCodeBranch, faPlus } from '@fortawesome/free-solid-svg-icons';
+import { faCheck, faChevronDown, faCodeBranch, faCodeMerge, faPlus } from '@fortawesome/free-solid-svg-icons';
 
 interface VersionSelectorProps {
   // null while the versions are being read: disabled meanwhile, named by its title.
@@ -9,12 +9,15 @@ interface VersionSelectorProps {
   versions: string[];
   onSwitch: (name: string) => void;
   onNew: () => void;
+  // Fusing another version into the current one (there's none to fuse while it's the only one).
+  onFuse: () => void;
   disabled?: boolean;
-  labels: { title: string; newVersion: string };
+  labels: { title: string; newVersion: string; fuse: string };
 }
 
-// The spell's current version, opening its versions to switch to one or make a new one.
-export const VersionSelector = ({ current, versions, onSwitch, onNew, disabled, labels }: VersionSelectorProps) => {
+// The spell's current version, opening its versions to switch to one, make a new one or fuse
+// another one into it.
+export const VersionSelector = ({ current, versions, onSwitch, onNew, onFuse, disabled, labels }: VersionSelectorProps) => {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -66,6 +69,17 @@ export const VersionSelector = ({ current, versions, onSwitch, onNew, disabled, 
           <button type="button" role="menuitem" data-testid="version-new" className={s.item} onClick={() => pick(onNew)}>
             <span className={s.check}><FontAwesomeIcon icon={faPlus} /></span>
             <span>{labels.newVersion}</span>
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            data-testid="version-fuse"
+            className={s.item}
+            disabled={versions.length < 2}
+            onClick={() => pick(onFuse)}
+          >
+            <span className={s.check}><FontAwesomeIcon icon={faCodeMerge} /></span>
+            <span>{labels.fuse}</span>
           </button>
         </div>
       )}

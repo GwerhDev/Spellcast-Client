@@ -1,13 +1,16 @@
 import type { Spell } from '../interfaces';
 import { sha256Hex } from './spellContainer';
 import { pageFileName, readWork, writeWork, type SpellFileSource, type SpellWork, type SpellWorkLayout } from './spellFormat';
-import { diffSpells, type SpellDiff, type SpellSnapshot } from './spellDiff';
+import {
+  commonAncestor, diffSpells, isAncestor, mergeSpells, resolveMerge,
+  type Resolution, type SpellDiff, type SpellMerge, type SpellSnapshot,
+} from './spellDiff';
 import { alignByContent } from './sequenceAlign';
 import type { JSONContent } from '@tiptap/core';
 import { recordImages as recordImagesOf, imagesOf, type SpellImage } from './spellImages';
 import { getSpellById } from '../db';
 import {
-  getBlob, getRepo, getSeal, getVersion, getVersions, putBlobs, putSealAndHead, putVersionAsCurrent, setCurrentVersion,
+  getBlob, getRepo, getSeal, getSeals, getVersion, getVersions, putBlobs, putSealAndHead, putVersionAsCurrent, setCurrentVersion,
   withSpellLock, type SealRecord, type VersionRecord,
 } from '../db/spellRepository';
 
@@ -145,18 +148,24 @@ export const spellIsSealed = (spell: Spell): Promise<boolean> => withSpellLock(s
  * Seals the spell's work on its current version (the Save button). Nothing changed since the
  * latest seal: no new seal (`created` false).
  */
-export const spellSeal = (spell: Spell, message = ''): Promise<{ seal: SealRecord; created: boolean }> => withSpellLock(spell.id, async () => {
+export const spellSeal = (spell: Spell, message = ''): Promise<{ seal: SealRecord; created: boolean }> =>
+  withSpellLock(spell.id, () => sealWork(spell, message));
+
+// A seal of the work on the current version, after its latest seal -- and `fusedFrom`, the
+// latest seal of the version merged into it, if it's a fusion's (then made even when nothing
+// changed: the seal says that version is in this one now).
+const sealWork = async (spell: Spell, message: string, fusedFrom?: string): Promise<{ seal: SealRecord; created: boolean }> => {
   const { currentVersion, head } = await ensureRepository(spell);
   const { files, blobs } = await filesOf(workOf(spell));
-  if (sameFiles(files, head.files)) return { seal: head, created: false };
+  if (!fusedFrom && sameFiles(files, head.files)) return { seal: head, created: false };
   // What the latest seal already holds is kept already (in the repository or in the record).
   const held = new Set(Object.values(head.files));
   await storeSealFiles(spell, blobs.filter(blob => !held.has(blob.sha256)));
-  const seal = await makeSeal(spell.id, [head.id], files, message);
+  const seal = await makeSeal(spell.id, fusedFrom ? [head.id, fusedFrom] : [head.id], files, message);
   const version = await getVersion(spell.id, currentVersion);
   await putSealAndHead(seal, { spellId: spell.id, name: currentVersion, headSealId: seal.id, createdAt: version?.createdAt ?? seal.createdAt });
   return { seal, created: true };
-});
+};
 
 export interface ChronicleEntry {
   seal: SealRecord;
@@ -281,12 +290,7 @@ export async function spellSwitchVersion(spell: Spell, name: string, write: (wor
     const version = await getVersion(spell.id, name);
     const seal = version ? await getSeal(spell.id, version.headSealId) : undefined;
     if (!version || !seal) throw new SpellVersionError(`There's no version named "${name}".`);
-    const source = sealSource(spell, seal);
-    const metaBytes = await source.read(META_PATH);
-    if (!metaBytes) throw new SpellVersionError('A sealed file is missing (spell.json).');
-    const meta = JSON.parse(new TextDecoder().decode(metaBytes)) as WorkMeta;
-    if (meta.cover) await source.read(meta.cover); // its type known before the cover is read back
-    return (await readWork(source, meta)).work;
+    return workOfSeal(spell, seal);
   });
   await write(work);
   await setCurrentVersion(spell.id, name);
@@ -329,17 +333,17 @@ const snapshotOf = async (files: Record<string, string>, read: (path: string) =>
     originalPages: originals,
     pages,
   };
-  return { snapshot, coverPath: meta.cover };
+  return { snapshot, coverPath: meta.cover, meta };
 };
 
 const sealSide = async (spell: Spell, seal: SealRecord) => {
   const source = sealSource(spell, seal);
-  const { snapshot, coverPath } = await snapshotOf(seal.files, source.read);
+  const { snapshot, coverPath, meta } = await snapshotOf(seal.files, source.read);
   const readImage = async (path: string) => {
     const data = await source.read(path);
     return data ? new Blob([data as BlobPart], { type: source.typeOf(path) ?? '' }) : null;
   };
-  return { snapshot, coverPath, readImage };
+  return { snapshot, coverPath, readImage, source, meta, seal };
 };
 
 const workSide = async (spell: Spell) => {
@@ -355,7 +359,8 @@ const workSide = async (spell: Spell) => {
 };
 
 type Side = Awaited<ReturnType<typeof sealSide>>;
-const changesOf = (from: Side | null, to: Side): SpellChanges => ({
+type Shown = Pick<Side, 'snapshot' | 'coverPath' | 'readImage'>;
+const changesOf = (from: Shown | null, to: Shown): SpellChanges => ({
   diff: diffSpells(from?.snapshot ?? EMPTY, to.snapshot),
   from: from?.snapshot ?? EMPTY,
   to: to.snapshot,
@@ -377,3 +382,129 @@ export const spellUnsealedChanges = (spell: Spell): Promise<SpellChanges> => wit
   const { head } = await ensureRepository(spell);
   return changesOf(await sealSide(spell, head), await workSide(spell));
 });
+
+// ── Fusing a version into the current one ──
+
+export type FuseSide = 'ours' | 'theirs';
+
+export type FusePlan =
+  // The other version is in this one already (its latest seal comes before this one's).
+  | { kind: 'upToDate'; theirsVersion: string }
+  // This version is behind the other one: it's only moved forward to the other's latest seal.
+  | { kind: 'fastForward'; theirsVersion: string; apply: (write: (work: SpellWork) => Promise<void>) => Promise<void> }
+  // Three-way: what merges, and the dissonances to resolve before the fusion is sealed.
+  | {
+    kind: 'merge';
+    theirsVersion: string;
+    merge: SpellMerge;
+    // Each side's cover file (to show it), and an image of a side, read when it's shown.
+    cover: Record<FuseSide, string | null>;
+    readImage: (side: FuseSide, path: string) => Promise<Blob | null>;
+    apply: (resolutions: (Resolution | undefined)[], write: (work: SpellWork) => Promise<void>) => Promise<void>;
+  };
+
+/**
+ * What fusing `theirsVersion` into the spell's current version takes. Nothing is written until
+ * the plan is applied; dropping it leaves both versions as they were. The work must be sealed
+ * first (its changes not sealed would be lost).
+ */
+export const spellFusePlan = (spell: Spell, theirsVersion: string): Promise<FusePlan> => withSpellLock(spell.id, async () => {
+  const { currentVersion, head: oursHead } = await ensureRepository(spell);
+  if (theirsVersion === currentVersion) throw new SpellVersionError('A version is not fused into itself.');
+  const theirsRecord = await getVersion(spell.id, theirsVersion);
+  const theirsHead = theirsRecord ? await getSeal(spell.id, theirsRecord.headSealId) : undefined;
+  if (!theirsHead) throw new SpellVersionError(`There's no version named "${theirsVersion}".`);
+  const seals = new Map((await getSeals(spell.id)).map(seal => [seal.id, seal]));
+  const parentsOf = (id: string) => seals.get(id)?.parentIds;
+
+  // Applied only if nothing moved since the plan was made (a seal on either version).
+  const stillAsPlanned = async () => {
+    const now = await currentState(spell.id);
+    const theirsNow = await getVersion(spell.id, theirsVersion);
+    if (now?.currentVersion !== currentVersion || now.head.id !== oursHead.id || theirsNow?.headSealId !== theirsHead.id) {
+      throw new SpellVersionError('The versions changed since the fusion was planned.');
+    }
+  };
+
+  if (isAncestor(theirsHead.id, oursHead.id, parentsOf)) return { kind: 'upToDate', theirsVersion };
+
+  if (isAncestor(oursHead.id, theirsHead.id, parentsOf)) {
+    const work = await workOfSeal(spell, theirsHead);
+    return {
+      kind: 'fastForward', theirsVersion,
+      apply: async (write) => {
+        await withSpellLock(spell.id, stillAsPlanned);
+        await write(work);
+        await withSpellLock(spell.id, async () => {
+          const version = await getVersion(spell.id, currentVersion);
+          await putVersionAsCurrent({ ...version!, headSealId: theirsHead.id });
+        });
+      },
+    };
+  }
+
+  const baseId = commonAncestor(oursHead.id, theirsHead.id, parentsOf);
+  const baseSeal = baseId ? seals.get(baseId) : undefined;
+  const [base, ours, theirs] = await Promise.all([
+    baseSeal ? sealSide(spell, baseSeal) : Promise.resolve(null),
+    sealSide(spell, oursHead),
+    sealSide(spell, theirsHead),
+  ]);
+  const merge = mergeSpells(base?.snapshot ?? EMPTY, ours.snapshot, theirs.snapshot);
+  return {
+    kind: 'merge', theirsVersion, merge,
+    cover: { ours: ours.coverPath ?? null, theirs: theirs.coverPath ?? null },
+    readImage: (side, path) => (side === 'ours' ? ours : theirs).readImage(path),
+    apply: async (resolutions, write) => {
+      const resolved = resolveMerge(merge, resolutions);
+      await withSpellLock(spell.id, stillAsPlanned);
+      const work = await workOfMerge(resolved, ours, theirs);
+      await write(work);
+      await withSpellLock(spell.id, () => sealWork({ ...spell, ...work }, '', theirsHead.id));
+    },
+  };
+});
+
+// A seal's work, as its files have it.
+const workOfSeal = async (spell: Spell, seal: SealRecord): Promise<SpellWork> => {
+  const source = sealSource(spell, seal);
+  const metaBytes = await source.read(META_PATH);
+  if (!metaBytes) throw new SpellVersionError('A sealed file is missing (spell.json).');
+  const meta = JSON.parse(new TextDecoder().decode(metaBytes)) as WorkMeta;
+  if (meta.cover) await source.read(meta.cover); // its type known before the cover is read back
+  return (await readWork(source, meta)).work;
+};
+
+// The work a resolved fusion holds: its pages as merged (their images read from whichever
+// side has them), the cover and original pages of the side they were taken from.
+const workOfMerge = async (resolved: SpellSnapshot, ours: Side, theirs: Side): Promise<SpellWork> => {
+  const coverSide = resolved.cover === ours.snapshot.cover ? ours : theirs;
+  const originalSide = resolved.originalPages === ours.snapshot.originalPages ? ours : theirs;
+  const sideOf = (path: string) => {
+    if (path.startsWith('original/pages/')) return originalSide;
+    if (path.startsWith('cover.')) return coverSide;
+    return ours.seal.files[path] ? ours : theirs;
+  };
+  const encode = (text: string) => new TextEncoder().encode(text);
+  const source: SpellFileSource = {
+    read: async (path) => {
+      const match = /^pages\/(\d+)\.json$/.exec(path);
+      if (match) {
+        const page = resolved.pages[Number(match[1]) - 1];
+        return page ? encode(JSON.stringify(page)) : null;
+      }
+      return sideOf(path).source.read(path);
+    },
+    typeOf: (path) => sideOf(path).source.typeOf(path),
+  };
+  const coverPath = coverSide.coverPath ?? null;
+  if (coverPath) await source.read(coverPath); // its type known before the cover is read back
+  const layout: WorkMeta = {
+    pageCount: resolved.pages.length,
+    originalPageCount: originalSide.meta.originalPageCount,
+    cover: coverPath,
+    title: resolved.title, description: resolved.description, author: resolved.author, tags: resolved.tags, language: resolved.language,
+  };
+  return (await readWork(source, layout)).work;
+};
+

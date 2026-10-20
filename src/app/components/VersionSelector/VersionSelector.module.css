@@ -82,6 +82,13 @@
   outline: none;
 }
 
+.item:disabled {
+  background: transparent;
+  color: var(--text-color);
+  opacity: 0.45;
+  cursor: default;
+}
+
 .itemCurrent {
   color: var(--color-primary);
 }

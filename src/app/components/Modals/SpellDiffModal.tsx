@@ -6,7 +6,7 @@ import { Spinner } from '../Spinner';
 import { useLanguage } from '../../../i18n';
 import type { BlockDiff, PageDiff } from '../../../utils/spellDiff';
 import type { ChangesSide, SpellChanges } from '../../../utils/spellVersions';
-import { textOf, wordDiff } from '../../../utils/wordDiff';
+import { imagesIn, textOf, wordDiff } from '../../../utils/wordDiff';
 
 interface SpellDiffModalProps {
   show: boolean;
@@ -15,12 +15,6 @@ interface SpellDiffModalProps {
   changes: SpellChanges | null;
   onClose: () => void;
 }
-
-// A page's image reference (spell-asset:{name}[;type=...]), the file it's in.
-const assetPath = (src: unknown) => {
-  const match = typeof src === 'string' ? /^spell-asset:([^;]+)/.exec(src) : null;
-  return match ? `assets/${match[1]}` : null;
-};
 
 // An image of one side, read when it's shown.
 const SideImage = ({ changes, side, path, alt }: { changes: SpellChanges; side: ChangesSide; path: string; alt: string }) => {
@@ -36,12 +30,6 @@ const SideImage = ({ changes, side, path, alt }: { changes: SpellChanges; side: 
     return () => { cancelled = true; if (made) URL.revokeObjectURL(made); };
   }, [changes, side, path]);
   return url ? <img className={s.image} src={url} alt={alt} /> : <span className={s.imagePlaceholder}>{alt}</span>;
-};
-
-// The images in a block, wherever they are in it.
-const imagesIn = (node: JSONContent): string[] => {
-  const own = node.type === 'image' ? [assetPath(node.attrs?.src)].filter((p): p is string => !!p) : [];
-  return [...own, ...(node.content ?? []).flatMap(imagesIn)];
 };
 
 type BlockMark = 'same' | 'added' | 'removed' | 'changed' | 'moved';

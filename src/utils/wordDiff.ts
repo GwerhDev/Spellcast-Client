@@ -11,6 +11,18 @@ export const textOf = (node: JSONContent): string => {
   return parts.join(nested ? '\n' : '');
 };
 
+// A page's image reference (spell-asset:{name}[;type=...]), the file it's in.
+const assetPath = (src: unknown) => {
+  const match = typeof src === 'string' ? /^spell-asset:([^;]+)/.exec(src) : null;
+  return match ? `assets/${match[1]}` : null;
+};
+
+// The files of the images in a block, wherever they are in it.
+export const imagesIn = (node: JSONContent): string[] => {
+  const own = node.type === 'image' ? [assetPath(node.attrs?.src)].filter((p): p is string => !!p) : [];
+  return [...own, ...(node.content ?? []).flatMap(imagesIn)];
+};
+
 export interface WordSegment {
   text: string;
   kind: 'same' | 'added' | 'removed';

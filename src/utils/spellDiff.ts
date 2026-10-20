@@ -279,3 +279,65 @@ export function mergeSpells(base: SpellSnapshot, ours: SpellSnapshot, theirs: Sp
 
   return { merged, dissonances };
 }
+
+// ── Resolving dissonances ──
+
+// How a dissonance is resolved: keep ours, keep theirs, or (a block changed on both sides)
+// keep both, ours first.
+export type Resolution = 'ours' | 'theirs' | 'both';
+
+/** Whether a dissonance can keep both sides: a block changed differently on each side. */
+export const canKeepBoth = (dissonance: Dissonance): boolean =>
+  dissonance.part === 'block' && dissonance.ours !== null && dissonance.theirs !== null;
+
+export class MergeResolutionError extends Error {}
+
+/**
+ * The merged state with each dissonance resolved as chosen (`resolutions[i]` for
+ * `merge.dissonances[i]`). Every one needs a resolution: nothing is merged with a dissonance
+ * left open.
+ */
+export function resolveMerge(merge: SpellMerge, resolutions: (Resolution | undefined)[]): SpellSnapshot {
+  const { dissonances } = merge;
+  if (dissonances.some((_, i) => !resolutions[i])) throw new MergeResolutionError('Every dissonance needs a resolution.');
+  dissonances.forEach((dissonance, i) => {
+    if (resolutions[i] === 'both' && !canKeepBoth(dissonance)) throw new MergeResolutionError('Only a block changed on both sides can keep both.');
+  });
+
+  const result: SpellSnapshot = { ...merge.merged, pages: merge.merged.pages.map(page => ({ ...page, content: [...(page.content ?? [])] })) };
+  const indexed = dissonances.map((dissonance, i) => ({ dissonance, resolution: resolutions[i]! }));
+
+  for (const { dissonance, resolution } of indexed) {
+    if (resolution === 'ours') continue;
+    if (dissonance.part === 'detail') {
+      if (dissonance.field === 'title') result.title = dissonance.theirs ?? '';
+      else result[dissonance.field] = dissonance.theirs || undefined;
+    } else if (dissonance.part === 'cover' || dissonance.part === 'originalPages') {
+      result[dissonance.part] = dissonance.theirs;
+    } else if (dissonance.part === 'pageLayout') {
+      result.pages[dissonance.page] = { ...result.pages[dissonance.page], attrs: dissonance.theirs };
+    }
+  }
+
+  // Blocks, then pages: a block's place is in the merged pages as they are, before pages are
+  // put in or taken out. Last place first, so an earlier one stays where it is.
+  const byPlace = <T extends { at: number }>(items: T[]) => [...items].sort((a, b) => b.at - a.at);
+  const blocks = indexed.filter((x): x is { dissonance: Extract<Dissonance, { part: 'block' }>; resolution: Resolution } => x.dissonance.part === 'block');
+  for (const { dissonance, resolution } of byPlace(blocks.map(x => ({ ...x, at: x.dissonance.page * 1e6 + x.dissonance.at })))) {
+    if (resolution === 'ours') continue;
+    const content = result.pages[dissonance.page].content!;
+    if (resolution === 'both') content.splice(dissonance.at + 1, 0, dissonance.theirs!);
+    // Ours removed it: theirs goes where it was. Theirs removed it: it goes. Else theirs instead.
+    else if (dissonance.ours === null) content.splice(dissonance.at, 0, dissonance.theirs!);
+    else if (dissonance.theirs === null) content.splice(dissonance.at, 1);
+    else content[dissonance.at] = dissonance.theirs;
+  }
+  const pages = indexed.filter((x): x is { dissonance: Extract<Dissonance, { part: 'page' }>; resolution: Resolution } => x.dissonance.part === 'page');
+  for (const { dissonance, resolution } of byPlace(pages.map(x => ({ ...x, at: x.dissonance.at })))) {
+    if (resolution === 'ours') continue;
+    if (dissonance.ours === null) result.pages.splice(dissonance.at, 0, dissonance.theirs!);
+    else result.pages.splice(dissonance.at, 1);
+  }
+  return result;
+}
+

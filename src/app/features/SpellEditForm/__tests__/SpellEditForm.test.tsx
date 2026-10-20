@@ -19,6 +19,8 @@ const versionsMock = {
   seal: vi.fn(() => Promise.resolve()),
   switchTo: vi.fn<(name: string) => Promise<void>>(() => Promise.resolve()),
   createVersion: vi.fn<(name: string) => Promise<void>>(() => Promise.resolve()),
+  fusePlan: vi.fn(async (name: string) => ({ kind: 'fastForward' as const, theirsVersion: name, apply: async () => {} })),
+  fuse: vi.fn<(plan: unknown, resolutions: unknown[]) => Promise<void>>(() => Promise.resolve()),
   sealChanges: vi.fn(async () => ({
     diff: { details: [], tags: { added: [], removed: [] }, cover: null, originalPages: null, pages: [] },
     from: { title: 'T', cover: null, originalPages: null, pages: [] }, to: { title: 'T', cover: null, originalPages: null, pages: [] },
@@ -40,6 +42,8 @@ vi.mock('../../../../hooks/useSpellVersions', async () => {
         seal: async () => { await versionsMock.seal(); setUnsealed(false); },
         switchTo: async (name: string) => { await versionsMock.switchTo(name); setUnsealed(false); },
         createVersion: versionsMock.createVersion,
+        fusePlan: versionsMock.fusePlan,
+        fuse: versionsMock.fuse,
         chronicle: versionsMock.chronicle,
         sealChanges: versionsMock.sealChanges,
         unsealedChanges: versionsMock.sealChanges,
@@ -458,6 +462,8 @@ describe('SpellEditForm', () => {
       versionsMock.seal.mockClear();
       versionsMock.switchTo.mockClear();
       versionsMock.createVersion.mockClear();
+      versionsMock.fusePlan.mockClear();
+      versionsMock.fuse.mockClear();
     });
 
     it('Save saves the edits and seals them; then there is nothing to save', async () => {
@@ -513,6 +519,44 @@ describe('SpellEditForm', () => {
       await waitFor(() => expect(versionsMock.switchTo).toHaveBeenCalledWith('draft'));
       expect(updateSpellContent).toHaveBeenCalled();
       expect(versionsMock.seal).toHaveBeenCalledTimes(1);
+    });
+
+    it('fuses another version into the current one, once its plan is confirmed', async () => {
+      renderForm();
+      await screen.findByTestId('spell-edit-form');
+      fireEvent.click(screen.getByTestId('version-selector'));
+      fireEvent.click(screen.getByTestId('version-fuse'));
+      fireEvent.click(await screen.findByTestId('fuse-version-draft'));
+      await waitFor(() => expect(versionsMock.fusePlan).toHaveBeenCalledWith('draft'));
+      fireEvent.click(await screen.findByTestId('fuse-confirm'));
+      await waitFor(() => expect(versionsMock.fuse).toHaveBeenCalledWith(expect.objectContaining({ kind: 'fastForward', theirsVersion: 'draft' }), []));
+      await waitFor(() => expect(screen.queryByTestId('fuse-modal')).not.toBeInTheDocument());
+    });
+
+    it('cancelling a fusion writes nothing', async () => {
+      renderForm();
+      await screen.findByTestId('spell-edit-form');
+      fireEvent.click(screen.getByTestId('version-selector'));
+      fireEvent.click(screen.getByTestId('version-fuse'));
+      fireEvent.click(await screen.findByTestId('fuse-version-draft'));
+      await screen.findByTestId('fuse-confirm');
+      fireEvent.click(screen.getByTestId('fuse-cancel'));
+      await waitFor(() => expect(screen.queryByTestId('fuse-modal')).not.toBeInTheDocument());
+      expect(versionsMock.fuse).not.toHaveBeenCalled();
+    });
+
+    it('with changes not sealed, asks to seal them before fusing', async () => {
+      renderForm();
+      await screen.findByTestId('spell-edit-form');
+      fireEvent.change(screen.getByTestId('spell-edit-title-input'), { target: { value: 'Unsealed' } });
+      fireEvent.click(screen.getByTestId('version-selector'));
+      fireEvent.click(screen.getByTestId('version-fuse'));
+      expect(await screen.findByTestId('fuse-unsealed-modal')).toBeInTheDocument();
+      expect(screen.queryByTestId('fuse-modal')).not.toBeInTheDocument();
+      fireEvent.click(screen.getByTestId('fuse-unsealed-seal'));
+      await waitFor(() => expect(versionsMock.seal).toHaveBeenCalledTimes(1));
+      expect(updateSpellContent).toHaveBeenCalled();
+      expect(await screen.findByTestId('fuse-modal')).toBeInTheDocument();
     });
 
     it('makes a new version with the name given, never one already taken', async () => {

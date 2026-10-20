@@ -120,6 +120,10 @@ export const getRepo = async (spellId: string): Promise<RepoRecord | undefined> 
 export const getSeal = async (spellId: string, id: string): Promise<SealRecord | undefined> =>
   result((await openDB()).transaction(SEALS).objectStore(SEALS).get([spellId, id]));
 
+// Every seal of a spell (its history, to find where two versions meet).
+export const getSeals = async (spellId: string): Promise<SealRecord[]> =>
+  result((await openDB()).transaction(SEALS).objectStore(SEALS).index('spellId').getAll(spellId));
+
 export const getVersion = async (spellId: string, name: string): Promise<VersionRecord | undefined> =>
   result((await openDB()).transaction(VERSIONS).objectStore(VERSIONS).get([spellId, name]));
 

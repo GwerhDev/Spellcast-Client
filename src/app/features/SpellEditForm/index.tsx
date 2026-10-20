@@ -40,9 +40,10 @@ import { useSpellVersions } from '../../../hooks/useSpellVersions';
 import { VersionSelector } from '../../components/VersionSelector/VersionSelector';
 import { ChronicleModal, type ChronicleItem } from '../../components/Modals/ChronicleModal';
 import { SpellDiffModal } from '../../components/Modals/SpellDiffModal';
-import type { SpellChanges } from '../../../utils/spellVersions';
+import type { ChronicleEntry, FusePlan, SpellChanges } from '../../../utils/spellVersions';
+import type { Resolution } from '../../../utils/spellDiff';
 import { NewVersionModal } from '../../components/Modals/NewVersionModal';
-import type { ChronicleEntry } from '../../../utils/spellVersions';
+import { FuseModal } from '../../components/Modals/FuseModal';
 
 const emptyContent: JSONContent = {
   type: 'doc',
@@ -87,6 +88,11 @@ export const SpellEditForm: React.FC = () => {
   const [changesView, setChangesView] = useState<{ title: string; changes: SpellChanges | null } | null>(null);
   // A version asked to switch to while this one has changes not sealed: what to do with them.
   const [pendingSwitch, setPendingSwitch] = useState<string | null>(null);
+  // Fusing another version into the current one: the one picked and its plan; asked to seal
+  // first while there's work not sealed (pendingFuse).
+  const [fusing, setFusing] = useState<{ picked: string | null; plan: FusePlan | null; busy: boolean } | null>(null);
+  const [pendingFuse, setPendingFuse] = useState(false);
+  const fusePicked = useRef<string | null>(null);
 
   // TCORE-103: editing the same social/feed metadata TCORE-97 introduced at creation time.
   const [description, setDescription] = useState('');
@@ -389,6 +395,38 @@ export const SpellEditForm: React.FC = () => {
     else void switchVersion(name);
   };
 
+  const openFuse = () => { fusePicked.current = null; setFusing({ picked: null, plan: null, busy: false }); };
+  const requestFuse = () => {
+    if (hasChanges || versions.unsealed) setPendingFuse(true);
+    else openFuse();
+  };
+  // A plan for the version picked; one for a version picked before it is dropped.
+  const pickFuse = (name: string) => {
+    fusePicked.current = name;
+    setFusing({ picked: name, plan: null, busy: false });
+    versions.fusePlan(name).then(
+      plan => { if (fusePicked.current === name) setFusing(f => f && { ...f, plan }); },
+      err => { reportVersionsError(err); setFusing(null); },
+    );
+  };
+  const closeFuse = () => { if (fusing?.busy) return; fusePicked.current = null; setFusing(null); };
+  // The fusion replaces the work with the fused one (all sealed first): a pending autosave
+  // would write the one before back over it, so it's dropped.
+  const confirmFuse = async (resolutions: (Resolution | undefined)[]) => {
+    const plan = fusing?.plan;
+    if (!plan) return;
+    setFusing(f => f && { ...f, busy: true });
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    setHasChanges(false);
+    try {
+      await versions.fuse(plan, resolutions);
+    } catch (err) {
+      reportVersionsError(err);
+    }
+    fusePicked.current = null;
+    setFusing(null);
+  };
+
   const summaryOf = (entry: ChronicleEntry): string => {
     if (entry.first) return t.versions.firstSeal;
     const parts = [
@@ -583,8 +621,9 @@ export const SpellEditForm: React.FC = () => {
             versions={versions.names}
             onSwitch={requestSwitch}
             onNew={() => setShowNewVersion(true)}
+            onFuse={requestFuse}
             disabled={isProcessingPdf}
-            labels={{ title: t.versions.title, newVersion: t.versions.newVersion }}
+            labels={{ title: t.versions.title, newVersion: t.versions.newVersion, fuse: t.fuse.fuseInto.replace('{name}', versions.current ?? '') }}
           />
         </span>
 
@@ -774,6 +813,33 @@ export const SpellEditForm: React.FC = () => {
               onClick={async () => { const name = pendingSwitch; if (name && await sealNow()) await switchVersion(name); else setPendingSwitch(null); }}
             >
               {t.versions.sealAndSwitch}
+            </PrimaryButton>
+          </div>
+        </div>
+      </CustomModal>
+
+      <FuseModal
+        show={fusing !== null}
+        ours={versions.current ?? ''}
+        others={versions.names.filter(name => name !== versions.current)}
+        picked={fusing?.picked ?? null}
+        plan={fusing?.plan ?? null}
+        busy={fusing?.busy}
+        onPick={pickFuse}
+        onFuse={(resolutions) => void confirmFuse(resolutions)}
+        onClose={closeFuse}
+      />
+
+      <CustomModal compact show={pendingFuse} onClose={() => setPendingFuse(false)} title={t.versions.unsealedTitle}>
+        <div className={s.importModalBody} data-testid="fuse-unsealed-modal">
+          <p>{t.fuse.unsealedMessage}</p>
+          <div className={s.importModalActions}>
+            <SecondaryButton onClick={() => setPendingFuse(false)}>{t.common.cancel}</SecondaryButton>
+            <PrimaryButton
+              data-testid="fuse-unsealed-seal"
+              onClick={async () => { setPendingFuse(false); if (await sealNow()) openFuse(); }}
+            >
+              {t.fuse.sealAndContinue}
             </PrimaryButton>
           </div>
         </div>

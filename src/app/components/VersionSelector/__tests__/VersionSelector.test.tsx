@@ -2,9 +2,9 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { VersionSelector } from '../VersionSelector';
 
-const labels = { title: 'Version', newVersion: 'New version…' };
+const labels = { title: 'Version', newVersion: 'New version…', fuse: 'Fuse into "source"…' };
 const renderSelector = (over = {}) => {
-  const props = { current: 'source', versions: ['source', 'draft'], onSwitch: vi.fn(), onNew: vi.fn(), labels, ...over };
+  const props = { current: 'source', versions: ['source', 'draft'], onSwitch: vi.fn(), onNew: vi.fn(), onFuse: vi.fn(), labels, ...over };
   render(<VersionSelector {...props} />);
   return props;
 };
@@ -53,5 +53,17 @@ describe('VersionSelector', () => {
     fireEvent.click(screen.getByTestId('version-selector'));
     fireEvent.mouseDown(document.body);
     expect(screen.queryByTestId('version-new')).not.toBeInTheDocument();
+  });
+
+  it('fusing another version is offered only while there is another one', () => {
+    const props = renderSelector();
+    fireEvent.click(screen.getByTestId('version-selector'));
+    fireEvent.click(screen.getByTestId('version-fuse'));
+    expect(props.onFuse).toHaveBeenCalled();
+    expect(screen.queryByTestId('version-fuse')).not.toBeInTheDocument();
+
+    renderSelector({ versions: ['source'] });
+    fireEvent.click(screen.getAllByTestId('version-selector')[1]);
+    expect(screen.getByTestId('version-fuse')).toBeDisabled();
   });
 });
