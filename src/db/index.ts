@@ -6,7 +6,7 @@ import { sameUser } from "../utils/grimoire";
 import { dropCoverOverText } from "../utils/spellPage";
 import { getStoredProgress, getAllStoredProgress, setStoredProgress, setStoredProgressMany, deleteStoredProgress, clearStoredProgress } from "./spellProgress";
 import { deleteSpellCosmetics, clearSpellCosmetics } from "./spellCosmetics";
-import { deleteSpellRepository, clearSpellRepositories, keepSealedImages, withSpellLock } from "./spellRepository";
+import { deleteSpellRepository, clearSpellRepositories, getRepo, keepSealedImages, withSpellLock } from "./spellRepository";
 import { getStoredCoverFrame, getAllStoredCoverFrames, setStoredCoverFrame, deleteStoredCoverFrame, clearStoredCoverFrames, type CoverFrameRecord } from "./spellCoverFrames";
 
 // The pre-rename (TCORE-78) store name, frozen on purpose: it names whatever a
@@ -606,6 +606,13 @@ export const deleteSpellFromDB = async (id: string, userId: string | undefined):
 // they hold that the record stops holding is kept for them first -- see keepSealedImages).
 const writeSpellWork = <T,>(id: string, userId: string, after: (before: Spell) => Pick<Spell, 'pagesContent' | 'originalPagesContent' | 'cover'>, write: () => Promise<T>) =>
   withSpellLock(id, async () => {
+    // A spell without versions (most of them) is written as always, without reading it first.
+    // Versions that can't be read can't be kept either: the work is written regardless.
+    const versioned = await getRepo(id).then(Boolean, (err) => {
+      console.error(`[IndexedDB] Failed to read the versions of spell "${id}", writing it anyway:`, err);
+      return false;
+    });
+    if (!versioned) return write();
     const before = await readSpellFromStore(id, userId);
     return keepSealedImages(id, before, before ? after(before) : {}, write);
   });

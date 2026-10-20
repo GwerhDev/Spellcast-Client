@@ -237,6 +237,24 @@ describe('spellVersions', () => {
 
     // Kept before the record is written: a write that fails midway never leaves a seal
     // without its image.
+    it('a spell without versions is written as always, without looking at its images', async () => {
+      const { repo, db } = await loadAll();
+      const spell = await savedSpell([page('one', IMG)]);
+      const keep = vi.spyOn(repo, 'keepSealedImages');
+      await db.updateSpellContent(spell.id, 'user-1', { title: 'A Spell', pagesContent: JSON.stringify([page('two')]) });
+      expect(keep).not.toHaveBeenCalled();
+      expect((await db.getSpellById(spell.id, 'user-1'))!.pagesContent).toBe(JSON.stringify([page('two')]));
+    });
+
+    it('versions that can\'t be read never keep the work from being written', async () => {
+      const { repo, db } = await loadAll();
+      const spell = await savedSpell([page('one')]);
+      vi.spyOn(repo, 'getRepo').mockRejectedValue(new Error('UnknownError'));
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      await db.updateSpellContent(spell.id, 'user-1', { title: 'A Spell', pagesContent: JSON.stringify([page('two')]) });
+      expect((await db.getSpellById(spell.id, 'user-1'))!.pagesContent).toBe(JSON.stringify([page('two')]));
+    });
+
     it('the image is kept before the record stops holding it', async () => {
       const { versions, repo } = await loadAll();
       const spell = await savedSpell([page('one', IMG)]);
@@ -261,6 +279,28 @@ describe('spellVersions', () => {
       await Promise.all([first, second]);
       expect(order).toEqual(['first in', 'first out', 'second']);
     });
+  });
+
+  // The first repository (seals keyed by their id alone) only ever existed in unreleased
+  // builds: started over, and made again on use.
+  it('a repository from before seals were kept per spell is started over', async () => {
+    await new Promise<void>((resolve, reject) => {
+      const request = indexedDB.open('spellcast-repository', 1);
+      request.onupgradeneeded = () => {
+        const db = request.result;
+        db.createObjectStore('blobs', { keyPath: 'key' });
+        db.createObjectStore('seals', { keyPath: 'id' }).createIndex('spellId', 'spellId');
+        db.createObjectStore('versions', { keyPath: ['spellId', 'name'] }).createIndex('spellId', 'spellId');
+        db.createObjectStore('repos', { keyPath: 'spellId' }).put({ spellId: 'spell-1', currentVersion: 'gone' });
+      };
+      request.onsuccess = () => { request.result.close(); resolve(); };
+      request.onerror = () => reject(request.error);
+    });
+    const { versions, repo } = await load();
+    const spell = spellWith([page('one')]);
+    const { currentVersion, head } = await versions.spellRepository(spell);
+    expect(currentVersion).toBe('source');
+    expect(await repo.getSeal(spell.id, head.id)).toBeDefined();
   });
 
   it('deleting a spell\'s repository removes it all', async () => {

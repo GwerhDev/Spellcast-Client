@@ -14,7 +14,10 @@ import { dataUrlsIn, imagesOf, type SpellImageSource } from '../utils/spellImage
 // bump for it.
 
 const DB_NAME = 'spellcast-repository';
-const DB_VERSION = 1;
+// 2: seals keyed per spell. Version 1 only ever existed in builds that were never released:
+// it's started over, its repositories made again the next time a spell is opened in the
+// editor.
+const DB_VERSION = 2;
 const BLOBS = 'blobs';
 const SEALS = 'seals';
 const VERSIONS = 'versions';
@@ -58,8 +61,13 @@ const openDB = (): Promise<IDBDatabase> => {
   if (dbPromise) return dbPromise;
   dbPromise = new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
-    request.onupgradeneeded = () => {
+    request.onupgradeneeded = (event) => {
       const db = request.result;
+      if (event.oldVersion === 1) {
+        for (const name of [BLOBS, SEALS, VERSIONS, REPOS]) {
+          if (db.objectStoreNames.contains(name)) db.deleteObjectStore(name);
+        }
+      }
       if (!db.objectStoreNames.contains(BLOBS)) db.createObjectStore(BLOBS, { keyPath: 'key' });
       if (!db.objectStoreNames.contains(SEALS)) db.createObjectStore(SEALS, { keyPath: ['spellId', 'id'] }).createIndex('spellId', 'spellId');
       if (!db.objectStoreNames.contains(VERSIONS)) db.createObjectStore(VERSIONS, { keyPath: ['spellId', 'name'] }).createIndex('spellId', 'spellId');
