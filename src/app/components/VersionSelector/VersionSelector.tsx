@@ -4,7 +4,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheck, faChevronDown, faCodeBranch, faPlus } from '@fortawesome/free-solid-svg-icons';
 
 interface VersionSelectorProps {
-  current: string;
+  // null while the versions are being read: disabled meanwhile, named by its title.
+  current: string | null;
   versions: string[];
   onSwitch: (name: string) => void;
   onNew: () => void;
@@ -37,11 +38,12 @@ export const VersionSelector = ({ current, versions, onSwitch, onNew, disabled, 
         title={labels.title}
         aria-haspopup="menu"
         aria-expanded={open}
-        disabled={disabled}
+        aria-busy={current === null}
+        disabled={disabled || current === null}
         onClick={() => setOpen(o => !o)}
       >
         <FontAwesomeIcon icon={faCodeBranch} />
-        <span className={s.name}>{current}</span>
+        <span className={s.name}>{current ?? labels.title}</span>
         <FontAwesomeIcon icon={faChevronDown} className={s.caret} />
       </button>
       {open && (

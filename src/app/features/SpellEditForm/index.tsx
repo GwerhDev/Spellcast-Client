@@ -553,16 +553,14 @@ export const SpellEditForm: React.FC = () => {
               onChange={(e) => { setSpellTitle(e.target.value); setHasChanges(true); }}
             />
           </span>
-          {versions.current && (
-            <VersionSelector
-              current={versions.current}
-              versions={versions.names}
-              onSwitch={requestSwitch}
-              onNew={() => setShowNewVersion(true)}
-              disabled={isProcessingPdf}
-              labels={{ title: t.versions.title, newVersion: t.versions.newVersion }}
-            />
-          )}
+          <VersionSelector
+            current={versions.current}
+            versions={versions.names}
+            onSwitch={requestSwitch}
+            onNew={() => setShowNewVersion(true)}
+            disabled={isProcessingPdf}
+            labels={{ title: t.versions.title, newVersion: t.versions.newVersion }}
+          />
         </span>
 
         {isProcessingPdf && processingCollapsed && (

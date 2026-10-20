@@ -10,6 +10,14 @@ const renderSelector = (over = {}) => {
 };
 
 describe('VersionSelector', () => {
+  it('is disabled while the versions are read', () => {
+    renderSelector({ current: null });
+    const trigger = screen.getByTestId('version-selector');
+    expect(trigger).toBeDisabled();
+    expect(trigger).toHaveAttribute('aria-busy', 'true');
+    expect(trigger.textContent).toContain('Version');
+  });
+
   it('shows the current version and opens the list on click', () => {
     renderSelector();
     expect(screen.getByTestId('version-selector').textContent).toContain('source');
