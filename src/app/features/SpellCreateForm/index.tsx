@@ -1,5 +1,5 @@
 import s from '../../components/SpellCreateForm/index.module.css';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useAppSelector } from '../../../store/hooks';
 import { RootState } from '../../../store';
@@ -17,7 +17,7 @@ import { useNavigate } from 'react-router-dom';
 import type { JSONContent } from '../../../magictext';
 import type { TTSPlayPayload } from '../../../magictext';
 import workerSrc from 'pdfjs-dist/build/pdf.worker?url';
-import { faArrowLeft, faCloudUpload, faPaperclip, faSave, faLayerGroup } from '@fortawesome/free-solid-svg-icons';
+import { faArrowLeft, faCloudUpload, faFilePdf, faSave, faLayerGroup } from '@fortawesome/free-solid-svg-icons';
 import { PdfProcessingStatus } from '../../components/PdfProcessingStatus';
 import { SpellMetadataFields } from '../../components/SpellMetadataFields';
 import { IconButton } from '../../components/Buttons/IconButton';
@@ -27,6 +27,11 @@ import { textToSpeechService } from '../../../services/tts';
 import { renderPageToCover, extractPdfPages, emptyPageContent, blobToDataUrl, extractPdfMetadata, downscaleImageBlob } from '../../../utils/pdfUtils';
 import { useLanguage } from '../../../i18n';
 import { useGoBack } from '../../../hooks/useGoBack';
+import { useShowOriginalPdf } from '../../../hooks/useShowOriginalPdf';
+import { parseDataUrl } from '../../../utils/spellImages';
+import { CustomModal } from '../../components/Modals/CustomModal';
+import { PrimaryButton } from '../../components/Buttons/PrimaryButton';
+import { SecondaryButton } from '../../components/Buttons/SecondaryButton';
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
 const emptyContent: JSONContent = emptyPageContent;
@@ -53,6 +58,11 @@ export const SpellCreateForm: React.FC = () => {
   const pageList = usePageListToggle();
   // A page about to be deleted: asked first (its content would go).
   const [pageToDelete, setPageToDelete] = useState<number | null>(null);
+  // As in the editor: the page compared with the PDF's, and a page (or all of them) restored
+  // as read from it -- asked first, the edits to it would go.
+  const [showOriginal, setShowOriginal] = useShowOriginalPdf();
+  const [pageToReset, setPageToReset] = useState<number | null>(null);
+  const [showResetAllModal, setShowResetAllModal] = useState(false);
   const pdfInputRef = useRef<HTMLInputElement>(null);
   const originalPdfRef = useRef<File | null>(null);
   const originalPagesRef = useRef<JSONContent[] | null>(null);
@@ -115,6 +125,26 @@ export const SpellCreateForm: React.FC = () => {
       setTtsPlaying(true);
       window.speechSynthesis.speak(utt);
     }
+  };
+
+  // The PDF being read, to compare the pages with: not stored until the spell is (see
+  // handleSaveLocal), so it's the file itself.
+  const pdfFile = useMemo(() => {
+    const parsed = spell.fileContent ? parseDataUrl(spell.fileContent) : null;
+    return parsed ? new Blob([parsed.bytes as BlobPart], { type: parsed.type }) : null;
+  }, [spell.fileContent]);
+
+  // The pages as read from the PDF, once read.
+  const originals = originalPagesRef.current;
+  const handleResetPage = (index: number) => {
+    if (!originals?.[index]) return;
+    const updated = [...pagesContent];
+    updated[index] = { ...originals[index] };
+    setPagesContent(updated);
+  };
+  const handleResetAll = () => {
+    setShowResetAllModal(false);
+    if (originals) setPagesContent(originals.map(page => ({ ...page })));
   };
 
   const handlePdfImport = (file: File) => {
@@ -290,7 +320,9 @@ export const SpellCreateForm: React.FC = () => {
 
       dispatch(resetSpellReader());
       dispatch(resetSpellState());
-      navigate(`/spell/${newId}`);
+      // On to keep working on it: the editor of the spell just made (replacing this page in
+      // the history, so going back doesn't land on an empty create form).
+      navigate(`/editor/${newId}`, { replace: true });
 
     } catch (error) {
       console.error('Failed to save spell locally:', error);
@@ -327,9 +359,10 @@ export const SpellCreateForm: React.FC = () => {
           />
         )}
         {isSaving && <span className={s.saveStatus}>{t.common.saving}</span>}
-        <IconButton icon={faPaperclip} variant='transparent' title={t.spell.importPdf} onClick={() => pdfInputRef.current?.click()} />
+        {/* Importing a PDF is the PDF panel's own (see SpellEditor's pdfPanel): it opens this
+            picker, as in the editor. */}
         <input ref={pdfInputRef} type="file" accept=".pdf" style={{ display: 'none' }}
-          onChange={(e) => { if (e.target.files?.[0]) handlePdfImport(e.target.files[0]); }} />
+          onChange={(e) => { if (e.target.files?.[0]) handlePdfImport(e.target.files[0]); e.target.value = ''; }} />
         <IconButton
           data-testid="page-list-toggle"
           data-page-list-toggle
@@ -339,6 +372,15 @@ export const SpellCreateForm: React.FC = () => {
           title={pageList.open ? t.spell.hidePages : t.spell.showPages}
           aria-pressed={pageList.open}
           onClick={pageList.toggle}
+        />
+        <IconButton
+          data-testid="spell-create-original-btn"
+          icon={faFilePdf}
+          variant='transparent'
+          className={showOriginal ? s.headerBtnActive : undefined}
+          title={t.spell.showOriginal}
+          aria-pressed={showOriginal}
+          onClick={() => setShowOriginal(v => !v)}
         />
         <IconButton data-testid="spell-create-save-btn" icon={faSave} variant='transparent' title={t.common.save} disabled={isSaving || !spellTitle} onClick={handleSaveLocal} />
         <IconButton icon={faCloudUpload} disabled variant='transparent' title={t.nav.cloud} onClick={() => {}} />
@@ -385,6 +427,14 @@ export const SpellCreateForm: React.FC = () => {
             onTTSPlay={handleTTSPlay}
             onTTSStop={stopTTSPreview}
             ttsPlaying={ttsPlaying}
+            pdfPanel={showOriginal ? {
+              pdf: pdfFile,
+              hasOriginal: hasImportedPdf && !!pdfFile,
+              busy: isLoading && hasImportedPdf,
+              onReplacePdf: () => pdfInputRef.current?.click(),
+              onRestoreAll: originals ? () => setShowResetAllModal(true) : undefined,
+              onRestorePage: originals ? () => setPageToReset(editingPageIndex) : undefined,
+            } : null}
           />
         </div>
         <PageListPlace toggle={pageList} className={s.pagesContainer}>
@@ -395,6 +445,7 @@ export const SpellCreateForm: React.FC = () => {
               onPageClick={handlePageClick}
               onPageDelete={setPageToDelete}
               onAddPage={handleAddPage}
+              onPageReset={originals ? setPageToReset : undefined}
               pdfProgress={pdfProgress}
               column={overlay}
             />
@@ -408,6 +459,23 @@ export const SpellCreateForm: React.FC = () => {
         title={t.spell.deletePageTitle}
         message={t.spell.deletePageConfirm.replace('{n}', String((pageToDelete ?? 0) + 1))}
       />
+      <DeleteConfirmModal
+        show={pageToReset !== null}
+        onClose={() => setPageToReset(null)}
+        onConfirm={() => { const index = pageToReset; setPageToReset(null); if (index !== null) handleResetPage(index); }}
+        title={t.spell.resetPage}
+        message={t.spell.resetPageConfirm.replace('{n}', String((pageToReset ?? 0) + 1))}
+        confirmText={t.spell.resetPage}
+      />
+      <CustomModal compact show={showResetAllModal} onClose={() => setShowResetAllModal(false)} title={t.spell.resetAllTitle}>
+        <div className={s.modalBody}>
+          <p>{t.spell.resetAllDesc}</p>
+          <div className={s.modalActions}>
+            <SecondaryButton onClick={() => setShowResetAllModal(false)}>{t.common.cancel}</SecondaryButton>
+            <PrimaryButton onClick={handleResetAll}>{t.spell.resetAll}</PrimaryButton>
+          </div>
+        </div>
+      </CustomModal>
     </div>
   );
 };

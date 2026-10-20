@@ -7,9 +7,9 @@ import { useLanguage } from '../../../i18n';
 // What the original PDF's side of the editor can do, handed down by the editor's page
 // (see SpellEditForm): its own toolbar's actions.
 export interface PdfPanelOptions {
-  // The spell, and whether it kept its original PDF (without one, the panel offers to
-  // import it).
-  spellId: string;
+  // The original PDF: the spell's id (its PDF kept apart), or the PDF itself (a spell being
+  // made, not stored yet); and whether there is one (without it, the panel offers to import it).
+  pdf: string | Blob | null;
   hasOriginal: boolean;
   // A PDF being read into the spell: nothing to do here until it's done.
   busy?: boolean;

@@ -93,7 +93,7 @@ export const SpellEditor: React.FC<SpellEditorProps> = ({
   const panel = pdfPanel ?? (retained ? lastPanelRef.current : null);
   const sideBySide = !!panel && !narrow && rootWidth >= SIDE_MIN_WIDTH;
   const flipMode = !!panel && !sideBySide;
-  const original = useOriginalPdf(panel?.hasOriginal ? panel.spellId : null);
+  const original = useOriginalPdf(panel?.hasOriginal ? panel.pdf : null);
 
   // Scaled down to fit the space beside the ruler when the sheet is wider (a phone).
   const { zoom, showIndicator, adjustZoom, resetZoom, ZOOM_STEP } = useZoom(paperBgRef, { contentWidth: paperWidth, fitRef: paperCenterRef });

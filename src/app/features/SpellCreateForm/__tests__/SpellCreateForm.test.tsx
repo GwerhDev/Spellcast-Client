@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
 import { screen, fireEvent, waitFor } from '@testing-library/react';
 import { renderWithProviders } from '../../../../test/renderWithProviders';
+import { Routes, Route } from 'react-router-dom';
 import { SpellCreateForm } from '../index';
 import type { PdfMetadata } from '../../../../utils/pdfUtils';
 
@@ -12,8 +13,10 @@ vi.mock('pdfjs-dist', () => ({
 
 vi.mock('pdfjs-dist/build/pdf.worker?url', () => ({ default: '' }));
 
+// The editor itself isn't rendered here: what it's given is kept, to look at.
+let editorProps: Record<string, unknown> = {};
 vi.mock('../../../../app/components/Editors/SpellEditor', () => ({
-  SpellEditor: () => null,
+  SpellEditor: (props: Record<string, unknown>) => { editorProps = props; return null; },
 }));
 
 const extractPdfMetadataMock = vi.fn<() => Promise<PdfMetadata>>(() => Promise.resolve({}));
@@ -240,6 +243,44 @@ describe('SpellCreateForm', () => {
       await waitFor(() => expect(saveSpellToDBMock).toHaveBeenCalled());
       const payload = saveSpellToDBMock.mock.calls[0][0] as Record<string, unknown>;
       expect(payload.cover).toBe(forcedCover);
+    });
+  });
+
+  it('after the first save, opens the editor of the spell just made', async () => {
+    renderWithProviders(
+      <Routes>
+        <Route path="/editor/create" element={<SpellCreateForm />} />
+        <Route path="/editor/:id" element={<div data-testid="spell-editor-page" />} />
+      </Routes>,
+      { preloadedState: loggedInState, initialPath: '/editor/create' },
+    );
+    fireEvent.change(screen.getByTestId('spell-title-input'), { target: { value: 'My Spell' } });
+    fireEvent.click(screen.getByTestId('spell-create-save-btn'));
+    expect(await screen.findByTestId('spell-editor-page')).toBeInTheDocument();
+  });
+
+  describe('the original PDF, as in the editor', () => {
+    beforeEach(() => { localStorage.removeItem('spellcast.editor.showOriginalPdf'); });
+
+    it('the PDF button opens the comparison; without a PDF, it offers to import one', async () => {
+      renderWithProviders(<SpellCreateForm />, { preloadedState: loggedInState });
+      expect(editorProps.pdfPanel).toBeNull();
+      fireEvent.click(screen.getByTestId('spell-create-original-btn'));
+      const panel = editorProps.pdfPanel as { hasOriginal: boolean; onReplacePdf: () => void };
+      expect(panel.hasOriginal).toBe(false);
+      const click = vi.spyOn(HTMLInputElement.prototype, 'click').mockImplementation(() => {});
+      panel.onReplacePdf();
+      expect(click).toHaveBeenCalled();
+      click.mockRestore();
+    });
+
+    it('compares with the PDF being read, and restores pages as read from it', async () => {
+      renderWithProviders(<SpellCreateForm />, { preloadedState: withFileContentState });
+      fireEvent.click(screen.getByTestId('spell-create-original-btn'));
+      await waitFor(() => expect((editorProps.pdfPanel as { onRestoreAll?: unknown }).onRestoreAll).toBeDefined());
+      const panel = editorProps.pdfPanel as { pdf: Blob; hasOriginal: boolean };
+      expect(panel.hasOriginal).toBe(true);
+      expect(panel.pdf.type).toBe('application/pdf');
     });
   });
 });

@@ -17,7 +17,7 @@ vi.mock('../../../../../magictext', () => ({
 }));
 const narrow = { value: true };
 vi.mock('../../../../../hooks/useMediaQuery', () => ({ useMediaQuery: () => narrow.value }));
-vi.mock('../../../../../hooks/useOriginalPdf', () => ({ useOriginalPdf: (id: string | null) => (id ? { status: 'loading' } : null) }));
+vi.mock('../../../../../hooks/useOriginalPdf', () => ({ useOriginalPdf: (source: string | Blob | null) => (source ? { status: 'loading' } : null) }));
 
 // The editor's width, as the ResizeObserver reports it.
 let editorWidth = 1400;
@@ -32,7 +32,7 @@ const { SpellEditor } = await import('../index');
 
 const page = { type: 'doc', content: [{ type: 'paragraph' }] };
 const options = (overrides: Partial<PdfPanelOptions> = {}): PdfPanelOptions => ({
-  spellId: 'spell-1', hasOriginal: true, onReplacePdf: vi.fn(), onRestorePage: vi.fn(), onRestoreAll: vi.fn(), ...overrides,
+  pdf: 'spell-1', hasOriginal: true, onReplacePdf: vi.fn(), onRestorePage: vi.fn(), onRestoreAll: vi.fn(), ...overrides,
 });
 const editor = (pdfPanel: PdfPanelOptions | null) => (
   <SpellEditor pageNumber={1} pageContent={page} onPageContentChange={vi.fn()} pdfPanel={pdfPanel} />

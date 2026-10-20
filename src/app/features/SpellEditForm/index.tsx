@@ -35,6 +35,7 @@ import { EmptyState } from '../../components/EmptyState';
 import type { TTSPlayPayload } from '../../../magictext/types';
 import { useLanguage } from '../../../i18n';
 import { useGoBack } from '../../../hooks/useGoBack';
+import { useShowOriginalPdf } from '../../../hooks/useShowOriginalPdf';
 import { useSpellVersions } from '../../../hooks/useSpellVersions';
 import { VersionSelector } from '../../components/VersionSelector/VersionSelector';
 import { ChronicleModal, type ChronicleItem } from '../../components/Modals/ChronicleModal';
@@ -48,7 +49,6 @@ const emptyContent: JSONContent = {
 
 type SaveStatus = 'idle' | 'saving' | 'saved';
 
-const SHOW_ORIGINAL_KEY = 'spellcast.editor.showOriginalPdf';
 
 export const SpellEditForm: React.FC = () => {
   const { id, page } = useParams<{ id: string, page?: string }>();
@@ -95,12 +95,7 @@ export const SpellEditForm: React.FC = () => {
   const pageList = usePageListToggle();
   // The page compared with the original PDF's (beside it, or on its back; see SpellEditor).
   // Remembered for the next spell edited (this browser's own preference).
-  const [showOriginal, setShowOriginal] = useState(() => {
-    try { return localStorage.getItem(SHOW_ORIGINAL_KEY) === '1'; } catch { return false; }
-  });
-  useEffect(() => {
-    try { localStorage.setItem(SHOW_ORIGINAL_KEY, showOriginal ? '1' : '0'); } catch { /* storage unavailable */ }
-  }, [showOriginal]);
+  const [showOriginal, setShowOriginal] = useShowOriginalPdf();
   const [showRefreshMetadataModal, setShowRefreshMetadataModal] = useState(false);
   const updateFromPdf = useUpdateSpellsFromPdf();
 
@@ -650,7 +645,7 @@ export const SpellEditForm: React.FC = () => {
             onTTSStop={stopTTSPreview}
             ttsPlaying={ttsPlaying}
             pdfPanel={showOriginal && id ? {
-              spellId: id,
+              pdf: id,
               hasOriginal: spellHasOriginalPdf,
               busy: isProcessingPdf,
               onReplacePdf: () => pdfInputRef.current?.click(),
