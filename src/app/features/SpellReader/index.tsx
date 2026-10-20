@@ -361,16 +361,18 @@ export const SpellReader = () => {
         </AnimatePresence>
         {/* A phone: over the page instead (below the top bar, which floats over it in
             fullscreen). */}
-        {isLoaded && pageList.open && listOverPage && (
-          <PageListOverlay className={isFullscreen ? s.pageListBelowBar : undefined} onClose={() => pageList.setOpen(false)}>
-            <PageList
-              pages={Array.from({ length: totalPages }, () => '')}
-              currentPage={currentPage - 1}
-              onPageClick={turnToPage}
-              column
-            />
-          </PageListOverlay>
-        )}
+        <AnimatePresence>
+          {isLoaded && pageList.open && listOverPage && (
+            <PageListOverlay className={isFullscreen ? s.pageListBelowBar : undefined} onClose={() => pageList.setOpen(false)}>
+              <PageList
+                pages={Array.from({ length: totalPages }, () => '')}
+                currentPage={currentPage - 1}
+                onPageClick={turnToPage}
+                column
+              />
+            </PageListOverlay>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );

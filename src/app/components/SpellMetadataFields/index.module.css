@@ -16,6 +16,27 @@
   color: var(--color-light-100);
 }
 
+.chevron {
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chevron {
+    transition: none;
+  }
+}
+
+/* A flex item of the form's column: never shrunk by it, or it would jump to its real height
+   once its overflow is freed at the end. */
+.metadataReveal {
+  width: 100%;
+  flex: none;
+}
+
 .metadataSection {
   display: grid;
   grid-template-columns: 1fr 1fr;
