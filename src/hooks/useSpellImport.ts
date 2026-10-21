@@ -4,8 +4,8 @@ import { addApiResponse } from '../store/apiResponsesSlice';
 import { invalidateSpellList } from '../store/spellReaderSlice';
 import { useLanguage } from '../i18n';
 import { importSpellFromFile } from '../utils/spellFormat';
-import { SpellLockedError } from '../utils/spellProtection';
-import { accessKeys } from '../services/accessKeys';
+import { SpellLockedError, type AccessKey } from '../utils/spellProtection';
+import { ownAccessKeys } from '../services/accessKeys';
 
 // A protected file's password asked for: its name, whether the one given before wasn't it,
 // and while it's being tried.
@@ -62,15 +62,22 @@ export function useSpellImport() {
     setIsImporting(true);
     const name = file.name.replace(/\.spell$/i, '');
     try {
-      // Without them (the account not reached), it's still opened with its password.
-      const keys = await accessKeys().catch(() => []);
       let spellId: string | null = null;
       let password: string | undefined;
+      let keys: AccessKey[] = [];
+      let keysAsked = false;
       while (spellId === null) {
         try {
           spellId = await importSpellFromFile(file, userData.id, { keys, password });
         } catch (error) {
           if (!(error instanceof SpellLockedError)) throw error;
+          // Protected: first the caster's keys it has a slot for (asked for only now, and only
+          // those). Without them (none of its keys, the account not reached), its password.
+          if (!keysAsked && error.keyIds.length) {
+            keysAsked = true;
+            keys = await ownAccessKeys(error.keyIds).catch(() => []);
+            if (keys.length) continue;
+          }
           if (!error.password) {
             dispatch(addApiResponse({ message: t.protect.noKey.replace('{name}', name), type: 'error' }));
             return null;

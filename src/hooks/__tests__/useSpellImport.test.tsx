@@ -13,9 +13,10 @@ vi.mock('../../utils/spellFormat', () => ({
 }));
 
 // The caster's access keys (off until their account keeps them): one, to test an import is
-// wired to open a file with it.
+// wired to open a file with it -- asked for only for a protected file, and only its keys.
 const KEY = { id: 'key-1', key: new Uint8Array(32).fill(7) };
-vi.mock('../../services/accessKeys', () => ({ accessKeys: async () => [KEY] }));
+const ownAccessKeysMock = vi.fn(async (ids: string[]) => (ids.includes(KEY.id) ? [KEY] : []));
+vi.mock('../../services/accessKeys', () => ({ ownAccessKeys: (ids: string[]) => ownAccessKeysMock(ids) }));
 
 const { useSpellImport } = await import('../useSpellImport');
 const { SpellLockedError } = await import('../../utils/spellProtection');
@@ -54,7 +55,9 @@ describe('useSpellImport', () => {
     const file = new File(['zip-bytes'], 'My Book.spell');
     await act(async () => { await result.current.importFile(file); });
 
-    expect(importSpellFromFileMock).toHaveBeenCalledWith(file, 'user-1', { keys: expect.any(Array), password: undefined });
+    expect(importSpellFromFileMock).toHaveBeenCalledWith(file, 'user-1', { keys: [], password: undefined });
+    // A file that isn't protected never asks for the caster's keys.
+    expect(ownAccessKeysMock).not.toHaveBeenCalled();
     expect(store.getState().spellReader.listVersion).toBe(1);
     const responses = store.getState().apiResponses.responses;
     expect(responses).toHaveLength(1);
@@ -117,11 +120,15 @@ describe('useSpellImport', () => {
   describe('a protected file', () => {
     const locked = (wrong: boolean, password = true) => new SpellLockedError(wrong, password, password ? [] : ['key-elsewhere']);
 
-    it('is opened with the caster\'s access keys first, asking nothing', async () => {
-      importSpellFromFileMock.mockResolvedValue('new-id');
+    it('is opened with the caster\'s access keys it has a slot for, asking nothing', async () => {
+      importSpellFromFileMock
+        .mockRejectedValueOnce(new SpellLockedError(false, true, ['key-1', 'key-of-someone-else']))
+        .mockResolvedValueOnce('new-id');
       const { result } = renderImport(makeStore('user-1'));
-      await act(async () => { await result.current.importFile(new File(['x'], 'Locked.spell')); });
-      const [, , unlock] = importSpellFromFileMock.mock.calls[0];
+      await act(async () => { expect(await result.current.importFile(new File(['x'], 'Locked.spell'))).toBe('new-id'); });
+      expect(ownAccessKeysMock).toHaveBeenCalledTimes(1);
+      expect(ownAccessKeysMock).toHaveBeenCalledWith(['key-1', 'key-of-someone-else']);
+      const [, , unlock] = importSpellFromFileMock.mock.calls[1];
       expect(unlock.keys).toEqual([KEY]);
       expect(result.current.unlockPrompt).toBeNull();
     });

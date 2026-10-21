@@ -44,6 +44,12 @@ describe('accessKeys', () => {
       expect(await protectionFor({ password: 'pw' })).toEqual({ password: 'pw', keys: [] });
       await expect(protectionFor({ password: 'pw', keyIds: ['gone'] })).rejects.toThrow();
     });
+
+    it('a protected file is opened with no key, nothing asked for', async () => {
+      const { ownAccessKeys } = await load(false);
+      expect(await ownAccessKeys(['k1'])).toEqual([]);
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
   });
 
   describe('on: the account\'s', () => {
@@ -75,6 +81,19 @@ describe('accessKeys', () => {
       fetchMock.mockImplementation(async (url: string) => (url.endsWith('/access-keys') ? json(LIST) : json({ id: 'k1', key })));
       expect(await accessKeys(['k1'])).toEqual([{ id: 'k1', key: raw }]);
       expect(await accessKeys()).toEqual([{ id: 'k1', key: raw }]);
+    });
+
+    // A protected file names its keys: only the caster's own among them are handed over.
+    it('hands over only the caster\'s own keys among a file\'s, and none for a file without theirs', async () => {
+      const { ownAccessKeys } = await load(true);
+      const key = btoa(String.fromCharCode(...new Uint8Array(32).fill(7)));
+      fetchMock.mockImplementation(async (url: string) => (url.endsWith('/access-keys') ? json(LIST) : json({ id: 'k1', key })));
+      expect((await ownAccessKeys(['someone-elses', 'k1'])).map(k => k.id)).toEqual(['k1']);
+      expect(fetchMock.mock.calls.map(([url]) => url.replace(/^.*\/access-keys/, ''))).toEqual(['', '/k1']);
+
+      fetchMock.mockClear();
+      expect(await ownAccessKeys(['someone-elses'])).toEqual([]);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
     });
 
     it('fails clearly when the account turns it down', async () => {

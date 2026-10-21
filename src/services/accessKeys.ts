@@ -60,6 +60,18 @@ export const accessKeys = async (ids?: string[]): Promise<AccessKey[]> => {
   }));
 };
 
+/**
+ * The caster's own keys among these (the ones a protected .spell has a slot for): only those
+ * they have, each asked for by itself -- never every key, nor for a file that isn't protected.
+ * None while they're off.
+ */
+export const ownAccessKeys = async (ids: string[]): Promise<AccessKey[]> => {
+  if (!ACCESS_KEYS_ENABLED || !ids.length) return [];
+  const mine = new Set((await listAccessKeys()).map(k => k.id));
+  const wanted = ids.filter(id => mine.has(id));
+  return wanted.length ? accessKeys(wanted) : [];
+};
+
 /** What a .spell is protected with, as the caster chose it: a password and access keys (by
  * id). Undefined: neither, the file is free. */
 export const protectionFor = async ({ password, keyIds = [] }: { password?: string; keyIds?: string[] }): Promise<ProtectWith | undefined> => {

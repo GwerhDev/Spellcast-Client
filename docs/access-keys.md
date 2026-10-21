@@ -35,6 +35,9 @@ logged.
 - `id`: a string, the same one the `.spell` access-key slot keeps as `keyId`.
 - `createdAt`: an ISO 8601 date.
 - An error is any non-2xx status; the client shows a generic error for it.
+- The client asks for a key itself (`GET /user/access-keys/:id`) only to download a file
+  protected with it, or to open a protected file that has a slot for it -- never for a file
+  that isn't protected, and never for a key the file doesn't name.
 
 Deleting a key can't be undone. A `.spell` protected only with that key can't be opened
 anymore by anyone; one that also has a password still opens with it. The client asks for
