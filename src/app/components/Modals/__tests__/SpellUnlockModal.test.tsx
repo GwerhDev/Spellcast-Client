@@ -19,7 +19,7 @@ describe('SpellUnlockModal', () => {
     const props = renderModal();
     expect(screen.getByTestId('spell-unlock-modal').textContent).toContain('Locked');
     expect(screen.getByTestId('spell-unlock-submit')).toBeDisabled();
-    fireEvent.change(document.getElementById('spell-unlock-password')!, { target: { value: 'right' } });
+    fireEvent.change(document.getElementById('spell-unlock-secret')!, { target: { value: 'right' } });
     fireEvent.click(screen.getByTestId('spell-unlock-submit'));
     expect(props.onSubmit).toHaveBeenCalledWith('right');
     fireEvent.click(screen.getByTestId('spell-unlock-cancel'));

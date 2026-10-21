@@ -102,13 +102,11 @@ export const SpellExportModal: React.FC<SpellExportModalProps> = ({ show, title,
             <div className={s.password}>
               <div className={s.fields}>
                 <LabeledInput
-                  id="spell-export-password" htmlFor="spell-export-password" name="spell-export-password" type="password"
-                  autoComplete="new-password"
+                  id="spell-export-secret" htmlFor="spell-export-secret" name="spell-export-secret" type="password" notSaved
                   label={t.protect.passwordField} value={password} onChange={(e) => { setPassword(e.target.value); setCopied(false); }}
                 />
                 <LabeledInput
-                  id="spell-export-password-confirm" htmlFor="spell-export-password-confirm" name="spell-export-password-confirm" type="password"
-                  autoComplete="new-password"
+                  id="spell-export-secret-confirm" htmlFor="spell-export-secret-confirm" name="spell-export-secret-confirm" type="password" notSaved
                   label={t.protect.confirmField} value={confirmation} onChange={(e) => setConfirmation(e.target.value)}
                 />
               </div>

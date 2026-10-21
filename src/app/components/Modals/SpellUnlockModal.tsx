@@ -40,8 +40,7 @@ export const SpellUnlockModal = ({ fileName, wrong, busy, onSubmit, onCancel }: 
         </div>
         <div className={s.field}>
           <LabeledInput
-            id="spell-unlock-password" htmlFor="spell-unlock-password" name="spell-unlock-password" type="password"
-            autoComplete="off"
+            id="spell-unlock-secret" htmlFor="spell-unlock-secret" name="spell-unlock-secret" type="password" notSaved
             label={t.protect.passwordField} value={password} disabled={busy} onChange={(e) => setPassword(e.target.value)}
           />
           {wrong && !busy && (

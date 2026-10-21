@@ -99,3 +99,8 @@
   opacity: 0.5;
   cursor: default;
 }
+
+/* A password typed in a text field (not to be saved by the browser), its characters hidden. */
+.masked {
+  -webkit-text-security: disc;
+}

@@ -24,11 +24,11 @@ describe('SpellExportModal', () => {
     fireEvent.click(screen.getByTestId('spell-export-password-toggle'));
     const confirm = screen.getByTestId('spell-export-confirm-btn');
     expect(confirm).toBeDisabled();
-    type('spell-export-password', 'correct horse');
-    type('spell-export-password-confirm', 'correct hors');
+    type('spell-export-secret', 'correct horse');
+    type('spell-export-secret-confirm', 'correct hors');
     expect(screen.getByTestId('spell-export-password-mismatch')).toBeInTheDocument();
     expect(confirm).toBeDisabled();
-    type('spell-export-password-confirm', 'correct horse');
+    type('spell-export-secret-confirm', 'correct horse');
     expect(screen.queryByTestId('spell-export-password-mismatch')).not.toBeInTheDocument();
     fireEvent.click(confirm);
     expect(props.onExport).toHaveBeenCalledWith(expect.objectContaining({ password: 'correct horse', keyIds: [] }));
@@ -43,15 +43,16 @@ describe('SpellExportModal', () => {
     expect(props.onExport).toHaveBeenLastCalledWith(expect.objectContaining({ password: undefined, keyIds: ['k2'] }));
   });
 
-  it('the password starts empty, and the browser is told never to fill it with a saved one', () => {
+  it('the password starts empty, never filled with a saved one nor offered to be saved', () => {
     renderModal();
     toProtection();
     fireEvent.click(screen.getByTestId('spell-export-password-toggle'));
-    for (const id of ['spell-export-password', 'spell-export-password-confirm']) {
+    for (const id of ['spell-export-secret', 'spell-export-secret-confirm']) {
       const input = document.getElementById(id) as HTMLInputElement;
       expect(input.value).toBe('');
-      expect(input).toHaveAttribute('autocomplete', 'new-password');
-      expect(input).toHaveAttribute('type', 'password');
+      expect(input).toHaveAttribute('data-1p-ignore');
+      expect(input).toHaveAttribute('data-lpignore', 'true');
+      expect(input).not.toHaveAttribute('name', expect.stringMatching(/password/));
     }
   });
 
@@ -63,9 +64,9 @@ describe('SpellExportModal', () => {
     fireEvent.click(screen.getByTestId('spell-export-password-toggle'));
     expect(screen.getByTestId('spell-export-password-copy')).toBeDisabled();
     fireEvent.click(screen.getByTestId('spell-export-password-generate'));
-    const password = document.getElementById('spell-export-password') as HTMLInputElement;
+    const password = document.getElementById('spell-export-secret') as HTMLInputElement;
     expect(password.value).toHaveLength(20);
-    expect((document.getElementById('spell-export-password-confirm') as HTMLInputElement).value).toBe(password.value);
+    expect((document.getElementById('spell-export-secret-confirm') as HTMLInputElement).value).toBe(password.value);
     fireEvent.click(screen.getByTestId('spell-export-password-copy'));
     expect(writeText).toHaveBeenCalledWith(password.value);
     fireEvent.click(screen.getByTestId('spell-export-confirm-btn'));
