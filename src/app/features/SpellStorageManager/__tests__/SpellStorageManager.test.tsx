@@ -234,5 +234,15 @@ describe('SpellStorageManager', () => {
     expect(rows[0]).toHaveAttribute('data-testid', 'spell-storage-row-spell-2');
     expect(rows[0]).toHaveTextContent('Versions');
   });
+
+  it('still shows every spell when what the versions take can\'t be read', async () => {
+    getRepositorySizesMock.mockRejectedValue(new Error('blocked'));
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    renderManager();
+
+    expect(await screen.findByTestId('spell-storage-row-spell-1')).toBeInTheDocument();
+    expect(screen.getByTestId('spell-storage-row-spell-2')).toBeInTheDocument();
+    expect(screen.queryByTestId(/^spell-storage-versions-/)).not.toBeInTheDocument();
+  });
 });
 

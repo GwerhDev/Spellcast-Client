@@ -56,7 +56,12 @@ export const SpellStorageManager = () => {
       getSpellsFromDB(userData.id),
       getAllOriginalPdfSizes(),
       getAudioCacheSummary(),
-      getRepositorySizes(),
+      // What the versions take is a part of the picture, not the whole of it: their database
+      // not opening (another tab holding an older one, say) shows the rest without them.
+      getRepositorySizes().catch((err) => {
+        console.error('[Storage] Failed to read what the spells\' versions take:', err);
+        return {} as Record<string, number>;
+      }),
     ]);
 
     const nextRows: SpellRow[] = spells.map((spell) => {
