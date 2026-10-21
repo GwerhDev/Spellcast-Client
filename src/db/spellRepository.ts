@@ -213,6 +213,38 @@ export const setCurrentVersion = async (spellId: string, name: string): Promise<
   await done(tx);
 };
 
+const recordBytes = (record: unknown) => new TextEncoder().encode(JSON.stringify(record)).length;
+
+/**
+ * What each spell's repository takes, by spell id: its stored files and its seals', versions'
+ * and current version's records. Read in one pass, a record at a time (never all of them in
+ * memory); a spell with no repository isn't in it. Without a repository database yet (no spell
+ * ever opened in the editor) nothing is read, and none is made.
+ */
+export const getRepositorySizes = async (): Promise<Record<string, number>> => {
+  if (indexedDB.databases && !(await indexedDB.databases()).some(d => d.name === DB_NAME)) return {};
+  const db = await openDB();
+  const sizes: Record<string, number> = {};
+  const add = (spellId: string, bytes: number) => { sizes[spellId] = (sizes[spellId] ?? 0) + bytes; };
+  const tx = db.transaction([BLOBS, SEALS, VERSIONS, REPOS], 'readonly');
+  const each = (store: string, measure: (value: unknown) => void) => {
+    const request = tx.objectStore(store).openCursor();
+    request.onsuccess = () => {
+      const cursor = request.result;
+      if (!cursor) return;
+      measure(cursor.value);
+      cursor.continue();
+    };
+  };
+  each(BLOBS, (value) => {
+    const blob = value as BlobRecord;
+    add(blob.key.slice(0, blob.key.lastIndexOf(':')), blob.data.byteLength + recordBytes({ key: blob.key, type: blob.type }));
+  });
+  for (const store of [SEALS, VERSIONS, REPOS]) each(store, (value) => add((value as { spellId: string }).spellId, recordBytes(value)));
+  await done(tx);
+  return sizes;
+};
+
 /** Removes everything of a spell's repository (the spell itself was deleted). */
 export const deleteSpellRepository = async (spellId: string): Promise<void> => {
   const db = await openDB();

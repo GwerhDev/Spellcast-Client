@@ -11,6 +11,7 @@ import { invalidateSpellList } from '../../../store/spellReaderSlice';
 import { usePlaySpell } from '../../../hooks/usePlaySpell';
 import { deleteOriginalPdf, getAllOriginalPdfSizes } from '../../../db/originalPdfs';
 import { getAudioCacheSummary, clearSpellAudioCache } from '../../../db/audioCache';
+import { getRepositorySizes } from '../../../db/spellRepository';
 import { formatBytes } from '../../../utils/formatBytes';
 import { PrimaryButton } from '../../components/Buttons/PrimaryButton';
 import { DeleteConfirmModal } from '../../components/Modals/DeleteConfirmModal';
@@ -23,6 +24,8 @@ interface SpellRow {
   contentBytes: number;
   pdfBytes: number;
   audioBytes: number;
+  // Its versions: the seals of its repository (see db/spellRepository).
+  versionsBytes: number;
   totalBytes: number;
   // Page the reader is on (1-based); 0 when never started.
   currentPage: number;
@@ -49,10 +52,11 @@ export const SpellStorageManager = () => {
   const [confirmTarget, setConfirmTarget] = useState<ConfirmTarget>(null);
 
   const reload = useCallback(async () => {
-    const [spells, pdfSizes, audioSummary] = await Promise.all([
+    const [spells, pdfSizes, audioSummary, repositorySizes] = await Promise.all([
       getSpellsFromDB(userData.id),
       getAllOriginalPdfSizes(),
       getAudioCacheSummary(),
+      getRepositorySizes(),
     ]);
 
     const nextRows: SpellRow[] = spells.map((spell) => {
@@ -62,9 +66,10 @@ export const SpellStorageManager = () => {
       const contentBytes = (spell.listedPages?.bytes ?? 0) + (spell.cover?.size ?? 0);
       const pdfBytes = pdfSizes[spell.id] ?? 0;
       const audioBytes = audioSummary.bySpell[spell.id]?.totalBytes ?? 0;
+      const versionsBytes = repositorySizes[spell.id] ?? 0;
       return {
-        id: spell.id, title: spell.title, contentBytes, pdfBytes, audioBytes,
-        totalBytes: contentBytes + pdfBytes + audioBytes,
+        id: spell.id, title: spell.title, contentBytes, pdfBytes, audioBytes, versionsBytes,
+        totalBytes: contentBytes + pdfBytes + audioBytes + versionsBytes,
         currentPage: spell.progress?.currentPage ?? 0,
       };
     });
@@ -194,6 +199,14 @@ export const SpellStorageManager = () => {
                     </div>
                   )}
                 </li>
+                {row.versionsBytes > 0 && (
+                  <li className={s.breakdownRow}>
+                    <div className={s.breakdownInfo}>
+                      <span className={s.breakdownLabel}>{t.storage.spellStorageVersions}</span>
+                      <span className={s.breakdownBytes} data-testid={`spell-storage-versions-${row.id}`}>{formatBytes(row.versionsBytes)}</span>
+                    </div>
+                  </li>
+                )}
                 <li className={s.breakdownRow}>
                   <div className={s.breakdownInfo}>
                     <span className={s.breakdownLabel}>{t.storage.spellStorageProgress}</span>

@@ -572,6 +572,7 @@ export const en = {
     spellStorageSubtitle: 'What each Spell is using, broken down by content, original PDF, and cached audio.',
     spellStorageEmpty: 'No Spells yet.',
     spellStorageContent: 'Content',
+    spellStorageVersions: 'Versions',
     spellStoragePdf: 'Original PDF',
     spellStorageAudio: 'Audio cache',
     spellStorageDropPdf: 'Drop PDF',

@@ -47,7 +47,7 @@ describe('BrowserStorage drill-downs', () => {
     renderBrowserStorage();
     await screen.findByTestId('storage-detail-audio-cache');
 
-    // Only spells/audio cache/reading progress are buttons; voiceProfile/appSettings stay plain divs.
+    // Only spells/audio cache/reading progress are buttons; voiceProfile stays a plain div.
     const allDetailValues = screen.getAllByText(/^(—|\d+)$/);
     const buttons = allDetailValues.filter((el) => el.closest('button'));
     expect(buttons).toHaveLength(3);
@@ -61,4 +61,15 @@ describe('BrowserStorage drill-downs', () => {
 
     expect(navigateMock).toHaveBeenCalledWith('/caster/settings/storage/local/spells');
   });
+
+  // The app's settings in localStorage are only their weight, in the usage: their keys and
+  // values aren't listed.
+  it('never lists the settings kept in localStorage', async () => {
+    localStorage.setItem('spellcast-lang', 'es');
+    renderBrowserStorage();
+    await screen.findByTestId('storage-detail-spells');
+    expect(screen.queryByText('spellcast-lang')).not.toBeInTheDocument();
+    localStorage.removeItem('spellcast-lang');
+  });
 });
+

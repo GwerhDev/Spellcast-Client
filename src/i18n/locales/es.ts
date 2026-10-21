@@ -576,6 +576,7 @@ export const es: Translations = {
     spellStorageSubtitle: 'Lo que ocupa cada Spell, desglosado en contenido, PDF original y audio en caché.',
     spellStorageEmpty: 'Todavía no hay Spells.',
     spellStorageContent: 'Contenido',
+    spellStorageVersions: 'Versiones',
     spellStoragePdf: 'PDF original',
     spellStorageAudio: 'Caché de audio',
     spellStorageDropPdf: 'Soltar PDF',

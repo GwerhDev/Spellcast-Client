@@ -27,13 +27,6 @@ interface ItemCounts {
   readingProgress: number;
 }
 
-interface SettingEntry {
-  key: string;
-  value: string;
-}
-
-const KNOWN_LS_KEYS = ['theme', 'spellcast-lang', 'editor:autoSave', 'reader:fitToWidth', 'reader:lightningMode'];
-
 const formatBytes = (bytes: number): string => {
   if (bytes === 0) return '0 B';
   const k = 1024;
@@ -84,7 +77,6 @@ export const BrowserStorage: React.FC = () => {
   const [data, setData] = useState<StorageData | null>(null);
   const [supported, setSupported] = useState(true);
   const [counts, setCounts] = useState<ItemCounts | null>(null);
-  const [settings, setSettings] = useState<SettingEntry[]>([]);
 
   useEffect(() => {
     if (!navigator.storage?.estimate) { setSupported(false); return; }
@@ -105,12 +97,6 @@ export const BrowserStorage: React.FC = () => {
     ]).then(([spells, audioPages, voiceProfiles, readingProgress]) => {
       setCounts({ spells, audioPages, voiceProfiles, readingProgress });
     }).catch(() => setCounts({ spells: 0, audioPages: 0, voiceProfiles: 0, readingProgress: 0 }));
-
-    setSettings(
-      KNOWN_LS_KEYS
-        .map((key) => ({ key, value: localStorage.getItem(key) ?? '' }))
-        .filter((e) => e.value !== '')
-    );
   }, []);
 
   if (!supported) return <p className={s.unsupported}>{t.storage.notSupported}</p>;
@@ -140,8 +126,9 @@ export const BrowserStorage: React.FC = () => {
     { label: t.storage.voiceProfile, value: counts?.voiceProfiles ?? '—' },
     // Reset from the spells screen (per spell or all at once), so it drills down there.
     { label: t.storage.readingProgress, value: counts?.readingProgress ?? '—', path: 'settings/storage/local/spells', testId: 'storage-detail-reading-progress' },
-    { label: t.storage.appSettings, value: settings.length || '—' },
   ];
+  // The app's own settings (in localStorage) are only their weight, in the usage above: their
+  // keys and values say nothing to the caster.
 
   return (
     <div className={s.container}>
@@ -218,16 +205,6 @@ export const BrowserStorage: React.FC = () => {
         ))}
       </div>
 
-      {settings.length > 0 && (
-        <ul className={s.settingsList}>
-          {settings.map((entry) => (
-            <li key={entry.key} className={s.settingsItem}>
-              <span className={s.settingsKey}>{entry.key}</span>
-              <span className={s.settingsValue}>{entry.value}</span>
-            </li>
-          ))}
-        </ul>
-      )}
     </div>
   );
 };

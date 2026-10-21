@@ -465,4 +465,29 @@ describe('spellVersions', () => {
       expect(write).not.toHaveBeenCalled();
     });
   });
+
+  describe('what each repository takes', () => {
+    it('without a repository database yet, nothing is read and none is made', async () => {
+      const { repo } = await load();
+      expect(await repo.getRepositorySizes()).toEqual({});
+      expect((await indexedDB.databases()).map(d => d.name)).not.toContain('spellcast-repository');
+    });
+
+    it('each spell\'s seals and files, by spell; one sealed again with more takes more', async () => {
+      const { versions, repo } = await load();
+      const one = spellWith([page('one', IMG)]);
+      await versions.spellRepository(one);
+      await versions.spellRepository(spellWith([page('two')], { id: 'spell-2' }));
+      const before = await repo.getRepositorySizes();
+      expect(Object.keys(before).sort()).toEqual(['spell-1', 'spell-2']);
+      // spell-1 holds its image too (its record isn't stored here, so the seal keeps it).
+      expect(before['spell-1']).toBeGreaterThan(before['spell-2']);
+
+      await versions.spellSeal(spellWith([page('one'), page('a second page, sealed')]));
+      const after = await repo.getRepositorySizes();
+      expect(after['spell-1']).toBeGreaterThan(before['spell-1']);
+      expect(after['spell-2']).toBe(before['spell-2']);
+    });
+  });
 });
+

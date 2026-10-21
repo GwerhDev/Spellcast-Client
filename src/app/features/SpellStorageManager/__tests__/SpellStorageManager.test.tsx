@@ -34,8 +34,14 @@ vi.mock('../../../../db/audioCache', () => ({
   clearSpellAudioCache: (...args: unknown[]) => clearSpellAudioCacheMock(...args),
 }));
 
+const getRepositorySizesMock = vi.fn();
+vi.mock('../../../../db/spellRepository', () => ({
+  getRepositorySizes: () => getRepositorySizesMock(),
+}));
+
 beforeEach(() => {
   vi.clearAllMocks();
+  getRepositorySizesMock.mockResolvedValue({});
   getSpellsFromDBMock.mockResolvedValue([
     { id: 'spell-1', title: 'The Dragon Tale', pagesContent: 'x'.repeat(1000), originalPagesContent: undefined, cover: undefined,
       progress: { currentPage: 4, pagesProgress: [], lastReadSentenceIndex: 2 } },
@@ -215,4 +221,18 @@ describe('SpellStorageManager', () => {
       expect(resetSpellProgressMock).not.toHaveBeenCalled();
     });
   });
+
+  // A spell's versions (its repository's seals) are part of what it takes.
+  it('shows what a spell\'s versions take, in its total; a spell without any shows none', async () => {
+    getRepositorySizesMock.mockResolvedValue({ 'spell-2': 50_000 });
+    renderManager();
+
+    await waitFor(() => expect(screen.getByTestId('spell-storage-versions-spell-2')).toHaveTextContent('48.8 KB'));
+    expect(screen.queryByTestId('spell-storage-versions-spell-1')).not.toBeInTheDocument();
+    // 50,000 bytes of versions put spell-2 first, past spell-1's ~6 KB.
+    const rows = screen.getAllByTestId(/^spell-storage-row-/);
+    expect(rows[0]).toHaveAttribute('data-testid', 'spell-storage-row-spell-2');
+    expect(rows[0]).toHaveTextContent('Versions');
+  });
 });
+
