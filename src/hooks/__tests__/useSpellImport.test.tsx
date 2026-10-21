@@ -12,8 +12,8 @@ vi.mock('../../utils/spellFormat', () => ({
   importSpellFromFile: (...args: unknown[]) => importSpellFromFileMock(...args),
 }));
 
-// The caster's access keys (none yet, until their account keeps them): one, to test an
-// import is wired to open a file with it.
+// The caster's access keys (off until their account keeps them): one, to test an import is
+// wired to open a file with it.
 const KEY = { id: 'key-1', key: new Uint8Array(32).fill(7) };
 vi.mock('../../services/accessKeys', () => ({ accessKeys: async () => [KEY] }));
 

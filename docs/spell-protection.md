@@ -115,11 +115,11 @@ The content key is wrapped with AES-256-GCM, using the access key itself (32 byt
 with no additional data. `keyId` tells which of the caster's keys it is.
 
 Not written by Spellcast yet. The container writes and reads this slot already
-(`src/utils/spellProtection.ts`, with tests), and the download and import are wired to it
-through `src/services/accessKeys.ts`, which returns no keys until the caster's account keeps
-them (meanwhile the download shows the access-key option disabled). Once it returns them,
-the download offers each key, and an import opens a file with any
-key it has a slot for, wherever the caster has their account.
+(`src/utils/spellProtection.ts`, with tests), and the download and import are wired to the
+caster's access keys, which are off until their account keeps them: see
+[access-keys.md](access-keys.md) for their status and the API they expect. Once they're on,
+the download offers each key, and an import opens a file with any key it has a slot for,
+wherever the caster has their account.
 
 ## Opening a protected file
 

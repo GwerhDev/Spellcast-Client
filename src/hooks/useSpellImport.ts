@@ -62,7 +62,8 @@ export function useSpellImport() {
     setIsImporting(true);
     const name = file.name.replace(/\.spell$/i, '');
     try {
-      const keys = await accessKeys(userData.id);
+      // Without them (the account not reached), it's still opened with its password.
+      const keys = await accessKeys().catch(() => []);
       let spellId: string | null = null;
       let password: string | undefined;
       while (spellId === null) {

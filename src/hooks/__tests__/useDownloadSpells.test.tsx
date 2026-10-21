@@ -12,12 +12,12 @@ vi.mock('../../utils/spellFormat', () => ({
   downloadBlob: (...args: unknown[]) => downloadBlobMock(...args),
 }));
 
-// The caster's access keys (none yet, until their account keeps them): one, to test the
-// download is wired to protect with it.
+// The caster's access keys (off until their account keeps them): one, to test the download
+// is wired to protect with it.
 const KEY = { id: 'key-1', key: new Uint8Array(32).fill(7) };
 vi.mock('../../services/accessKeys', () => ({
   listAccessKeys: async () => [{ id: 'key-1', name: 'Home', createdAt: '' }],
-  protectionFor: async (_userId: string, { password, keyIds = [] }: { password?: string; keyIds?: string[] }) =>
+  protectionFor: async ({ password, keyIds = [] }: { password?: string; keyIds?: string[] }) =>
     (password || keyIds.length ? { password, keys: [KEY].filter(k => keyIds.includes(k.id)) } : undefined),
 }));
 

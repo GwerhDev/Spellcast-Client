@@ -594,10 +594,24 @@ export const en = {
     spellStorageProgressResetToast: 'Reading progress reset for "{title}".',
     spellStorageProgressResetAllToast: 'Reading progress reset for every Spell.',
   },
+  accessKeys: {
+    title: 'Access keys',
+    description: 'Protect the .spell files you download with a key of your account: they open without a password wherever you have your account.',
+    soonNote: 'Access keys will be available once your account can keep them.',
+    name: 'Name',
+    namePlaceholder: 'e.g. Personal',
+    create: 'Create key',
+    empty: 'You have no access keys yet.',
+    created: 'Created {date}',
+    delete: 'Delete key',
+    deleteTitle: 'Delete the key "{name}"',
+    deleteMessage: 'The .spell files protected only with this key can no longer be opened, by anyone. Those that also have a password still open with it.',
+    createdToast: 'The key "{name}" was created.',
+    deletedToast: 'The key "{name}" was deleted.',
+    error: 'Could not update your access keys.',
+  },
   permissions: {
     subtitle: 'Control access levels and what others can do with your content.',
-    // Placeholder page, no backend concept for this yet.
-    empty: 'Nothing to show here yet.',
   },
   // TCORE-82: AGPLv3 network-use notice, reachable from Settings.
   about: {

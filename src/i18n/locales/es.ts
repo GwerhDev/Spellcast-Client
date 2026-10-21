@@ -598,10 +598,24 @@ export const es: Translations = {
     spellStorageProgressResetToast: 'Progreso de lectura reiniciado para "{title}".',
     spellStorageProgressResetAllToast: 'Progreso de lectura reiniciado en todos los Spells.',
   },
+  accessKeys: {
+    title: 'Llaves de acceso',
+    description: 'Protege los archivos .spell que descargas con una llave de tu cuenta: se abren sin contraseña donde tengas tu cuenta.',
+    soonNote: 'Las llaves de acceso estarán disponibles cuando tu cuenta pueda guardarlas.',
+    name: 'Nombre',
+    namePlaceholder: 'p. ej. Personal',
+    create: 'Crear llave',
+    empty: 'Todavía no tienes llaves de acceso.',
+    created: 'Creada el {date}',
+    delete: 'Borrar llave',
+    deleteTitle: 'Borrar la llave «{name}»',
+    deleteMessage: 'Los archivos .spell protegidos solo con esta llave ya no se podrán abrir, por nadie. Los que también tienen contraseña se siguen abriendo con ella.',
+    createdToast: 'Se creó la llave «{name}».',
+    deletedToast: 'Se borró la llave «{name}».',
+    error: 'No se pudieron actualizar tus llaves de acceso.',
+  },
   permissions: {
     subtitle: 'Controla los niveles de acceso y lo que otros pueden hacer con tu contenido.',
-    // Página placeholder, aún no existe el concepto en el backend.
-    empty: 'Todavía no hay nada que mostrar aquí.',
   },
   // TCORE-82: aviso de licencia AGPLv3 (cláusula de uso en red), accesible desde Ajustes.
   about: {

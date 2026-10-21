@@ -32,7 +32,7 @@ export function useSpellExport() {
   useEffect(() => {
     if (!userData.id) return;
     let cancelled = false;
-    listAccessKeys(userData.id).then(list => { if (!cancelled) setKeys(list); }, () => {});
+    listAccessKeys().then(list => { if (!cancelled) setKeys(list); }, () => {});
     return () => { cancelled = true; };
   }, [userData.id]);
 
@@ -43,7 +43,7 @@ export function useSpellExport() {
     if (!target || !userData.id) return;
     setIsExporting(true);
     try {
-      const protectWith = await protectionFor(userData.id, { password, keyIds });
+      const protectWith = await protectionFor({ password, keyIds });
       const { blob, filename } = await exportSpellToBlob(target.id, userData.id, { ...parts, protectWith });
       downloadBlob(blob, filename);
       setTarget(null);

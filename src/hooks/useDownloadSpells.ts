@@ -48,7 +48,7 @@ export function useDownloadSpells() {
   useEffect(() => {
     if (!userId) return;
     let cancelled = false;
-    listAccessKeys(userId).then(list => { if (!cancelled) setKeys(list); }, () => {});
+    listAccessKeys().then(list => { if (!cancelled) setKeys(list); }, () => {});
     return () => { cancelled = true; };
   }, [userId]);
 
@@ -56,7 +56,7 @@ export function useDownloadSpells() {
     if (!userId || ids.length === 0) return;
     let options: ExportSpellOptions;
     try {
-      options = { ...parts, protectWith: await protectionFor(userId, { password, keyIds }) };
+      options = { ...parts, protectWith: await protectionFor({ password, keyIds }) };
     } catch (error) {
       console.error('Failed to protect the download:', error);
       dispatch(addApiResponse({ message: t.grimoire.downloadFailed.replace('{n}', String(ids.length)), type: 'error' }));
