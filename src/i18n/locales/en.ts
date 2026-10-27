@@ -25,6 +25,11 @@ export const en = {
     // A spell's pick that follows the caster's default (set from the inventory).
     default: 'Default',
   },
+  desktop: {
+    home: 'Home',
+    account: 'Account',
+    settingsSoon: 'Settings (coming soon)',
+  },
   auth: {
     login: 'Log in',
     logout: 'Log out',

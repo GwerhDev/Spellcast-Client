@@ -4,6 +4,7 @@ import s from './Desktop.module.css';
 import { App, EnvCategory, getNhexaEnv } from 'services/apps';
 import { useAppSelector, useAppDispatch } from 'store/hooks';
 import { setMinimized } from 'store/desktopSlice';
+import { DesktopDock } from '../../components/DesktopDock/DesktopDock';
 
 const sameHost = (url: string): boolean => {
   try {
@@ -39,6 +40,20 @@ export const Desktop = () => {
   return (
     <>
       <div className={s.desktop} data-minimized={minimized} aria-hidden={!minimized} />
+      <div className={s.dockWrapper}>
+        <AnimatePresence>
+          {minimized && (
+            <motion.div
+              initial={{ opacity: 0, x: -16 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -16 }}
+              transition={{ duration: 0.35, ease: 'easeOut', delay: 0.1 }}
+            >
+              <DesktopDock />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
       <div className={s.launcherWrapper}>
       <AnimatePresence>
         {minimized && (

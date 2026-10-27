@@ -27,6 +27,11 @@ export const es: Translations = {
     update: 'Actualizar',
     minimize: 'Minimizar',
   },
+  desktop: {
+    home: 'Inicio',
+    account: 'Cuenta',
+    settingsSoon: 'Configuración (próximamente)',
+  },
   auth: {
     login: 'Iniciar sesión',
     logout: 'Cerrar sesión',

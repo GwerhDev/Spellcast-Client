@@ -1,0 +1,57 @@
+/* Fixed dark colors, like the launcher's: the desktop is outside app-container. */
+.dock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background: var(--nhexa-desktop-surface);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
+  pointer-events: auto;
+}
+
+.tool {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  font-size: 1.1rem;
+  color: var(--nhexa-desktop-text);
+  background: transparent;
+  border: 1.5px solid transparent;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: border-color 0.18s ease, color 0.18s ease, background-color 0.18s ease;
+}
+
+.tool:hover:not(:disabled) {
+  color: var(--nhexa-desktop-accent);
+  border-color: var(--nhexa-desktop-accent);
+  background: rgba(115, 165, 204, 0.12);
+}
+
+.tool:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.separator {
+  width: 60%;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* On a narrow screen there's no room beside the window: the dock lies on top of it. */
+@media (max-width: 600px) {
+  .dock {
+    flex-direction: row;
+  }
+
+  .separator {
+    width: 1px;
+    height: 24px;
+  }
+}

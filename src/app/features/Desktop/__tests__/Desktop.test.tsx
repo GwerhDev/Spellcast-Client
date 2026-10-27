@@ -39,6 +39,13 @@ describe('Desktop', () => {
     renderWithProviders(<Desktop />, { preloadedState: { desktop: { minimized: false } } });
     await act(async () => { await resolved; });
     expect(screen.queryByTestId('desktop-launcher')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('desktop-dock')).not.toBeInTheDocument();
+  });
+
+  it("shows the fixed tools even before (or without) StreamBy's app list", () => {
+    getNhexaEnvMock.mockReturnValue(new Promise(() => {})); // never resolves
+    renderWithProviders(<Desktop />, { preloadedState: { desktop: { minimized: true } } });
+    expect(screen.getByTestId('desktop-dock')).toBeInTheDocument();
   });
 
   it('renders categories and apps once loaded, marking the same-host app as current', async () => {
