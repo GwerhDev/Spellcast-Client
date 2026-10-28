@@ -668,6 +668,16 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
         // speaking, advance to the next one" case. If we're mid-utterance,
         // drop it and speak whatever is now current instead.
         if (!playing && !awaitingStartRef.current) return;
+        // A network voice still saying a sentence (a sentence clicked, another voice, a page
+        // turned by hand): cutting it and speaking the new one in the same instant leaves
+        // the new one without any start or end, so the reading never moves on from it. What
+        // it does follow is a pause and then a play -- stopping as a pause does, and starting
+        // as a play does, confirmed by the voice's own onstart.
+        if (isNetworkVoice() && activeUtteranceRef.current) {
+          await stopEngineAndConfirmPaused();
+          startPlayingFromCurrentSentence();
+          return;
+        }
         activeUtteranceRef.current = null;
         window.speechSynthesis.cancel();
         startSpeakingCurrentSentence();
