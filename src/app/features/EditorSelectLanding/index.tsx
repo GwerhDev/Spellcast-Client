@@ -36,6 +36,8 @@ export const EditorSelectLanding = () => {
   const show3D = useCoverFrame3DSection(panelBodyRef);
 
   useEffect(() => {
+    // Without the session read yet there's no caster to list for: still loading, not empty.
+    if (!userData.id) return;
     getSpellsFromDB(userData.id)
       .then((docs) =>
         setDocuments(docs.sort((a: Spell, b: Spell) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()))

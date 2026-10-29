@@ -400,6 +400,9 @@ const asListed = (spell: Spell): Spell => {
 // getAll), each one's pages dropped as it's read: all of them at once could take more memory
 // than the page has, and the browser would kill it.
 const readSpellsFromStore = async (userId: string | undefined): Promise<Spell[]> => {
+  // No caster, no spells: the store holds every account's that used this browser, and a list
+  // asked for before the session is read must not show them (they'd flash, then vanish).
+  if (userId == null || userId === '') return [];
   const db = await openDB();
   const transaction = db.transaction(SPELLS_STORE_NAME, 'readonly');
   const spellStore = transaction.objectStore(SPELLS_STORE_NAME);
@@ -423,11 +426,11 @@ const readSpellsFromStore = async (userId: string | undefined): Promise<Spell[]>
       };
     });
 
-  // Fast path: the userId index matched (types agree), or there's no user to filter by.
-  // Otherwise a full scan with a type-tolerant match, so spells saved under a differently-
-  // typed id (historical data) still list instead of silently disappearing.
+  // Fast path: the userId index matched (types agree). Otherwise a full scan with a type-
+  // tolerant match, so spells saved under a differently-typed id (historical data) still list
+  // instead of silently disappearing.
   const exact = await collect(spellStore.index('userId'), userId, () => true, 'index scan');
-  if (exact.length > 0 || userId == null) return exact;
+  if (exact.length > 0) return exact;
   const matched = await collect(spellStore, undefined, (s) => sameUser(s.userId, userId), 'fallback scan');
   if (matched.length > 0) {
     console.warn(`[IndexedDB] Listed ${matched.length} spell(s) via type-tolerant userId fallback (stored id type differs from session id).`);

@@ -84,6 +84,16 @@ describe('db/index.ts CRUD', () => {
     expect(mine[0].title).toBe('Mine');
   });
 
+  // Asked before the session is read, a list must not show the other accounts' spells this
+  // browser holds: they'd show, then vanish once the caster is known.
+  it('getSpellsFromDB lists nothing without a caster', async () => {
+    const { saveSpellToDB, getSpellsFromDB } = await importDb();
+    await saveSpellToDB(seedSpell({ title: 'Another account\'s', userId: 'user-2' }));
+
+    expect(await getSpellsFromDB(undefined)).toEqual([]);
+    expect(await getSpellsFromDB('')).toEqual([]);
+  });
+
   // A list never holds every spell's pages (images and all) in memory: only whether a spell
   // has them, how many, and their size.
   it('getSpellsFromDB lists spells without their pages, with their count and size', async () => {

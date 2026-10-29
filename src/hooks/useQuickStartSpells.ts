@@ -21,7 +21,9 @@ export const useQuickStartSpells = () => {
   useEffect(() => {
     // No going back to the loading state on a refetch (isLoading starts true, for the first
     // load only): what shows the loading state replaces everything, including an open detail
-    // modal, which would close and reopen on every change saved from it.
+    // modal, which would close and reopen on every change saved from it. Without the session
+    // read yet there's no caster to list for: still loading, not an empty list.
+    if (!userId) return;
     getSpellsFromDB(userId)
       .then(docs => setDocuments(docs.sort((a: Spell, b: Spell) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())))
       .catch(error => console.error('Failed to fetch local spells:', error))
