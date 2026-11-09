@@ -33,11 +33,11 @@ import { isQuotaExceededError } from '../../../utils/storageQuota';
 import { getSpellById, getSpellCover } from '../../../db';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '../../../store/hooks';
-import { faScroll } from '@fortawesome/free-solid-svg-icons';
+
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Waveform } from '../../components/Waveform/Waveform';
 import { SpellDetailModal } from '../../components/Modals/SpellDetailModal';
-import { SILENT_AUDIO_SRC } from '../../../config/consts';
+import { SILENT_AUDIO_SRC, SPELL_ICON } from '../../../config/consts';
 import { useSpellCosmetic } from '../../../hooks/useSpellCosmetic';
 
 interface PlayerProps {
@@ -636,7 +636,7 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
             >
               {coverUrl
                 ? <img data-testid="audio-player-cover" src={coverUrl} alt="" className={s.cover} />
-                : <div data-testid="audio-player-cover-placeholder" className={s.coverIcon}><FontAwesomeIcon icon={faScroll} /></div>
+                : <div data-testid="audio-player-cover-placeholder" className={s.coverIcon}><FontAwesomeIcon icon={SPELL_ICON} /></div>
               }
               {isPlaying && (
                 <div className={s.coverWaveOverlay}>

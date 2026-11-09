@@ -102,7 +102,7 @@ export const SpellEditForm: React.FC = () => {
   const [metadataExpanded, setMetadataExpanded] = useState(false);
   const [spellHasOriginalPdf, setSpellHasOriginalPdf] = useState(false);
   // The page list, shown or hidden from the top bar (see PageListPlace).
-  const pageList = usePageListToggle();
+  const pageList = usePageListToggle('editor');
   // The page compared with the original PDF's (beside it, or on its back; see SpellEditor).
   // Remembered for the next spell edited (this browser's own preference).
   const [showOriginal, setShowOriginal] = useShowOriginalPdf();

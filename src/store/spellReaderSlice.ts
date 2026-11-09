@@ -18,6 +18,9 @@ interface SpellReaderState {
   isLoaded: boolean;
   hasInitialPageSet: boolean;
   showSearcher: boolean;
+  // What the search opens on: everything (the header's; also when unset), or the open Spell
+  // alone (the reader's).
+  searcherScope?: 'all' | 'spell';
   currentPageText: string;
   progress?: SpellProgress; // Add progress to state
   currentSentenceIndex: number;
@@ -47,6 +50,7 @@ const initialState: SpellReaderState = {
   currentPageText: "",
   hasInitialPageSet: false, // Initialize new flag
   showSearcher: false,
+  searcherScope: 'all',
   showReaderSettings: false,
   // TCORE-128: off unless the user explicitly opted in -- stretching pages to the viewer width
   // alters the PDF's original layout, so it shouldn't happen without being chosen. Only a saved
@@ -104,6 +108,11 @@ const spellReaderSlice = createSlice({
     },
     setShowSearcher(state, action: PayloadAction<boolean>) {
       state.showSearcher = action.payload;
+      if (action.payload) state.searcherScope = 'all';
+    },
+    openSpellSearcher(state) {
+      state.showSearcher = true;
+      state.searcherScope = 'spell';
     },
     goToNextPage(state) {
       if (state.currentPage < state.totalPages) {
@@ -188,6 +197,7 @@ export const {
   setSpellLoaded,
   setHasInitialPageSet,
   setShowSearcher,
+  openSpellSearcher,
   setSentences,
   setCurrentSentenceIndex,
   setShowReaderSettings,

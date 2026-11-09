@@ -13,10 +13,16 @@ const DEFAULT_OPEN_SECTIONS: Record<SidebarSectionKey, boolean> = {
   settings: false,
 };
 
+// Where a page list (the pages beside the page) is: the reader's, and the editor's.
+export type PageListPlace = 'reader' | 'editor';
+
 interface LayoutState {
   version: number;
   sidebarCollapsed: boolean;
   sidebarOpenSections: Record<SidebarSectionKey, boolean>;
+  // Whether each page list is shown (on a wide screen: on a phone it opens over the page,
+  // and starts hidden), as the caster left it.
+  pageListOpen: Record<PageListPlace, boolean>;
 }
 
 const loadPersistedState = (): Partial<LayoutState> => {
@@ -39,6 +45,7 @@ const initialState: LayoutState = {
   version: STATE_VERSION,
   sidebarCollapsed: persisted.sidebarCollapsed ?? false,
   sidebarOpenSections: { ...DEFAULT_OPEN_SECTIONS, ...(persisted.sidebarOpenSections ?? {}) },
+  pageListOpen: { reader: true, editor: true, ...(persisted.pageListOpen ?? {}) },
 };
 
 const layoutSlice = createSlice({
@@ -57,8 +64,11 @@ const layoutSlice = createSlice({
     toggleSection(state, action: PayloadAction<SidebarSectionKey>) {
       state.sidebarOpenSections[action.payload] = !state.sidebarOpenSections[action.payload];
     },
+    setPageListOpen(state, action: PayloadAction<{ place: PageListPlace; open: boolean }>) {
+      state.pageListOpen[action.payload.place] = action.payload.open;
+    },
   },
 });
 
-export const { setSidebarCollapsed, toggleSidebarCollapsed, setSectionOpen, toggleSection } = layoutSlice.actions;
+export const { setSidebarCollapsed, toggleSidebarCollapsed, setSectionOpen, toggleSection, setPageListOpen } = layoutSlice.actions;
 export default layoutSlice.reducer;

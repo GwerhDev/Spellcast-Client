@@ -23,7 +23,8 @@ import { Spinner } from '../Spinner';
 import { PrimaryButton } from '../Buttons/PrimaryButton';
 import { SecondaryButton } from '../Buttons/SecondaryButton';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBookOpenReader, faPen, faScroll, faWandMagicSparkles, faTrash } from '@fortawesome/free-solid-svg-icons';
+import { faPen, faTrash } from '@fortawesome/free-solid-svg-icons';
+import { SPELL_ICON, READER_ICON, SPELL_EDIT_ICON } from '../../../config/consts';
 import { Tag } from '../Tag/Tag';
 import { useLanguage } from '../../../i18n';
 import { DeleteConfirmModal } from './DeleteConfirmModal';
@@ -233,7 +234,7 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
               <div ref={coverSlotRef} data-testid="spell-detail-modal-cover" className={`${s.coverWrap} ${leg ? s.coverAway : ''}`}>
                 {origin
                   ? <img src={origin.coverUrl} alt="" className={`${s.cover} ${getCoverFrameCorners(origin.coverFrameId ?? null) ? s.coverSquared : ''}`} />
-                  : <div className={s.coverPlaceholder}><FontAwesomeIcon icon={faScroll} /></div>}
+                  : <div className={s.coverPlaceholder}><FontAwesomeIcon icon={SPELL_ICON} /></div>}
                 {/* Landed before the spell is read: the cover keeps the 3D look it flew in with. */}
                 {origin && originFrame3D && <Cover3D url={origin.coverUrl} config={originFrame3D} />}
               </div>
@@ -242,7 +243,7 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
               </div>
             </div>
             <div className={s.actions}>
-              <PrimaryButton data-testid="spell-detail-modal-continue-btn" icon={faBookOpenReader} onClick={handleRead}>{t.spell.openInReader}</PrimaryButton>
+              <PrimaryButton data-testid="spell-detail-modal-continue-btn" icon={READER_ICON} onClick={handleRead}>{t.spell.openInReader}</PrimaryButton>
             </div>
           </div>
         ) : (
@@ -251,7 +252,7 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
               <div ref={coverSlotRef} data-testid="spell-detail-modal-cover" className={`${s.coverWrap} ${leg ? s.coverAway : ''}`}>
                 {shownCoverUrl
                   ? <img src={shownCoverUrl} alt={doc.title} className={`${s.cover} ${coverFrameCorners ? s.coverSquared : ''}`} style={getCoverFrameStyle(resolvedCoverFrameId)} />
-                  : <div className={s.coverPlaceholder}><FontAwesomeIcon icon={faScroll} /></div>
+                  : <div className={s.coverPlaceholder}><FontAwesomeIcon icon={SPELL_ICON} /></div>
                 }
                 {shownCoverUrl && coverFrame3D
                   ? <Cover3D url={shownCoverUrl} config={coverFrame3D} />
@@ -328,10 +329,10 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
               </div>
             </div>
             <div className={s.actions}>
-              <PrimaryButton data-testid="spell-detail-modal-continue-btn" icon={faBookOpenReader} onClick={handleRead}>{t.spell.openInReader}</PrimaryButton>
+              <PrimaryButton data-testid="spell-detail-modal-continue-btn" icon={READER_ICON} onClick={handleRead}>{t.spell.openInReader}</PrimaryButton>
               {inGrimoire && (
                 <>
-                  <SecondaryButton data-testid="spell-detail-modal-edit-btn" icon={faWandMagicSparkles} onClick={handleEdit}>{t.spell.editSpell}</SecondaryButton>
+                  <SecondaryButton data-testid="spell-detail-modal-edit-btn" icon={SPELL_EDIT_ICON} onClick={handleEdit}>{t.spell.editSpell}</SecondaryButton>
                   <PrimaryButton data-testid="spell-detail-modal-delete-btn" variant="danger" icon={faTrash} onClick={() => setShowDeleteModal(true)}>{t.common.delete}</PrimaryButton>
                 </>
               )}

@@ -29,12 +29,12 @@ import { useNavigate } from 'react-router-dom';
 import { setSelectedVoice } from '../../../store/voiceSlice';
 import { getSpellCover } from '../../../db';
 import { useAppSelector } from '../../../store/hooks';
-import { faScroll } from '@fortawesome/free-solid-svg-icons';
+
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Waveform } from '../../components/Waveform/Waveform';
 import { SpellDetailModal } from '../../components/Modals/SpellDetailModal';
 import { addSignalNotice } from '../../../store/signalSlice';
-import { SILENT_AUDIO_SRC } from '../../../config/consts';
+import { SILENT_AUDIO_SRC, SPELL_ICON } from '../../../config/consts';
 import { makeSilentWav } from '../../../utils/silentAudio';
 import { splitIntoSpeechChunks, speechChunkBudget } from '../../../utils/speechChunks';
 import { useSpellCosmetic } from '../../../hooks/useSpellCosmetic';
@@ -1007,7 +1007,7 @@ export const BrowserPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, s
             >
               {coverUrl
                 ? <img data-testid="browser-player-cover" src={coverUrl} alt="" className={s.cover} />
-                : <div data-testid="browser-player-cover-placeholder" className={s.coverIcon}><FontAwesomeIcon icon={faScroll} /></div>
+                : <div data-testid="browser-player-cover-placeholder" className={s.coverIcon}><FontAwesomeIcon icon={SPELL_ICON} /></div>
               }
               {isPlaying && (
                 <div className={s.coverWaveOverlay}>

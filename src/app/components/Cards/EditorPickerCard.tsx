@@ -1,7 +1,7 @@
 import s from './EditorPickerCard.module.css';
 import React, { useMemo, useEffect, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faScroll } from '@fortawesome/free-solid-svg-icons';
+import { SPELL_ICON } from '../../../config/consts';
 import { Spell } from 'src/interfaces';
 import { useAppSelector } from '../../../store/hooks';
 import { resolveCoverFrameId, getCoverFrameStyle, getCoverFrameCorners, getCoverFrame3D } from '../../../utils/coverFrame';
@@ -59,7 +59,7 @@ export const EditorPickerCard = ({ doc, onClick, show3D }: EditorPickerCardProps
               // render inside CoverFrame3DView's textured plane below when 3D is active.
               ? <div className={s.cover} style={coverFrameStyle} role="img" aria-label={doc.title} />
               : <img src={coverUrl} alt={doc.title} className={s.cover} style={coverFrameStyle} />)
-            : <div className={s.iconWrapper}><FontAwesomeIcon icon={faScroll} className={s.icon} /></div>
+            : <div className={s.iconWrapper}><FontAwesomeIcon icon={SPELL_ICON} className={s.icon} /></div>
           }
         </div>
         <div className={s.footer}>

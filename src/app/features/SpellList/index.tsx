@@ -9,7 +9,8 @@ import { SpellCard } from '../../components/Cards/SpellCard';
 import { SpellDetailModal, type SpellDetailOrigin } from '../../components/Modals/SpellDetailModal';
 import { EmptyState } from '../../components/EmptyState';
 import { useCoverFrame3DSection } from '../../../hooks/useCoverFrame3DSection';
-import { faScroll, faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
+import { faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
+import { SPELL_ICON } from '../../../config/consts';
 import { useLanguage } from '../../../i18n';
 import { useInfiniteList } from '../../../hooks/useInfiniteList';
 import { useMarqueeSelect } from '../../../hooks/useMarqueeSelect';
@@ -145,7 +146,7 @@ export const SpellList: React.FC<SpellListProps> = ({ query = '', filter = 'loca
   if (documents.length === 0) return (
     <EmptyState
       testId="spell-list-empty"
-      icon={faScroll}
+      icon={SPELL_ICON}
       message={filter === 'local' ? t.spell.noLocalSpells : t.spell.noSpells}
     />
   );

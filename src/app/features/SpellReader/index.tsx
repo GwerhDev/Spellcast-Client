@@ -8,10 +8,12 @@ import { useReaderFullscreen } from '../../../hooks/useReaderFullscreen';
 import { ZoomOverlay } from '../../components/Zoom/ZoomOverlay';
 import { useDispatch, useSelector } from 'react-redux';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowLeft, faEdit, faScroll, faGear, faExpand, faCompress, faInfoCircle, faLayerGroup } from '@fortawesome/free-solid-svg-icons';
+import { faArrowLeft, faEdit, faGear, faExpand, faCompress, faInfoCircle, faLayerGroup } from '@fortawesome/free-solid-svg-icons';
+import { SPELL_ICON } from '../../../config/consts';
 import { RootState } from '../../../store';
 import { activeSentenceIndex as getActiveSentenceIndex } from '../../../utils/activeSentence';
-import { goToPage, setCurrentSentenceIndex, setShowReaderSettings, recordReaderActivity } from '../../../store/spellReaderSlice';
+import { goToPage, setCurrentSentenceIndex, setShowReaderSettings, recordReaderActivity, openSpellSearcher } from '../../../store/spellReaderSlice';
+import { spSpellSearch } from '../../../icons';
 import { setPendingSeek } from '../../../store/audioPlayerSlice';
 import { moveCompanionModel, rotateCompanionModel, scaleCompanionModel, toggleCompanionDepth, type CompanionPlacement } from '../../../store/casterInventorySlice';
 import { companions } from '../../../config/assets';
@@ -121,7 +123,7 @@ export const SpellReader = () => {
   const [showInfoModal, setShowInfoModal] = useState(false);
   // The page list, shown or hidden from the top bar: its column beside the page on a wide
   // screen, over the page on a phone.
-  const pageList = usePageListToggle();
+  const pageList = usePageListToggle('reader');
   // Over the page on a phone; beside it otherwise -- fullscreen too, where it stays as it
   // is (it doesn't fade with the top bar and the player): only its button shows or hides it.
   const listOverPage = pageList.narrow;
@@ -289,10 +291,16 @@ export const SpellReader = () => {
           <IconButton data-testid="spell-reader-back-btn" variant='transparent' icon={faArrowLeft} title={t.common.back} onClick={goBack} />
         </span>
         <div className={s.titleContainer}>
-          <FontAwesomeIcon icon={faScroll} />
+          <FontAwesomeIcon icon={SPELL_ICON} />
           {spellTitle}
         </div>
         <div className={s.controlsContainer}>
+          {isLoaded && (
+            <IconButton
+              data-testid="spell-reader-search-btn" icon={spSpellSearch} variant='transparent'
+              title={t.reader.searchInSpell} onClick={() => dispatch(openSpellSearcher())}
+            />
+          )}
           {isLoaded && (
             <IconButton
               data-testid="page-list-toggle"

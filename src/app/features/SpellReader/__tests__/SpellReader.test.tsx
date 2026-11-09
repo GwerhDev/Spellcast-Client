@@ -45,6 +45,16 @@ describe('SpellReader', () => {
     expect(screen.getByTestId('mock-spell-detail-modal')).toHaveTextContent('doc-1');
   });
 
+  it("its magnifying glass opens the search on the open Spell's pages and text alone", () => {
+    const store = makeStore();
+    store.dispatch(setSpellFile({ id: 'doc-1', title: 'Test Spell' }));
+    store.dispatch(setSpellLoaded(true));
+    renderWithProviders(<SpellReader />, { store });
+
+    fireEvent.click(screen.getByTestId('spell-reader-search-btn'));
+    expect(store.getState().spellReader).toMatchObject({ showSearcher: true, searcherScope: 'spell' });
+  });
+
   // Back where it was opened from is covered by useGoBack's own tests (it needs the real
   // browser history); here, opened directly, there's nowhere in the app to go back to.
   it('its back button goes home when the reader was opened directly', () => {

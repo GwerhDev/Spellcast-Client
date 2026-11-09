@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import s from '../../components/Modals/SearcherModal.module.css';
-import { faFileLines, faMagnifyingGlass, faScroll } from '@fortawesome/free-solid-svg-icons';
+import { faFileLines, faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
+import { SPELL_ICON } from '../../../config/consts';
 import { useAppSelector } from '../../../store/hooks';
 import { useLanguage } from '../../../i18n';
 import { SearchResult } from '../../components/Modals/SearchResult';
@@ -73,7 +74,7 @@ export const GeneralSearch: React.FC<GeneralSearchProps> = ({ onDone, onOpenPlay
               <ul className={s.pageList}>
                 {foundSpells.map(spell => (
                   <SearchResult
-                    key={spell.id} testId={`general-search-spell-${spell.id}`} icon={faScroll} title={spell.title}
+                    key={spell.id} testId={`general-search-spell-${spell.id}`} icon={SPELL_ICON} title={spell.title}
                     desc={spellDesc(spell, t.search.pages)} onClick={() => openSpell(spell)}
                   />
                 ))}

@@ -34,7 +34,6 @@ export const es: Translations = {
     settingsSoon: 'Configuración (próximamente)',
   },
   search: {
-    field: 'Buscar',
     title: 'Buscar',
     everything: 'Todo',
     everythingPlaceholder: 'Busca lo que sea',
@@ -438,6 +437,7 @@ export const es: Translations = {
   reader: {
     readerSettings: 'Configuración del lector',
     spellInfo: 'Información del Spell',
+    searchInSpell: 'Buscar en este Spell',
     enterFullscreen: 'Pantalla completa',
     exitFullscreen: 'Salir de pantalla completa',
     companions: 'Compañeros',

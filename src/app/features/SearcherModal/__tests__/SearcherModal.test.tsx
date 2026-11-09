@@ -1,9 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
-import { screen, fireEvent, waitFor } from '@testing-library/react';
+import { screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { Route, Routes, useLocation } from 'react-router-dom';
 import { renderWithProviders, makeStore } from '../../../../test/renderWithProviders';
 import { SearcherModal } from '../index';
-import { setSpellFile, setSpellLoaded, setSpellInfo, setShowSearcher } from '../../../../store/spellReaderSlice';
+import { setSpellFile, setSpellLoaded, setSpellInfo, setShowSearcher, openSpellSearcher } from '../../../../store/spellReaderSlice';
 
 const { page1, page2 } = vi.hoisted(() => ({
   page1: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'The dragon slept in the cave.' }] }] },
@@ -45,6 +45,22 @@ describe('SearcherModal', () => {
   it('renders nothing when showSearcher is false', () => {
     renderWithProviders(<SearcherModal />);
     expect(screen.queryByTestId('tab-search')).not.toBeInTheDocument();
+  });
+
+  describe("from the reader: the open Spell's pages and text alone", () => {
+    it('opens on them, with no tabs', async () => {
+      const store = makeStore();
+      store.dispatch(setSpellFile({ id: 'doc-1', title: 'Test Spell' }));
+      store.dispatch(setSpellInfo({ totalPages: 2 }));
+      store.dispatch(setSpellLoaded(true));
+      store.dispatch(openSpellSearcher());
+      renderWithProviders(<SearcherModal />, { store });
+      expect(await screen.findByTestId('searcher-page-1')).toBeInTheDocument();
+      expect(screen.queryByTestId('tab-all')).not.toBeInTheDocument();
+      // The header's opens everything again.
+      act(() => { store.dispatch(setShowSearcher(false)); store.dispatch(setShowSearcher(true)); });
+      expect(screen.getByTestId('tab-all')).toBeInTheDocument();
+    });
   });
 
   describe('everything at once', () => {

@@ -4,6 +4,7 @@ import { GRIMOIRE_ICON } from '../../../config/consts';
 import { useAppDispatch, useAppSelector } from '../../../store/hooks';
 import { setShowSearcher } from '../../../store/spellReaderSlice';
 import { TabModal, TabDef } from '../../components/Modals/TabModal';
+import { CustomModal } from '../../components/Modals/CustomModal';
 import { useLanguage } from '../../../i18n';
 import { GeneralSearch } from './GeneralSearch';
 import { SpellContentSearch } from './SpellContentSearch';
@@ -16,12 +17,13 @@ interface SearcherModalProps {
   onOpenPlayerSettings?: () => void;
 }
 
-// The app's search, opened from the header's field: everything at once, and a tab for each
-// kind of thing alone (the open Spell's pages, the grimoire, the settings).
+// The app's search, opened from the header: everything at once, and a tab for each kind of
+// thing alone (the open Spell's pages, the grimoire, the settings). From the reader, the open
+// Spell's pages and text alone.
 export const SearcherModal: React.FC<SearcherModalProps> = ({ onOpenPlayerSettings }) => {
   const { t } = useLanguage();
   const dispatch = useAppDispatch();
-  const { showSearcher, spellId, spellTitle } = useAppSelector(state => state.spellReader);
+  const { showSearcher, searcherScope, spellId, spellTitle } = useAppSelector(state => state.spellReader);
   const close = () => dispatch(setShowSearcher(false));
 
   const tabs: TabDef[] = [
@@ -31,5 +33,12 @@ export const SearcherModal: React.FC<SearcherModalProps> = ({ onOpenPlayerSettin
     { id: 'settings', icon: faGear, label: t.search.settings, content: <SettingsSearch onDone={close} onOpenPlayerSettings={onOpenPlayerSettings} /> },
   ];
 
+  if (searcherScope === 'spell' && spellId) {
+    return (
+      <CustomModal show={showSearcher} onClose={close} title={t.reader.selectPage}>
+        <SpellContentSearch onDone={close} />
+      </CustomModal>
+    );
+  }
   return <TabModal show={showSearcher} onClose={close} title={t.search.title} tabs={tabs} />;
 };

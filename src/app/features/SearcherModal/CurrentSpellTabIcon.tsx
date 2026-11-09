@@ -1,7 +1,7 @@
 import React from 'react';
 import s from '../../components/Modals/SearcherModal.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faScroll } from '@fortawesome/free-solid-svg-icons';
+import { SPELL_ICON } from '../../../config/consts';
 import { useAppSelector } from '../../../store/hooks';
 import { useSpellCoverUrl } from '../../../hooks/useSpellCoverUrl';
 
@@ -12,5 +12,5 @@ export const CurrentSpellTabIcon: React.FC = () => {
   const coverUrl = useSpellCoverUrl(spellId, userData.id);
   return coverUrl
     ? <img src={coverUrl} alt="" className={s.tabCover} data-testid="current-spell-tab-cover" />
-    : <FontAwesomeIcon icon={faScroll} />;
+    : <FontAwesomeIcon icon={SPELL_ICON} />;
 };

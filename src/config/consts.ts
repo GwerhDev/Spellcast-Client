@@ -4,7 +4,7 @@ import {
   faList, faPlus, faIdBadge, faChartLine, faCircleInfo,
 } from "@fortawesome/free-solid-svg-icons";
 import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
-import { spAltar, spBag, spCaster, spChest, spEditor, spGrimoire } from "../icons";
+import { spAltar, spBag, spCaster, spChest, spEditor, spGrimoire, spReader, spScroll, spSpellEdit } from "../icons";
 
 // The grimoire's icon, wherever it stands for it (the sidebar, the search's tab).
 export const GRIMOIRE_ICON = spGrimoire;
@@ -13,6 +13,10 @@ export const EDITOR_ICON = spEditor;
 export const HAVENSTORE_ICON = spChest;
 export const INVENTORY_ICON = spBag;
 export const CASTER_ICON = spCaster;
+// A Spell (a scroll), wherever one stands for it.
+export const SPELL_ICON = spScroll;
+export const READER_ICON = spReader;
+export const SPELL_EDIT_ICON = spSpellEdit;
 
 // Silent, single-cycle WAV looped by both BrowserPlayer and AudioPlayer as a
 // real, always-audible HTMLMediaElement anchor: Chromium doesn't reliably

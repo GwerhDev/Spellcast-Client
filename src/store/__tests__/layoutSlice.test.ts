@@ -4,6 +4,7 @@ import reducer, {
   toggleSidebarCollapsed,
   setSectionOpen,
   toggleSection,
+  setPageListOpen,
 } from '../layoutSlice';
 
 beforeEach(() => {
@@ -16,10 +17,17 @@ beforeEach(() => {
 const baseState = {
   sidebarCollapsed: false,
   sidebarOpenSections: { editor: false, caster: false, settings: false },
+  pageListOpen: { reader: true, editor: true },
   version: 1,
 };
 
 describe('layoutSlice', () => {
+  it("keeps each page list's state (the reader's, the editor's) apart, shown until it's hidden", () => {
+    expect(reducer(undefined, { type: '@@INIT' }).pageListOpen).toEqual({ reader: true, editor: true });
+    const state = reducer(baseState, setPageListOpen({ place: 'reader', open: false }));
+    expect(state.pageListOpen).toEqual({ reader: false, editor: true });
+  });
+
   it('returns initial state with sidebar expanded and all sections closed', () => {
     const state = reducer(undefined, { type: '@@INIT' });
     expect(state.sidebarCollapsed).toBe(false);

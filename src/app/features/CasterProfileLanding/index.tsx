@@ -1,6 +1,7 @@
 import s from './index.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faQuoteLeft, faScroll, faCircleInfo } from '@fortawesome/free-solid-svg-icons';
+import { faQuoteLeft, faCircleInfo } from '@fortawesome/free-solid-svg-icons';
+import { SPELL_ICON } from '../../../config/consts';
 import { useLanguage } from '../../../i18n';
 
 /**
@@ -40,7 +41,7 @@ export const CasterProfileLanding = () => {
         <div className={s.cardGrid}>
           {t.caster.mockGrimoire.map((spell, i) => (
             <div key={i} data-testid="caster-profile-grimoire-card" className={s.card}>
-              <FontAwesomeIcon icon={faScroll} className={s.cardIcon} />
+              <FontAwesomeIcon icon={SPELL_ICON} className={s.cardIcon} />
               <span className={s.grimoireTitle}>{spell.title}</span>
               <span className={s.grimoireAuthor}>{spell.author}</span>
             </div>

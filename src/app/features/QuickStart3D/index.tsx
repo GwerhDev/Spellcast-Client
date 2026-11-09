@@ -2,8 +2,8 @@ import s from './index.module.css';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowRight, faChevronLeft, faChevronRight, faScroll } from '@fortawesome/free-solid-svg-icons';
-import { GRIMOIRE_ICON } from '../../../config/consts';
+import { faArrowRight, faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons';
+import { GRIMOIRE_ICON, SPELL_ICON } from '../../../config/consts';
 import { useAppSelector } from '../../../store/hooks';
 import { useLanguage } from '../../../i18n';
 import { useQuickStartSpells } from '../../../hooks/useQuickStartSpells';
@@ -177,7 +177,7 @@ export const QuickStart3DScene: React.FC<{ model: QuickStart3DModel }> = ({ mode
       hiddenId={detail?.origin ? detail.spellId : null}
       moreLabel={t.nav.grimoire}
       moreIcon={GRIMOIRE_ICON}
-      emptyIcon={faScroll}
+      emptyIcon={SPELL_ICON}
     />
   );
 };

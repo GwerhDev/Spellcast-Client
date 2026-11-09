@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import s from '../../components/Modals/SearcherModal.module.css';
-import { faScroll } from '@fortawesome/free-solid-svg-icons';
+
 import { useLanguage } from '../../../i18n';
 import type { Spell } from '../../../interfaces';
 import { SearchResult } from '../../components/Modals/SearchResult';
 import { SearchEmpty } from '../../components/Modals/SearchEmpty';
-import { GRIMOIRE_ICON } from '../../../config/consts';
+import { GRIMOIRE_ICON, SPELL_ICON } from '../../../config/consts';
 import { filterSpells, useGrimoireSpells, useOpenSpell } from './searchSources';
 
 /** What a Spell is, under its title: its author and how many pages it has. */
@@ -46,7 +46,7 @@ export const SpellsSearch: React.FC<SpellsSearchProps> = ({ onDone }) => {
         <ul className={s.pageList}>
           {found.map(spell => (
             <SearchResult
-              key={spell.id} testId={`spells-search-${spell.id}`} icon={faScroll} title={spell.title}
+              key={spell.id} testId={`spells-search-${spell.id}`} icon={SPELL_ICON} title={spell.title}
               desc={spellDesc(spell, t.search.pages)} onClick={() => open(spell)}
             />
           ))}

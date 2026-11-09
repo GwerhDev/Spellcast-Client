@@ -1,5 +1,6 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBan, faImage, faCheck, faClockRotateLeft, faBookOpenReader, faStar, faLock, faPalette, faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons';
+import { faBan, faImage, faCheck, faClockRotateLeft, faStar, faLock, faPalette, faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons';
+import { READER_ICON } from '../../../config/consts';
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import { TabModal } from '../Modals/TabModal';
 import { ToggleRow } from '../Inputs/ToggleRow';
@@ -82,7 +83,7 @@ export const AltarSettingsModal = ({ show, onClose }: AltarSettingsModalProps) =
   ];
   const quickStartOptions: Option<QuickStartFilter>[] = [
     { id: 'last', label: t.start.quickStartLast, icon: faClockRotateLeft },
-    { id: 'inProgress', label: t.start.quickStartInProgress, icon: faBookOpenReader },
+    { id: 'inProgress', label: t.start.quickStartInProgress, icon: READER_ICON },
     { id: 'favorites', label: t.start.quickStartFavorites, icon: faStar, locked: true },
   ];
 

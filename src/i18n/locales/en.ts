@@ -34,7 +34,6 @@ export const en = {
   // The app's search (the header's field): Spells, or the open Spell's pages and text; and
   // the app's settings, each found by its name, what it's for, or its keywords.
   search: {
-    field: 'Search',
     title: 'Search',
     everything: 'Everything',
     everythingPlaceholder: 'Search anything',
@@ -438,6 +437,7 @@ export const en = {
   reader: {
     readerSettings: 'Reader Settings',
     spellInfo: 'Spell info',
+    searchInSpell: 'Search in this Spell',
     enterFullscreen: 'Enter fullscreen',
     exitFullscreen: 'Exit fullscreen',
     companions: 'Companions',

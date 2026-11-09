@@ -55,7 +55,7 @@ export const SpellCreateForm: React.FC = () => {
   const [pdfProgress, setPdfProgress] = useState<{ current: number; total: number } | null>(null);
   const [editingPageIndex, setEditingPageIndex] = useState<number>(0);
   // The page list, shown or hidden from the top bar (see PageListPlace).
-  const pageList = usePageListToggle();
+  const pageList = usePageListToggle('editor');
   // A page about to be deleted: asked first (its content would go).
   const [pageToDelete, setPageToDelete] = useState<number | null>(null);
   // As in the editor: the page compared with the PDF's, and a page (or all of them) restored

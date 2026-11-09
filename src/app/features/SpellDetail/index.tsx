@@ -18,7 +18,8 @@ import { EmptyState } from '../../components/EmptyState';
 // import { SpellExportModal } from '../../components/Modals/SpellExportModal'; // .spell export: future
 import { Tag } from '../../components/Tag/Tag';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBookOpenReader, faScroll, faWandMagicSparkles, faArrowLeft, faTrash, faTriangleExclamation, faFileLines, faChartSimple, faFont, faClock, faLanguage, faCalendar, faFilePdf } from '@fortawesome/free-solid-svg-icons';
+import { faArrowLeft, faTrash, faTriangleExclamation, faFileLines, faChartSimple, faFont, faClock, faLanguage, faCalendar, faFilePdf } from '@fortawesome/free-solid-svg-icons';
+import { SPELL_ICON, READER_ICON, SPELL_EDIT_ICON } from '../../../config/consts';
 import { GrimoireStatus } from '../../components/GrimoireStatus/GrimoireStatus';
 import { countSpellWords, estimateListeningMinutes } from '../../../utils/spellStats';
 import { isInCasterGrimoire } from '../../../utils/grimoire';
@@ -179,7 +180,7 @@ export const SpellDetail: React.FC = () => {
                 )}
               </div>
             )
-            : <FontAwesomeIcon icon={faScroll} size="4x" className={s.icon} />
+            : <FontAwesomeIcon icon={SPELL_ICON} size="4x" className={s.icon} />
           }
           <div className={s.info}>
             <h1 data-testid="spell-detail-title" className={s.title}>{doc.title}</h1>
@@ -205,8 +206,8 @@ export const SpellDetail: React.FC = () => {
               </div>
             )}
             <div className={s.actions}>
-              <PrimaryButton data-testid="spell-detail-continue-btn" icon={faBookOpenReader} onClick={handleOpenReader}>{t.spell.openInReader}</PrimaryButton>
-              {inGrimoire && <SecondaryButton data-testid="spell-detail-edit-btn" icon={faWandMagicSparkles} onClick={handleEdit}>{t.spell.editSpell}</SecondaryButton>}
+              <PrimaryButton data-testid="spell-detail-continue-btn" icon={READER_ICON} onClick={handleOpenReader}>{t.spell.openInReader}</PrimaryButton>
+              {inGrimoire && <SecondaryButton data-testid="spell-detail-edit-btn" icon={SPELL_EDIT_ICON} onClick={handleEdit}>{t.spell.editSpell}</SecondaryButton>}
               {/* .spell export: future
               <SecondaryButton data-testid="spell-detail-export-btn" icon={faFileExport} onClick={() => openExportModal({ id: doc.id, title: doc.title })}>{t.spell.exportSpell}</SecondaryButton>
               */}

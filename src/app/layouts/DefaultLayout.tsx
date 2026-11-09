@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, lazy, Suspense } from 'react';
 import { motion } from 'framer-motion';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useNavigate } from 'react-router-dom';
 import { Sidebar } from '../features/Sidebar/Sidebar';
 import { LogoutModal } from '../components/Modals/LogoutModal';
 import { AudioPlayer } from '../features/AudioPlayer';
@@ -13,9 +13,9 @@ import { SearcherModal } from '../components/Modals/SearcherModal';
 import { PlayerSettings } from '../components/Modals/PlayerSettings';
 import { ReaderSettings } from '../components/SpellReader/ReaderSettings';
 import { EditorSettings } from '../components/EditorSettingsPanel/EditorSettings';
-import { AccountMenu } from '../components/AccountMenu/AccountMenu';
 import { AppSwitcher } from '../components/AppSwitcher/AppSwitcher';
-import { SearchField } from '../components/SearchField/SearchField';
+import { AppTitle } from '../components/AppTitle/AppTitle';
+import { SearchButton } from '../components/SearchButton/SearchButton';
 import { useLanguage } from '../../i18n';
 import { VoiceSelectorModal } from '../components/Modals/VoiceSelectorModal';
 import { SoundBackground } from '../components/SoundBackground/SoundBackground';
@@ -52,6 +52,7 @@ export default function DefaultLayout() {
   const { spellId: activeSpellId } = useSelector((state: RootState) => state.spellReader);
   const minimized = useSelector((state: RootState) => state.desktop.minimized);
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const { t } = useLanguage();
   const { showModal: showAttentionGuard, handleContinue: handleAttentionGuardContinue } = useAttentionGuard();
   useStorageQuotaWarning();
@@ -104,15 +105,15 @@ export default function DefaultLayout() {
       <Desktop />
       <div className="app-window">
         <div className="header-app">
-          {/* The app's icon, above the sidebar's rail, opens Nhexa's apps; in the center, the
-              app's search (Spells, the open Spell's pages and text, and the settings). */}
+          {/* The app's icon, above the sidebar's rail, opens Nhexa's apps; its title goes home;
+              the magnifying glass, beside the bell, opens the app's search. */}
           <span className="header-spacer header-left">
             <AppSwitcher label={t.desktop.apps} onClick={() => dispatch(toggleMinimized())} />
           </span>
-          <SearchField label={t.search.field} onClick={() => dispatch(setShowSearcher(true))} />
+          <AppTitle label="Spellcast" onClick={() => navigate('/')} />
           <span className="header-spacer">
+            <SearchButton label={t.search.title} onClick={() => dispatch(setShowSearcher(true))} />
             <NotificationsButton />
-            <AccountMenu />
           </span>
         </div>
         <motion.div

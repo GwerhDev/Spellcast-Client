@@ -6,7 +6,8 @@ import { SecondaryButton } from '../Buttons/SecondaryButton';
 import { ToggleRow } from '../Inputs/ToggleRow';
 import { LabeledInput } from '../Inputs/LabeledInput';
 import { IconButton } from '../Buttons/IconButton';
-import { faScroll, faCheck, faCopy, faLock, faTriangleExclamation, faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons';
+import { faCheck, faCopy, faLock, faTriangleExclamation, faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons';
+import { SPELL_ICON } from '../../../config/consts';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { generatePassword } from '../../../utils/passwordGenerator';
 import { useLanguage } from '../../../i18n';
@@ -160,7 +161,7 @@ export const SpellExportModal: React.FC<SpellExportModalProps> = ({ show, title,
       onClose={onClose}
       title={heading ?? t.spell.exportTitle.replace('{title}', title)}
       tabs={[
-        { id: 'content', icon: faScroll, label: t.spell.exportContentTab, content },
+        { id: 'content', icon: SPELL_ICON, label: t.spell.exportContentTab, content },
         { id: 'protection', icon: faLock, label: t.protect.title, content: protection },
       ]}
       footer={actions}

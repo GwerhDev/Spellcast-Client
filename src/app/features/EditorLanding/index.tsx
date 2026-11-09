@@ -2,8 +2,8 @@ import s from '../../components/EditorLanding/index.module.css';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faScroll, faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons';
-import { EDITOR_ICON } from '../../../config/consts';
+
+import { EDITOR_ICON, SPELL_ICON, SPELL_EDIT_ICON } from '../../../config/consts';
 import { resetSpellState } from '../../../store/spellSlice';
 import { SectionHeader } from '../../components/SectionHeader';
 import { useLanguage } from '../../../i18n';
@@ -24,14 +24,14 @@ export const EditorLanding = () => {
         <SectionHeader icon={EDITOR_ICON} title={t.editor.tagline} subtitle={t.editor.subtitle} align="center" />
         <div className={s.cards}>
           <div data-testid="editor-create-card" className={s.card} onClick={handleCreateNew}>
-            <FontAwesomeIcon icon={faScroll} className={s.cardIcon} />
+            <FontAwesomeIcon icon={SPELL_ICON} className={s.cardIcon} />
             <span>
               <h3 className={s.cardTitle}>{t.editor.create}</h3>
               <small className={s.description}>{t.editor.createDesc}</small>
             </span>
           </div>
           <div data-testid="editor-edit-card" className={s.card} onClick={() => navigate('/editor/select')}>
-            <FontAwesomeIcon icon={faWandMagicSparkles} className={s.cardIcon} />
+            <FontAwesomeIcon icon={SPELL_EDIT_ICON} className={s.cardIcon} />
             <span>
               <h3 className={s.cardTitle}>{t.common.edit}</h3>
               <small className={s.description}>{t.editor.editDesc}</small>

@@ -1,6 +1,7 @@
 import s from '../../components/Inputs/SpellCreateInput.module.css';
 import { useEffect, useRef, useState } from 'react';
-import { faUpload, faFileCircleCheck, faFilePdf, faFileWord, faTrash, faHourglassHalf, faScroll, faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons';
+import { faUpload, faFileCircleCheck, faFilePdf, faFileWord, faTrash, faHourglassHalf } from '@fortawesome/free-solid-svg-icons';
+import { SPELL_ICON, SPELL_EDIT_ICON } from '../../../config/consts';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
@@ -76,7 +77,7 @@ export const SpellCreateInput = (props: SpellCreateInputProps) => {
   const getFileTypeIcon = (type: string | null | undefined) => {
     switch (type) {
       case 'pdf': return faFilePdf;
-      case 'spell': return faScroll;
+      case 'spell': return SPELL_ICON;
       case 'doc': return faFileWord;
       default: return faFileCircleCheck;
     }
@@ -166,10 +167,10 @@ export const SpellCreateInput = (props: SpellCreateInputProps) => {
         {resultId ? (
           <>
             <button data-testid="spell-create-input-open-btn" onClick={() => navigate(`/spell/${resultId}`)} className={s.continueButton} title={t.reader.spellInfo}>
-              <FontAwesomeIcon icon={faScroll} />
+              <FontAwesomeIcon icon={SPELL_ICON} />
             </button>
             <button data-testid="spell-create-input-edit-btn" onClick={() => navigate(`/editor/${resultId}`)} className={s.continueButton} title={t.spell.editSpell}>
-              <FontAwesomeIcon icon={faWandMagicSparkles} />
+              <FontAwesomeIcon icon={SPELL_EDIT_ICON} />
             </button>
           </>
         ) : importing || job?.status === 'processing' ? (

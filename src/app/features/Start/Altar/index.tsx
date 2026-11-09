@@ -4,7 +4,7 @@ import { AltarBrandIcon, AltarCornerButton, AltarHint, AltarNowReading, AltarSen
 import { activeSentenceIndex } from '../../../../utils/activeSentence';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { faBookOpenReader, faEject, faPen, faScroll, faUpload, faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons';
+import { faEject, faPen, faUpload } from '@fortawesome/free-solid-svg-icons';
 import { useNavigate } from 'react-router-dom';
 import { RadialMenu, type RadialMenuItem } from '../../../components/RadialMenu/RadialMenu';
 import { useAppDispatch, useAppSelector } from '../../../../store/hooks';
@@ -17,7 +17,7 @@ import type { Spell } from '../../../../interfaces';
 import { useSpellCoverUrl } from '../../../../hooks/useSpellCoverUrl';
 import { isInCasterGrimoire } from '../../../../utils/grimoire';
 import { useDragPointer } from '../../../../hooks/useDragPointer';
-import { SPELL_DRAG_TYPE, EDITOR_ICON } from '../../../../config/consts';
+import { SPELL_DRAG_TYPE, EDITOR_ICON, SPELL_ICON, READER_ICON } from '../../../../config/consts';
 import { useLanguage } from '../../../../i18n';
 
 interface AltarProps {
@@ -240,10 +240,10 @@ export const Altar = ({ onWrite, onImport, immersive = false, idle = false, onFo
   // to do with the spell loaded. Short labels, so the ring stays tight around the center.
   const ringActions = immersive && hasSpell && !dropping;
   const actionItems: RadialMenuItem[] = [
-    { id: 'info', label: t.start.spellInfo, icon: faScroll, onSelect: () => navigate(`/spell/${spellId}`) },
-    { id: 'reader', label: t.spell.reader, icon: faBookOpenReader, onSelect: () => navigate(`/spell/${spellId}/reader`) },
+    { id: 'info', label: t.start.spellInfo, icon: SPELL_ICON, onSelect: () => navigate(`/spell/${spellId}`) },
+    { id: 'reader', label: t.spell.reader, icon: READER_ICON, onSelect: () => navigate(`/spell/${spellId}/reader`) },
     ...(inGrimoire ? [
-      { id: 'edit', label: t.nav.editor, icon: faWandMagicSparkles, onSelect: () => navigate(`/editor/${spellId}`) },
+      { id: 'edit', label: t.nav.editor, icon: EDITOR_ICON, onSelect: () => navigate(`/editor/${spellId}`) },
     ] : []),
     { id: 'import', label: t.start.importTab, icon: faUpload, onSelect: onImport, angle: 122 },
     { id: 'unload', label: t.player.unload, icon: faEject, onSelect: () => unloadSpell(), exit: true, angle: 58 },
@@ -270,11 +270,11 @@ export const Altar = ({ onWrite, onImport, immersive = false, idle = false, onFo
       )}
       rightCorner={hasSpell && !dropping && !immersive && (
         <>
-          <AltarCornerButton data-testid="altar-open-reader" icon={faBookOpenReader} title={t.spell.openInReader} onClick={() => navigate(`/spell/${spellId}/reader`)} />
+          <AltarCornerButton data-testid="altar-open-reader" icon={READER_ICON} title={t.spell.openInReader} onClick={() => navigate(`/spell/${spellId}/reader`)} />
           {inGrimoire && (
             <AltarCornerButton
               data-testid="altar-edit"
-              icon={faWandMagicSparkles}
+              icon={EDITOR_ICON}
               title={t.spell.editSpell}
               onClick={() => navigate(`/editor/${spellId}`)}
             />

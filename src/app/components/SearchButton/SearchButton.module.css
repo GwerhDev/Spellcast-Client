@@ -1,0 +1,19 @@
+/* As the notifications' bell beside it: Nhexa's shell, its colors whatever the app's theme. */
+.button {
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--nhexa-desktop-text-dim);
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease;
+}
+
+.button:hover,
+.button:focus-visible {
+  outline: none;
+  color: var(--nhexa-desktop-accent);
+}

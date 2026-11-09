@@ -1,10 +1,10 @@
 import s from './SpellCard.module.css';
-import { SPELL_DRAG_TYPE } from '../../../config/consts';
+import { SPELL_DRAG_TYPE, SPELL_ICON } from '../../../config/consts';
 import { DragTether } from '../DragTether/DragTether';
 import { beginTouchSpellDrag, isTouchDragging } from '../../../utils/touchSpellDrag';
 import React, { useEffect, useState, useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faScroll, faHourglassHalf, faCheck } from '@fortawesome/free-solid-svg-icons';
+import { faHourglassHalf, faCheck } from '@fortawesome/free-solid-svg-icons';
 import { Spell } from '../../../interfaces';
 import { Waveform } from '../Waveform/Waveform';
 import { useAppSelector } from '../../../store/hooks';
@@ -200,7 +200,7 @@ export const SpellCard = ({ doc, isActive, isPlaying, onClick, lifted = false, f
               // alt=...>` used to carry (the WebGL canvas itself has none).
               ? <div className={s.cover} style={coverFrameStyle} role="img" aria-label={doc.title} />
               : <img src={coverUrl} alt={doc.title} className={s.cover} style={coverFrameStyle} draggable={false} />)
-            : <div className={s.iconWrapper}><FontAwesomeIcon icon={faScroll} className={s.icon} /></div>
+            : <div className={s.iconWrapper}><FontAwesomeIcon icon={SPELL_ICON} className={s.icon} /></div>
           }
           {uploadJob && (
             <div className={s.uploadOverlay}>
@@ -237,7 +237,7 @@ export const SpellCard = ({ doc, isActive, isPlaying, onClick, lifted = false, f
         <div className={s.dragPlaceholder} data-testid={`spell-card-placeholder-${doc.id}`} aria-hidden="true">
           <span className={s.dragRipple} />
           <span className={`${s.dragRipple} ${s.dragRippleLate}`} />
-          <FontAwesomeIcon icon={faScroll} />
+          <FontAwesomeIcon icon={SPELL_ICON} />
         </div>
       )}
       {dragOrigin && <DragTether origin={dragOrigin} />}
