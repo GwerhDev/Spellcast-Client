@@ -1,8 +1,9 @@
 import {
   faUsers, faFingerprint, faShield, faPalette, faHardDrive, faCloud,
-  faHome, faBuildingColumns, faFeatherPointed, faStore, faUser, faBox, faGear,
+  faBuildingColumns, faFeatherPointed, faStore, faUser, faBox, faGear,
   faList, faPlus, faIdBadge, faChartLine, faBoxOpen, faCircleInfo,
 } from "@fortawesome/free-solid-svg-icons";
+import { spAltar } from "../icons";
 
 // Silent, single-cycle WAV looped by both BrowserPlayer and AudioPlayer as a
 // real, always-audible HTMLMediaElement anchor: Chromium doesn't reliably
@@ -64,7 +65,7 @@ export const GRIMOIRE_ICON = faBuildingColumns;
 
 // Sections with no sub-items — rendered as single-click rows/icons in both sidebar states.
 export const sidebarDirectLinks = [
-  { key: "home", icon: faHome, path: "/" },
+  { key: "home", icon: spAltar, path: "/" },
   { key: "grimoire", icon: GRIMOIRE_ICON, path: "/grimoire" },
   { key: "havenstore", icon: faStore, path: "/havenstore" },
 ];
