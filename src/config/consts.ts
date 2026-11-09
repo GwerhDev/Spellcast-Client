@@ -59,10 +59,13 @@ export const editorDirectoryList = [
   { name: "Create", icon: faPlus, path: "editor/create" },
 ];
 
+// The grimoire's icon, wherever it stands for it (the sidebar, the search's tab).
+export const GRIMOIRE_ICON = faBuildingColumns;
+
 // Sections with no sub-items — rendered as single-click rows/icons in both sidebar states.
 export const sidebarDirectLinks = [
   { key: "home", icon: faHome, path: "/" },
-  { key: "grimoire", icon: faBuildingColumns, path: "/grimoire" },
+  { key: "grimoire", icon: GRIMOIRE_ICON, path: "/grimoire" },
   { key: "havenstore", icon: faStore, path: "/havenstore" },
 ];
 

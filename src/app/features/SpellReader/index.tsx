@@ -22,7 +22,6 @@ import { PaperSheet } from '../../components/PaperSheet/PaperSheet';
 import { Spinner } from '../../components/Spinner';
 import { IconButton } from '../../components/Buttons/IconButton';
 import { SpellDetailModal } from '../../components/Modals/SpellDetailModal';
-import { SearcherButton } from '../../components/SpellReader/Searcher/SearcherButton';
 import { PageList } from '../../components/SpellCreateForm/PageList';
 import { PageListOverlay } from '../../components/SpellCreateForm/PageListOverlay';
 import { usePageListToggle } from '../../../hooks/usePageListToggle';
@@ -288,7 +287,6 @@ export const SpellReader = () => {
           {/* Back where the reader was opened from (the spell's page, home...), or home when
               it was opened directly. */}
           <IconButton data-testid="spell-reader-back-btn" variant='transparent' icon={faArrowLeft} title={t.common.back} onClick={goBack} />
-          {isLoaded && <SearcherButton />}
         </span>
         <div className={s.titleContainer}>
           <FontAwesomeIcon icon={faScroll} />

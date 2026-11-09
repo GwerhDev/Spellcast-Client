@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, lazy, Suspense } from 'react';
 import { motion } from 'framer-motion';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 import { Sidebar } from '../features/Sidebar/Sidebar';
 import { LogoutModal } from '../components/Modals/LogoutModal';
 import { AudioPlayer } from '../features/AudioPlayer';
@@ -15,7 +15,7 @@ import { ReaderSettings } from '../components/SpellReader/ReaderSettings';
 import { EditorSettings } from '../components/EditorSettingsPanel/EditorSettings';
 import { AccountMenu } from '../components/AccountMenu/AccountMenu';
 import { AppSwitcher } from '../components/AppSwitcher/AppSwitcher';
-import { AppTitle } from '../components/AppTitle/AppTitle';
+import { SearchField } from '../components/SearchField/SearchField';
 import { useLanguage } from '../../i18n';
 import { VoiceSelectorModal } from '../components/Modals/VoiceSelectorModal';
 import { SoundBackground } from '../components/SoundBackground/SoundBackground';
@@ -26,7 +26,7 @@ import { Desktop } from '../features/Desktop';
 import { useAppDispatch } from 'store/hooks';
 import { setMinimized, toggleMinimized } from 'store/desktopSlice';
 import { setSidebarCollapsed } from 'store/layoutSlice';
-import { invalidateSpellList } from 'store/spellReaderSlice';
+import { invalidateSpellList, setShowSearcher } from 'store/spellReaderSlice';
 import { useAttentionGuard } from '../../hooks/useAttentionGuard';
 import { useStorageQuotaWarning } from '../../hooks/useStorageQuotaWarning';
 import { AttentionGuardModal } from '../components/Modals/AttentionGuardModal';
@@ -52,7 +52,6 @@ export default function DefaultLayout() {
   const { spellId: activeSpellId } = useSelector((state: RootState) => state.spellReader);
   const minimized = useSelector((state: RootState) => state.desktop.minimized);
   const dispatch = useAppDispatch();
-  const navigate = useNavigate();
   const { t } = useLanguage();
   const { showModal: showAttentionGuard, handleContinue: handleAttentionGuardContinue } = useAttentionGuard();
   useStorageQuotaWarning();
@@ -93,7 +92,7 @@ export default function DefaultLayout() {
       <SoundBackground />
       <SpellProcessor />
       <SpellUploadWorker />
-      <SearcherModal />
+      <SearcherModal onOpenPlayerSettings={() => setIsPlayerSettingsOpen(true)} />
       <VoiceSelectorModal
         show={isVoiceSelectorOpen}
         onClose={() => setIsVoiceSelectorOpen(false)}
@@ -105,11 +104,12 @@ export default function DefaultLayout() {
       <Desktop />
       <div className="app-window">
         <div className="header-app">
-          {/* The app's icon, above the sidebar's rail, opens Nhexa's apps; its title goes home. */}
+          {/* The app's icon, above the sidebar's rail, opens Nhexa's apps; in the center, the
+              app's search (Spells, the open Spell's pages and text, and the settings). */}
           <span className="header-spacer header-left">
             <AppSwitcher label={t.desktop.apps} onClick={() => dispatch(toggleMinimized())} />
           </span>
-          <AppTitle label="Spellcast" onClick={() => navigate('/')} />
+          <SearchField label={t.search.field} onClick={() => dispatch(setShowSearcher(true))} />
           <span className="header-spacer">
             <NotificationsButton />
             <AccountMenu />

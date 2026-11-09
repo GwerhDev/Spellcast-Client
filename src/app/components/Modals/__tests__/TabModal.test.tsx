@@ -18,6 +18,19 @@ describe('TabModal', () => {
     expect(screen.queryByTestId('tab-modal-footer')).not.toBeInTheDocument();
   });
 
+  it('starts at its first tab each time it opens', () => {
+    const { rerender } = render(<TabModal show onClose={vi.fn()} title="T" tabs={tabs} />);
+    fireEvent.click(screen.getByTestId('tab-two'));
+    rerender(<TabModal show={false} onClose={vi.fn()} title="T" tabs={tabs} />);
+    rerender(<TabModal show onClose={vi.fn()} title="T" tabs={tabs} />);
+    expect(screen.getByTestId('content-one')).toBeInTheDocument();
+  });
+
+  it('takes an icon of its own for a tab (e.g. a cover)', () => {
+    render(<TabModal show onClose={vi.fn()} title="T" tabs={[{ id: 'cover', iconNode: <img data-testid="cover" alt="" />, label: 'Cover', content: <p>c</p> }]} />);
+    expect(screen.getByTestId('tab-cover')).toContainElement(screen.getByTestId('cover'));
+  });
+
   it('a footer, when given, is the same under every tab', () => {
     render(<TabModal show onClose={vi.fn()} title="T" tabs={tabs} footer={<button data-testid="action">Go</button>} />);
     expect(screen.getByTestId('tab-modal-footer')).toContainElement(screen.getByTestId('action'));

@@ -1,3 +1,11 @@
+/* A tab's content: its search field, then what it found, apart. */
+.panel {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
 .searchRow {
   display: flex;
   align-items: center;
@@ -157,4 +165,72 @@
   color: var(--color-light-400);
   text-align: center;
   padding: 1.5rem 0;
+}
+/* A Spell or a setting found: its icon, its name and what it is. */
+.resultIcon {
+  flex-shrink: 0;
+  width: 1rem;
+  opacity: 0.7;
+}
+
+.resultText {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.resultTitle {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.resultDesc {
+  font-size: 0.75rem;
+  opacity: 0.6;
+}
+
+/* Everything at once: what it found, by kind. */
+.groups {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.groupTitle {
+  margin: 0 0 0.4rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+
+/* The open Spell's tab: its cover, as its icon. */
+.tabCover {
+  width: 18px;
+  height: 24px;
+  object-fit: cover;
+  border-radius: 2px;
+}
+
+/* A tab that lists nothing: its icon, large and quiet, over what it says. */
+.empty {
+  padding: 2rem 1rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.9rem;
+  text-align: center;
+}
+
+.emptyIcon {
+  font-size: 2rem;
+  opacity: 0.25;
+}
+
+.empty .hint {
+  margin: 0;
+  max-width: 28rem;
 }

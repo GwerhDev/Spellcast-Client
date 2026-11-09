@@ -1,5 +1,5 @@
 import s from './TabModal.module.css';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -9,7 +9,9 @@ import { IconButton } from '../Buttons/IconButton';
 export interface TabDef {
   // Names the tab's button (`tab-<id>`), for tests.
   id?: string;
-  icon: IconDefinition;
+  // Its button's icon; or its own (e.g. a Spell's cover), instead.
+  icon?: IconDefinition;
+  iconNode?: React.ReactNode;
   label: string;
   content: React.ReactNode;
 }
@@ -25,6 +27,8 @@ interface TabModalProps {
 
 export const TabModal: React.FC<TabModalProps> = ({ show, onClose, title, tabs, footer }) => {
   const [activeTab, setActiveTab] = useState(0);
+  // Opened again, it starts at its first tab (its tabs may not be the same ones as last time).
+  useEffect(() => { if (show) setActiveTab(0); }, [show]);
 
   if (!show) return null;
 
@@ -49,7 +53,7 @@ export const TabModal: React.FC<TabModalProps> = ({ show, onClose, title, tabs, 
                   onClick={() => setActiveTab(i)}
                   title={tab.label}
                 >
-                  <FontAwesomeIcon icon={tab.icon} />
+                  {tab.iconNode ?? (tab.icon && <FontAwesomeIcon icon={tab.icon} />)}
                 </button>
               ))}
             </div>
