@@ -152,6 +152,13 @@
   justify-content: flex-end;
 }
 
+/* The header's left: the app's brand (AppSwitcher), its icon in a slot as wide as the sidebar's
+   rail below it, so it's centered above it. */
+.header-spacer.header-left {
+  justify-content: flex-start;
+  --app-switcher-slot: 44px;
+}
+
 .title-container {
   gap: .5rem;
   width: 100%;

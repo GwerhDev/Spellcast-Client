@@ -15,6 +15,7 @@ import { ReaderSettings } from '../components/SpellReader/ReaderSettings';
 import { EditorSettings } from '../components/EditorSettingsPanel/EditorSettings';
 import { AccountMenu } from '../components/AccountMenu/AccountMenu';
 import { AppSwitcher } from '../components/AppSwitcher/AppSwitcher';
+import { useLanguage } from '../../i18n';
 import { VoiceSelectorModal } from '../components/Modals/VoiceSelectorModal';
 import { SoundBackground } from '../components/SoundBackground/SoundBackground';
 import { SpellUploadWorker } from '../features/SpellUploadWorker';
@@ -22,7 +23,7 @@ import { PdfUploadQueue } from '../components/PdfUploadQueue';
 import { NotificationsButton } from '../features/NotificationsButton';
 import { Desktop } from '../features/Desktop';
 import { useAppDispatch } from 'store/hooks';
-import { setMinimized } from 'store/desktopSlice';
+import { setMinimized, toggleMinimized } from 'store/desktopSlice';
 import { setSidebarCollapsed } from 'store/layoutSlice';
 import { invalidateSpellList } from 'store/spellReaderSlice';
 import { useAttentionGuard } from '../../hooks/useAttentionGuard';
@@ -50,6 +51,7 @@ export default function DefaultLayout() {
   const { spellId: activeSpellId } = useSelector((state: RootState) => state.spellReader);
   const minimized = useSelector((state: RootState) => state.desktop.minimized);
   const dispatch = useAppDispatch();
+  const { t } = useLanguage();
   const { showModal: showAttentionGuard, handleContinue: handleAttentionGuardContinue } = useAttentionGuard();
   useStorageQuotaWarning();
   // TCORE-124: the shared 3D canvas only mounts (and its lazy chunk only downloads) once
@@ -101,8 +103,10 @@ export default function DefaultLayout() {
       <Desktop />
       <div className="app-window">
         <div className="header-app">
-          <span className="header-spacer"></span>
-          <AppSwitcher />
+          {/* The app's icon, above the sidebar's rail, opens Nhexa's apps. */}
+          <span className="header-spacer header-left">
+            <AppSwitcher label={t.desktop.apps} onClick={() => dispatch(toggleMinimized())} />
+          </span>
           <span className="header-spacer">
             <NotificationsButton />
             <AccountMenu />

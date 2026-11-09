@@ -28,6 +28,7 @@ export const es: Translations = {
     minimize: 'Minimizar',
   },
   desktop: {
+    apps: 'Apps de Nhexa',
     home: 'Inicio',
     account: 'Cuenta',
     settingsSoon: 'Configuración (próximamente)',

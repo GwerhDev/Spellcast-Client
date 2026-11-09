@@ -26,6 +26,7 @@ export const en = {
     default: 'Default',
   },
   desktop: {
+    apps: 'Nhexa apps',
     home: 'Home',
     account: 'Account',
     settingsSoon: 'Settings (coming soon)',
