@@ -1,7 +1,8 @@
 import React, { useRef, useEffect } from 'react';
 import s from './PageList.module.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faNewspaper, faTrash, faPlus, faCheck, faSpinner, faRotateLeft } from '@fortawesome/free-solid-svg-icons';
+import { faTrash, faPlus, faCheck, faSpinner, faRotateLeft } from '@fortawesome/free-solid-svg-icons';
+import { SPELL_ICON } from '../../../config/consts';
 import { useLanguage } from '../../../i18n';
 
 interface PageListProps {
@@ -78,7 +79,7 @@ export const PageList: React.FC<PageListProps> = ({ pages, currentPage, onPageCl
             )}
             {progressState === 'processing'
               ? <FontAwesomeIcon icon={faSpinner} spin />
-              : <FontAwesomeIcon icon={faNewspaper} />
+              : <FontAwesomeIcon icon={SPELL_ICON} />
             }
             <small className={s.pageNumber}>{t.spell.page} {index + 1}</small>
           </div>
