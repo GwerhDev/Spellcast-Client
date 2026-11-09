@@ -90,8 +90,10 @@ export const Desktop = () => {
                               onClick={() => handleClick(app)}
                               data-testid={current ? 'desktop-app-current' : 'desktop-app-other'}
                             >
-                              <img src={app.icon} alt="" className={s.appIcon} />
-                              <span className={s.label}>{app.label.toUpperCase()}</span>
+                              <span className={s.face}>
+                                <img src={app.icon} alt="" className={s.appIcon} />
+                                <span className={s.label}>{app.label.toUpperCase()}</span>
+                              </span>
                             </button>
                           );
                         })}

@@ -66,37 +66,63 @@
   display: none;
 }
 
-.item {
-  scroll-snap-align: center;
+/* Each app is a hexagon (flat top), and those of a category fit together as a honeycomb strip:
+   every other one half a hexagon lower, each one a quarter of its width over the last. Its
+   border is a hexagon behind its face (a clip-path cuts off CSS borders). */
+.item,
+.skeletonItem {
   flex-shrink: 0;
-  position: relative;
-  overflow: hidden;
-  width: 116px;
+  width: var(--hex-w);
+  height: var(--hex-h);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.6rem;
-  padding: 1.1rem 0.5rem;
+  gap: 0.5rem;
   background: var(--nhexa-desktop-surface);
-  border: 1.5px solid transparent;
-  border-radius: 14px;
-  cursor: pointer;
-  transition: border-color 0.18s ease, transform 0.2s ease;
+  clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%);
 }
 
-.item::before {
+.item {
+  scroll-snap-align: center;
+  flex-shrink: 0;
+  position: relative;
+  width: var(--hex-w);
+  height: var(--hex-h);
+  padding: 1.5px;
+  border: none;
+  background: rgba(255, 255, 255, 0.07);
+  clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%);
+  cursor: pointer;
+  transition: background-color 0.18s ease, transform 0.2s ease;
+}
+
+.face {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  box-sizing: border-box;
+  background: var(--nhexa-desktop-surface);
+  clip-path: inherit;
+}
+
+.face::before {
   content: '';
   position: absolute;
   inset: 0;
   background: var(--app-color);
   opacity: 0;
-  border-radius: inherit;
   pointer-events: none;
   transition: opacity 0.18s ease;
 }
 
-.item::after {
+.face::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -113,15 +139,15 @@
 }
 
 .item:hover {
-  border-color: var(--app-color);
+  background: var(--app-color);
   transform: translateY(-4px);
 }
 
-.item:hover::before {
+.item:hover .face::before {
   opacity: 0.12;
 }
 
-.item:hover::after {
+.item:hover .face::after {
   opacity: 1;
   animation: appShine 0.5s ease-out forwards;
 }
@@ -130,12 +156,11 @@
   color: var(--app-color);
 }
 
-/* The current app (Spellcast) is highlighted — clicking it restores the window. */
 .current {
-  border-color: var(--app-color);
+  background: var(--app-color);
 }
 
-.current::before {
+.current .face::before {
   opacity: 0.1;
 }
 
@@ -145,8 +170,8 @@
 }
 
 .appIcon {
-  width: 56px;
-  height: 56px;
+  width: 44px;
+  height: 44px;
   object-fit: contain;
   flex-shrink: 0;
   position: relative;
@@ -198,9 +223,26 @@
 .categoryApps {
   display: flex;
   flex-direction: row;
-  align-items: center;
-  gap: 1rem;
+  align-items: flex-start;
   flex-shrink: 0;
+  padding-left: calc(132px * 0.25);
+}
+
+/* The honeycomb strip: the hexagons interlock, every other one half a hexagon lower (the
+   loading ones too). */
+.categoryApps > *,
+.skeletonItem {
+  margin-left: calc(var(--hex-w) * -0.25 + var(--hex-gap));
+}
+
+.categoryApps > :nth-child(even),
+.skeletonItem:nth-child(even) {
+  margin-top: calc(var(--hex-h) / 2 + var(--hex-gap) / 2);
+}
+
+.categoryApps > :nth-child(odd),
+.skeletonItem:nth-child(odd) {
+  margin-bottom: calc(var(--hex-h) / 2 + var(--hex-gap) / 2);
 }
 
 .categoryDivider {
@@ -228,8 +270,8 @@
 }
 
 .skeletonIcon {
-  width: 56px;
-  height: 56px;
+  width: 44px;
+  height: 44px;
   border-radius: 12px;
   background: linear-gradient(90deg, var(--nhexa-desktop-skeleton-1), var(--nhexa-desktop-skeleton-2), var(--nhexa-desktop-skeleton-1));
   background-size: 200% 100%;
