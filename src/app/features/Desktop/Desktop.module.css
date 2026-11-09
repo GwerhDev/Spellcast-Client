@@ -66,33 +66,20 @@
   display: none;
 }
 
-/* Each app is a hexagon (flat top), and those of a category fit together as a honeycomb strip:
-   every other one half a hexagon lower, each one a quarter of its width over the last. Its
-   border is a hexagon behind its face (a clip-path cuts off CSS borders). */
-.item,
-.skeletonItem {
-  flex-shrink: 0;
-  width: var(--hex-w);
-  height: var(--hex-h);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  background: var(--nhexa-desktop-surface);
-  clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%);
-}
-
+/* Each app is a hexagon (pointy top), in a row with the others: their upright sides face each
+   other. Its border is a hexagon behind its face (a clip-path cuts off CSS borders). */
 .item {
+  --hex-w: 112px;
   scroll-snap-align: center;
   flex-shrink: 0;
   position: relative;
   width: var(--hex-w);
-  height: var(--hex-h);
+  height: calc(var(--hex-w) * 1.1547);
   padding: 1.5px;
   border: none;
+  border-radius: 0;
   background: rgba(255, 255, 255, 0.07);
-  clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%);
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
   cursor: pointer;
   transition: background-color 0.18s ease, transform 0.2s ease;
 }
@@ -223,26 +210,9 @@
 .categoryApps {
   display: flex;
   flex-direction: row;
-  align-items: flex-start;
+  align-items: center;
+  gap: 6px;
   flex-shrink: 0;
-  padding-left: calc(132px * 0.25);
-}
-
-/* The honeycomb strip: the hexagons interlock, every other one half a hexagon lower (the
-   loading ones too). */
-.categoryApps > *,
-.skeletonItem {
-  margin-left: calc(var(--hex-w) * -0.25 + var(--hex-gap));
-}
-
-.categoryApps > :nth-child(even),
-.skeletonItem:nth-child(even) {
-  margin-top: calc(var(--hex-h) / 2 + var(--hex-gap) / 2);
-}
-
-.categoryApps > :nth-child(odd),
-.skeletonItem:nth-child(odd) {
-  margin-bottom: calc(var(--hex-h) / 2 + var(--hex-gap) / 2);
 }
 
 .categoryDivider {
@@ -256,17 +226,16 @@
 /* Fixed dark colors -- the desktop launcher is outside app-container and must always
    look like dark mode regardless of the in-app theme toggle. */
 .skeletonItem {
-  width: 116px;
-  height: 130px;
-  border-radius: 14px;
+  flex-shrink: 0;
+  width: 112px;
+  height: calc(112px * 1.1547);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 0.6rem;
-  padding: 1.1rem 0.5rem;
   background: var(--nhexa-desktop-surface);
-  border: 1.5px solid rgba(255, 255, 255, 0.06);
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
 }
 
 .skeletonIcon {
