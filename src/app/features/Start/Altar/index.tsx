@@ -4,7 +4,7 @@ import { AltarBrandIcon, AltarCornerButton, AltarHint, AltarNowReading, AltarSen
 import { activeSentenceIndex } from '../../../../utils/activeSentence';
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { faBookOpenReader, faEject, faFeatherPointed, faPen, faScroll, faUpload, faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons';
+import { faBookOpenReader, faEject, faPen, faScroll, faUpload, faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons';
 import { useNavigate } from 'react-router-dom';
 import { RadialMenu, type RadialMenuItem } from '../../../components/RadialMenu/RadialMenu';
 import { useAppDispatch, useAppSelector } from '../../../../store/hooks';
@@ -17,7 +17,7 @@ import type { Spell } from '../../../../interfaces';
 import { useSpellCoverUrl } from '../../../../hooks/useSpellCoverUrl';
 import { isInCasterGrimoire } from '../../../../utils/grimoire';
 import { useDragPointer } from '../../../../hooks/useDragPointer';
-import { SPELL_DRAG_TYPE } from '../../../../config/consts';
+import { SPELL_DRAG_TYPE, EDITOR_ICON } from '../../../../config/consts';
 import { useLanguage } from '../../../../i18n';
 
 interface AltarProps {
@@ -109,7 +109,7 @@ export const Altar = ({ onWrite, onImport, immersive = false, idle = false, onFo
   const menuItems: RadialMenuItem[] = [
     { id: 'write', label: t.start.writeTab, icon: faPen, onSelect: onWrite },
     { id: 'import', label: t.start.importTab, icon: faUpload, onSelect: onImport },
-    { id: 'editor', label: t.nav.editor, icon: faFeatherPointed, onSelect: () => navigate('/editor') },
+    { id: 'editor', label: t.nav.editor, icon: EDITOR_ICON, onSelect: () => navigate('/editor') },
   ];
 
   // Imports every dropped .spell (saved in the browser, lists refreshed, a toast per file)

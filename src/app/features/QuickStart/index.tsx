@@ -6,7 +6,8 @@ import { SpellCard } from '../../components/Cards/SpellCard';
 import { SpellDetailModal, type SpellDetailOrigin } from '../../components/Modals/SpellDetailModal';
 import { useCoverFrame3DSection } from '../../../hooks/useCoverFrame3DSection';
 import { useLanguage } from '../../../i18n';
-import { faArrowRight, faBuildingColumns } from '@fortawesome/free-solid-svg-icons';
+import { faArrowRight } from '@fortawesome/free-solid-svg-icons';
+import { GRIMOIRE_ICON } from '../../../config/consts';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Coverflow, type CoverflowItem } from '../../components/Coverflow/Coverflow';
 import { EmptySpellCard } from '../../components/Cards/EmptySpellCard';
@@ -89,7 +90,7 @@ export const QuickStart: React.FC = () => {
           onClick={() => navigate('/grimoire')}
           onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate('/grimoire'); } }}
         >
-          <FontAwesomeIcon icon={faBuildingColumns} />
+          <FontAwesomeIcon icon={GRIMOIRE_ICON} />
           <span>{t.nav.grimoire}</span>
         </div>
       ),
@@ -101,7 +102,7 @@ export const QuickStart: React.FC = () => {
       <div className={s.container}>
         <div className={s.header} data-dock-reveal>
           <span className={s.grimoireLink} onClick={() => navigate('/grimoire')}>
-            <FontAwesomeIcon icon={faBuildingColumns} />
+            <FontAwesomeIcon icon={GRIMOIRE_ICON} />
             {t.nav.grimoire}
             <FontAwesomeIcon icon={faArrowRight} />
           </span>

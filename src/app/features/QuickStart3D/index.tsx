@@ -2,7 +2,8 @@ import s from './index.module.css';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowRight, faBuildingColumns, faChevronLeft, faChevronRight, faScroll } from '@fortawesome/free-solid-svg-icons';
+import { faArrowRight, faChevronLeft, faChevronRight, faScroll } from '@fortawesome/free-solid-svg-icons';
+import { GRIMOIRE_ICON } from '../../../config/consts';
 import { useAppSelector } from '../../../store/hooks';
 import { useLanguage } from '../../../i18n';
 import { useQuickStartSpells } from '../../../hooks/useQuickStartSpells';
@@ -118,7 +119,7 @@ export const QuickStart3DStrip: React.FC<{ model: QuickStart3DModel }> = ({ mode
       <div className={s.container} data-testid="quick-start-3d">
         <div className={s.header} data-dock-reveal>
           <span className={s.grimoireLink} onClick={seeAll}>
-            <FontAwesomeIcon icon={faBuildingColumns} />
+            <FontAwesomeIcon icon={GRIMOIRE_ICON} />
             {t.nav.grimoire}
             <FontAwesomeIcon icon={faArrowRight} />
           </span>
@@ -175,7 +176,7 @@ export const QuickStart3DScene: React.FC<{ model: QuickStart3DModel }> = ({ mode
       onSettled={() => { row.spreading.current = false; }}
       hiddenId={detail?.origin ? detail.spellId : null}
       moreLabel={t.nav.grimoire}
-      moreIcon={faBuildingColumns}
+      moreIcon={GRIMOIRE_ICON}
       emptyIcon={faScroll}
     />
   );

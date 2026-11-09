@@ -5,7 +5,8 @@ import { useLanguage } from '../../../i18n';
 import { SegmentedTabs } from '../../components/Tabs/SegmentedTabs';
 import { SpellList, GrimoireFilter } from '../SpellList';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCloud, faHardDrive, faLayerGroup, faMagnifyingGlass, faPlus, faCheckSquare, faTrash, faXmark, faBuildingColumns, faArrowsRotate, faCheckDouble, faSquare, faDownload } from '@fortawesome/free-solid-svg-icons';
+import { faCloud, faHardDrive, faLayerGroup, faMagnifyingGlass, faPlus, faCheckSquare, faTrash, faXmark, faArrowsRotate, faCheckDouble, faSquare, faDownload } from '@fortawesome/free-solid-svg-icons';
+import { GRIMOIRE_ICON } from '../../../config/consts';
 import { SectionHeader } from '../../components/SectionHeader';
 import { EmptyState } from '../../components/EmptyState';
 import { ImportOption } from '../../components/Start/ImportOption';
@@ -168,7 +169,7 @@ export const GrimoireLanding = () => {
 
   return (
     <div className={s.container} data-testid="grimoire-landing">
-      <SectionHeader icon={faBuildingColumns} title={t.nav.grimoire} subtitle={t.grimoire.subtitle} align="center" />
+      <SectionHeader icon={GRIMOIRE_ICON} title={t.nav.grimoire} subtitle={t.grimoire.subtitle} align="center" />
 
       <SegmentedTabs tabs={tabs} active={filter} onChange={handleFilterChange} />
 

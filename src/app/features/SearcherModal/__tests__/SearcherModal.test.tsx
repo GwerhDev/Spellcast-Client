@@ -53,7 +53,7 @@ describe('SearcherModal', () => {
       expect(screen.getByTestId('general-search-hint')).toHaveTextContent('Test Spell');
       expect(screen.getByTestId('general-search-hint').querySelector('svg')).toHaveAttribute('data-icon', 'magnifying-glass');
       // The grimoire's tab has the grimoire's icon, as in the sidebar.
-      expect(screen.getByTestId('tab-grimoire').querySelector('svg')).toHaveAttribute('data-icon', 'building-columns');
+      expect(screen.getByTestId('tab-grimoire').querySelector('svg')).toHaveAttribute('data-icon', 'grimoire');
       expect(screen.queryByTestId('general-search-spells')).not.toBeInTheDocument();
       renderOpen({ withSpell: false });
       expect(screen.getAllByTestId('general-search-hint')[1]).toHaveTextContent(/Open a Spell/);
@@ -147,7 +147,7 @@ describe('SearcherModal', () => {
       fireEvent.click(screen.getByTestId('tab-grimoire'));
       await screen.findByTestId('spells-search-sp-1');
       fireEvent.change(screen.getByTestId('spells-search-input'), { target: { value: 'silmarillion' } });
-      expect(screen.getByTestId('spells-search-no-results').querySelector('svg')).toHaveAttribute('data-icon', 'building-columns');
+      expect(screen.getByTestId('spells-search-no-results').querySelector('svg')).toHaveAttribute('data-icon', 'grimoire');
     });
   });
 

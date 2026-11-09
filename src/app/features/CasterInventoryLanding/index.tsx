@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { faBoxOpen, faLayerGroup, faMusic, faFileLines, faCat, faImage } from '@fortawesome/free-solid-svg-icons';
+import { faLayerGroup, faMusic, faFileLines, faCat, faImage } from '@fortawesome/free-solid-svg-icons';
+import { INVENTORY_ICON } from '../../../config/consts';
 import { EmptyState } from '../../components/EmptyState';
 import { InventoryBag, type BagItem } from '../../components/Inventory/InventoryBag';
 import { ItemDetailModal } from '../../components/Inventory/ItemDetailModal';
@@ -72,7 +73,7 @@ export const CasterInventoryLanding = () => {
           tabs={<BagFilterTabs tabs={filterTabs} active={filter} onChange={id => setFilter(id as 'all' | AssetCategory)} />}
         />
       ) : (
-        <EmptyState icon={faBoxOpen} message={t.caster.inventoryEmpty} testId="inventory-empty" />
+        <EmptyState icon={INVENTORY_ICON} message={t.caster.inventoryEmpty} testId="inventory-empty" />
       )}
       <ItemDetailModal
         asset={selected?.asset ?? null}

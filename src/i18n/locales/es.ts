@@ -114,7 +114,7 @@ export const es: Translations = {
     accountsCenter: 'Centro de cuentas',
     nhexaInterface: 'Nhexa Interface',
     havenstore: 'Havenstore',
-    home: 'Inicio',
+    home: 'Altar',
     local: 'Local',
     cloud: 'Nube',
     editor: 'Editor',

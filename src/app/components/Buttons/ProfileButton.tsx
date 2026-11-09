@@ -2,7 +2,8 @@ import s from "./ProfileButton.module.css";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faGear, faHome, faRightFromBracket, faUser } from "@fortawesome/free-solid-svg-icons";
+import { faGear, faRightFromBracket } from "@fortawesome/free-solid-svg-icons";
+import { spAltar, spCaster } from "../../../icons";
 import { userData } from "../../../interfaces";
 import { ProfileCanvas } from "../Canvas/ProfileCanvas";
 import { useLanguage } from '../../../i18n';
@@ -58,10 +59,10 @@ export const ProfileButton = (props: { userData: userData }) => {
           {showCanvas && (
             <ul className={s.accountActionsContainer}>
               <button title={t.nav.home} onClick={handleGoHome}>
-                <FontAwesomeIcon icon={faHome} />
+                <FontAwesomeIcon icon={spAltar} />
               </button>
               <button title={t.nav.account} onClick={handleAccount}>
-                <FontAwesomeIcon icon={faUser} />
+                <FontAwesomeIcon icon={spCaster} />
               </button>
               <button title={t.common.settings}>
                 <FontAwesomeIcon icon={faGear} />

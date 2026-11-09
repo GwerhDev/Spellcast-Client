@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faMagnifyingGlass, faStore } from '@fortawesome/free-solid-svg-icons';
+import { faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
+import { HAVENSTORE_ICON } from '../../../config/consts';
 import { SectionHeader } from '../../components/SectionHeader';
 import { CompanionCard } from '../../components/Cards/CompanionCard';
 import { SoundBackgroundCard } from '../../components/Cards/SoundBackgroundCard';
@@ -43,7 +44,7 @@ export const HavenStoreLanding = () => {
   return (
     <div data-testid="haven-store" className={s.container}>
       <span className={s.header}>
-        <SectionHeader icon={faStore} title={t.havenStore.title} subtitle={t.havenStore.subtitle} align="center" />
+        <SectionHeader icon={HAVENSTORE_ICON} title={t.havenStore.title} subtitle={t.havenStore.subtitle} align="center" />
       </span>
 
       <div className={s.panel}>

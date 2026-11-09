@@ -1,9 +1,18 @@
 import {
   faUsers, faFingerprint, faShield, faPalette, faHardDrive, faCloud,
-  faBuildingColumns, faFeatherPointed, faStore, faUser, faBox, faGear,
-  faList, faPlus, faIdBadge, faChartLine, faBoxOpen, faCircleInfo,
+  faBox, faGear,
+  faList, faPlus, faIdBadge, faChartLine, faCircleInfo,
 } from "@fortawesome/free-solid-svg-icons";
-import { spAltar } from "../icons";
+import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
+import { spAltar, spBag, spCaster, spChest, spEditor, spGrimoire } from "../icons";
+
+// The grimoire's icon, wherever it stands for it (the sidebar, the search's tab).
+export const GRIMOIRE_ICON = spGrimoire;
+// The other sections' (Spellcast's own icons, see src/icons), wherever they stand for them.
+export const EDITOR_ICON = spEditor;
+export const HAVENSTORE_ICON = spChest;
+export const INVENTORY_ICON = spBag;
+export const CASTER_ICON = spCaster;
 
 // Silent, single-cycle WAV looped by both BrowserPlayer and AudioPlayer as a
 // real, always-audible HTMLMediaElement anchor: Chromium doesn't reliably
@@ -31,7 +40,7 @@ export const SPELL_DRAG_TYPE = 'application/x-spellcast-spell';
 export const dashboardDirectoryList = [
   // TCORE-109: possession + equip surface (unlockedIds + the same setActiveXxx actions
   // ReaderSettings/PlayerPreferences already dispatch) -- Havenstore stays acquisition-only.
-  { name: "Inventory", icon: faBoxOpen, path: "inventory" },
+  { name: "Inventory", icon: INVENTORY_ICON, path: "inventory" },
   { name: "Stats", icon: faChartLine, path: "stats" },
   { name: "Groups", icon: faUsers, path: "groups" },
 ];
@@ -60,21 +69,18 @@ export const editorDirectoryList = [
   { name: "Create", icon: faPlus, path: "editor/create" },
 ];
 
-// The grimoire's icon, wherever it stands for it (the sidebar, the search's tab).
-export const GRIMOIRE_ICON = faBuildingColumns;
-
 // Sections with no sub-items — rendered as single-click rows/icons in both sidebar states.
 export const sidebarDirectLinks = [
   { key: "home", icon: spAltar, path: "/" },
   { key: "grimoire", icon: GRIMOIRE_ICON, path: "/grimoire" },
-  { key: "havenstore", icon: faStore, path: "/havenstore" },
+  { key: "havenstore", icon: HAVENSTORE_ICON, path: "/havenstore" },
 ];
 
 export interface SidebarAccordionSectionConfig {
   key: string;
-  icon: typeof faUser;
+  icon: IconDefinition;
   path: string;
-  items: { name: string; icon: typeof faUser; path: string }[];
+  items: { name: string; icon: IconDefinition; path: string }[];
   basePath: string;
   subSections: SidebarAccordionSectionConfig[];
 }
@@ -94,8 +100,8 @@ export const userSubSections: SidebarAccordionSectionConfig[] = [
 // destinations are mirrored flat in `casterTabs` below, which CasterLayout renders as a tab
 // bar atop every /caster/* route.
 export const sidebarAccordionSections: SidebarAccordionSectionConfig[] = [
-  { key: "editor", icon: faFeatherPointed, path: "/editor", items: editorDirectoryList, basePath: "/", subSections: [] },
-  { key: "caster", icon: faUser, path: "/caster/profile", items: dashboardDirectoryList, basePath: "/caster/", subSections: userSubSections },
+  { key: "editor", icon: EDITOR_ICON, path: "/editor", items: editorDirectoryList, basePath: "/", subSections: [] },
+  { key: "caster", icon: CASTER_ICON, path: "/caster/profile", items: dashboardDirectoryList, basePath: "/caster/", subSections: userSubSections },
 ];
 
 // Flat mirror of the sidebar's Caster section (Profile + Inventory/Stats/Groups items +
@@ -104,7 +110,7 @@ export const sidebarAccordionSections: SidebarAccordionSectionConfig[] = [
 // the sidebar itself uses, so the two can never show mismatched text.
 export const casterTabs = [
   { id: "profile", icon: faIdBadge, path: "/caster/profile" },
-  { id: "inventory", icon: faBoxOpen, path: "/caster/inventory" },
+  { id: "inventory", icon: INVENTORY_ICON, path: "/caster/inventory" },
   { id: "stats", icon: faChartLine, path: "/caster/stats" },
   { id: "groups", icon: faUsers, path: "/caster/groups" },
   { id: "settings", icon: faGear, path: "/caster/settings" },

@@ -2,7 +2,8 @@ import s from '../../components/EditorLanding/index.module.css';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faScroll, faWandMagicSparkles, faFeatherPointed } from '@fortawesome/free-solid-svg-icons';
+import { faScroll, faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons';
+import { EDITOR_ICON } from '../../../config/consts';
 import { resetSpellState } from '../../../store/spellSlice';
 import { SectionHeader } from '../../components/SectionHeader';
 import { useLanguage } from '../../../i18n';
@@ -20,7 +21,7 @@ export const EditorLanding = () => {
   return (
     <div data-testid="editor-landing" className={s.selectContainer}>
       <div className={s.selectInner}>
-        <SectionHeader icon={faFeatherPointed} title={t.editor.tagline} subtitle={t.editor.subtitle} align="center" />
+        <SectionHeader icon={EDITOR_ICON} title={t.editor.tagline} subtitle={t.editor.subtitle} align="center" />
         <div className={s.cards}>
           <div data-testid="editor-create-card" className={s.card} onClick={handleCreateNew}>
             <FontAwesomeIcon icon={faScroll} className={s.cardIcon} />

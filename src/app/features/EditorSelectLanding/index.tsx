@@ -2,7 +2,8 @@ import s from '../../components/EditorSelectLanding/index.module.css';
 import grid from '../../components/SpellGrid/index.module.css';
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { faArrowLeft, faScroll, faCloud, faFeatherPointed, faHardDrive, faLayerGroup, faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
+import { faArrowLeft, faScroll, faCloud, faHardDrive, faLayerGroup, faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
+import { EDITOR_ICON } from '../../../config/consts';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { getSpellsFromDB } from '../../../db';
 import { useAppSelector } from '../../../store/hooks';
@@ -109,7 +110,7 @@ export const EditorSelectLanding = () => {
       </div>
 
       <div className={s.sectionHeader}>
-        <SectionHeader icon={faFeatherPointed} title={t.editor.tagline} subtitle={t.editor.selectSpellSubtitle} align="center" />
+        <SectionHeader icon={EDITOR_ICON} title={t.editor.tagline} subtitle={t.editor.selectSpellSubtitle} align="center" />
       </div>
 
       <div className={s.controls}>

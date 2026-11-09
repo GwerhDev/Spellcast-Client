@@ -114,7 +114,7 @@ export const en = {
     accountsCenter: 'Accounts center',
     nhexaInterface: 'Nhexa Interface',
     havenstore: 'Havenstore',
-    home: 'Home',
+    home: 'Altar',
     local: 'Local',
     cloud: 'Cloud',
     editor: 'Editor',
