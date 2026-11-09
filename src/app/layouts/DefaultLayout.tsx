@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, lazy, Suspense } from 'react';
 import { motion } from 'framer-motion';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useNavigate } from 'react-router-dom';
 import { Sidebar } from '../features/Sidebar/Sidebar';
 import { LogoutModal } from '../components/Modals/LogoutModal';
 import { AudioPlayer } from '../features/AudioPlayer';
@@ -15,6 +15,7 @@ import { ReaderSettings } from '../components/SpellReader/ReaderSettings';
 import { EditorSettings } from '../components/EditorSettingsPanel/EditorSettings';
 import { AccountMenu } from '../components/AccountMenu/AccountMenu';
 import { AppSwitcher } from '../components/AppSwitcher/AppSwitcher';
+import { AppTitle } from '../components/AppTitle/AppTitle';
 import { useLanguage } from '../../i18n';
 import { VoiceSelectorModal } from '../components/Modals/VoiceSelectorModal';
 import { SoundBackground } from '../components/SoundBackground/SoundBackground';
@@ -51,6 +52,7 @@ export default function DefaultLayout() {
   const { spellId: activeSpellId } = useSelector((state: RootState) => state.spellReader);
   const minimized = useSelector((state: RootState) => state.desktop.minimized);
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const { t } = useLanguage();
   const { showModal: showAttentionGuard, handleContinue: handleAttentionGuardContinue } = useAttentionGuard();
   useStorageQuotaWarning();
@@ -103,10 +105,11 @@ export default function DefaultLayout() {
       <Desktop />
       <div className="app-window">
         <div className="header-app">
-          {/* The app's icon, above the sidebar's rail, opens Nhexa's apps. */}
+          {/* The app's icon, above the sidebar's rail, opens Nhexa's apps; its title goes home. */}
           <span className="header-spacer header-left">
             <AppSwitcher label={t.desktop.apps} onClick={() => dispatch(toggleMinimized())} />
           </span>
+          <AppTitle label="Spellcast" onClick={() => navigate('/')} />
           <span className="header-spacer">
             <NotificationsButton />
             <AccountMenu />
