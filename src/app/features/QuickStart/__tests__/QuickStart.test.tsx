@@ -4,7 +4,8 @@ import { renderWithProviders, makeStore } from '../../../../test/renderWithProvi
 import { QuickStart } from '../index';
 import * as db from '../../../../db';
 import { invalidateSpellList, coverFrameChanged } from '../../../../store/spellReaderSlice';
-import { toggleQuickStartFilter } from '../../../../store/altarSlice';
+import { toggleQuickStartFilter, spellArriving, spellDeparting, spellLanded } from '../../../../store/altarSlice';
+import { setSpellFile, resetSpellReader } from '../../../../store/spellReaderSlice';
 
 // The detail modal loads the spell on its own; a stub is enough to see which spell a card opened.
 vi.mock('../../../components/Modals/SpellDetailModal', () => ({
@@ -132,5 +133,78 @@ describe('QuickStart', () => {
     fireEvent.click(screen.getByTestId('spell-card-doc-2'));
     expect(screen.getByTestId('spell-detail-modal-stub')).toHaveTextContent('doc-2');
   });
-});
 
+  describe('the spell on the altar', () => {
+    const other = { ...mockDoc, id: 'doc-2', title: 'Another book' };
+    const box = { left: 40, top: 500, width: 120, height: 168, right: 160, bottom: 668, x: 40, y: 500, toJSON: () => ({}) };
+    const atTheCards = () => vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue(box as DOMRect);
+
+    it("isn't in the row, and is back once it's dispelled", async () => {
+      vi.spyOn(db, 'getSpellsFromDB').mockResolvedValue([mockDoc, other] as never);
+      const store = loggedStore();
+      renderWithProviders(<QuickStart />, { store });
+      await screen.findByTestId('spell-card-doc-1');
+      act(() => { store.dispatch(setSpellFile({ id: 'doc-1', title: 'Sample Book' })); });
+      // Gone at once, not faded out where it was: its cover is on its way to the altar.
+      await act(async () => {});
+      expect(screen.queryByTestId('spell-card-doc-1')).toBeNull();
+      expect(screen.getByTestId('spell-card-doc-2')).toBeInTheDocument();
+      act(() => { store.dispatch(resetSpellReader()); });
+      expect(await screen.findByTestId('spell-card-doc-1')).toBeInTheDocument();
+    });
+
+    it('leaves the row as soon as it is dropped on the altar, before it has loaded; back if it never does', async () => {
+      vi.spyOn(db, 'getSpellsFromDB').mockResolvedValue([mockDoc, other] as never);
+      const store = loggedStore();
+      renderWithProviders(<QuickStart />, { store });
+      await screen.findByTestId('spell-card-doc-1');
+      act(() => { store.dispatch(spellArriving({ spellId: 'doc-1', via: 'drop', from: box })); });
+      // At once: a card left fading there would show its cover again as its drag ends.
+      await act(async () => {});
+      expect(screen.queryByTestId('spell-card-doc-1')).toBeNull();
+      act(() => { store.dispatch(spellLanded()); });
+      expect(await screen.findByTestId('spell-card-doc-1')).toBeInTheDocument();
+    });
+
+    it('flies from its card to the altar when conjured another way', async () => {
+      vi.spyOn(db, 'getSpellsFromDB').mockResolvedValue([mockDoc, other] as never);
+      const store = loggedStore();
+      renderWithProviders(<QuickStart />, { store });
+      await screen.findByTestId('spell-card-doc-1');
+      atTheCards();
+      act(() => { store.dispatch(setSpellFile({ id: 'doc-1', title: 'Sample Book' })); });
+      expect(store.getState().altar.arrival).toMatchObject({ spellId: 'doc-1', via: 'flight', from: { left: 40, top: 500, width: 120, height: 168 } });
+    });
+
+    it("doesn't fly what's already on its way (dropped, or flown from its detail)", async () => {
+      vi.spyOn(db, 'getSpellsFromDB').mockResolvedValue([mockDoc, other] as never);
+      const store = loggedStore();
+      renderWithProviders(<QuickStart />, { store });
+      await screen.findByTestId('spell-card-doc-1');
+      atTheCards();
+      const fromDetail = { left: 300, top: 100, width: 200, height: 280 };
+      act(() => { store.dispatch(spellArriving({ spellId: 'doc-1', via: 'flight', from: fromDetail })); });
+      act(() => { store.dispatch(setSpellFile({ id: 'doc-1', title: 'Sample Book' })); });
+      expect(store.getState().altar.arrival?.from).toEqual(fromDetail);
+    });
+
+    it('when dispelled, says where its card is back for it to fly there, and keeps it hidden until it has', async () => {
+      vi.spyOn(db, 'getSpellsFromDB').mockResolvedValue([mockDoc, other] as never);
+      const store = loggedStore();
+      store.dispatch(setSpellFile({ id: 'doc-1', title: 'Sample Book' }));
+      renderWithProviders(<QuickStart />, { store });
+      await screen.findByTestId('spell-card-doc-2');
+      atTheCards();
+      act(() => {
+        store.dispatch(resetSpellReader());
+        store.dispatch(spellDeparting({ spellId: 'doc-1', from: { left: 400, top: 200, width: 80, height: 80 } }));
+      });
+      const card = await screen.findByTestId('spell-card-doc-1');
+      expect(card.className).toMatch(/cardLifted/);
+      // No cover to show: it flies with the altar's light, after a few frames looking for one.
+      await waitFor(() => expect(store.getState().altar.departure?.to).toEqual({ left: 40, top: 500, width: 120, height: 168 }));
+      act(() => { store.dispatch({ type: 'altar/spellReturned' }); });
+      expect(screen.getByTestId('spell-card-doc-1').className).not.toMatch(/cardLifted/);
+    });
+  });
+});

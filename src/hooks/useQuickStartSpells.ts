@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { getSpellsFromDB } from '../db';
 import { useAppSelector } from '../store/hooks';
 import type { Spell } from '../interfaces';
@@ -11,12 +11,22 @@ export const QUICK_START_MAX = 10;
 // scene): the caster's spells, newest first, through the altar's filters (see
 // applyQuickStart), kept up to date as they change -- read again when the list changes,
 // and patched in place for a cover frame picked or a page turned in the one being read.
+// The one on the altar isn't among them: it's back once it's dispelled.
 export const useQuickStartSpells = () => {
   const userId = useAppSelector((state) => state.session.userData.id);
   const { spellId: activeDocId, currentPage: activeCurrentPage, listVersion, coverFrameChange } = useAppSelector((state) => state.spellReader);
   const quickStart = useAppSelector((state) => state.altar.quickStart);
   const [documents, setDocuments] = useState<Spell[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  // The spell left out (the one on the altar). It follows the one loaded in a layout effect,
+  // not in the same render: the commit a spell is conjured in still has its card, so the
+  // view can see where it was (and fly it from there to the altar) before it's gone, with
+  // nothing painted in between.
+  const [onAltar, setOnAltar] = useState<string | null>(activeDocId);
+  useLayoutEffect(() => { setOnAltar(activeDocId); }, [activeDocId]);
+  // One dropped on the altar leaves the row as it's let go, before it has loaded: its card
+  // (back from being dragged) would show for a moment otherwise. Back if it fails to load.
+  const dropped = useAppSelector((state) => (state.altar.arrival?.via === 'drop' ? state.altar.arrival.spellId : null));
 
   useEffect(() => {
     // No going back to the loading state on a refetch (isLoading starts true, for the first
@@ -47,9 +57,15 @@ export const useQuickStartSpells = () => {
   }, [activeCurrentPage, activeDocId]);
 
   // The same list until the spells or the filters change, for what's built from it.
-  const listed = useMemo(() => applyQuickStart(documents, quickStart), [documents, quickStart]);
+  const listed = useMemo(
+    () => applyQuickStart(documents.filter(doc => doc.id !== onAltar && doc.id !== dropped), quickStart),
+    [documents, quickStart, onAltar, dropped],
+  );
   const visible = useMemo(() => listed.slice(0, QUICK_START_MAX), [listed]);
   return {
+    // Spells leaving the row for the altar: gone from it at once (their cover is on its way
+    // there), not faded out where they were.
+    vanishing: [onAltar, dropped, activeDocId].filter((id): id is string => !!id),
     isLoading,
     // None at all (not just none through the filters).
     empty: documents.length === 0,

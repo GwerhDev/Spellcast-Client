@@ -27,6 +27,10 @@ interface CoverflowProps {
   interactive?: boolean;
   labels?: { previous: string; next: string };
   testId?: string;
+  // Items leaving the row that go at once instead of fading out where they were: something
+  // else carries them away (a spell going to the altar). A card left fading there would show
+  // again in the meantime (e.g. its cover back as its drag ends).
+  vanishing?: string[];
 }
 
 // A place's look (see placeValues), as the card's transform and filter.
@@ -49,7 +53,7 @@ const placeAt = (l: CoverflowLayout, offset: number) => {
 // behind it is brought to the center instead. With room, arrows sit at its sides and
 // resting the pointer over the cards behind keeps it moving that way; narrow, it shows one
 // card in front and is swiped through. On mounting, the cards spread out from the center.
-export const Coverflow = ({ items, renderEmpty, itemWidth, slots = 7, interactive = true, labels, testId = 'coverflow' }: CoverflowProps) => {
+export const Coverflow = ({ items, renderEmpty, itemWidth, slots = 7, interactive = true, labels, testId = 'coverflow', vanishing = [] }: CoverflowProps) => {
   const reduced = useReducedMotion();
   const rootRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
@@ -74,7 +78,7 @@ export const Coverflow = ({ items, renderEmpty, itemWidth, slots = 7, interactiv
         style={{ width: `calc(${itemWidth} * ${spanOf(layout, half)})` }}
         {...stageHandlers}
       >
-        <AnimatePresence initial>
+        <AnimatePresence initial custom={vanishing}>
           {places.map(({ offset, index, empty, key, behind }) => {
             const item = empty ? null : items[index];
             const enterFrom = spreading.current
@@ -88,7 +92,16 @@ export const Coverflow = ({ items, renderEmpty, itemWidth, slots = 7, interactiv
                 className={`${s.place} ${behind ? '' : s.front}`}
                 initial={enterFrom}
                 animate={placeAt(layout, offset)}
-                exit={{ ...placeAt(layout, offset), opacity: 0 }}
+                // Leaving, it fades out where it was, or is gone at once (see `vanishing`): read at
+                // the moment it leaves, from the row's latest `vanishing`.
+                custom={vanishing}
+                variants={{
+                  // (A place's key is its item's, with the lap it's on: `<key>@<lap>`.)
+                  gone: (vanish: string[] = []) => (vanish.includes(key.slice(0, key.lastIndexOf('@')))
+                    ? { opacity: 0, transition: { duration: 0 } }
+                    : { ...placeAt(layout, offset), opacity: 0 }),
+                }}
+                exit="gone"
                 transition={spreading.current && !reduced ? { ...transition, delay: Math.abs(offset) * 0.07 } : transition}
                 onAnimationComplete={() => { spreading.current = false; }}
                 // A card behind the front row is brought to the center first; it only acts

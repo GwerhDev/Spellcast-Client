@@ -2,13 +2,15 @@ import { PlayButton, PlayButtonShape } from '../../../components/PlayButton/Play
 import { AltarPanel } from '../../../components/Altar/AltarPanel';
 import { AltarBrandIcon, AltarCornerButton, AltarHint, AltarNowReading, AltarSentence, AltarWave } from '../../../components/Altar/AltarParts';
 import { activeSentenceIndex } from '../../../../utils/activeSentence';
-import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { faEject, faPen, faUpload } from '@fortawesome/free-solid-svg-icons';
 import { useNavigate } from 'react-router-dom';
 import { RadialMenu, type RadialMenuItem } from '../../../components/RadialMenu/RadialMenu';
 import { useAppDispatch, useAppSelector } from '../../../../store/hooks';
 import { addApiResponse } from '../../../../store/apiResponsesSlice';
+import { spellArriving, spellLanded, spellDeparting, spellReturned, type ScreenRect } from '../../../../store/altarSlice';
+import { AltarArrival } from '../../../components/Altar/AltarArrival';
 import { getSpellById } from '../../../../db';
 import { useSpellImport } from '../../../../hooks/useSpellImport';
 import { SpellUnlockModal } from '../../../components/Modals/SpellUnlockModal';
@@ -17,7 +19,7 @@ import type { Spell } from '../../../../interfaces';
 import { useSpellCoverUrl } from '../../../../hooks/useSpellCoverUrl';
 import { isInCasterGrimoire } from '../../../../utils/grimoire';
 import { useDragPointer } from '../../../../hooks/useDragPointer';
-import { SPELL_DRAG_TYPE, EDITOR_ICON, SPELL_ICON, READER_ICON } from '../../../../config/consts';
+import { SPELL_DRAG_GRIP_TYPE, SPELL_DRAG_TYPE, EDITOR_ICON, SPELL_ICON, READER_ICON } from '../../../../config/consts';
 import { useLanguage } from '../../../../i18n';
 
 interface AltarProps {
@@ -40,6 +42,25 @@ const isFileDrag = (e: React.DragEvent) => hasType(e, 'Files');
 // While a spell is dragged over the altar, the button glows brighter the closer it gets
 // (within GLOW_RANGE px of its center).
 const GLOW_RANGE = 420;
+
+// A spell let go: where the browser drew the card being carried (held where it was picked up,
+// see SpellCard), or, without that (carried another way: a finger, the 3D row), a card's size
+// centered on the point.
+const coverAt = (e: React.DragEvent): ScreenRect => {
+  try {
+    const grip = JSON.parse(e.dataTransfer.getData(SPELL_DRAG_GRIP_TYPE) || 'null');
+    if (grip && [grip.x, grip.y, grip.width, grip.height].every(Number.isFinite)) {
+      return { left: e.clientX - grip.x, top: e.clientY - grip.y, width: grip.width, height: grip.height };
+    }
+  } catch { /* not a grip: centered below */ }
+  const width = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--spell-card-width')) || 120;
+  const height = width * 1.4;
+  return { left: e.clientX - width / 2, top: e.clientY - height / 2, width, height };
+};
+const rectOf = (el: Element | null | undefined): ScreenRect | null => {
+  const box = el?.getBoundingClientRect();
+  return box ? { left: box.left, top: box.top, width: box.width, height: box.height } : null;
+};
 
 // The altar: Start's central panel, where a spell is placed to be read. The panel itself is
 // the drop target: dropping a spell from the grimoire starts reading it, and so does
@@ -115,7 +136,7 @@ export const Altar = ({ onWrite, onImport, immersive = false, idle = false, onFo
   // Imports every dropped .spell (saved in the browser, lists refreshed, a toast per file)
   // and starts reading the first one. Anything else is refused here -- PDFs go through
   // Import, which has their review step.
-  const openSpellFiles = async (files: File[]) => {
+  const openSpellFiles = async (files: File[], at: ScreenRect) => {
     const spellFiles = files.filter(isSpellFile);
     if (spellFiles.length === 0) {
       dispatch(addApiResponse({ message: t.start.readOnlySpellFiles, type: 'error' }));
@@ -128,20 +149,52 @@ export const Altar = ({ onWrite, onImport, immersive = false, idle = false, onFo
       const firstId = ids.find((id): id is string => !!id);
       if (!firstId) return;
       const spell = await getSpellById(firstId, userId);
-      if (spell) conjure(spell);
+      if (!spell) return;
+      dispatch(spellArriving({ spellId: spell.id, via: 'drop', from: at }));
+      conjure(spell);
     } finally {
       setImporting(false);
     }
   };
 
-  const openDroppedSpell = async (droppedId: string) => {
+  // Dropped, it melts into the altar from where it was let go (and leaves the quick start,
+  // which skips its own flight for it: it was carried here).
+  const openDroppedSpell = async (droppedId: string, at: ScreenRect) => {
+    dispatch(spellArriving({ spellId: droppedId, via: 'drop', from: at }));
     try {
       const spell = await getSpellById(droppedId, userId);
       if (spell) conjure(spell);
+      else dispatch(spellLanded());
     } catch (error) {
+      dispatch(spellLanded());
       console.error('Failed to load dropped spell:', error);
     }
   };
+
+  // A spell arriving (dropped here, or flying from its card in the quick start), melting into
+  // the center. Drawn from the moment it's let go, right where the cursor left it -- not once
+  // it has loaded, which would leave a gap with nothing where the card was carried. Its own
+  // cover (in memory already, for a spell from the quick start), not the loaded spell's.
+  const arrival = useAppSelector(state => state.altar.arrival);
+  const arrivalCoverUrl = useSpellCoverUrl(arrival?.spellId, userId);
+  const [arrivalTarget, setArrivalTarget] = useState<ScreenRect | null>(null);
+  useLayoutEffect(() => {
+    setArrivalTarget(arrival ? rectOf(centerRef.current) : null);
+  }, [arrival]);
+  const landed = useCallback(() => dispatch(spellLanded()), [dispatch]);
+
+  // Dispelled (however: here, or from the player), it goes back from the center to its card in
+  // the quick start, which says where that is once it has it back (see useReturnFromAltar).
+  const departure = useAppSelector(state => state.altar.departure);
+  const wasLoaded = useRef(spellId);
+  useLayoutEffect(() => {
+    const was = wasLoaded.current;
+    wasLoaded.current = spellId;
+    if (!was || was === spellId) return;
+    const from = rectOf(centerRef.current);
+    if (from) dispatch(spellDeparting({ spellId: was, from }));
+  }, [spellId, dispatch]);
+  const returned = useCallback(() => dispatch(spellReturned()), [dispatch]);
 
   // A dragged spell's pointer, as CSS variables on the panel (no re-render per move): a
   // beam of light from the pointer onto the button, anchored at the button's center and
@@ -223,13 +276,13 @@ export const Altar = ({ onWrite, onImport, immersive = false, idle = false, onFo
       e.preventDefault();
       setSpellDragActive(false);
       const droppedId = e.dataTransfer.getData(SPELL_DRAG_TYPE);
-      if (droppedId) void openDroppedSpell(droppedId);
+      if (droppedId) void openDroppedSpell(droppedId, coverAt(e));
       return;
     }
     if (!isFileDrag(e)) return;
     e.preventDefault();
     setFileDragActive(false);
-    void openSpellFiles(Array.from(e.dataTransfer.files));
+    void openSpellFiles(Array.from(e.dataTransfer.files), coverAt(e));
   };
 
   // Immersive, the loaded spell's actions ring the center like the Spellcast button's menu
@@ -340,6 +393,12 @@ export const Altar = ({ onWrite, onImport, immersive = false, idle = false, onFo
         <AltarHint text={hintText} busy={importing} hidden={showMenu} />
       )}
     >
+      {arrival && arrivalTarget && (
+        <AltarArrival key={`in-${arrival.spellId}-${arrival.via}`} kind={arrival.via} from={arrival.from} to={arrivalTarget} coverUrl={arrivalCoverUrl} onDone={landed} />
+      )}
+      {departure?.to && (
+        <AltarArrival key={`out-${departure.spellId}`} kind="return" from={departure.from} to={departure.to} coverUrl={departure.coverUrl} onDone={returned} />
+      )}
       <SpellUnlockModal
         fileName={unlockPrompt?.fileName ?? null}
         wrong={!!unlockPrompt?.wrong}

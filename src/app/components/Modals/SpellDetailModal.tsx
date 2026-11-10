@@ -1,6 +1,7 @@
 import s from './SpellDetailModal.module.css';
 import React, { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { spellArriving } from '../../../store/altarSlice';
 import { useDispatch } from 'react-redux';
 import { useAppSelector } from '../../../store/hooks';
 import { getSpellById } from '../../../db';
@@ -67,6 +68,9 @@ interface SpellDetailModalProps {
 export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, show, onClose, origin = null }) => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  // On the altar's page, conjuring or dispelling from here is the altar's moment: the modal
+  // gets out of the way at once, and the cover flies to the altar (or back to its card).
+  const onAltar = useLocation().pathname === '/';
   const { t } = useLanguage();
   const { userData } = useAppSelector(state => state.session);
   const { spellId: currentPlayingId, currentPage: readerCurrentPage, totalPages: readerTotalPages, isLoaded: readerLoaded } = useAppSelector(state => state.spellReader);
@@ -168,6 +172,21 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
 
   // Only navigation: playback stays exactly as it is (the reader keeps a loaded spell
   // playing or paused, and doesn't start one that wasn't).
+  const handleMount = (spell: NonNullable<typeof doc>) => {
+    if (onAltar) {
+      const box = coverSlotRef.current?.getBoundingClientRect();
+      onClose();
+      // From where its cover is seen, here in the modal.
+      if (box && box.width > 0) dispatch(spellArriving({ spellId: spell.id, via: 'flight', from: { left: box.left, top: box.top, width: box.width, height: box.height } }));
+    }
+    mountSpell(spell);
+  };
+
+  const handleUnmount = () => {
+    if (onAltar) onClose();
+    unloadSpell();
+  };
+
   const handleRead = () => {
     onClose();
     navigate(`/spell/${spellId}/reader`);
@@ -298,8 +317,8 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
                   isPlaying={isPlaying}
                   canPrevious={mounted && readerLoaded && readerCurrentPage > 1}
                   canNext={mounted && readerLoaded && readerCurrentPage < readerTotalPages}
-                  onMount={() => mountSpell(doc)}
-                  onUnmount={() => unloadSpell()}
+                  onMount={() => handleMount(doc)}
+                  onUnmount={handleUnmount}
                   onTogglePlay={togglePlayback}
                   onPrevious={() => { dispatch(recordReaderActivity()); dispatch(goToPreviousPage()); }}
                   onNext={() => { dispatch(recordReaderActivity()); dispatch(goToNextPage()); }}

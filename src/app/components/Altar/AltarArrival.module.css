@@ -1,0 +1,36 @@
+.layer {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+}
+
+.cover {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 0 40px color-mix(in srgb, var(--color-primary-accent) 55%, transparent);
+  transform-origin: center;
+}
+
+.image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.glow {
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--color-primary-accent) 95%, white), color-mix(in srgb, var(--color-primary) 35%, transparent) 60%, transparent 75%);
+}
+
+.ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 2px solid color-mix(in srgb, var(--color-primary-accent) 85%, transparent);
+  box-shadow: 0 0 30px color-mix(in srgb, var(--color-primary-accent) 60%, transparent), inset 0 0 30px color-mix(in srgb, var(--color-primary) 40%, transparent);
+}

@@ -168,6 +168,43 @@ describe('SpellDetailModal', () => {
       expect(store.getState().spellReader.spellId).toBeNull();
       expect(screen.getByTestId('spell-transport-mount')).toBeInTheDocument();
     });
+
+    // On the altar's page, loading or unloading from here is the altar's moment.
+    it("on the altar's page, gets out of the way as it loads one, which flies from its cover here to the altar", async () => {
+      vi.spyOn(db, 'getSpellById').mockResolvedValue(mockDoc as never);
+      const store = loggedStore();
+      const onClose = vi.fn();
+      renderWithProviders(<SpellDetailModal spellId="doc-1" show onClose={onClose} />, { store, initialPath: '/' });
+      const mount = await screen.findByTestId('spell-transport-mount');
+      vi.spyOn(screen.getByTestId('spell-detail-modal-cover'), 'getBoundingClientRect')
+        .mockReturnValue({ left: 300, top: 100, width: 200, height: 280 } as DOMRect);
+      fireEvent.click(mount);
+      expect(onClose).toHaveBeenCalledTimes(1);
+      expect(store.getState().spellReader.spellId).toBe('doc-1');
+      expect(store.getState().altar.arrival).toEqual({ spellId: 'doc-1', via: 'flight', from: { left: 300, top: 100, width: 200, height: 280 } });
+    });
+
+    it("on the altar's page, gets out of the way as it unloads one, for it to go back to its card", async () => {
+      vi.spyOn(db, 'getSpellById').mockResolvedValue(mockDoc as never);
+      const store = loggedStore();
+      store.dispatch(setSpellFile({ id: 'doc-1', title: 'My Book', userId: 'user-1' }));
+      const onClose = vi.fn();
+      renderWithProviders(<SpellDetailModal spellId="doc-1" show onClose={onClose} />, { store, initialPath: '/' });
+      fireEvent.click(await screen.findByTestId('spell-transport-unmount'));
+      expect(onClose).toHaveBeenCalledTimes(1);
+      expect(store.getState().spellReader.spellId).toBeNull();
+    });
+
+    it("anywhere else, stays open as it loads and unloads, and nothing flies to the altar", async () => {
+      vi.spyOn(db, 'getSpellById').mockResolvedValue(mockDoc as never);
+      const store = loggedStore();
+      const onClose = vi.fn();
+      renderWithProviders(<SpellDetailModal spellId="doc-1" show onClose={onClose} />, { store, initialPath: '/grimoire' });
+      fireEvent.click(await screen.findByTestId('spell-transport-mount'));
+      fireEvent.click(screen.getByTestId('spell-transport-unmount'));
+      expect(onClose).not.toHaveBeenCalled();
+      expect(store.getState().altar.arrival).toBeNull();
+    });
   });
 
   it("'Open in the reader' only navigates: it never turns autoplay on", async () => {

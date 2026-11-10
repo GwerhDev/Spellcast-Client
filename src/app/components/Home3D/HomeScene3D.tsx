@@ -54,6 +54,12 @@ interface HomeScene3DProps {
   onSettled?: () => void;
   // A spell shown elsewhere right now (its cover lifted into its open detail): not drawn.
   hiddenId: string | null;
+  // Spells leaving the row that go at once instead of fading out where they were: something
+  // else carries them away (to the altar).
+  vanishing?: string[];
+  // Filled with where a spell's book is on screen right now (its cover), or null if it isn't
+  // in the row: for the page to fly it from there (e.g. to the altar).
+  locate?: React.MutableRefObject<((spellId: string) => SceneRect | null) | null>;
   // What the card leading to the rest of the spells says, and its icon; the empty place's icon.
   moreLabel: string;
   moreIcon: IconDefinition;
@@ -250,7 +256,7 @@ interface Card {
 }
 
 const Row: React.FC<Omit<HomeScene3DProps, 'anchor'> & { layout: React.MutableRefObject<Layout | null> }> = ({
-  places, layout, onBring, onOpen, onMore, onDragChange, onSettled, hiddenId, moreLabel, moreIcon, emptyIcon,
+  places, layout, onBring, onOpen, onMore, onDragChange, onSettled, hiddenId, moreLabel, moreIcon, emptyIcon, locate, vanishing,
 }) => {
   const settled = useRef(false);
   const cards = useRef(new Map<string, Card>());
@@ -265,6 +271,21 @@ const Row: React.FC<Omit<HomeScene3DProps, 'anchor'> & { layout: React.MutableRe
   const raycaster = useRef(new THREE.Raycaster());
   const handlers = useRef({ onBring, onOpen, onMore, onDragChange, onSettled });
   useEffect(() => { handlers.current = { onBring, onOpen, onMore, onDragChange, onSettled }; });
+
+  // A spell's book, where it's drawn right now (one fading out of the row isn't there).
+  useEffect(() => {
+    if (!locate) return;
+    locate.current = (spellId: string) => {
+      const l = layout.current;
+      for (const [key, card] of cards.current) {
+        if (card.leaving || card.place.kind !== 'book' || card.place.book?.id !== spellId) continue;
+        const g = groups.current.get(key);
+        return g && l ? coverRectOnScreen(g, camera, gl.domElement, l.cardW, l.cardH) : null;
+      }
+      return null;
+    };
+    return () => { locate.current = null; };
+  }, [locate, layout, camera, gl]);
 
   // Every place's card, kept as the row turns (a card moving to its next place keeps going
   // from where it is); a card no longer in the row fades out where it was, then is gone.
@@ -333,7 +354,8 @@ const Row: React.FC<Omit<HomeScene3DProps, 'anchor'> & { layout: React.MutableRe
       g.scale.setScalar(dragged ? 1.04 : card.scale.value);
       g.rotation.y = dragged ? g.rotation.y * 0.65 : turnAt(card.x.value);
       const opacity = Math.max(0, Math.min(1, card.opacity.value)) * l.opacity;
-      const hidden = card.place.kind === 'book' && card.place.book?.id === hiddenId;
+      const bookId = card.place.kind === 'book' ? card.place.book?.id : undefined;
+      const hidden = !!bookId && (bookId === hiddenId || (card.leaving && !!vanishing?.includes(bookId)));
       // Faded out, or shown elsewhere: not drawn, and nothing to point at.
       g.visible = !hidden && opacity > 0.02;
       tint(g, card.brightness.value, opacity);

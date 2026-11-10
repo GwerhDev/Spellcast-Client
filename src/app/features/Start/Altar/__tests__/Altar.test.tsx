@@ -1,15 +1,15 @@
 import type React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { screen, fireEvent, waitFor, act } from '@testing-library/react';
+import { screen, fireEvent, waitFor, act, createEvent } from '@testing-library/react';
 import { renderWithProviders, makeStore } from '../../../../../test/renderWithProviders';
 import { setSpellFile, setSpellLoaded, setSentences, setCurrentSentenceIndex } from '../../../../../store/spellReaderSlice';
 import { play, pause } from '../../../../../store/browserPlayerSlice';
 import { play as playAudio, setAiTimeline, setCurrentTime } from '../../../../../store/audioPlayerSlice';
 import { setSelectedVoice } from '../../../../../store/voiceSlice';
-import { setReadOnConjure, setAltarBackdrop } from '../../../../../store/altarSlice';
+import { setReadOnConjure, setAltarBackdrop, spellArriving, spellLanded, departureTargeted } from '../../../../../store/altarSlice';
 import { Routes, Route } from 'react-router-dom';
 import { Altar } from '../index';
-import { SPELL_DRAG_TYPE } from '../../../../../config/consts';
+import { SPELL_DRAG_GRIP_TYPE, SPELL_DRAG_TYPE } from '../../../../../config/consts';
 
 const mockGetSpellById = vi.fn();
 const mockDeleteSpellFromDB = vi.fn();
@@ -19,6 +19,14 @@ vi.mock('../../../../../db', () => ({
   getSpellCover: (...args: unknown[]) => Promise.resolve(mockGetSpellById(...args)).then((d) => (d as { cover?: Blob } | null | undefined)?.cover ?? null),
   getCachedSpellCover: () => undefined,
   deleteSpellFromDB: (...args: unknown[]) => mockDeleteSpellFromDB(...args),
+}));
+
+// The flight itself has its own tests: here it only shows which way it goes, and lands when
+// a test says so.
+vi.mock('../../../../components/Altar/AltarArrival', () => ({
+  AltarArrival: ({ kind, coverUrl }: { kind: string; coverUrl: string | null }) => (
+    <div data-testid="altar-arrival" data-kind={kind}>{coverUrl && <img data-testid="altar-arrival-cover" src={coverUrl} alt="" />}</div>
+  ),
 }));
 
 const mockImportFile = vi.fn();
@@ -629,6 +637,77 @@ describe('Altar', () => {
       expect(store.getState().spellReader.spellId).toBeNull();
       expect(await screen.findByTestId('altar-brand-icon')).toBeInTheDocument();
       expect(screen.queryByTestId('altar-unload')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('a spell arriving and leaving', () => {
+    const readable = { id: 'spell-1', userId: undefined, title: 'Spell one', createdAt: new Date(), pagesContent: '["a"]' };
+    // A card dragged by where it was held: 30px in from its left, 40px down, 120x168.
+    const grippedDrag = (id = 'spell-1') => ({
+      dataTransfer: {
+        types: [SPELL_DRAG_TYPE, SPELL_DRAG_GRIP_TYPE],
+        getData: (type: string) => (type === SPELL_DRAG_TYPE ? id : type === SPELL_DRAG_GRIP_TYPE ? JSON.stringify({ x: 30, y: 40, width: 120, height: 168 }) : ''),
+        dropEffect: 'none',
+      },
+    });
+
+    // jsdom's drag events carry no pointer: the drop's, set on it.
+    const dropAt = (drag: ReturnType<typeof grippedDrag>, x: number, y: number) => {
+      const altar = screen.getByTestId('altar');
+      const event = createEvent.drop(altar, drag);
+      Object.defineProperties(event, { clientX: { value: x }, clientY: { value: y } });
+      fireEvent(altar, event);
+    };
+
+    it('takes a dropped spell from where the card was seen let go, and melts it in once it has loaded', async () => {
+      mockGetSpellById.mockResolvedValue(readable);
+      const store = makeStore();
+      renderWithProviders(<Read />, { store });
+      dragSpellOver();
+      await act(async () => { dropAt(grippedDrag(), 300, 400); });
+      const arrival = store.getState().altar.arrival!;
+      expect(arrival).toMatchObject({ spellId: 'spell-1', via: 'drop' });
+      expect(arrival.from.width).toBe(120);
+      expect(arrival.from.height).toBe(168);
+      // The card's corner: the drop point, less where it was held.
+      expect(arrival.from.left).toBe(300 - 30);
+      expect(arrival.from.top).toBe(400 - 40);
+      // Melting in from the moment it's let go, before it has loaded.
+      expect(screen.getByTestId('altar-arrival')).toHaveAttribute('data-kind', 'drop');
+      await waitFor(() => expect(store.getState().spellReader.spellId).toBe('spell-1'));
+      act(() => { store.dispatch(spellLanded()); });
+      expect(screen.queryByTestId('altar-arrival')).toBeNull();
+    });
+
+    it("lets go of the arrival when the dropped spell can't be loaded", async () => {
+      mockGetSpellById.mockResolvedValue(undefined);
+      const store = makeStore();
+      renderWithProviders(<Read />, { store });
+      dragSpellOver();
+      await act(async () => { dropAt(grippedDrag('gone'), 300, 400); });
+      await waitFor(() => expect(store.getState().altar.arrival).toBeNull());
+      expect(screen.queryByTestId('altar-arrival')).toBeNull();
+    });
+
+    it('flies in a spell conjured another way', () => {
+      const store = makeStore();
+      renderWithProviders(<Read />, { store });
+      act(() => {
+        store.dispatch(spellArriving({ spellId: 'spell-1', via: 'flight', from: { left: 10, top: 600, width: 120, height: 168 } }));
+      });
+      expect(screen.getByTestId('altar-arrival')).toHaveAttribute('data-kind', 'flight');
+    });
+
+    it('sends a dispelled spell back from the center, however it was dispelled, and flies it once its card is found', () => {
+      const store = makeStore();
+      store.dispatch(setSpellFile({ id: 'spell-1', title: 'Spell one' }));
+      renderWithProviders(<Read />, { store });
+      fireEvent.click(screen.getByTestId('altar-unload'));
+      expect(store.getState().altar.departure).toMatchObject({ spellId: 'spell-1', to: null });
+      expect(screen.queryByTestId('altar-arrival')).toBeNull();
+      act(() => { store.dispatch(departureTargeted({ to: { left: 10, top: 600, width: 120, height: 168 }, coverUrl: 'blob:card' })); });
+      expect(screen.getByTestId('altar-arrival')).toHaveAttribute('data-kind', 'return');
+      expect(screen.getByTestId('altar-arrival-cover')).toHaveAttribute('src', 'blob:card');
     });
   });
 });

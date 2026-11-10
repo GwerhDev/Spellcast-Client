@@ -40,6 +40,10 @@ export const ACCESS_KEYS_ENABLED = false;
 // dataTransfer type a SpellCard sets when dragged (payload: the spell id), so a drop target
 // can tell a spell apart from files or text being dragged over it.
 export const SPELL_DRAG_TYPE = 'application/x-spellcast-spell';
+// Where a dragged card was held (the pointer's place on it, and its size), as JSON: the
+// browser draws the card being carried there, so a drop target can take it from where it's
+// seen (see the Altar).
+export const SPELL_DRAG_GRIP_TYPE = 'application/x-spellcast-spell-grip';
 
 export const dashboardDirectoryList = [
   // TCORE-109: possession + equip surface (unlockedIds + the same setActiveXxx actions

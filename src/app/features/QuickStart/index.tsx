@@ -12,6 +12,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Coverflow, type CoverflowItem } from '../../components/Coverflow/Coverflow';
 import { EmptySpellCard } from '../../components/Cards/EmptySpellCard';
 import { useQuickStartSpells } from '../../../hooks/useQuickStartSpells';
+import { useFlightToAltar } from '../../../hooks/useFlightToAltar';
+import { useReturnFromAltar } from '../../../hooks/useReturnFromAltar';
 
 // The places the row always shows: a spell in the middle and three on each side, filled
 // with empty ones when there are fewer spells.
@@ -34,7 +36,7 @@ export const QuickStart: React.FC = () => {
   const audioPlaying = useAppSelector((state) => state.audioPlayer.isPlaying);
   const browserPlaying = useAppSelector((state) => state.browserPlayer.isPlaying);
   const { t } = useLanguage();
-  const { isLoading, empty, visible, hasMore } = useQuickStartSpells();
+  const { isLoading, empty, visible, hasMore, vanishing } = useQuickStartSpells();
   const carouselWrapperRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   // A card click opens the spell's detail in a modal (the same one the player's cover
@@ -47,6 +49,20 @@ export const QuickStart: React.FC = () => {
   // conditions (Mode3D user setting, desktop, !reduced-motion, low-end check, section in
   // viewport).
   const show3D = useCoverFrame3DSection(carouselWrapperRef);
+
+  // Conjured from somewhere else, its card flies from the row to the altar; dispelled, it
+  // goes back to its card, hidden until it's there.
+  const cardOf = (spellId: string) => carouselWrapperRef.current?.querySelector<HTMLElement>(`[data-spell-id="${CSS.escape(spellId)}"]`) ?? null;
+  const rectOf = (el: HTMLElement | null) => {
+    const box = el?.getBoundingClientRect();
+    return box ? { left: box.left, top: box.top, width: box.width, height: box.height } : null;
+  };
+  useFlightToAltar(spellId => rectOf(cardOf(spellId)));
+  const returning = useReturnFromAltar(spellId => {
+    const card = cardOf(spellId);
+    const rect = rectOf(card);
+    return rect ? { rect, coverUrl: card?.querySelector('img')?.getAttribute('src') ?? null } : null;
+  });
 
   const coverflowLabels = {
     previous: t.common.previous,
@@ -68,7 +84,7 @@ export const QuickStart: React.FC = () => {
           isActive={activeDocId === doc.id}
           isPlaying={activeDocId === doc.id && (audioPlaying || browserPlaying)}
           onClick={(origin) => { setDetailOrigin(origin ?? null); setDetailSpellId(doc.id); }}
-          lifted={detailSpellId === doc.id && !!detailOrigin}
+          lifted={(detailSpellId === doc.id && !!detailOrigin) || returning === doc.id}
           uploadJob={uploadJob}
           show3D={show3D}
           // The coverflow moves, scales, dims and overlaps its cards: each 3D cover in a
@@ -116,6 +132,7 @@ export const QuickStart: React.FC = () => {
             interactive={!isLoading}
             labels={coverflowLabels}
             renderEmpty={(key) => (isLoading ? <SkeletonCard /> : <EmptySpellCard testId={`quick-start-${key}`} />)}
+            vanishing={vanishing}
           />
         </div>
       </div>

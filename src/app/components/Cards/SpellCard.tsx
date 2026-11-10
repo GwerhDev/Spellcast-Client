@@ -1,5 +1,5 @@
 import s from './SpellCard.module.css';
-import { SPELL_DRAG_TYPE, SPELL_ICON } from '../../../config/consts';
+import { SPELL_DRAG_GRIP_TYPE, SPELL_DRAG_TYPE, SPELL_ICON } from '../../../config/consts';
 import { DragTether } from '../DragTether/DragTether';
 import { beginTouchSpellDrag, isTouchDragging } from '../../../utils/touchSpellDrag';
 import React, { useEffect, useState, useRef } from 'react';
@@ -151,6 +151,7 @@ export const SpellCard = ({ doc, isActive, isPlaying, onClick, lifted = false, f
         e.dataTransfer.setData(SPELL_DRAG_TYPE, doc.id);
         e.dataTransfer.effectAllowed = 'copy';
         const rect = e.currentTarget.getBoundingClientRect();
+        e.dataTransfer.setData(SPELL_DRAG_GRIP_TYPE, JSON.stringify({ x: e.clientX - rect.left, y: e.clientY - rect.top, width: rect.width, height: rect.height }));
         const origin = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
         // The browser snapshots the drag image right after this handler; switching to the
         // placeholder on the next frame keeps the real card as what follows the cursor.

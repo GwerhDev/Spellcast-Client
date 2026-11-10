@@ -7,6 +7,8 @@ import { GRIMOIRE_ICON, SPELL_ICON } from '../../../config/consts';
 import { useAppSelector } from '../../../store/hooks';
 import { useLanguage } from '../../../i18n';
 import { useQuickStartSpells } from '../../../hooks/useQuickStartSpells';
+import { useFlightToAltar } from '../../../hooks/useFlightToAltar';
+import { useReturnFromAltar } from '../../../hooks/useReturnFromAltar';
 import { getCoverFrame3D, resolveCoverFrameId } from '../../../utils/coverFrame';
 import { IconButton } from '../../components/Buttons/IconButton';
 import { SpellDetailModal, type SpellDetailOrigin } from '../../components/Modals/SpellDetailModal';
@@ -46,15 +48,26 @@ const cardWidthOf = (el: HTMLElement | null) => (el ? parseFloat(getComputedStyl
 // spell's detail, opened from a book the same way it opens from a card.
 export const useQuickStart3D = () => {
   const navigate = useNavigate();
-  const { isLoading, empty, visible, hasMore } = useQuickStartSpells();
+  const { isLoading, empty, visible, hasMore, vanishing } = useQuickStartSpells();
   const activeCoverFrameId = useAppSelector(state => state.casterInventory.activeCoverFrameId);
   const coverUrls = useCoverUrls(visible);
+  // Dispelled, it goes back to its book, hidden until it's there.
+  const coverUrlsRef = useRef(coverUrls);
+  coverUrlsRef.current = coverUrls;
   const [dragging, setDragging] = useState(false);
   const [detail, setDetail] = useState<{ spellId: string; origin: SpellDetailOrigin | null } | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const anchorRef = useRef<HTMLDivElement>(null);
   // Where the book's cover was when its detail opened: the cover flies back there.
   const originRef = useRef<HTMLDivElement>(null);
+  // Where a spell's book is on screen (the scene fills it in): conjured from somewhere else,
+  // it flies from there to the altar.
+  const locateRef = useRef<((spellId: string) => SceneRect | null) | null>(null);
+  useFlightToAltar(spellId => locateRef.current?.(spellId) ?? null);
+  const returning = useReturnFromAltar(spellId => {
+    const rect = locateRef.current?.(spellId);
+    return rect ? { rect, coverUrl: coverUrlsRef.current[spellId] ?? null } : null;
+  });
 
   const keys = useMemo(() => [...visible.map(spell => spell.id), ...(hasMore ? [MORE_KEY] : [])], [visible, hasMore]);
   const row = useCoverflow({ keys, slots: SLOTS, interactive: !isLoading, rootRef, measureItem: () => cardWidthOf(anchorRef.current) });
@@ -102,7 +115,7 @@ export const useQuickStart3D = () => {
   return {
     isLoading, empty, visible, hasMore, places, row, dragging, setDragging, detail, setDetail, open,
     seeAll: () => navigate('/grimoire'),
-    rootRef, anchorRef, originRef,
+    rootRef, anchorRef, originRef, locateRef, returning, vanishing,
   };
 };
 
@@ -163,7 +176,7 @@ export const QuickStart3DStrip: React.FC<{ model: QuickStart3DModel }> = ({ mode
 // The scene drawing the row (see HomeScene3D).
 export const QuickStart3DScene: React.FC<{ model: QuickStart3DModel }> = ({ model }) => {
   const { t } = useLanguage();
-  const { isLoading, empty, places, row, setDragging, detail, open, seeAll, anchorRef } = model;
+  const { isLoading, empty, places, row, setDragging, detail, open, seeAll, anchorRef, locateRef, returning, vanishing } = model;
   if (!isLoading && empty) return null;
   return (
     <LazyHomeScene3D
@@ -174,7 +187,9 @@ export const QuickStart3DScene: React.FC<{ model: QuickStart3DModel }> = ({ mode
       onMore={seeAll}
       onDragChange={setDragging}
       onSettled={() => { row.spreading.current = false; }}
-      hiddenId={detail?.origin ? detail.spellId : null}
+      hiddenId={returning ?? (detail?.origin ? detail.spellId : null)}
+      locate={locateRef}
+      vanishing={vanishing}
       moreLabel={t.nav.grimoire}
       moreIcon={GRIMOIRE_ICON}
       emptyIcon={SPELL_ICON}
