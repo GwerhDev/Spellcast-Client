@@ -46,8 +46,18 @@
 
 /* On a narrow screen there's no room beside the window: the dock lies on top of it. */
 @media (max-width: 600px) {
+  /* Smaller too, in step with the minimized window: the screen's width sets its size, between
+     a touch target's and the wide screen's. */
   .dock {
     flex-direction: row;
+    gap: clamp(0.25rem, 1.5vw, 0.5rem);
+    padding: clamp(0.25rem, 1.5vw, 0.5rem);
+  }
+
+  .tool {
+    width: clamp(34px, 9vw, 44px);
+    height: clamp(34px, 9vw, 44px);
+    font-size: clamp(0.85rem, 3.4vw, 1.1rem);
   }
 
   .separator {
