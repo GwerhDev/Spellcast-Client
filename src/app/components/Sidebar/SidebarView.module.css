@@ -406,6 +406,80 @@
     display: block;
   }
 
+  /* What's swiped: the whole bar (and the open list). It takes the touch's vertical moves
+     itself (no page scroll under the finger), so a swipe up or down reaches it. */
+  .mobileSwipe {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    touch-action: none;
+    /* A swipe isn't a selection. */
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  /* The handle at its top: what says it can be swiped up. */
+  .mobileHandle {
+    align-self: center;
+    width: 36px;
+    height: 4px;
+    margin-top: 6px;
+    border-radius: 999px;
+    background: var(--text-2);
+    opacity: 0.35;
+  }
+
+  /* What grows and shrinks under the finger. */
+  .mobileBody {
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Open: the main sections, at most three to a row, each an icon with its name under it. */
+  .mobileGrid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    align-items: start;
+    gap: var(--size-2) var(--size-1);
+    padding: var(--size-3) var(--size-2) var(--size-2);
+  }
+
+  .mobileTile {
+    display: flex;
+    justify-content: center;
+    min-width: 0;
+  }
+
+  .mobileTileLink {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: var(--size-2) 2px;
+    border-radius: var(--size-2);
+    color: var(--text-2);
+    text-decoration: none;
+    font-size: 1.25rem;
+  }
+
+  .mobileTileActive {
+    color: var(--color-primary);
+  }
+
+  .mobileTileLabel {
+    max-width: 100%;
+    font-size: 0.68rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
   .mobileRow {
     order: 1;
     flex: 1;

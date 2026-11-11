@@ -1,9 +1,15 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { screen, fireEvent } from '@testing-library/react';
 import { renderWithProviders } from '../../../../test/renderWithProviders';
 import { Sidebar } from '../Sidebar';
+import { mockMatchMedia } from '../../../../test/mockMatchMedia';
 
 describe('Sidebar', () => {
+  // The desktop sidebar (its toggle, its accordions): the test window is 1024px wide, which is
+  // the mobile layout's, so it's told it's a desktop.
+  beforeEach(() => { mockMatchMedia(false); });
+  afterEach(() => { vi.unstubAllGlobals(); });
+
   it('renders the expanded panel when sidebarCollapsed is false', () => {
     renderWithProviders(<Sidebar />, { preloadedState: { layout: { version: 1, sidebarCollapsed: false, sidebarOpenSections: { editor: false, caster: false, settings: false }, pageListOpen: { reader: true, editor: true } } } });
     expect(screen.getByTestId('sidebar-panel')).toBeInTheDocument();

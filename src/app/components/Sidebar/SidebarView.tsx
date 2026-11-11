@@ -1,4 +1,5 @@
-import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
+import { useLayoutEffect, useRef, useState } from 'react';
+import { motion, animate, useMotionValue } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChevronDown, faBars } from '@fortawesome/free-solid-svg-icons';
@@ -249,113 +250,124 @@ const DesktopSidebar = ({
   </>
 );
 
-// Mobile: only ONE of {row, list} is ever mounted at a time. Framer Motion's layoutId
-// connects the same logical item across that mount/unmount boundary — when the row
-// unmounts and the list mounts (or vice versa), each shared-id element animates its own
-// position/size change instead of being replaced instantly. "user" (no rail icon at all)
-// only exists in the list and just fades in/out normally.
+// Where the mobile menu settles when the finger lets go: a quick flick decides by its direction;
+// otherwise it goes to whichever end it was dragged closer to (progress: 0 closed, 1 open).
+// eslint-disable-next-line react-refresh/only-export-components
+export const settlesOpen = (progress: number, velocityY: number): boolean =>
+  velocityY < -300 ? true : velocityY > 300 ? false : progress > 0.5;
+
+// The bar's row: three sections, like the open menu's rows.
+const MOBILE_COLUMNS = 3;
+
+// Mobile: the menu is a bar at the bottom of the screen, swiped up to open (and down to close;
+// no menu button). Open, it shows just the main sections, each an icon with its name under it,
+// straight to its page -- no submenus. There's one grid, always: closed, it's cut down to its
+// first row with the names faded out, so opening and closing only grows and shrinks it under
+// the finger -- nothing is swapped and no icon moves.
 const MobileSidebar = ({
   collapsed,
-  openSections,
   activePathname,
   directLinks,
   accordionSections,
-  onToggleSection,
+  onToggleCollapsed,
   onNavigate,
-}: Omit<SidebarViewProps, 'onToggleCollapsed'>) => {
-  const morphId = (key: string) => `sidebar-morph-${key}`;
-  const hasExpandableBody = (section: SidebarAccordionSection): boolean =>
-    section.items.length > 0 || !!section.subSections?.length;
-  const morphableSections = accordionSections.filter(section => !hasExpandableBody(section));
-  const nonMorphableSections = accordionSections.filter(hasExpandableBody);
+}: SidebarViewProps) => {
+  // The bar shows what it always has first (the direct links and the sections with nothing
+  // under them), then the rest.
+  const bare = (section: SidebarAccordionSection) => section.items.length === 0 && !section.subSections?.length;
+  const entries = [
+    ...directLinks.map(link => ({ key: link.key, icon: link.icon, path: link.path, label: link.label, active: isActive(activePathname, link.path) })),
+    ...[...accordionSections.filter(bare), ...accordionSections.filter(section => !bare(section))]
+      .map(section => ({ key: section.key, icon: section.icon, path: section.path, label: section.label, active: sectionOrDescendantActive(section, activePathname) })),
+  ];
+
+  // How open it is, 0 (the bar) to 1 (every section): drives the height and the names' fade.
+  const openness = useMotionValue(collapsed ? 0 : 1);
+  const height = useMotionValue<number | 'auto'>('auto');
+  const [dragging, setDragging] = useState(false);
+  const gridRef = useRef<HTMLElement>(null);
+  const barHeight = useRef(0);
+  const startOpenness = useRef(0);
+
+  // The bar is as tall as it takes to center the first row's icons in it.
+  const measure = () => {
+    const grid = gridRef.current;
+    const icon = grid?.querySelector('svg');
+    if (!grid || !icon) return { bar: 0, open: 0 };
+    const bar = 2 * (icon.getBoundingClientRect().top + icon.getBoundingClientRect().height / 2 - grid.getBoundingClientRect().top);
+    barHeight.current = bar;
+    return { bar, open: grid.scrollHeight };
+  };
+  const heightAt = (o: number) => { const { bar, open } = measure(); return bar + (open - bar) * o; };
+
+  // At rest: the bar's height closed, its own height open.
+  useLayoutEffect(() => {
+    if (dragging) return;
+    openness.set(collapsed ? 0 : 1);
+    if (collapsed) height.set(measure().bar || 'auto');
+    else height.set('auto');
+  }, [collapsed, dragging, entries.length, openness, height]);
+
+  const onPanStart = () => {
+    startOpenness.current = openness.get();
+    setDragging(true);
+  };
+  const onPan = (_: PointerEvent, info: { offset: { y: number } }) => {
+    const { bar, open } = measure();
+    if (open <= bar) return;
+    const o = Math.min(1, Math.max(0, startOpenness.current - info.offset.y / (open - bar)));
+    openness.set(o);
+    height.set(heightAt(o));
+  };
+  const onPanEnd = (_: PointerEvent, info: { velocity: { y: number } }) => {
+    const toOpen = settlesOpen(openness.get(), info.velocity.y);
+    const { bar, open } = measure();
+    const span = Math.max(1, open - bar);
+    animate(openness, toOpen ? 1 : 0, {
+      type: 'spring', stiffness: 420, damping: 40, velocity: -info.velocity.y / span,
+      onUpdate: o => height.set(heightAt(o)),
+    }).then(() => {
+      if (toOpen === collapsed) onToggleCollapsed();
+      setDragging(false);
+    });
+  };
+
+  // Closed, what's past the bar's row is out of reach (and out of the way of a screen reader).
+  const hidden = (index: number) => collapsed && !dragging && index >= MOBILE_COLUMNS;
 
   return (
-    <LayoutGroup>
-      <AnimatePresence initial={false} mode="popLayout">
-        {collapsed ? (
-          <motion.nav key="row" className={s.mobileRow} data-testid="sidebar-rail" exit={{ opacity: 0 }}>
-            {directLinks.map(link => (
-              <motion.div key={link.key} className={s.mobileRowItem} layoutId={morphId(link.key)}>
-                <Link
-                  to={link.path}
-                  title={link.label}
-                  data-testid={`sidebar-rail-icon-${link.key}`}
-                  className={`${s.railIcon} ${isActive(activePathname, link.path) ? s.railIconActive : ''}`}
-                  onClick={onNavigate}
-                >
-                  <NavIcon icon={link.icon} active={isActive(activePathname, link.path)} />
-                </Link>
-              </motion.div>
-            ))}
-            {morphableSections.map(section => (
-              <motion.div key={section.key} className={s.mobileRowItem} layoutId={morphId(section.key)}>
-                <Link
-                  to={section.path}
-                  title={section.label}
-                  data-testid={`sidebar-rail-icon-${section.key}`}
-                  className={`${s.railIcon} ${sectionOrDescendantActive(section, activePathname) ? s.railIconActive : ''}`}
-                  onClick={onNavigate}
-                >
-                  <NavIcon icon={section.icon} active={sectionOrDescendantActive(section, activePathname)} />
-                </Link>
-              </motion.div>
-            ))}
-          </motion.nav>
-        ) : (
-          <motion.nav
-            key="list"
-            className={s.panel}
-            data-testid="sidebar-panel"
-            exit={{ opacity: 0 }}
-          >
-            <ul className={s.directLinkList}>
-              {directLinks.map(link => (
-                <motion.li key={link.key} layoutId={morphId(link.key)}>
-                  <Link
-                    to={link.path}
-                    data-testid={`sidebar-nav-item-${link.key}`}
-                    className={`${s.navItem} ${isActive(activePathname, link.path) ? s.activeLink : ''}`}
-                    onClick={onNavigate}
-                  >
-                    <NavIcon icon={link.icon} active={isActive(activePathname, link.path)} />
-                    <span>{link.label}</span>
-                  </Link>
-                </motion.li>
-              ))}
-              {morphableSections.map(section => (
-                <motion.li key={section.key} layoutId={morphId(section.key)}>
-                  <Link
-                    to={section.path}
-                    data-testid={`sidebar-nav-item-${section.key}`}
-                    className={`${s.navItem} ${sectionOrDescendantActive(section, activePathname) ? s.activeLink : ''}`}
-                    onClick={onNavigate}
-                  >
-                    <NavIcon icon={section.icon} active={sectionOrDescendantActive(section, activePathname)} />
-                    <span>{section.label}</span>
-                  </Link>
-                </motion.li>
-              ))}
-            </ul>
-
-            {nonMorphableSections.map(section => (
-              <motion.div key={section.key} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                <SidebarAccordion
-                  section={section}
-                  depth={0}
-                  openSections={openSections}
-                  activePathname={activePathname}
-                  collapsed={collapsed}
-                  onToggleSection={onToggleSection}
-                  onNavigate={onNavigate}
-                />
-              </motion.div>
-            ))}
-          </motion.nav>
-        )}
-      </AnimatePresence>
-    </LayoutGroup>
+    <motion.div
+      className={s.mobileSwipe}
+      data-testid="sidebar-swipe"
+      onPanStart={onPanStart}
+      onPan={onPan}
+      onPanEnd={onPanEnd}
+    >
+      {/* What says it can be swiped. */}
+      <span className={s.mobileHandle} aria-hidden="true" />
+      <motion.div className={s.mobileBody} style={{ height }}>
+        <nav ref={gridRef} className={s.mobileGrid} data-testid={collapsed ? 'sidebar-rail' : 'sidebar-panel'}>
+          {entries.map((entry, index) => (
+            <div key={entry.key} className={s.mobileTile} aria-hidden={hidden(index) || undefined}>
+              <Link
+                to={entry.path}
+                title={entry.label}
+                data-testid={`sidebar-nav-item-${entry.key}`}
+                className={`${s.mobileTileLink} ${entry.active ? s.mobileTileActive : ''}`}
+                tabIndex={hidden(index) ? -1 : undefined}
+                onClick={onNavigate}
+              >
+                <NavIcon icon={entry.icon} active={entry.active} />
+                <motion.span className={s.mobileTileLabel} style={{ opacity: openness }}>{entry.label}</motion.span>
+              </Link>
+            </div>
+          ))}
+        </nav>
+      </motion.div>
+    </motion.div>
   );
 };
+
 
 export const SidebarView = (props: SidebarViewProps) => {
   const { collapsed, onToggleCollapsed } = props;
@@ -386,10 +398,11 @@ export const SidebarView = (props: SidebarViewProps) => {
     </button>
   );
 
+  // On mobile there's no menu button: the menu is swiped open and closed (see MobileSidebar).
   return (
     <div className={`${s.sidebar} ${collapsed ? s.sidebarCollapsed : s.sidebarExpanded}`}>
       {isMobile ? <MobileSidebar {...props} /> : <DesktopSidebar {...props} />}
-      {toggleButton}
+      {!isMobile && toggleButton}
     </div>
   );
 };

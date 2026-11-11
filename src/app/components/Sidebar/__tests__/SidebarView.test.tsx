@@ -3,7 +3,7 @@ import { screen, fireEvent } from '@testing-library/react';
 import { faHome, faUser, faBox, faUsers, faHardDrive } from '@fortawesome/free-solid-svg-icons';
 import { renderWithProviders as render } from '../../../../test/renderWithProviders';
 import { mockMatchMedia } from '../../../../test/mockMatchMedia';
-import { SidebarView } from '../SidebarView';
+import { SidebarView, settlesOpen } from '../SidebarView';
 import type { SidebarDirectLink, SidebarAccordionSection } from '../SidebarView';
 
 const directLinks: SidebarDirectLink[] = [{ key: 'home', icon: faHome, path: '/', label: 'Home' }];
@@ -159,46 +159,52 @@ describe('SidebarView', () => {
 });
 
 describe('SidebarView on mobile', () => {
-  // Below the breakpoint, only one of {row, list} is ever mounted at a time (AnimatePresence
-  // mount/unmount, not the desktop's dual-mount + aria-hidden pattern) so Framer Motion's
-  // layoutId can morph each shared item's position/size across that boundary.
+  // Below the breakpoint there's one grid of the main sections: closed, it's cut down to its
+  // first row (the bar), and the rest is out of reach.
   beforeEach(() => {
     mockMatchMedia(true);
   });
 
-  it('mounts only the icon row when collapsed', () => {
-    render(<SidebarView {...baseProps} collapsed />);
+  it('closed, is the bar; open, the panel', () => {
+    const { unmount } = render(<SidebarView {...baseProps} collapsed />);
     expect(screen.getByTestId('sidebar-rail')).toBeInTheDocument();
     expect(screen.queryByTestId('sidebar-panel')).not.toBeInTheDocument();
-  });
-
-  it('mounts only the panel when expanded', () => {
+    unmount();
     render(<SidebarView {...baseProps} collapsed={false} />);
     expect(screen.getByTestId('sidebar-panel')).toBeInTheDocument();
     expect(screen.queryByTestId('sidebar-rail')).not.toBeInTheDocument();
   });
 
-  it('collapsed row renders direct links and only sections with no expandable body (no items, no sub-sections)', () => {
-    // A section morphs into a plain row icon only if it has nothing to expand. Any section
-    // with items and/or nested subSections — "editor" and "caster" in the real config — always
-    // renders as a full accordion in the expanded panel instead, and gets no rail icon here.
+  it('the bar has the direct links and the sections with nothing under them first; the rest is out of reach while closed', () => {
     const bareSection: SidebarAccordionSection = { key: 'editor', icon: faBox, path: '/editor', label: 'Editor', items: [] };
-    render(<SidebarView {...baseProps} collapsed accordionSections={[bareSection, ...accordionSections]} />);
-    expect(screen.getByTestId('sidebar-rail-icon-home')).toBeInTheDocument();
-    expect(screen.getByTestId('sidebar-rail-icon-editor')).toBeInTheDocument();
-    expect(screen.queryByTestId('sidebar-rail-icon-caster')).not.toBeInTheDocument();
+    const links: SidebarDirectLink[] = [...directLinks, { key: 'grimoire', icon: faBox, path: '/grimoire', label: 'Grimoire' }];
+    render(<SidebarView {...baseProps} collapsed directLinks={links} accordionSections={[...accordionSections, bareSection]} />);
+    const keys = [...screen.getByTestId('sidebar-rail').querySelectorAll('a')].map(a => a.dataset.testid?.replace('sidebar-nav-item-', ''));
+    expect(keys).toEqual(['home', 'grimoire', 'editor', 'caster']);
+    expect(screen.getByTestId('sidebar-nav-item-editor')).not.toHaveAttribute('tabindex');
+    expect(screen.getByTestId('sidebar-nav-item-caster')).toHaveAttribute('tabindex', '-1');
   });
 
-  it('expanded panel renders the direct links and accordion sections, including nested ones', () => {
-    render(<SidebarView {...baseProps} collapsed={false} openSections={{ editor: false, caster: true, settings: false }} />);
+  it('open, lists just the main sections, each straight to its page: no submenus', () => {
+    render(<SidebarView {...baseProps} collapsed={false} openSections={{ editor: false, caster: true, settings: true }} />);
     expect(screen.getByTestId('sidebar-nav-item-home')).toBeInTheDocument();
-    expect(screen.getByTestId('sidebar-nav-item-settings')).toBeInTheDocument();
+    for (const section of accordionSections) {
+      expect(screen.getByTestId(`sidebar-nav-item-${section.key}`)).toHaveAttribute('href', section.path);
+    }
+    // Not even an open section's own items or sub-sections.
+    expect(screen.queryByTestId('sidebar-nav-item-settings')).not.toBeInTheDocument();
   });
 
-  it('calls onToggleCollapsed when the toggle button is clicked', () => {
-    const onToggleCollapsed = vi.fn();
-    render(<SidebarView {...baseProps} collapsed onToggleCollapsed={onToggleCollapsed} />);
-    fireEvent.click(screen.getByTestId('sidebar-toggle-btn'));
-    expect(onToggleCollapsed).toHaveBeenCalledTimes(1);
+  it('has no menu button: the menu is swiped open and closed', () => {
+    render(<SidebarView {...baseProps} collapsed />);
+    expect(screen.queryByTestId('sidebar-toggle-btn')).not.toBeInTheDocument();
+    expect(screen.getByTestId('sidebar-swipe')).toBeInTheDocument();
+  });
+
+  it('let go, settles where it was dragged closer to, unless flicked one way', () => {
+    expect(settlesOpen(0.7, 0)).toBe(true);
+    expect(settlesOpen(0.3, 0)).toBe(false);
+    expect(settlesOpen(0.1, -600)).toBe(true);
+    expect(settlesOpen(0.9, 600)).toBe(false);
   });
 });
