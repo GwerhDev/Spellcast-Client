@@ -17,7 +17,7 @@ import { useNavigate } from 'react-router-dom';
 import type { JSONContent } from '../../../magictext';
 import type { TTSPlayPayload } from '../../../magictext';
 import workerSrc from 'pdfjs-dist/build/pdf.worker?url';
-import { faArrowLeft, faCloudUpload, faFilePdf, faSave, faLayerGroup } from '@fortawesome/free-solid-svg-icons';
+import { faArrowLeft } from '@fortawesome/free-solid-svg-icons';
 import { PdfProcessingStatus } from '../../components/PdfProcessingStatus';
 import { SpellMetadataFields } from '../../components/SpellMetadataFields';
 import { IconButton } from '../../components/Buttons/IconButton';
@@ -32,6 +32,7 @@ import { parseDataUrl } from '../../../utils/spellImages';
 import { CustomModal } from '../../components/Modals/CustomModal';
 import { PrimaryButton } from '../../components/Buttons/PrimaryButton';
 import { SecondaryButton } from '../../components/Buttons/SecondaryButton';
+import { spOriginal, spPages, spRaise, spSeal } from '../../../icons';
 pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
 const emptyContent: JSONContent = emptyPageContent;
@@ -366,7 +367,8 @@ export const SpellCreateForm: React.FC = () => {
         <IconButton
           data-testid="page-list-toggle"
           data-page-list-toggle
-          icon={faLayerGroup}
+          icon={spPages}
+          active={pageList.open}
           variant='transparent'
           className={pageList.open ? s.headerBtnActive : undefined}
           title={pageList.open ? t.spell.hidePages : t.spell.showPages}
@@ -375,15 +377,16 @@ export const SpellCreateForm: React.FC = () => {
         />
         <IconButton
           data-testid="spell-create-original-btn"
-          icon={faFilePdf}
+          icon={spOriginal}
+          active={showOriginal}
           variant='transparent'
           className={showOriginal ? s.headerBtnActive : undefined}
           title={t.spell.showOriginal}
           aria-pressed={showOriginal}
           onClick={() => setShowOriginal(v => !v)}
         />
-        <IconButton data-testid="spell-create-save-btn" icon={faSave} variant='transparent' title={t.common.save} disabled={isSaving || !spellTitle} onClick={handleSaveLocal} />
-        <IconButton icon={faCloudUpload} disabled variant='transparent' title={t.nav.cloud} onClick={() => {}} />
+        <IconButton data-testid="spell-create-save-btn" icon={spSeal} variant='transparent' title={t.common.save} disabled={isSaving || !spellTitle} onClick={handleSaveLocal} />
+        <IconButton icon={spRaise} disabled variant='transparent' title={t.nav.cloud} onClick={() => {}} />
       </div>
 
       <SpellMetadataFields

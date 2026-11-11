@@ -8,12 +8,12 @@ import { useReaderFullscreen } from '../../../hooks/useReaderFullscreen';
 import { ZoomOverlay } from '../../components/Zoom/ZoomOverlay';
 import { useDispatch, useSelector } from 'react-redux';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowLeft, faEdit, faGear, faExpand, faCompress, faInfoCircle, faLayerGroup } from '@fortawesome/free-solid-svg-icons';
+import { faArrowLeft } from '@fortawesome/free-solid-svg-icons';
 import { SPELL_ICON } from '../../../config/consts';
 import { RootState } from '../../../store';
 import { activeSentenceIndex as getActiveSentenceIndex } from '../../../utils/activeSentence';
 import { goToPage, setCurrentSentenceIndex, setShowReaderSettings, recordReaderActivity, openSpellSearcher } from '../../../store/spellReaderSlice';
-import { spSpellSearch } from '../../../icons';
+import { spFullscreen, spGear, spInfo, spPages, spSpellEdit, spSpellSearch } from '../../../icons';
 import { setPendingSeek } from '../../../store/audioPlayerSlice';
 import { moveCompanionModel, rotateCompanionModel, scaleCompanionModel, toggleCompanionDepth, type CompanionPlacement } from '../../../store/casterInventorySlice';
 import { companions } from '../../../config/assets';
@@ -305,7 +305,8 @@ export const SpellReader = () => {
             <IconButton
               data-testid="page-list-toggle"
               data-page-list-toggle
-              icon={faLayerGroup}
+              icon={spPages}
+              active={pageList.open}
               variant='transparent'
               className={pageList.open ? s.headerBtnActive : undefined}
               title={pageList.open ? t.spell.hidePages : t.spell.showPages}
@@ -313,10 +314,10 @@ export const SpellReader = () => {
               onClick={pageList.toggle}
             />
           )}
-          {isLoaded && <IconButton data-testid="spell-reader-info-btn" icon={faInfoCircle} variant='transparent' title={t.reader.spellInfo} onClick={() => setShowInfoModal(true)} />}
-          {isLoaded && <IconButton icon={faEdit} variant='transparent' title={t.spell.editSpell} onClick={handleEdit} />}
-          {isLoaded && <IconButton icon={faGear} variant='transparent' title={t.reader.readerSettings} onClick={() => dispatch(setShowReaderSettings(true))} />}
-          {isLoaded && <IconButton icon={isFullscreen ? faCompress : faExpand} variant='transparent' title={isFullscreen ? t.reader.exitFullscreen : t.reader.enterFullscreen} onClick={toggleFullscreen} />}
+          {isLoaded && <IconButton data-testid="spell-reader-info-btn" icon={spInfo} variant='transparent' title={t.reader.spellInfo} onClick={() => setShowInfoModal(true)} />}
+          {isLoaded && <IconButton icon={spSpellEdit} variant='transparent' title={t.spell.editSpell} onClick={handleEdit} />}
+          {isLoaded && <IconButton icon={spGear} variant='transparent' title={t.reader.readerSettings} onClick={() => dispatch(setShowReaderSettings(true))} />}
+          {isLoaded && <IconButton icon={spFullscreen} active={isFullscreen} variant='transparent' title={isFullscreen ? t.reader.exitFullscreen : t.reader.enterFullscreen} onClick={toggleFullscreen} />}
         </div>
       </div>
       <div className={s.bodyWrapper}>

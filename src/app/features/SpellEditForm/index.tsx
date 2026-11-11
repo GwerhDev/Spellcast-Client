@@ -23,7 +23,7 @@ import { PageListPlace } from '../../components/SpellCreateForm/PageListOverlay'
 import { usePageListToggle } from '../../../hooks/usePageListToggle';
 import { SpellEditor } from '../../components/Editors/SpellEditor';
 import { isCoverPage } from '../../../utils/spellPage';
-import { faArrowLeft, faCloudUpload, faGear, faSave, faTriangleExclamation, faFilePdf, faLayerGroup, faClockRotateLeft } from '@fortawesome/free-solid-svg-icons';
+import { faArrowLeft, faTriangleExclamation } from '@fortawesome/free-solid-svg-icons';
 import { PdfProcessingStatus } from '../../components/PdfProcessingStatus';
 import { IconButton } from '../../components/Buttons/IconButton';
 import { DeleteConfirmModal } from '../../components/Modals/DeleteConfirmModal';
@@ -44,6 +44,7 @@ import type { ChronicleEntry, FusePlan, SpellChanges } from '../../../utils/spel
 import type { Resolution } from '../../../utils/spellDiff';
 import { NewVersionModal } from '../../components/Modals/NewVersionModal';
 import { FuseModal } from '../../components/Modals/FuseModal';
+import { spChronicle, spGear, spOriginal, spPages, spRaise, spSeal } from '../../../icons';
 
 const emptyContent: JSONContent = {
   type: 'doc',
@@ -645,7 +646,8 @@ export const SpellEditForm: React.FC = () => {
         <IconButton
           data-testid="page-list-toggle"
           data-page-list-toggle
-          icon={faLayerGroup}
+          icon={spPages}
+          active={pageList.open}
           variant='transparent'
           className={pageList.open ? s.headerBtnActive : undefined}
           title={pageList.open ? t.spell.hidePages : t.spell.showPages}
@@ -654,17 +656,18 @@ export const SpellEditForm: React.FC = () => {
         />
         <IconButton
           data-testid="spell-edit-original-btn"
-          icon={faFilePdf}
+          icon={spOriginal}
+          active={showOriginal}
           variant='transparent'
           className={showOriginal ? s.headerBtnActive : undefined}
           title={t.spell.showOriginal}
           aria-pressed={showOriginal}
           onClick={() => setShowOriginal(v => !v)}
         />
-        <IconButton data-testid="spell-edit-save-btn" icon={faSave} variant='transparent' title={t.common.save} disabled={!(hasChanges || versions.unsealed) || isProcessingPdf} onClick={handleSave} />
-        <IconButton data-testid="spell-edit-chronicle-btn" icon={faClockRotateLeft} variant='transparent' title={t.versions.chronicle} disabled={!versions.current} onClick={openChronicle} />
-        <IconButton icon={faCloudUpload} disabled variant='transparent' title={t.nav.cloud} onClick={() => {}} />
-        <IconButton icon={faGear} variant='transparent' onClick={() => dispatch(setShowEditorSettings(true))} />
+        <IconButton data-testid="spell-edit-save-btn" icon={spSeal} variant='transparent' title={t.common.save} disabled={!(hasChanges || versions.unsealed) || isProcessingPdf} onClick={handleSave} />
+        <IconButton data-testid="spell-edit-chronicle-btn" icon={spChronicle} variant='transparent' title={t.versions.chronicle} disabled={!versions.current} onClick={openChronicle} />
+        <IconButton icon={spRaise} disabled variant='transparent' title={t.nav.cloud} onClick={() => {}} />
+        <IconButton icon={spGear} variant='transparent' onClick={() => dispatch(setShowEditorSettings(true))} />
       </div>
 
       <SpellMetadataFields

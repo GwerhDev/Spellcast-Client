@@ -29,7 +29,7 @@
 .flicker.candleLeft { animation-duration: 1.3s; animation-delay: -0.4s; }
 .flicker.candleRight { animation-duration: 1.45s; animation-delay: -0.9s; }
 
-:where(a, button):hover > .icon .flame,
+:where(a, button:not(:disabled)):hover > .icon .flame,
 .active .flame {
   transform: scale(1);
   opacity: 1;
@@ -38,10 +38,10 @@
 }
 
 /* The candles catch a moment after the altar. */
-:where(a, button):hover > .icon .flame.candleLeft,
+:where(a, button:not(:disabled)):hover > .icon .flame.candleLeft,
 .active .flame.candleLeft { transition-delay: 0.08s; }
 
-:where(a, button):hover > .icon .flame.candleRight,
+:where(a, button:not(:disabled)):hover > .icon .flame.candleRight,
 .active .flame.candleRight { transition-delay: 0.14s; }
 
 @keyframes flicker {
@@ -74,20 +74,20 @@
   transition: opacity 0.2s ease-out 0.15s;
 }
 
-:where(a, button):hover > .icon .cover,
+:where(a, button:not(:disabled)):hover > .icon .cover,
 .active .cover {
   transform: scaleX(0.1) skewY(-14deg);
   transition-delay: 0.12s;
 }
 
-:where(a, button):hover > .icon .clasp,
+:where(a, button:not(:disabled)):hover > .icon .clasp,
 .active .clasp {
   transform: translateX(8%);
   opacity: 0;
   transition-delay: 0s;
 }
 
-:where(a, button):hover > .icon .pages,
+:where(a, button:not(:disabled)):hover > .icon .pages,
 .active .pages {
   opacity: 1;
   transition-delay: 0.18s;
@@ -129,13 +129,13 @@
   transition: opacity 0.12s ease-in;
 }
 
-:where(a, button):hover > .icon .plug,
+:where(a, button:not(:disabled)):hover > .icon .plug,
 .active .plug {
   opacity: 1;
   transition: opacity 0.15s ease-out 0.12s;
 }
 
-:where(a, button):hover > .icon .lid,
+:where(a, button:not(:disabled)):hover > .icon .lid,
 .active .lid {
   transform: translateY(-20%) scaleY(0.35);
 }
@@ -144,23 +144,23 @@
   transition: opacity 0.2s ease-in 0.12s;
 }
 
-:where(a, button):hover > .icon .hasp,
+:where(a, button:not(:disabled)):hover > .icon .hasp,
 .active .hasp {
   opacity: 0;
   transition: opacity 0.15s ease-out;
 }
 
-:where(a, button):hover > .icon .sparkle,
+:where(a, button:not(:disabled)):hover > .icon .sparkle,
 .active .sparkle {
   transform: scale(1);
   opacity: 1;
   transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s, opacity 0.2s ease-out 0.2s;
 }
 
-:where(a, button):hover > .icon .sparkle.sparkle1,
+:where(a, button:not(:disabled)):hover > .icon .sparkle.sparkle1,
 .active .sparkle.sparkle1 { transition-delay: 0.28s; }
 
-:where(a, button):hover > .icon .sparkle.sparkle2,
+:where(a, button:not(:disabled)):hover > .icon .sparkle.sparkle2,
 .active .sparkle.sparkle2 { transition-delay: 0.34s; }
 
 @keyframes twinkle {
@@ -177,19 +177,203 @@
   transition: transform 0.35s cubic-bezier(0.5, 0, 0.75, 0.3);
 }
 
-:where(a, button):hover > .icon .book,
+:where(a, button:not(:disabled)):hover > .icon .book,
 .active .book {
   transform: translateY(11%);
   transition: transform 0.45s cubic-bezier(0.34, 1.3, 0.64, 1) 0.05s;
 }
 
+/* Searching the spell: the glass leans in, bigger, on its center. */
+.glass {
+  transform-box: view-box;
+  transform-origin: 75% 75%;   /* (384, 384) */
+  transition: transform 0.3s cubic-bezier(0.5, 0, 0.75, 0.3);
+}
+
+:where(a, button:not(:disabled)):hover > .icon .glass,
+.active .glass {
+  transform: scale(1.12) rotate(-12deg);
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Editing the spell: the quill writes, back and forth on its nib, while it's hovered. */
+.quill {
+  transform-box: view-box;
+  transform-origin: 61.1% 94.1%;   /* its nib, (313, 482) */
+  transition: transform 0.25s ease-out;
+}
+
+:where(a, button:not(:disabled)):hover > .icon .quill,
+.active .quill {
+  animation: write 0.9s ease-in-out infinite;
+}
+
+@keyframes write {
+  0%, 100% { transform: rotate(0deg) translateX(0); }
+  25% { transform: rotate(-5deg) translateX(-1.5%); }
+  50% { transform: rotate(2deg) translateX(1%); }
+  75% { transform: rotate(-3deg) translateX(-0.5%); }
+}
+
+/* The page selector: the pages behind fan out, up and to the right. */
+.page {
+  transform-box: view-box;
+  transition: transform 0.3s cubic-bezier(0.5, 0, 0.75, 0.3);
+}
+
+:where(a, button:not(:disabled)):hover > .icon .page,
+.active .page {
+  transition: transform 0.4s cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+
+:where(a, button:not(:disabled)):hover > .icon .pageMiddle,
+.active .pageMiddle { transform: translate(3%, -3%); }
+
+:where(a, button:not(:disabled)):hover > .icon .pageBack,
+.active .pageBack { transform: translate(7%, -7%); transition-delay: 0.04s; }
+
+/* The information: the "i"'s dot hops, once each time it's hovered. */
+.dot {
+  transform-box: view-box;
+}
+
+:where(a, button:not(:disabled)):hover > .icon .dot {
+  animation: hop 0.55s cubic-bezier(0.3, 0, 0.3, 1);
+}
+
+/* Chrome doesn't repaint what a mask cuts when only the mask's content moves: what it cuts
+   is animated along with it (by nothing anyone sees), so it is. */
+:where(a, button:not(:disabled)):hover > .icon .maskedBody {
+  animation: repaint 0.55s linear;
+}
+
+@keyframes repaint {
+  from { opacity: 0.999; }
+  to { opacity: 1; }
+}
+
+@keyframes hop {
+  0%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-11%); }
+  70% { transform: translateY(1.5%); }
+}
+
+/* Settings: the gear turns an eighth (a tooth to the next). */
+.gear {
+  transform-box: view-box;
+  transform-origin: 50% 50%;
+  transition: transform 0.5s cubic-bezier(0.5, 0, 0.75, 0.3);
+}
+
+:where(a, button:not(:disabled)):hover > .icon .gear,
+.active .gear {
+  transform: rotate(45deg);
+  transition: transform 0.6s cubic-bezier(0.34, 1.3, 0.64, 1);
+}
+
+/* Fullscreen: each corner on its own center. */
+.corner {
+  transform-box: view-box;
+  transition: transform 0.35s cubic-bezier(0.34, 1.3, 0.64, 1);
+}
+
+.cornerTL { transform-origin: 21.875% 21.875%; }   /* (112, 112) */
+.cornerTR { transform-origin: 78.125% 21.875%; }
+.cornerBR { transform-origin: 78.125% 78.125%; }
+.cornerBL { transform-origin: 21.875% 78.125%; }
+
+/* Hovered: they spread out. */
+:where(a, button:not(:disabled)):hover > .icon .cornerTL { transform: translate(-3%, -3%); }
+:where(a, button:not(:disabled)):hover > .icon .cornerTR { transform: translate(3%, -3%); }
+:where(a, button:not(:disabled)):hover > .icon .cornerBR { transform: translate(3%, 3%); }
+:where(a, button:not(:disabled)):hover > .icon .cornerBL { transform: translate(-3%, 3%); }
+
+/* In fullscreen: each turned to point in; hovered, they close in. */
+.active .corner { transform: rotate(180deg); }
+:where(a, button:not(:disabled)):hover > .icon.active .cornerTL { transform: translate(3%, 3%) rotate(180deg); }
+:where(a, button:not(:disabled)):hover > .icon.active .cornerTR { transform: translate(-3%, 3%) rotate(180deg); }
+:where(a, button:not(:disabled)):hover > .icon.active .cornerBR { transform: translate(-3%, -3%) rotate(180deg); }
+:where(a, button:not(:disabled)):hover > .icon.active .cornerBL { transform: translate(3%, -3%) rotate(180deg); }
+
+/* The original: the page turns over (and stays turned while it's shown). */
+.turn {
+  transform-box: view-box;
+  transform-origin: 50% 50%;
+  transition: transform 0.45s cubic-bezier(0.45, 0, 0.2, 1);
+}
+
+:where(a, button:not(:disabled)):hover > .icon .turn,
+.active .turn {
+  transform: scaleX(-1);
+}
+
+/* Sealing: the seal is pressed down and springs back, once each time it's hovered. */
+.stamp {
+  transform-box: view-box;
+  transform-origin: 50% 50%;
+}
+
+:where(a, button:not(:disabled)):hover > .icon .stamp {
+  animation: stamp 0.45s cubic-bezier(0.3, 0, 0.3, 1);
+}
+
+@keyframes stamp {
+  0%, 100% { transform: scale(1); }
+  35% { transform: scale(0.8); }
+  70% { transform: scale(1.07); }
+}
+
+/* The chronicle: the hourglass turns over. */
+.hourglass {
+  transform-box: view-box;
+  transform-origin: 50% 50%;
+  transition: transform 0.5s cubic-bezier(0.45, 0, 0.2, 1);
+}
+
+:where(a, button:not(:disabled)):hover > .icon .hourglass,
+.active .hourglass {
+  transform: rotate(180deg);
+  transition: transform 0.6s cubic-bezier(0.34, 1.3, 0.64, 1);
+}
+
+/* Raising: the arrow rises, again and again, while it's hovered. */
+.arrow {
+  transform-box: view-box;
+}
+
+:where(a, button:not(:disabled)):hover > .icon .arrow {
+  animation: rise 1s ease-in-out infinite;
+}
+
+:where(a, button:not(:disabled)):hover > .icon .maskedBody.maskedLoop {
+  animation: repaint 1s linear infinite;
+}
+
+@keyframes rise {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-7%); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .book,
-  :where(a, button):hover > .icon .book,
+  :where(a, button:not(:disabled)):hover > .icon .book,
   .active .book { transition: none; }
   .flame,
-  :where(a, button):hover > .icon .flame,
+  :where(a, button:not(:disabled)):hover > .icon .flame,
   .active .flame { transition: opacity 0.2s ease-out; }
   .flicker { animation: none; }
+  .glass, .page, .gear, .corner,
+  :where(a, button:not(:disabled)):hover > .icon .glass,
+  :where(a, button:not(:disabled)):hover > .icon .page,
+  :where(a, button:not(:disabled)):hover > .icon .gear,
+  :where(a, button:not(:disabled)):hover > .icon .corner { transition: none; }
+  :where(a, button:not(:disabled)):hover > .icon .quill,
+  :where(a, button:not(:disabled)):hover > .icon .dot,
+  :where(a, button:not(:disabled)):hover > .icon .maskedBody,
+  :where(a, button:not(:disabled)):hover > .icon .stamp,
+  :where(a, button:not(:disabled)):hover > .icon .arrow { animation: none; }
+  .turn, .hourglass,
+  :where(a, button:not(:disabled)):hover > .icon .turn,
+  :where(a, button:not(:disabled)):hover > .icon .hourglass { transition: none; }
   .twinkle { animation: none; }
 }

@@ -4,8 +4,11 @@ import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   ALTAR_BODY, ALTAR_CANDLE_LEFT, CASTER_BODY, CASTER_BOOK, CASTER_BOOK_GAP, ALTAR_CANDLE_RIGHT, ALTAR_FLAME, CHEST_BODY, CHEST_HASP, CHEST_LID, CHEST_LID_PLUG, CHEST_PLUG, CHEST_SPARKLES, EDITOR_BODY, EDITOR_FLAME,
-  GRIMOIRE_BASE, GRIMOIRE_CLASP, GRIMOIRE_COVER, GRIMOIRE_PAGES,
+  FULLSCREEN_BL, FULLSCREEN_BR, FULLSCREEN_TL, FULLSCREEN_TR, GEAR, GRIMOIRE_BASE, GRIMOIRE_CLASP, GRIMOIRE_COVER, GRIMOIRE_PAGES,
+  INFO_BODY, INFO_DOT, PAGES_BACK, PAGES_FRONT, PAGES_MIDDLE, SPELL_EDIT_QUILL, SPELL_EDIT_SCROLL, SPELL_SEARCH_GLASS,
+  SPELL_SEARCH_SCROLL, RAISE_ARROW, RAISE_CLOUD,
 } from '../../../icons/animated';
+import { spChronicle, spOriginal, spSeal } from '../../../icons';
 
 interface NavIconProps {
   icon: IconDefinition;
@@ -111,6 +114,97 @@ const CasterIcon = ({ active }: AnimatedProps) => {
   );
 };
 
+// Searching the spell: hovered, the glass over its scroll leans in, bigger, as if to read closer.
+const SpellSearchIcon = ({ active }: AnimatedProps) => (
+  <Svg name="spell-search" width={512} active={active}>
+    <path d={SPELL_SEARCH_SCROLL} />
+    <path className={s.glass} d={SPELL_SEARCH_GLASS} data-testid="nav-icon-spell-search-glass" />
+  </Svg>
+);
+
+// Editing the spell: hovered, its quill writes (back and forth on its nib) for as long as it is.
+const SpellEditIcon = ({ active }: AnimatedProps) => (
+  <Svg name="spell-edit" width={512} active={active}>
+    <path d={SPELL_EDIT_SCROLL} />
+    <path className={s.quill} d={SPELL_EDIT_QUILL} data-testid="nav-icon-spell-edit-quill" />
+  </Svg>
+);
+
+// The page selector: hovered (or open), the pages behind the front one fan out.
+const PagesIcon = ({ active }: AnimatedProps) => (
+  <Svg name="pages" width={512} active={active}>
+    <path className={`${s.page} ${s.pageBack}`} d={PAGES_BACK} data-testid="nav-icon-pages-back" />
+    <path className={`${s.page} ${s.pageMiddle}`} d={PAGES_MIDDLE} />
+    <path d={PAGES_FRONT} />
+  </Svg>
+);
+
+// The information: hovered, the "i"'s dot hops (a hole in the disc, cut by a mask that hops).
+const InfoIcon = ({ active }: AnimatedProps) => {
+  const id = `info-dot-${useId().replace(/:/g, '')}`;
+  return (
+    <Svg name="info" width={512} active={active}>
+      <defs>
+        <mask id={id} maskUnits="userSpaceOnUse" x={-64} y={-64} width={640} height={640}>
+          <rect x={-64} y={-64} width={640} height={640} fill="white" />
+          <path className={s.dot} d={INFO_DOT} fill="black" data-testid="nav-icon-info-dot" />
+        </mask>
+      </defs>
+      <path className={s.maskedBody} d={INFO_BODY} mask={`url(#${id})`} />
+    </Svg>
+  );
+};
+
+// Settings: hovered (or open), the gear turns.
+const GearIcon = ({ active }: AnimatedProps) => (
+  <Svg name="gear" width={512} active={active}>
+    <path className={s.gear} d={GEAR} data-testid="nav-icon-gear-wheel" />
+  </Svg>
+);
+
+// Fullscreen: its corners point out, and spread on hover; in fullscreen (active) each turns
+// on its own center to point in, and closes in on hover.
+const FullscreenIcon = ({ active }: AnimatedProps) => (
+  <Svg name="fullscreen" width={512} active={active}>
+    <path className={`${s.corner} ${s.cornerTL}`} d={FULLSCREEN_TL} data-testid="nav-icon-fullscreen-corner" />
+    <path className={`${s.corner} ${s.cornerTR}`} d={FULLSCREEN_TR} />
+    <path className={`${s.corner} ${s.cornerBR}`} d={FULLSCREEN_BR} />
+    <path className={`${s.corner} ${s.cornerBL}`} d={FULLSCREEN_BL} />
+  </Svg>
+);
+
+// An icon that moves as one: drawn as in the library, all of it in one part.
+const Whole = ({ icon, part, active }: AnimatedProps & { icon: IconDefinition; part: string }) => (
+  <Svg name={icon.iconName} width={icon.icon[0]} active={active}>
+    <path className={part} d={icon.icon[4] as string} data-testid={`nav-icon-${icon.iconName}-whole`} />
+  </Svg>
+);
+
+// The original (the PDF's page): hovered (or shown), the page turns over.
+const OriginalIcon = ({ active }: AnimatedProps) => <Whole icon={spOriginal} part={s.turn} active={active} />;
+
+// Sealing the spell: hovered, the seal is pressed, as a stamp.
+const SealIcon = ({ active }: AnimatedProps) => <Whole icon={spSeal} part={s.stamp} active={active} />;
+
+// The chronicle: hovered, the hourglass turns over.
+const ChronicleIcon = ({ active }: AnimatedProps) => <Whole icon={spChronicle} part={s.hourglass} active={active} />;
+
+// Raising to the cloud: hovered, its arrow rises (a hole in the cloud, cut by a mask that rises).
+const RaiseIcon = ({ active }: AnimatedProps) => {
+  const id = `raise-arrow-${useId().replace(/:/g, '')}`;
+  return (
+    <Svg name="raise" width={512} active={active}>
+      <defs>
+        <mask id={id} maskUnits="userSpaceOnUse" x={-64} y={-64} width={640} height={640}>
+          <rect x={-64} y={-64} width={640} height={640} fill="white" />
+          <path className={s.arrow} d={RAISE_ARROW} fill="black" data-testid="nav-icon-raise-arrow" />
+        </mask>
+      </defs>
+      <path className={`${s.maskedBody} ${s.maskedLoop}`} d={RAISE_CLOUD} mask={`url(#${id})`} />
+    </Svg>
+  );
+};
+
 // The icons that move, by their name in the icon library.
 const ANIMATED: Record<string, (props: AnimatedProps) => ReactElement> = {
   altar: AltarIcon,
@@ -118,11 +212,27 @@ const ANIMATED: Record<string, (props: AnimatedProps) => ReactElement> = {
   chest: ChestIcon,
   editor: EditorIcon,
   caster: CasterIcon,
+  'spell-search': SpellSearchIcon,
+  'spell-edit': SpellEditIcon,
+  pages: PagesIcon,
+  info: InfoIcon,
+  gear: GearIcon,
+  fullscreen: FullscreenIcon,
+  original: OriginalIcon,
+  seal: SealIcon,
+  chronicle: ChronicleIcon,
+  raise: RaiseIcon,
 };
 
 // A section's icon in the sidebar: one of ours that moves as it's hovered (and stays so while
 // its section is open), or the icon as it is.
+const animatedOf = (icon: IconDefinition) => (icon.prefix === 'fak' ? ANIMATED[icon.iconName] : undefined);
+
+// Whether an icon is one of ours that moves (a Font Awesome one of the same name never is).
+export const isAnimatedIcon = (icon: unknown): icon is IconDefinition =>
+  !!icon && typeof icon === 'object' && 'iconName' in icon && !!animatedOf(icon as IconDefinition);
+
 export const NavIcon = ({ icon, active = false }: NavIconProps) => {
-  const Animated = ANIMATED[icon.iconName];
+  const Animated = animatedOf(icon);
   return Animated ? <Animated active={active} /> : <FontAwesomeIcon icon={icon} data-testid={`nav-icon-${icon.iconName}`} />;
 };
