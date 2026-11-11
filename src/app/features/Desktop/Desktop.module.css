@@ -388,3 +388,15 @@
   0%   { background-position: -100%; }
   100% { background-position: 200%; }
 }
+
+/* Launching an app: the others fade away while its splash opens out of it (see AppLaunch). */
+.launcher[data-launching] .item:not([data-launching]) {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.launcher[data-launching] .categoryLabel,
+.launcher[data-launching] .categoryDivider {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
