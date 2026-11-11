@@ -1,10 +1,10 @@
 import {
-  faUsers, faFingerprint, faShield, faPalette, faHardDrive, faCloud,
+  faFingerprint, faShield, faPalette, faHardDrive, faCloud,
   faBox, faGear,
-  faList, faPlus, faIdBadge, faChartLine, faCircleInfo,
+  faList, faPlus, faCircleInfo,
 } from "@fortawesome/free-solid-svg-icons";
 import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
-import { spAltar, spBag, spCaster, spChest, spEditor, spGrimoire, spReader, spScroll, spSpellEdit } from "../icons";
+import { spAltar, spArmor, spBag, spCaster, spChest, spEditor, spGrimoire, spGroup, spHelm, spReader, spScroll, spSpellEdit } from "../icons";
 
 // The grimoire's icon, wherever it stands for it (the sidebar, the search's tab).
 export const GRIMOIRE_ICON = spGrimoire;
@@ -49,8 +49,8 @@ export const dashboardDirectoryList = [
   // TCORE-109: possession + equip surface (unlockedIds + the same setActiveXxx actions
   // ReaderSettings/PlayerPreferences already dispatch) -- Havenstore stays acquisition-only.
   { name: "Inventory", icon: INVENTORY_ICON, path: "inventory" },
-  { name: "Stats", icon: faChartLine, path: "stats" },
-  { name: "Groups", icon: faUsers, path: "groups" },
+  { name: "Stats", icon: spArmor, path: "stats" },
+  { name: "Groups", icon: spGroup, path: "groups" },
 ];
 
 export const storageDirectoryList = [
@@ -117,9 +117,9 @@ export const sidebarAccordionSections: SidebarAccordionSectionConfig[] = [
 // every /caster/* route. Labels are resolved from `t.nav[id]` at render time, same lookup
 // the sidebar itself uses, so the two can never show mismatched text.
 export const casterTabs = [
-  { id: "profile", icon: faIdBadge, path: "/caster/profile" },
+  { id: "profile", icon: spHelm, path: "/caster/profile" },
   { id: "inventory", icon: INVENTORY_ICON, path: "/caster/inventory" },
-  { id: "stats", icon: faChartLine, path: "/caster/stats" },
-  { id: "groups", icon: faUsers, path: "/caster/groups" },
+  { id: "stats", icon: spArmor, path: "/caster/stats" },
+  { id: "groups", icon: spGroup, path: "/caster/groups" },
   { id: "settings", icon: faGear, path: "/caster/settings" },
 ];

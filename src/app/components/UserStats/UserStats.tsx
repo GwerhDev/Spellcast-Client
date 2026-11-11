@@ -2,7 +2,8 @@ import s from './UserStats.module.css';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../../../i18n';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUsers, faChevronRight } from '@fortawesome/free-solid-svg-icons';
+import { faChevronRight } from '@fortawesome/free-solid-svg-icons';
+import { spGroup } from '../../../icons';
 
 export const UserStats = () => {
   const navigate = useNavigate();
@@ -12,7 +13,7 @@ export const UserStats = () => {
     <div className={s.statsContainer}>
       <button className={s.card} onClick={() => navigate('/caster/groups')}>
         <div className={s.cardHeader}>
-          <span className={s.cardIcon}><FontAwesomeIcon icon={faUsers} /></span>
+          <span className={s.cardIcon}><FontAwesomeIcon icon={spGroup} /></span>
           <span className={s.cardTitle}>{t.nav.groups}</span>
           <FontAwesomeIcon icon={faChevronRight} className={s.chevron} />
         </div>
