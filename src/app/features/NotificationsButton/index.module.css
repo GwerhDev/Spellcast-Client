@@ -9,8 +9,8 @@
   border: none;
   padding: 0;
   cursor: pointer;
-  color: var(--nhexa-desktop-text-dim);
-  font-size: 16px;
+  color: var(--nhexa-desktop-icon);
+  font-size: var(--nhexa-desktop-icon-size);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -18,7 +18,7 @@
 }
 
 .btn:hover {
-  color: var(--nhexa-desktop-accent);
+  color: var(--nhexa-desktop-icon-hover);
 }
 
 .badge {

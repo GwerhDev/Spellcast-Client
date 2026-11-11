@@ -4,8 +4,9 @@
   border: none;
   background: none;
   cursor: pointer;
-  color: var(--nhexa-desktop-text-dim);
-  font-size: 15px;
+  color: var(--nhexa-desktop-icon);
+  /* A little under the other icons: the hexagon nodes fill their box more. */
+  font-size: 0.9rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -15,5 +16,5 @@
 .trigger:hover,
 .trigger:focus-visible {
   outline: none;
-  color: var(--nhexa-desktop-accent);
+  color: var(--nhexa-desktop-icon-hover);
 }

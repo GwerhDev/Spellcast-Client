@@ -133,21 +133,23 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  width: 100%;
-  height: 28px;
-  min-height: 28px;
-  max-height: 28px;
+  /* Edge to edge of the window: out over main's inset (that's the app's frame's, not the
+     header's), so its icons sit as far from the edges as in every other app. */
+  margin-inline: -0.5rem;
+  height: var(--nhexa-desktop-header-height);
+  min-height: var(--nhexa-desktop-header-height);
+  max-height: var(--nhexa-desktop-header-height);
   flex-shrink: 0;
   overflow: visible;
   position: relative;
   gap: .5rem;
   /* Its icons clear the window's edge (the same on both sides: the title stays centered). */
-  padding-inline: 0.75rem;
+  padding-inline: var(--nhexa-desktop-header-inline);
   box-sizing: border-box;
 }
 
 .header-spacer {
-  gap: 1rem;
+  gap: var(--nhexa-desktop-icon-gap);
   width: 100%;
   height: 100%;
   display: flex;
@@ -240,6 +242,10 @@
 @media (max-width: 1024px) {
   main {
     padding: 0;
+  }
+
+  .header-app {
+    margin-inline: 0;
   }
 
   .dashboard-container {

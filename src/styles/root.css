@@ -101,6 +101,17 @@
   --nhexa-desktop-text-dim: #7b7b7b;
   --nhexa-desktop-skeleton-1: #3c3c3c;
   --nhexa-desktop-skeleton-2: #2f2f2f;
+  /* The header's icons (search, notifications, apps...): one gray, one size, one gap, in
+     every app's header. */
+  --nhexa-desktop-icon: #adadad;
+  --nhexa-desktop-icon-hover: #e4e4e4;
+  --nhexa-desktop-icon-size: 0.95rem;
+  --nhexa-desktop-icon-gap: 1rem;
+  /* The header itself: its height, how far its icons sit from the window's edges, and the
+     size of the app's mark by its (centered) name. The name's color is each app's own. */
+  --nhexa-desktop-header-height: 25px;
+  --nhexa-desktop-header-inline: 0.75rem;
+  --nhexa-desktop-title-mark: 14px;
   /* NHEXA brand accent (celeste) for shell elements -- the AppSwitcher/splash
      wordmark, the splash progress bar, etc. Deliberately NOT --color-primary:
      an in-app theme (e.g. Spellcast's bronze light theme) must never repaint the

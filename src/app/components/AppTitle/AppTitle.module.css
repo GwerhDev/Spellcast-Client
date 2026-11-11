@@ -1,5 +1,5 @@
-/* NHEXA shell wordmark -- keep the brand celeste regardless of the app's in-app theme
-   (bronze, etc.). Shell elements never follow the app theme token. */
+/* NHEXA shell wordmark: Spellcast's celeste, whatever the app's in-app theme (bronze,
+   etc.) -- shell elements don't follow the app's theme tokens. */
 .title {
   display: flex;
   align-items: center;
@@ -18,7 +18,7 @@
 }
 
 .icon {
-  width: 15px;
-  height: 15px;
+  width: var(--nhexa-desktop-title-mark);
+  height: var(--nhexa-desktop-title-mark);
   flex-shrink: 0;
 }
