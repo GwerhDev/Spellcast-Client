@@ -16,6 +16,7 @@
 }
 
 .buttonsContainer.scrollable {
+  border-radius: 0;
   overflow-x: auto;
   scroll-behavior: smooth;
   scrollbar-width: none;
@@ -29,6 +30,13 @@
 .buttonsContainer.scrollable .tabButton {
   width: auto;
   flex: 0 0 auto;
+}
+
+/* With arrows at its sides, the strip's ends aren't the bar's ends: the first and last tabs are
+   square too. */
+.buttonsContainer.scrollable .tabButton.left,
+.buttonsContainer.scrollable .tabButton.right {
+  border-radius: 0;
 }
 
 .arrowButton {
