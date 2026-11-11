@@ -1,139 +1,20 @@
-/* A launch: the chosen app's splash, opening out of its hexagon (a circle growing from its
-   center) until it covers the screen. Each splash's first frame is drawn as that app draws it:
-   keep these in step with Spellcast's, Spectra's and StreamBy's Loader. */
+/* A launch: over the whole page, where what's on screen comes undone into the background the
+   chosen app's splash starts with (drawn on it bit by bit: see AppLaunch). */
 .launch {
   position: fixed;
   inset: 0;
   z-index: 100000;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  clip-path: circle(0 at var(--x) var(--y));
-  transition: clip-path 0.7s cubic-bezier(0.65, 0, 0.35, 1);
   pointer-events: none;
 }
 
-.open {
-  clip-path: circle(150vmax at var(--x) var(--y));
-}
-
-/* ── Spellcast's splash ── */
-.spellcast {
-  background:
-    radial-gradient(ellipse 80% 60% at 70% 40%, color-mix(in oklch, #73a5cc 12%, transparent), transparent 70%),
-    radial-gradient(ellipse 60% 40% at 20% 80%, color-mix(in oklch, #73a5cc 8%, transparent), transparent 70%),
-    linear-gradient(to right top, #1a1a1c, #2f2f2f);
-}
-
-.spellcastWrapper {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2rem;
-  font-family: 'Geist', -apple-system, system-ui, sans-serif;
-}
-
-.spellcastLogo {
-  width: 120px;
-  height: 120px;
-  opacity: 0.9;
-}
-
-.spellcastWordmark {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.28em;
-  color: #73a5cc;
-  text-transform: uppercase;
-  margin-top: -1rem;
-}
-
-.spellcastBar {
-  width: 160px;
-  height: 3px;
-  border-radius: 999px;
-  background: #3c3c3c;
-}
-
-.spellcastMessage {
-  font-size: 0.7rem;
-  letter-spacing: 0.04em;
-  margin-top: -1rem;
-  visibility: hidden;
-}
-
-/* ── Spectra's splash ── */
-.spectra {
-  background:
-    radial-gradient(ellipse 80% 60% at 70% 40%, color-mix(in oklch, #73a5cc 12%, transparent), transparent 70%),
-    radial-gradient(ellipse 60% 40% at 20% 80%, color-mix(in oklch, #73a5cc 8%, transparent), transparent 70%),
-    linear-gradient(to right top, #1a1a1c, #2f2f2f);
-}
-
-.spectraInner {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 20px;
-  font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
-}
-
-.spectraLogo {
-  display: block;
-  width: 120px;
-  height: 120px;
-}
-
-.spectraWordmark {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.28em;
-  color: #73a5cc;
-  margin-top: -10px;
-}
-
-.spectraBar {
-  width: 180px;
-  height: 2px;
-  border-radius: 999px;
-  background: oklch(0.20 0.006 0);
-  margin-top: 4px;
-}
-
-.spectraMessage {
-  font-size: 9px;
-  font-weight: 500;
-  letter-spacing: 0.16em;
-  margin-top: -8px;
-  visibility: hidden;
-}
-
-/* ── StreamBy's splash ── */
-.streamby {
-  background: linear-gradient(to right top, #1a1a1c, #2f2f2f);
-}
-
-.streambyLogo {
-  width: 50%;
-  opacity: 0.5;
-}
-
-/* Under its wordmark: its logo's SVG is square, the wordmark ending 4.48% of its height below
-   its center (see StreamBy's Loader). */
-.streambyBar {
+.layer {
   position: absolute;
-  top: calc(50% + 50vw * 0.0448 + 2rem);
-  left: 50%;
-  transform: translateX(-50%);
-  width: 160px;
-  height: 3px;
-  border-radius: 999px;
-  background: #3c3c3c;
+  inset: 0;
+  width: 100%;
+  height: 100%;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .launch {
-    transition: none;
-  }
+/* The bits about to come undone glow (a filter: the GPU's, not the canvas's own blur). */
+.sparks {
+  filter: drop-shadow(0 0 5px rgba(115, 165, 204, 0.85));
 }

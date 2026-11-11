@@ -30,7 +30,7 @@ export const Desktop = () => {
   const allApps = categories.flatMap(c => c.apps);
   const currentApp = allApps.find((a) => sameHost(a.url)) ?? allApps.find(looksLikeSpellcast);
 
-  // Choosing another app: one whose splash is known opens out of its hexagon into it first (see
+  // Choosing another app: one whose splash is known: the page comes undone into its splash's background first (see
   // AppLaunch), the rest are opened at once.
   const [launch, setLaunch] = useState<{ app: App; kind: SplashKind; from: { x: number; y: number } } | null>(null);
   const handleClick = (app: App, e: React.MouseEvent<HTMLElement>) => {
@@ -115,7 +115,7 @@ export const Desktop = () => {
         )}
       </AnimatePresence>
       </div>
-      {launch && <AppLaunch kind={launch.kind} url={launch.app.url} from={launch.from} onDone={() => { window.location.href = launch.app.url; }} />}
+      {launch && <AppLaunch kind={launch.kind} from={launch.from} onDone={() => { window.location.href = launch.app.url; }} />}
     </>
   );
 };

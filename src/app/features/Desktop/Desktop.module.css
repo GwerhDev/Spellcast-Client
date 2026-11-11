@@ -389,7 +389,7 @@
   100% { background-position: 200%; }
 }
 
-/* Launching an app: the others fade away while its splash opens out of it (see AppLaunch). */
+/* Launching an app: the others fade away as the page comes undone (see AppLaunch). */
 .launcher[data-launching] .item:not([data-launching]) {
   opacity: 0;
   transition: opacity 0.3s ease;
