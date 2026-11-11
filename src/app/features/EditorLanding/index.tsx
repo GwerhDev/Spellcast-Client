@@ -33,7 +33,7 @@ export const EditorLanding = () => {
           <div data-testid="editor-edit-card" className={s.card} onClick={() => navigate('/editor/select')}>
             <FontAwesomeIcon icon={SPELL_EDIT_ICON} className={s.cardIcon} />
             <span>
-              <h3 className={s.cardTitle}>{t.common.edit}</h3>
+              <h3 className={s.cardTitle}>{t.nav.select}</h3>
               <small className={s.description}>{t.editor.editDesc}</small>
             </span>
           </div>
