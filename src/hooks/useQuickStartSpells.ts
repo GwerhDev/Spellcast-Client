@@ -1,4 +1,5 @@
-import { useEffect, useLayoutEffect, useMemo, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useStore } from 'react-redux';
 import { getSpellsFromDB } from '../db';
 import { useAppSelector } from '../store/hooks';
 import type { Spell } from '../interfaces';
@@ -6,6 +7,13 @@ import { applyQuickStart } from '../utils/quickStart';
 
 // How many spells the quick start shows; past that, it points to the Grimoire.
 export const QUICK_START_MAX = 10;
+
+// The list as last read, kept past the quick start's own life: back on the altar with nothing
+// changed since (the same caster, the same version of the list), it's shown at once, not read
+// from the database again. Kept per store (the app has one; each test its own). `version` is
+// the list's version it was read at -- patched in place since, it's still that version.
+interface ReadList { userId: string; version: number; docs: Spell[] }
+const lastRead = new WeakMap<object, ReadList>();
 
 // The quick start's spells, for any way of showing them (the coverflow, or the home's 3D
 // scene): the caster's spells, newest first, through the altar's filters (see
@@ -16,8 +24,13 @@ export const useQuickStartSpells = () => {
   const userId = useAppSelector((state) => state.session.userData.id);
   const { spellId: activeDocId, currentPage: activeCurrentPage, listVersion, coverFrameChange } = useAppSelector((state) => state.spellReader);
   const quickStart = useAppSelector((state) => state.altar.quickStart);
-  const [documents, setDocuments] = useState<Spell[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const store = useStore();
+  const cached = lastRead.get(store);
+  const fresh = !!userId && cached?.userId === userId && cached.version === listVersion ? cached : null;
+  const [documents, setDocuments] = useState<Spell[]>(() => fresh?.docs ?? []);
+  const [isLoading, setIsLoading] = useState(!fresh);
+  // The list's version what's shown was read at (null: nothing read yet).
+  const shownVersion = useRef<number | null>(fresh ? fresh.version : null);
   // The spell left out (the one on the altar). It follows the one loaded in a layout effect,
   // not in the same render: the commit a spell is conjured in still has its card, so the
   // view can see where it was (and fly it from there to the altar) before it's gone, with
@@ -34,11 +47,26 @@ export const useQuickStartSpells = () => {
     // modal, which would close and reopen on every change saved from it. Without the session
     // read yet there's no caster to list for: still loading, not an empty list.
     if (!userId) return;
+    // Shown already as it is now (kept from the last time): nothing to read.
+    if (shownVersion.current === listVersion && lastRead.get(store)?.userId === userId) return;
+    let cancelled = false;
     getSpellsFromDB(userId)
-      .then(docs => setDocuments(docs.sort((a: Spell, b: Spell) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())))
+      .then(docs => {
+        if (cancelled) return;
+        shownVersion.current = listVersion;
+        setDocuments(docs.sort((a: Spell, b: Spell) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()));
+      })
       .catch(error => console.error('Failed to fetch local spells:', error))
-      .finally(() => setIsLoading(false));
+      .finally(() => { if (!cancelled) setIsLoading(false); });
+    return () => { cancelled = true; };
+    //eslint-disable-next-line
   }, [userId, listVersion]);
+
+  // What's shown, kept for next time: patched in place or read, at the version it was read at.
+  useEffect(() => {
+    if (!userId || shownVersion.current === null) return;
+    lastRead.set(store, { userId, version: shownVersion.current, docs: documents });
+  }, [store, userId, documents]);
 
   // A cover frame picked from the detail: applied to that spell in place, no refetch.
   useEffect(() => {

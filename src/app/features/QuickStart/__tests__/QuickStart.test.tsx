@@ -135,6 +135,35 @@ describe('QuickStart', () => {
     expect(screen.getByTestId('spell-detail-modal-stub')).toHaveTextContent('doc-2');
   });
 
+  describe('back on the altar', () => {
+    it("shows the spells at once, without reading them again, when nothing has changed since", async () => {
+      const read = vi.spyOn(db, 'getSpellsFromDB').mockResolvedValue([mockDoc] as never);
+      const store = loggedStore();
+      const first = renderWithProviders(<QuickStart />, { store });
+      await screen.findByTestId('spell-card-doc-1');
+      expect(read).toHaveBeenCalledTimes(1);
+      first.unmount();
+      renderWithProviders(<QuickStart />, { store });
+      // There at once (no loading state first), from what was read before.
+      expect(screen.getByTestId('spell-card-doc-1')).toBeInTheDocument();
+      await act(async () => {});
+      expect(read).toHaveBeenCalledTimes(1);
+    });
+
+    it('reads them again when the list changed while it was away', async () => {
+      const read = vi.spyOn(db, 'getSpellsFromDB').mockResolvedValue([mockDoc] as never);
+      const store = loggedStore();
+      const first = renderWithProviders(<QuickStart />, { store });
+      await screen.findByTestId('spell-card-doc-1');
+      first.unmount();
+      read.mockResolvedValue([mockDoc, { ...mockDoc, id: 'doc-2', title: 'Another book' }] as never);
+      store.dispatch(invalidateSpellList());
+      renderWithProviders(<QuickStart />, { store });
+      expect(await screen.findByTestId('spell-card-doc-2')).toBeInTheDocument();
+      expect(read).toHaveBeenCalledTimes(2);
+    });
+  });
+
   describe('the spell on the altar', () => {
     const other = { ...mockDoc, id: 'doc-2', title: 'Another book' };
     const box = { left: 40, top: 500, width: 120, height: 168, right: 160, bottom: 668, x: 40, y: 500, toJSON: () => ({}) };
