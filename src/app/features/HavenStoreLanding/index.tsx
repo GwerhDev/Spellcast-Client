@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
 import { HAVENSTORE_ICON } from '../../../config/consts';
@@ -11,6 +11,8 @@ import { useAppSelector, useAppDispatch } from '../../../store/hooks';
 import { unlockAsset } from '../../../store/casterInventorySlice';
 import { soundBackgrounds, pageBackgrounds, companions, coverFrames } from '../../../config/assets';
 import { useLanguage } from '../../../i18n';
+import { Carousel } from '../../components/Carousel/Carousel';
+import { useScrolledPast } from '../../../hooks/useScrolledPast';
 import s from '../../components/HavenStoreLanding/index.module.css';
 
 // TCORE-109: Havenstore is acquisition-only -- POSSESSION (unlockedIds), never ACTIVATION
@@ -25,6 +27,9 @@ export const HavenStoreLanding = () => {
   const { t } = useLanguage();
   const [query, setQuery] = useState('');
   const { unlockedIds } = useAppSelector(state => state.casterInventory);
+  // Scrolled past its heading: the search bar sticks, solid, and takes the heading's title.
+  const headingRef = useRef<HTMLSpanElement>(null);
+  const stuck = useScrolledPast(headingRef);
 
   const isUnlocked = (id: string) => unlockedIds.includes(id);
 
@@ -43,12 +48,16 @@ export const HavenStoreLanding = () => {
 
   return (
     <div data-testid="haven-store" className={s.container}>
-      <span className={s.header}>
+      <span ref={headingRef} className={s.header}>
         <SectionHeader icon={HAVENSTORE_ICON} title={t.havenStore.title} subtitle={t.havenStore.subtitle} align="center" />
       </span>
 
       <div className={s.panel}>
-        <div className={s.panelHeader}>
+        <div className={`${s.panelHeader} ${stuck ? s.stuck : ''}`} data-testid="haven-bar" data-sticky-bar data-stuck={stuck || undefined}>
+          <span className={s.barTitle} aria-hidden={!stuck}>
+            <FontAwesomeIcon icon={HAVENSTORE_ICON} className={s.barIcon} />
+            {t.havenStore.title}
+          </span>
           <div className={s.searchWrapper}>
             <FontAwesomeIcon icon={faMagnifyingGlass} className={s.searchIcon} />
             <input
@@ -65,7 +74,7 @@ export const HavenStoreLanding = () => {
           <div className={s.body}>
             <div className={s.section}>
               <p className={s.sectionLabel}>{t.havenStore.soundBackgrounds}</p>
-              <div className={s.soundGrid}>
+              <Carousel previousLabel={t.common.previous} nextLabel={t.common.next} itemWidth="168px" aria-label={t.havenStore.soundBackgrounds} data-testid="sounds-carousel">
                 {filteredSounds.map(bg => (
                   <SoundBackgroundCard
                     key={bg.id}
@@ -76,12 +85,12 @@ export const HavenStoreLanding = () => {
                     showEquipControls={false}
                   />
                 ))}
-              </div>
+              </Carousel>
             </div>
 
             <div className={s.section}>
               <p className={s.sectionLabel}>{t.havenStore.pageBackgrounds}</p>
-              <div className={s.pageGrid}>
+              <Carousel previousLabel={t.common.previous} nextLabel={t.common.next} itemWidth="140px" aria-label={t.havenStore.pageBackgrounds} data-testid="pages-carousel">
                 {filteredPages.map(bg => (
                   <PageBackgroundCard
                     key={bg.id}
@@ -92,12 +101,12 @@ export const HavenStoreLanding = () => {
                     showEquipControls={false}
                   />
                 ))}
-              </div>
+              </Carousel>
             </div>
 
             <div className={s.section}>
               <p className={s.sectionLabel}>{t.havenStore.companions}</p>
-              <div data-testid="companions-grid" className={s.soundGrid}>
+              <Carousel previousLabel={t.common.previous} nextLabel={t.common.next} itemWidth="168px" aria-label={t.havenStore.companions} data-testid="companions-grid">
                 {filteredCompanions.map(companion => {
                   const comingSoon = !!companion.comingSoon;
                   const unlocked = !comingSoon && isUnlocked(companion.id);
@@ -112,12 +121,12 @@ export const HavenStoreLanding = () => {
                     />
                   );
                 })}
-              </div>
+              </Carousel>
             </div>
 
             <div className={s.section}>
               <p className={s.sectionLabel}>{t.havenStore.coverFrames}</p>
-              <div className={s.pageGrid}>
+              <Carousel previousLabel={t.common.previous} nextLabel={t.common.next} itemWidth="140px" aria-label={t.havenStore.coverFrames} data-testid="cover-frames-carousel">
                 {filteredCoverFrames.map(border => (
                   <CoverFrameCard
                     key={border.id}
@@ -128,7 +137,7 @@ export const HavenStoreLanding = () => {
                     showEquipControls={false}
                   />
                 ))}
-              </div>
+              </Carousel>
             </div>
           </div>
         </div>

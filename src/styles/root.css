@@ -47,6 +47,9 @@
   --field-label-size: 0.7rem;
   --field-padding: 0.45rem 0.65rem;
   --field-radius: 6px;
+  /* A page's sticky bar (Havenstore's search): its height, so the scroll rail beside it can take
+     its color too (see .dashboard-sections in globals.css). */
+  --sticky-bar-height: 2.75rem;
   --component-background-transparency: #dbdbf513;
   --color-primary-accent: #84b4d8;
   --color-secondary-accent: #9b85c8;

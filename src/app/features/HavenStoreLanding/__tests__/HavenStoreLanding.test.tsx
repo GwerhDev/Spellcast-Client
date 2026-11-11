@@ -1,9 +1,46 @@
-import { describe, it, expect } from 'vitest';
-import { screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { screen, fireEvent, act } from '@testing-library/react';
 import { renderWithProviders } from '../../../../test/renderWithProviders';
 import { HavenStoreLanding } from '../index';
 
+// The page's scroller isn't laid out here: what the observer would see is told to it by hand.
+const watchIntersections = () => {
+  const seen: { callback: IntersectionObserverCallback }[] = [];
+  vi.stubGlobal('IntersectionObserver', class {
+    constructor(callback: IntersectionObserverCallback) { seen.push({ callback }); }
+    observe() {}
+    disconnect() {}
+  });
+  return (scrolledPast: boolean) => act(() => {
+    seen.forEach(({ callback }) => callback([{
+      isIntersecting: !scrolledPast,
+      boundingClientRect: { top: scrolledPast ? -200 : 40 },
+      rootBounds: { top: 0 },
+    } as unknown as IntersectionObserverEntry], {} as IntersectionObserver));
+  });
+};
+
 describe('HavenStoreLanding', () => {
+  afterEach(() => { vi.unstubAllGlobals(); });
+
+  it("sticks its search bar, solid with the store's title, once its heading has scrolled away", () => {
+    const scroll = watchIntersections();
+    renderWithProviders(<HavenStoreLanding />);
+    const bar = screen.getByTestId('haven-bar');
+    expect(bar).not.toHaveAttribute('data-stuck');
+    scroll(true);
+    expect(bar).toHaveAttribute('data-stuck', 'true');
+    scroll(false);
+    expect(bar).not.toHaveAttribute('data-stuck');
+  });
+
+  it('shows each category as a carousel', () => {
+    renderWithProviders(<HavenStoreLanding />);
+    for (const id of ['sounds-carousel', 'pages-carousel', 'companions-grid', 'cover-frames-carousel']) {
+      expect(screen.getByTestId(id)).toHaveAttribute('role', 'group');
+    }
+  });
+
   it('renders the store', () => {
     renderWithProviders(<HavenStoreLanding />);
     expect(screen.getByTestId('haven-store')).toBeInTheDocument();

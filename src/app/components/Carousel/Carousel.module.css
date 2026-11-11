@@ -1,0 +1,103 @@
+/* Holds the row and its buttons (over its edges). */
+.root {
+  position: relative;
+  min-width: 0;
+}
+
+/* A row that scrolls sideways, its rail hidden (it scrolls by touch, trackpad, shift+wheel,
+   keys, or its buttons), snapping to its items. Its edges' fade is a share of its width (a
+   phone's is narrow: a wide fade would cover most of a card), within bounds. */
+.carousel {
+  --fade: clamp(0.75rem, 4vw, 2.5rem);
+  --fade-before: 0px;
+  --fade-after: 0px;
+  display: flex;
+  gap: 0.75rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+  /* Room for its items' hover lift and glow, not cut off by its own overflow. */
+  padding: 0.5rem 0;
+  margin: -0.5rem 0;
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 var(--fade-before), #000 calc(100% - var(--fade-after)), transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0, #000 var(--fade-before), #000 calc(100% - var(--fade-after)), transparent 100%);
+}
+
+.carousel::-webkit-scrollbar {
+  display: none;
+}
+
+/* Its edges fade only where there's more to see. */
+.carousel[data-more-before] { --fade-before: var(--fade); }
+.carousel[data-more-after] { --fade-after: var(--fade); }
+
+.carousel > * {
+  flex: 0 0 var(--item-width);
+  scroll-snap-align: start;
+}
+
+/* On a phone (narrow, or touch): it always rests on an item -- its first at the start, then each
+   one after it centered, its last at the end. */
+@media (max-width: 600px), (pointer: coarse) {
+  .carousel {
+    scroll-snap-type: x mandatory;
+  }
+
+  .carousel > * {
+    scroll-snap-align: center;
+  }
+
+  .carousel > :first-child {
+    scroll-snap-align: start;
+  }
+
+  .carousel > :last-child {
+    scroll-snap-align: end;
+  }
+}
+
+/* Its buttons: only with a mouse (a pointer that hovers), shown while it's hovered or one of
+   them has the keyboard's focus; each only on a side with more to see. */
+.arrow {
+  position: absolute;
+  top: 50%;
+  z-index: 2;
+  display: none;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 0.8rem;
+  color: var(--color-light-100);
+  background: var(--component-background);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  transform: translateY(-50%);
+  transition: opacity 0.2s ease, color 0.2s ease;
+}
+
+.arrow:hover {
+  color: var(--color-primary);
+  background: var(--component-background);
+}
+
+.previous { left: 0.25rem; }
+.next { right: 0.25rem; }
+
+@media (hover: hover) and (pointer: fine) {
+  .arrow {
+    display: flex;
+  }
+
+  .root:hover .arrow,
+  .arrow:focus-visible {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .arrow {
+    transition: none;
+  }
+}

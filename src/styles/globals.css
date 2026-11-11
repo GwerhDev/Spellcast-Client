@@ -219,6 +219,18 @@
   display: none;
 }
 
+/* A page with a sticky bar at its top (Havenstore's): its scroll rail runs below the bar (its
+   thumb never under it); once the bar is stuck, the rail's gutter beside it -- the room kept for
+   the rail, which nothing in the page can paint over -- takes the bar's color, so the bar
+   reaches the window's edge. */
+.dashboard-sections:has([data-sticky-bar])::-webkit-scrollbar-track {
+  margin-top: var(--sticky-bar-height);
+}
+
+.dashboard-sections:has([data-sticky-bar][data-stuck])::-webkit-scrollbar {
+  background: linear-gradient(to bottom, var(--component-background) 0 var(--sticky-bar-height), transparent var(--sticky-bar-height));
+}
+
 .nav-container {
   display: flex;
   width: auto;
