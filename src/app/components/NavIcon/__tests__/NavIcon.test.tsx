@@ -6,7 +6,7 @@ import { spAltar, spCaster, spChest, spChronicle, spEditor, spFullscreen, spGear
 import {
   ALTAR_BODY, ALTAR_CANDLE_LEFT, CASTER_BODY, CASTER_BOOK, ALTAR_CANDLE_RIGHT, ALTAR_FLAME, CHEST_BODY, CHEST_HASP, CHEST_LID, CHEST_SPARKLES,
   EDITOR_BODY, EDITOR_FLAME, FULLSCREEN_BL, FULLSCREEN_BR, FULLSCREEN_TL, FULLSCREEN_TR, GEAR, INFO_BODY, INFO_DOT, PAGES_BACK,
-  PAGES_FRONT, PAGES_MIDDLE, RAISE_ARROW, RAISE_CLOUD, SPELL_EDIT_QUILL, SPELL_EDIT_SCROLL, SPELL_SEARCH_GLASS, SPELL_SEARCH_SCROLL, GRIMOIRE_BASE, GRIMOIRE_CLASP, GRIMOIRE_COVER, GRIMOIRE_PAGES,
+  PAGES_FRONT, PAGES_MIDDLE, PDF_CORNER, PDF_PAGE, CHRONICLE_HOUR, CHRONICLE_MINUTE, CHRONICLE_RIM, RAISE_ARROW, RAISE_CLOUD, SPELL_EDIT_QUILL, SPELL_EDIT_SCROLL, SPELL_SEARCH_GLASS, SPELL_SEARCH_SCROLL, GRIMOIRE_BASE, GRIMOIRE_CLASP, GRIMOIRE_COVER, GRIMOIRE_PAGES,
 } from '../../../../icons/animated';
 
 const subpaths = (d: string) => d.match(/M[^M]*/g) ?? [];
@@ -92,12 +92,14 @@ describe('NavIcon', () => {
     expect(screen.getByTestId('nav-icon-fullscreen')).toHaveAttribute('data-active', 'true');
   });
 
-  it("draws the editor's own: the original, the seal and the chronicle whole, the cloud's arrow apart", () => {
+  it("draws the editor's own: the PDF's corner and the clock's hands apart, the seal whole, the cloud's arrow apart", () => {
     render(<><NavIcon icon={spOriginal} active /><NavIcon icon={spSeal} /><NavIcon icon={spChronicle} /><NavIcon icon={spRaise} /></>);
     expect(screen.getByTestId('nav-icon-original')).toHaveAttribute('data-active', 'true');
-    expect(screen.getByTestId('nav-icon-original-whole')).toHaveAttribute('d', spOriginal.icon[4]);
+    expect(screen.getByTestId('nav-icon-original-corner')).toHaveAttribute('d', PDF_CORNER);
+    expect(PDF_PAGE + PDF_CORNER).toBe(spOriginal.icon[4]);
     expect(screen.getByTestId('nav-icon-seal-whole')).toHaveAttribute('d', spSeal.icon[4]);
-    expect(screen.getByTestId('nav-icon-chronicle-whole')).toHaveAttribute('d', spChronicle.icon[4]);
+    expect(screen.getByTestId('nav-icon-chronicle-minute')).toHaveAttribute('d', CHRONICLE_MINUTE);
+    expect(CHRONICLE_RIM + CHRONICLE_MINUTE + CHRONICLE_HOUR).toBe(spChronicle.icon[4]);
     expect(screen.getByTestId('nav-icon-raise-arrow')).toHaveAttribute('d', RAISE_ARROW);
     expect(RAISE_CLOUD + RAISE_ARROW).toBe(spRaise.icon[4]);
   });

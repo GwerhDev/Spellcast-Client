@@ -6,9 +6,9 @@ import {
   ALTAR_BODY, ALTAR_CANDLE_LEFT, CASTER_BODY, CASTER_BOOK, CASTER_BOOK_GAP, ALTAR_CANDLE_RIGHT, ALTAR_FLAME, CHEST_BODY, CHEST_HASP, CHEST_LID, CHEST_LID_PLUG, CHEST_PLUG, CHEST_SPARKLES, EDITOR_BODY, EDITOR_FLAME,
   FULLSCREEN_BL, FULLSCREEN_BR, FULLSCREEN_TL, FULLSCREEN_TR, GEAR, GRIMOIRE_BASE, GRIMOIRE_CLASP, GRIMOIRE_COVER, GRIMOIRE_PAGES,
   INFO_BODY, INFO_DOT, PAGES_BACK, PAGES_FRONT, PAGES_MIDDLE, SPELL_EDIT_QUILL, SPELL_EDIT_SCROLL, SPELL_SEARCH_GLASS,
-  SPELL_SEARCH_SCROLL, RAISE_ARROW, RAISE_CLOUD,
+  SPELL_SEARCH_SCROLL, RAISE_ARROW, RAISE_CLOUD, PDF_PAGE, PDF_CORNER, CHRONICLE_RIM, CHRONICLE_MINUTE, CHRONICLE_HOUR,
 } from '../../../icons/animated';
-import { spChronicle, spOriginal, spSeal } from '../../../icons';
+import { spSeal } from '../../../icons';
 
 interface NavIconProps {
   icon: IconDefinition;
@@ -180,14 +180,27 @@ const Whole = ({ icon, part, active }: AnimatedProps & { icon: IconDefinition; p
   </Svg>
 );
 
-// The original (the PDF's page): hovered (or shown), the page turns over.
-const OriginalIcon = ({ active }: AnimatedProps) => <Whole icon={spOriginal} part={s.turn} active={active} />;
+// The original PDF: hovered (or shown), its page lifts and its dog-eared corner peels up.
+const OriginalIcon = ({ active }: AnimatedProps) => (
+  <Svg name="original" width={512} active={active}>
+    <g className={s.lift} data-testid="nav-icon-original-page">
+      <path d={PDF_PAGE} />
+      <path className={s.peel} d={PDF_CORNER} data-testid="nav-icon-original-corner" />
+    </g>
+  </Svg>
+);
 
 // Sealing the spell: hovered, the seal is pressed, as a stamp.
 const SealIcon = ({ active }: AnimatedProps) => <Whole icon={spSeal} part={s.stamp} active={active} />;
 
-// The chronicle: hovered, the hourglass turns over.
-const ChronicleIcon = ({ active }: AnimatedProps) => <Whole icon={spChronicle} part={s.hourglass} active={active} />;
+// The chronicle: hovered, its clock's hands run back (the minute hand a whole turn).
+const ChronicleIcon = ({ active }: AnimatedProps) => (
+  <Svg name="chronicle" width={512} active={active}>
+    <path d={CHRONICLE_RIM} />
+    <path className={`${s.hand} ${s.minuteHand}`} d={CHRONICLE_MINUTE} data-testid="nav-icon-chronicle-minute" />
+    <path className={`${s.hand} ${s.hourHand}`} d={CHRONICLE_HOUR} />
+  </Svg>
+);
 
 // Raising to the cloud: hovered, its arrow rises (a hole in the cloud, cut by a mask that rises).
 const RaiseIcon = ({ active }: AnimatedProps) => {
