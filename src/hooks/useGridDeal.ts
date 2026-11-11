@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, type RefObject } from 'react';
+import { prefersReducedMotion } from '../utils/reducedMotion';
 
 // The Grimoire's entrance: the first time the grid shows its cards they're dealt onto it
 // like cards tossed on a table, one after another in the grid's order -- each flies in
@@ -36,7 +37,7 @@ export const useGridDeal = (gridRef: RefObject<HTMLElement | null>, ready: boole
     if (!grid || cards.length === 0) return;
     done.current = true;
     if (typeof cards[0].animate !== 'function') return;
-    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+    if (prefersReducedMotion()) return;
 
     // The hand: below the middle of the grid's own width, at the bottom of the screen.
     const box = grid.getBoundingClientRect();

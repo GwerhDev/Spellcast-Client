@@ -21,6 +21,7 @@ import { isInCasterGrimoire } from '../../../../utils/grimoire';
 import { useDragPointer } from '../../../../hooks/useDragPointer';
 import { SPELL_DRAG_GRIP_TYPE, SPELL_DRAG_TYPE, EDITOR_ICON, SPELL_ICON, READER_ICON } from '../../../../config/consts';
 import { useLanguage } from '../../../../i18n';
+import { prefersReducedMotion } from '../../../../utils/reducedMotion';
 
 interface AltarProps {
   // The Spellcast button's menu: Start owns the Write/Import modals these open.
@@ -185,12 +186,13 @@ export const Altar = ({ onWrite, onImport, immersive = false, idle = false, onFo
 
   // Dispelled (however: here, or from the player), it goes back from the center to its card in
   // the quick start, which says where that is once it has it back (see useReturnFromAltar).
+  // With reduced motion it isn't sent back at all: its card is just in the row again.
   const departure = useAppSelector(state => state.altar.departure);
   const wasLoaded = useRef(spellId);
   useLayoutEffect(() => {
     const was = wasLoaded.current;
     wasLoaded.current = spellId;
-    if (!was || was === spellId) return;
+    if (!was || was === spellId || prefersReducedMotion()) return;
     const from = rectOf(centerRef.current);
     if (from) dispatch(spellDeparting({ spellId: was, from }));
   }, [spellId, dispatch]);

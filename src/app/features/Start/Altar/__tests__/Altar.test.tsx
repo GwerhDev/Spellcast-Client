@@ -1,5 +1,5 @@
 import type React from 'react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { screen, fireEvent, waitFor, act, createEvent } from '@testing-library/react';
 import { renderWithProviders, makeStore } from '../../../../../test/renderWithProviders';
 import { setSpellFile, setSpellLoaded, setSentences, setCurrentSentenceIndex } from '../../../../../store/spellReaderSlice';
@@ -10,6 +10,7 @@ import { setReadOnConjure, setAltarBackdrop, spellArriving, spellLanded, departu
 import { Routes, Route } from 'react-router-dom';
 import { Altar } from '../index';
 import { SPELL_DRAG_GRIP_TYPE, SPELL_DRAG_TYPE } from '../../../../../config/consts';
+import { mockMatchMedia } from '../../../../../test/mockMatchMedia';
 
 const mockGetSpellById = vi.fn();
 const mockDeleteSpellFromDB = vi.fn();
@@ -696,6 +697,20 @@ describe('Altar', () => {
         store.dispatch(spellArriving({ spellId: 'spell-1', via: 'flight', from: { left: 10, top: 600, width: 120, height: 168 } }));
       });
       expect(screen.getByTestId('altar-arrival')).toHaveAttribute('data-kind', 'flight');
+    });
+
+    describe('with reduced motion', () => {
+      afterEach(() => { vi.unstubAllGlobals(); });
+
+      it("doesn't send a dispelled spell back: its card is just in the row again", () => {
+        mockMatchMedia(true);
+        const store = makeStore();
+        store.dispatch(setSpellFile({ id: 'spell-1', title: 'Spell one' }));
+        renderWithProviders(<Read />, { store });
+        fireEvent.click(screen.getByTestId('altar-unload'));
+        expect(store.getState().altar.departure).toBeNull();
+        expect(screen.queryByTestId('altar-arrival')).toBeNull();
+      });
     });
 
     it('sends a dispelled spell back from the center, however it was dispelled, and flies it once its card is found', () => {

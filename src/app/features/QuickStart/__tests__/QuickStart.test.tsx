@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { screen, waitFor, fireEvent, act } from '@testing-library/react';
 import { renderWithProviders, makeStore } from '../../../../test/renderWithProviders';
 import { QuickStart } from '../index';
@@ -6,6 +6,7 @@ import * as db from '../../../../db';
 import { invalidateSpellList, coverFrameChanged } from '../../../../store/spellReaderSlice';
 import { toggleQuickStartFilter, spellArriving, spellDeparting, spellLanded } from '../../../../store/altarSlice';
 import { setSpellFile, resetSpellReader } from '../../../../store/spellReaderSlice';
+import { mockMatchMedia } from '../../../../test/mockMatchMedia';
 
 // The detail modal loads the spell on its own; a stub is enough to see which spell a card opened.
 vi.mock('../../../components/Modals/SpellDetailModal', () => ({
@@ -186,6 +187,23 @@ describe('QuickStart', () => {
       act(() => { store.dispatch(spellArriving({ spellId: 'doc-1', via: 'flight', from: fromDetail })); });
       act(() => { store.dispatch(setSpellFile({ id: 'doc-1', title: 'Sample Book' })); });
       expect(store.getState().altar.arrival?.from).toEqual(fromDetail);
+    });
+
+    describe('with reduced motion', () => {
+      afterEach(() => { vi.unstubAllGlobals(); });
+
+      it("doesn't fly it to the altar: it's just there, and its card just gone", async () => {
+        vi.spyOn(db, 'getSpellsFromDB').mockResolvedValue([mockDoc, other] as never);
+        const store = loggedStore();
+        renderWithProviders(<QuickStart />, { store });
+        await screen.findByTestId('spell-card-doc-1');
+        atTheCards();
+        mockMatchMedia(true);
+        act(() => { store.dispatch(setSpellFile({ id: 'doc-1', title: 'Sample Book' })); });
+        expect(store.getState().altar.arrival).toBeNull();
+        await act(async () => {});
+        expect(screen.queryByTestId('spell-card-doc-1')).toBeNull();
+      });
     });
 
     it('when dispelled, says where its card is back for it to fly there, and keeps it hidden until it has', async () => {

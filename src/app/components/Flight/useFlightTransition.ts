@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import { liveRect, rectOf, type FlightRect } from './flightRect';
+import { prefersReducedMotion } from '../../../utils/reducedMotion';
 
 // Where a modal was opened from: the place on screen of what it opened (a card's cover, an
 // inventory slot), so that thing can fly into the modal and back when closing.
@@ -20,9 +21,6 @@ interface UseFlightTransitionOptions {
   origin: FlightOrigin | null | undefined;
   onClose: () => void;
 }
-
-const prefersReducedMotion = () =>
-  typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
 // Opening a modal from something on the page: that thing lifts off its place and flies
 // into the modal's slot, which stays hidden until it lands; closing flies it back and only

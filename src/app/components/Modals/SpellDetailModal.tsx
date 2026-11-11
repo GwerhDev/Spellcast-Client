@@ -32,6 +32,7 @@ import { DeleteConfirmModal } from './DeleteConfirmModal';
 import { CoverFlight } from '../CoverFlight/CoverFlight';
 import { useFlightTransition, type FlightOrigin } from '../Flight/useFlightTransition';
 import { LazyCoverFrame3DCanvas } from '../Cover3D/lazyCover3D';
+import { prefersReducedMotion } from '../../../utils/reducedMotion';
 
 // In 3D, the cover with its frame as one object, in a canvas of its own (the modal is over
 // the app's shared one), with room around the cover for the frame's overhang. The flat cover
@@ -176,8 +177,8 @@ export const SpellDetailModal: React.FC<SpellDetailModalProps> = ({ spellId, sho
     if (onAltar) {
       const box = coverSlotRef.current?.getBoundingClientRect();
       onClose();
-      // From where its cover is seen, here in the modal.
-      if (box && box.width > 0) dispatch(spellArriving({ spellId: spell.id, via: 'flight', from: { left: box.left, top: box.top, width: box.width, height: box.height } }));
+      // From where its cover is seen, here in the modal (with reduced motion, it's just there).
+      if (box && box.width > 0 && !prefersReducedMotion()) dispatch(spellArriving({ spellId: spell.id, via: 'flight', from: { left: box.left, top: box.top, width: box.width, height: box.height } }));
     }
     mountSpell(spell);
   };
