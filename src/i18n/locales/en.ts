@@ -511,7 +511,7 @@ export const en = {
     mode3dDescription: 'Experimental — reimagines parts of the interface as a navigable 3D scene. Off by default.',
     glassTitle: 'Glass effects',
     glassLabel: 'Enable glass effects',
-    glassDescription: 'Panels, cards and floating surfaces become translucent glass that blurs what is behind them. On by default.',
+    glassDescription: 'Panels, cards and floating surfaces become translucent glass that blurs what is behind them. Off by default.',
   },
   editorSettings: {
     title: 'Editor Settings',

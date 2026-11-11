@@ -3,8 +3,8 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 // The glass effects (translucent, blurred surfaces over what's behind them): a preference like
 // the 3D mode (see Mode3DContext.tsx, which this mirrors), kept in localStorage so it's there
 // before the session loads. On, it marks <html data-glass>: the surfaces made of glass (the
-// global .glass class) take it then, and only then (see globals.css). On by default: off only
-// once turned off.
+// global .glass class) take it then, and only then (see globals.css). Off by default: on only
+// once turned on.
 const STORAGE_KEY = 'glass';
 
 interface GlassContextType {
@@ -25,10 +25,10 @@ export const useGlass = (): GlassContextType => {
 
 const readSaved = () => {
   try {
-    return localStorage.getItem(STORAGE_KEY) !== '0';
+    return localStorage.getItem(STORAGE_KEY) === '1';
   } catch {
-    // Storage blocked (private browsing): the default, on.
-    return true;
+    // Storage blocked (private browsing): the default, off.
+    return false;
   }
 };
 
