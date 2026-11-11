@@ -6,6 +6,7 @@ import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import type { SidebarSectionKey } from '../../../store/layoutSlice';
 import { useMediaQuery } from '../../../hooks/useMediaQuery';
 import s from './SidebarView.module.css';
+import { NavIcon } from '../NavIcon/NavIcon';
 
 export interface SidebarDirectLink {
   key: string;
@@ -91,7 +92,7 @@ const SidebarAccordion = ({
           onClick={onNavigate}
           tabIndex={collapsed ? -1 : undefined}
         >
-          <FontAwesomeIcon icon={section.icon} />
+          <NavIcon icon={section.icon} active={sectionActive} />
           <span>{section.label}</span>
         </Link>
         <button
@@ -181,7 +182,7 @@ const DesktopSidebar = ({
               onClick={onNavigate}
               tabIndex={collapsed ? undefined : -1}
             >
-              <FontAwesomeIcon icon={link.icon} />
+              <NavIcon icon={link.icon} active={isActive(activePathname, link.path)} />
             </Link>
           </motion.li>
         ))}
@@ -195,7 +196,7 @@ const DesktopSidebar = ({
               onClick={onNavigate}
               tabIndex={collapsed ? undefined : -1}
             >
-              <FontAwesomeIcon icon={section.icon} />
+              <NavIcon icon={section.icon} active={sectionOrDescendantActive(section, activePathname)} />
             </Link>
           </motion.li>
         ))}
@@ -218,7 +219,7 @@ const DesktopSidebar = ({
               onClick={onNavigate}
               tabIndex={collapsed ? -1 : undefined}
             >
-              <FontAwesomeIcon icon={link.icon} />
+              <NavIcon icon={link.icon} active={isActive(activePathname, link.path)} />
               <span>{link.label}</span>
             </Link>
           </motion.li>
@@ -282,7 +283,7 @@ const MobileSidebar = ({
                   className={`${s.railIcon} ${isActive(activePathname, link.path) ? s.railIconActive : ''}`}
                   onClick={onNavigate}
                 >
-                  <FontAwesomeIcon icon={link.icon} />
+                  <NavIcon icon={link.icon} active={isActive(activePathname, link.path)} />
                 </Link>
               </motion.div>
             ))}
@@ -295,7 +296,7 @@ const MobileSidebar = ({
                   className={`${s.railIcon} ${sectionOrDescendantActive(section, activePathname) ? s.railIconActive : ''}`}
                   onClick={onNavigate}
                 >
-                  <FontAwesomeIcon icon={section.icon} />
+                  <NavIcon icon={section.icon} active={sectionOrDescendantActive(section, activePathname)} />
                 </Link>
               </motion.div>
             ))}
@@ -316,7 +317,7 @@ const MobileSidebar = ({
                     className={`${s.navItem} ${isActive(activePathname, link.path) ? s.activeLink : ''}`}
                     onClick={onNavigate}
                   >
-                    <FontAwesomeIcon icon={link.icon} />
+                    <NavIcon icon={link.icon} active={isActive(activePathname, link.path)} />
                     <span>{link.label}</span>
                   </Link>
                 </motion.li>
@@ -329,7 +330,7 @@ const MobileSidebar = ({
                     className={`${s.navItem} ${sectionOrDescendantActive(section, activePathname) ? s.activeLink : ''}`}
                     onClick={onNavigate}
                   >
-                    <FontAwesomeIcon icon={section.icon} />
+                    <NavIcon icon={section.icon} active={sectionOrDescendantActive(section, activePathname)} />
                     <span>{section.label}</span>
                   </Link>
                 </motion.li>
