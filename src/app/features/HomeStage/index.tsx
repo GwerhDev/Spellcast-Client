@@ -1,5 +1,4 @@
 import { useState, type ReactNode } from 'react';
-import { faGear } from '@fortawesome/free-solid-svg-icons';
 import { HomeStage as HomeStageView } from '../../components/HomeStage/HomeStage';
 import { IconButton } from '../../components/Buttons/IconButton';
 import { AltarSettingsModal } from '../../components/Altar/AltarSettingsModal';
@@ -11,6 +10,7 @@ import { useCoverFrame3DEnabled } from '../../../hooks/useCoverFrame3DEnabled';
 import { useAppSelector } from '../../../store/hooks';
 import { useSpellCoverUrl } from '../../../hooks/useSpellCoverUrl';
 import { usePointerIdle } from '../../../hooks/usePointerIdle';
+import { spGear } from '../../../icons';
 
 // How long the pointer rests before the quick start steps aside, with a spell loaded.
 export const HOME_IDLE_MS = 3000;
@@ -57,7 +57,7 @@ const HomeStageWith = ({ secondary, layer, layerRaised }: { secondary: ReactNode
       layerRaised={layerRaised}
       corner={(
         <>
-          <IconButton data-testid="altar-settings-btn" icon={faGear} variant='transparent' title={t.start.altarSettings} onClick={() => setShowSettings(true)} />
+          <IconButton data-testid="altar-settings-btn" icon={spGear} variant='transparent' title={t.start.altarSettings} onClick={() => setShowSettings(true)} />
           <AltarSettingsModal show={showSettings} onClose={() => setShowSettings(false)} />
         </>
       )}

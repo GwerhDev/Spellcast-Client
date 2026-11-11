@@ -1,5 +1,5 @@
 import React from 'react';
-import { faGear, faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
+import { faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
 import { GRIMOIRE_ICON } from '../../../config/consts';
 import { useAppDispatch, useAppSelector } from '../../../store/hooks';
 import { setShowSearcher } from '../../../store/spellReaderSlice';
@@ -11,6 +11,7 @@ import { SpellContentSearch } from './SpellContentSearch';
 import { SpellsSearch } from './SpellsSearch';
 import { SettingsSearch } from './SettingsSearch';
 import { CurrentSpellTabIcon } from './CurrentSpellTabIcon';
+import { spGear } from '../../../icons';
 
 interface SearcherModalProps {
   // The player's settings are the layout's to open (from the settings' search).
@@ -30,7 +31,7 @@ export const SearcherModal: React.FC<SearcherModalProps> = ({ onOpenPlayerSettin
     { id: 'all', icon: faMagnifyingGlass, label: t.search.everything, content: <GeneralSearch onDone={close} onOpenPlayerSettings={onOpenPlayerSettings} /> },
     ...(spellId ? [{ id: 'spell', iconNode: <CurrentSpellTabIcon />, label: spellTitle ?? t.search.currentSpell, content: <SpellContentSearch onDone={close} /> }] : []),
     { id: 'grimoire', icon: GRIMOIRE_ICON, label: t.search.grimoire, content: <SpellsSearch onDone={close} /> },
-    { id: 'settings', icon: faGear, label: t.search.settings, content: <SettingsSearch onDone={close} onOpenPlayerSettings={onOpenPlayerSettings} /> },
+    { id: 'settings', icon: spGear, label: t.search.settings, content: <SettingsSearch onDone={close} onOpenPlayerSettings={onOpenPlayerSettings} /> },
   ];
 
   if (searcherScope === 'spell' && spellId) {

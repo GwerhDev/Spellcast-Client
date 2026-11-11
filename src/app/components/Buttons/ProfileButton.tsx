@@ -2,8 +2,8 @@ import s from "./ProfileButton.module.css";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faGear, faRightFromBracket } from "@fortawesome/free-solid-svg-icons";
-import { spAltar, spCaster } from "../../../icons";
+import { faRightFromBracket } from "@fortawesome/free-solid-svg-icons";
+import { spAltar, spCaster, spGear } from "../../../icons";
 import { userData } from "../../../interfaces";
 import { ProfileCanvas } from "../Canvas/ProfileCanvas";
 import { useLanguage } from '../../../i18n';
@@ -65,7 +65,7 @@ export const ProfileButton = (props: { userData: userData }) => {
                 <FontAwesomeIcon icon={spCaster} />
               </button>
               <button title={t.common.settings}>
-                <FontAwesomeIcon icon={faGear} />
+                <FontAwesomeIcon icon={spGear} />
               </button>
               <button title={t.auth.logout} onClick={handleLogoutModal}>
                 <FontAwesomeIcon icon={faRightFromBracket} />

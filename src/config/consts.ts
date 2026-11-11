@@ -1,10 +1,10 @@
 import {
   faFingerprint, faShield, faPalette, faHardDrive, faCloud,
-  faBox, faGear,
+  faBox,
   faList, faPlus, faCircleInfo,
 } from "@fortawesome/free-solid-svg-icons";
 import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
-import { spAltar, spBag, spBody, spCaster, spChest, spEditor, spGrimoire, spGroup, spHood, spReader, spScroll, spSpellEdit } from "../icons";
+import { spAltar, spBag, spBody, spCaster, spChest, spEditor, spGear, spGrimoire, spGroup, spHood, spReader, spScroll, spSpellEdit } from "../icons";
 
 // The grimoire's icon, wherever it stands for it (the sidebar, the search's tab).
 export const GRIMOIRE_ICON = spGrimoire;
@@ -97,7 +97,7 @@ export interface SidebarAccordionSectionConfig {
 // a nested accordion within the "caster" section body. Also reachable as tabs from
 // CasterLayout, the shared header+tabs shell every /caster/* route renders under.
 export const userSubSections: SidebarAccordionSectionConfig[] = [
-  { key: "settings", icon: faGear, path: "/caster/settings", items: settingsDirectoryList, basePath: "/caster/", subSections: [] },
+  { key: "settings", icon: spGear, path: "/caster/settings", items: settingsDirectoryList, basePath: "/caster/", subSections: [] },
 ];
 
 // Top-level sections with sub-items — rendered as accordions in the expanded panel,
@@ -121,5 +121,5 @@ export const casterTabs = [
   { id: "inventory", icon: INVENTORY_ICON, path: "/caster/inventory" },
   { id: "stats", icon: spBody, path: "/caster/stats" },
   { id: "groups", icon: spGroup, path: "/caster/groups" },
-  { id: "settings", icon: faGear, path: "/caster/settings" },
+  { id: "settings", icon: spGear, path: "/caster/settings" },
 ];
