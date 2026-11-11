@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../../store/hooks';
 import { setSectionOpen, toggleSection, toggleSidebarCollapsed, type SidebarSectionKey } from '../../../store/layoutSlice';
@@ -10,6 +10,8 @@ import type { SidebarAccordionSection } from '../../components/Sidebar/SidebarVi
 
 interface SidebarProps {
   onNavigate?: () => void;
+  // Mobile: the player, in the menu at the bottom of the screen (see SidebarView).
+  mobilePlayer?: ReactNode;
 }
 
 // Collects the keys of every section that should auto-open for the current route: a
@@ -28,7 +30,7 @@ const collectKeysToOpen = (sections: SidebarAccordionSectionConfig[], pathname: 
     return selfMatches || childKeys.length > 0 ? [section.key, ...childKeys] : childKeys;
   });
 
-export const Sidebar = ({ onNavigate }: SidebarProps) => {
+export const Sidebar = ({ onNavigate, mobilePlayer }: SidebarProps) => {
   const dispatch = useAppDispatch();
   const { sidebarCollapsed, sidebarOpenSections } = useAppSelector(state => state.layout);
   const { pathname } = useLocation();
@@ -81,6 +83,7 @@ export const Sidebar = ({ onNavigate }: SidebarProps) => {
       onToggleCollapsed={() => dispatch(toggleSidebarCollapsed())}
       onToggleSection={key => dispatch(toggleSection(key))}
       onNavigate={onNavigate}
+      mobilePlayer={mobilePlayer}
     />
   );
 };

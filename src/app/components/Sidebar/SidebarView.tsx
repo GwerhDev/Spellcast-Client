@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { motion, animate, useMotionValue } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -42,6 +42,9 @@ interface SidebarViewProps {
   onToggleCollapsed: () => void;
   onToggleSection: (key: SidebarSectionKey) => void;
   onNavigate?: () => void;
+  // Mobile: the player, at the top of the menu at the bottom of the screen. Closed, the menu
+  // is just the player; swiped up, the sections show below it.
+  mobilePlayer?: ReactNode;
 }
 
 const isActive = (activePathname: string, path: string): boolean =>
@@ -271,6 +274,7 @@ const MobileSidebar = ({
   accordionSections,
   onToggleCollapsed,
   onNavigate,
+  mobilePlayer,
 }: SidebarViewProps) => {
   // The bar shows what it always has first (the direct links and the sections with nothing
   // under them), then the rest.
@@ -285,34 +289,79 @@ const MobileSidebar = ({
   const openness = useMotionValue(collapsed ? 0 : 1);
   const height = useMotionValue<number | 'auto'>('auto');
   const [dragging, setDragging] = useState(false);
+  const swipeRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const playerRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLElement>(null);
-  const barHeight = useRef(0);
   const startOpenness = useRef(0);
+  // A drag that started sideways (e.g. along the player's progress bar) isn't the menu's.
+  const ignoring = useRef(false);
+  const hasPlayer = !!mobilePlayer;
 
-  // The bar is as tall as it takes to center the first row's icons in it.
+  // Closed, the menu is the player; with none, as tall as it takes to center the first row's
+  // icons in it. Open, all of it.
   const measure = () => {
-    const grid = gridRef.current;
-    const icon = grid?.querySelector('svg');
-    if (!grid || !icon) return { bar: 0, open: 0 };
-    const bar = 2 * (icon.getBoundingClientRect().top + icon.getBoundingClientRect().height / 2 - grid.getBoundingClientRect().top);
-    barHeight.current = bar;
-    return { bar, open: grid.scrollHeight };
+    const content = contentRef.current;
+    if (!content) return { bar: 0, open: 0 };
+    const open = content.scrollHeight;
+    if (playerRef.current) return { bar: playerRef.current.offsetHeight, open };
+    const icon = gridRef.current?.querySelector('svg');
+    if (!icon) return { bar: 0, open };
+    const r = icon.getBoundingClientRect();
+    return { bar: 2 * (r.top + r.height / 2 - content.getBoundingClientRect().top), open };
   };
   const heightAt = (o: number) => { const { bar, open } = measure(); return bar + (open - bar) * o; };
 
-  // At rest: the bar's height closed, its own height open.
+  // At rest: the bar's height closed, its own height open. Closed, the page keeps that much
+  // room free at its bottom (--mobile-nav-height), so nothing of it stays under the menu.
   useLayoutEffect(() => {
     if (dragging) return;
     openness.set(collapsed ? 0 : 1);
     if (collapsed) height.set(measure().bar || 'auto');
     else height.set('auto');
-  }, [collapsed, dragging, entries.length, openness, height]);
+  }, [collapsed, dragging, entries.length, hasPlayer, openness, height]);
 
-  const onPanStart = () => {
+  // The player changes size (loading, a longer title): the bar follows it.
+  useEffect(() => {
+    const player = playerRef.current;
+    if (!player || typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(() => {
+      if (collapsed && !dragging) height.set(player.offsetHeight);
+    });
+    observer.observe(player);
+    return () => observer.disconnect();
+  }, [hasPlayer, collapsed, dragging, height]);
+
+  // The room the page keeps free under it: the menu's height at rest, closed, as it's really
+  // drawn -- watched, not read as it's set (the height lands a frame later), so it's never the
+  // height of a bar that's no longer there (e.g. the player's, once a spell is unloaded).
+  const atRest = useRef({ collapsed, dragging });
+  atRest.current = { collapsed, dragging };
+  useEffect(() => {
+    const nav = swipeRef.current?.closest<HTMLElement>('.nav-container') ?? swipeRef.current;
+    if (!nav) return;
+    const publish = () => {
+      if (atRest.current.collapsed && !atRest.current.dragging) {
+        document.documentElement.style.setProperty('--mobile-nav-height', `${nav.offsetHeight}px`);
+      }
+    };
+    const frame = requestAnimationFrame(publish);
+    if (typeof ResizeObserver === 'undefined') return () => cancelAnimationFrame(frame);
+    const observer = new ResizeObserver(publish);
+    observer.observe(nav);
+    return () => { cancelAnimationFrame(frame); observer.disconnect(); };
+  }, [collapsed, dragging, hasPlayer]);
+
+  useEffect(() => () => { document.documentElement.style.removeProperty('--mobile-nav-height'); }, []);
+
+  const onPanStart = (_: PointerEvent, info: { offset: { x: number; y: number } }) => {
+    ignoring.current = Math.abs(info.offset.x) > Math.abs(info.offset.y);
+    if (ignoring.current) return;
     startOpenness.current = openness.get();
     setDragging(true);
   };
   const onPan = (_: PointerEvent, info: { offset: { y: number } }) => {
+    if (ignoring.current) return;
     const { bar, open } = measure();
     if (open <= bar) return;
     const o = Math.min(1, Math.max(0, startOpenness.current - info.offset.y / (open - bar)));
@@ -320,6 +369,7 @@ const MobileSidebar = ({
     height.set(heightAt(o));
   };
   const onPanEnd = (_: PointerEvent, info: { velocity: { y: number } }) => {
+    if (ignoring.current) { ignoring.current = false; return; }
     const toOpen = settlesOpen(openness.get(), info.velocity.y);
     const { bar, open } = measure();
     const span = Math.max(1, open - bar);
@@ -332,11 +382,13 @@ const MobileSidebar = ({
     });
   };
 
-  // Closed, what's past the bar's row is out of reach (and out of the way of a screen reader).
-  const hidden = (index: number) => collapsed && !dragging && index >= MOBILE_COLUMNS;
+  // Closed, what's past the bar is out of reach (and out of the way of a screen reader): past
+  // its row of icons, or with the player as the bar, every section.
+  const hidden = (index: number) => collapsed && !dragging && (hasPlayer || index >= MOBILE_COLUMNS);
 
   return (
     <motion.div
+      ref={swipeRef}
       className={s.mobileSwipe}
       data-testid="sidebar-swipe"
       onPanStart={onPanStart}
@@ -346,6 +398,8 @@ const MobileSidebar = ({
       {/* What says it can be swiped. */}
       <span className={s.mobileHandle} aria-hidden="true" />
       <motion.div className={s.mobileBody} style={{ height }}>
+        <div ref={contentRef}>
+        {hasPlayer && <div ref={playerRef} data-testid="sidebar-mobile-player" className={s.mobilePlayer}>{mobilePlayer}</div>}
         <nav ref={gridRef} className={s.mobileGrid} data-testid={collapsed ? 'sidebar-rail' : 'sidebar-panel'}>
           {entries.map((entry, index) => (
             <div key={entry.key} className={s.mobileTile} aria-hidden={hidden(index) || undefined}>
@@ -363,6 +417,7 @@ const MobileSidebar = ({
             </div>
           ))}
         </nav>
+        </div>
       </motion.div>
     </motion.div>
   );

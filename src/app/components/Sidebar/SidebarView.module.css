@@ -439,6 +439,13 @@
     flex-direction: column;
   }
 
+  /* The player at the top of the menu: the menu's own surface, not a bar of its own. */
+  .mobilePlayer :global(.audioplayer-container) {
+    background: transparent;
+    box-shadow: none;
+    border-radius: 0;
+  }
+
   /* Open: the main sections, at most three to a row, each an icon with its name under it. */
   .mobileGrid {
     display: grid;

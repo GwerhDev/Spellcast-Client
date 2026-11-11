@@ -77,6 +77,26 @@
   position: relative;
 }
 
+/* On a phone, with no spell loaded, the scene is only as tall as it is: stretched to the
+   screen's height it left a gap above what's below it (the quick start). Docked (a spell
+   loaded), it keeps filling the screen -- the dock hangs from its bottom. */
+@media (max-width: 1024px) {
+  .mainLoose {
+    flex: 0 0 auto;
+  }
+
+  /* The menu is fixed over the bottom of the screen and the stage goes on under it (its cover
+     reaching the bottom, behind the menu's rounded corners): what's on the stage ends above
+     the menu -- its height, published by the menu -- and the docked content hangs from there. */
+  .stage {
+    padding-bottom: var(--mobile-nav-height, 5rem);
+  }
+
+  .dockAnchor {
+    bottom: var(--mobile-nav-height, 5rem);
+  }
+}
+
 /* Where the page's top right corner hangs from (it takes no room): over everything on the
    page, and with a spell loaded, kept at the top as the page scrolls. */
 .cornerAnchor {

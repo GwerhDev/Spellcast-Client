@@ -76,3 +76,20 @@
     padding-inline: 1rem;
   }
 }
+
+/* A phone with no spell loaded: the altar only as tall as it is, with nothing under it, so
+   the quick start follows close below. (Loaded, the quick start is docked at the bottom
+   instead, not below it -- there the altar keeps the room it reserves.) */
+@media (max-width: 1024px) {
+  .container:not(.immersive) {
+    padding-bottom: 0;
+  }
+
+  .container:not(.immersive) .createContainer {
+    padding-bottom: 0;
+  }
+
+  .container:not(.immersive) .optionContainer {
+    min-height: 0;
+  }
+}

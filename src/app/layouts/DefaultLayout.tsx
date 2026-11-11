@@ -34,6 +34,7 @@ import { onSpellsMigrated } from '../../db';
 import { useMode3D } from '../../context/Mode3DContext';
 import { preloadCover3D } from '../components/Cover3D/lazyCover3D';
 import spellcastIcon from '../../assets/spellcast-logo.svg';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 
 // TCORE-124: the app's ONE shared 3D canvas for cover-frame corners -- mounted once here
 // (not per-route) so every card everywhere that opts into 3D corners (via SpellCard's own
@@ -67,6 +68,8 @@ export default function DefaultLayout() {
   const [isPlayerSettingsOpen, setIsPlayerSettingsOpen] = useState(false);
   const [isVoiceSelectorOpen, setIsVoiceSelectorOpen] = useState(false);
   const navRef = useRef<HTMLElement>(null);
+  // A phone: the player goes in the menu at the bottom of the screen, not under the page.
+  const isMobile = useMediaQuery('(max-width: 1024px)');
 
   // TCORE-78: the documents->spells IndexedDB migration runs silently in the
   // background after the DB opens. If a spell list already rendered (empty or
@@ -88,6 +91,12 @@ export default function DefaultLayout() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [dispatch]);
+
+  const player = activeSpellId && (selectedVoice.type === 'browser'
+    // Keyed by spell: each spell gets a fresh player instance, as it did when the
+    // player only mounted once that spell's pages were loaded.
+    ? <BrowserPlayer key={activeSpellId} showVoiceSelectorModal={setIsVoiceSelectorOpen} showPlayerConfigModal={setIsPlayerSettingsOpen} />
+    : <AudioPlayer key={activeSpellId} showVoiceSelectorModal={setIsVoiceSelectorOpen} showPlayerConfigModal={setIsPlayerSettingsOpen} />);
 
   return (
     <main>
@@ -128,7 +137,10 @@ export default function DefaultLayout() {
             <nav className="nav-container" ref={navRef}>
               <aside className="aside-container">
                 <div className="aside-inner-container glass">
-                  <Sidebar onNavigate={() => { if (window.matchMedia('(max-width: 1024px)').matches) dispatch(setSidebarCollapsed(true)); }} />
+                  <Sidebar
+                    onNavigate={() => { if (window.matchMedia('(max-width: 1024px)').matches) dispatch(setSidebarCollapsed(true)); }}
+                    mobilePlayer={isMobile && player ? <div className="audioplayer-container">{player}</div> : undefined}
+                  />
                 </div>
               </aside>
             </nav>
@@ -162,11 +174,7 @@ export default function DefaultLayout() {
               switches to it), and with nothing loaded the bar appears while a spell is dragged
               near the bottom. */}
           <PlayerDock>
-            {activeSpellId && (selectedVoice.type === 'browser'
-              // Keyed by spell: each spell gets a fresh player instance, as it did when the
-              // player only mounted once that spell's pages were loaded.
-              ? <BrowserPlayer key={activeSpellId} showVoiceSelectorModal={setIsVoiceSelectorOpen} showPlayerConfigModal={setIsPlayerSettingsOpen} />
-              : <AudioPlayer key={activeSpellId} showVoiceSelectorModal={setIsVoiceSelectorOpen} showPlayerConfigModal={setIsPlayerSettingsOpen} />)}
+            {!isMobile && player}
           </PlayerDock>
           <LogoutModal />
           <AttentionGuardModal show={showAttentionGuard} onContinue={handleAttentionGuardContinue} />

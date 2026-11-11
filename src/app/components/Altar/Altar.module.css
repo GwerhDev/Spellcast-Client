@@ -569,3 +569,25 @@
 .immersive .nowTitle {
   font-size: 1.25rem;
 }
+
+/* A phone: the altar smaller, so it, the sentence being read and the quick start below fit
+   on the screen. Zoom, not a transform: the ring's options are placed in px around the
+   center, and the room it takes on the page shrinks with it. */
+@media (max-width: 1024px) {
+  .stage {
+    zoom: 0.72;
+  }
+
+  .immersive .sentence {
+    padding-inline: 1rem;
+    font-size: 1.05rem;
+  }
+
+  .immersive .footerSlot {
+    height: calc(1.05rem * 1.4 * 4);
+  }
+
+  .immersive .nowTitle {
+    font-size: 1.1rem;
+  }
+}

@@ -289,9 +289,13 @@
     border-radius: 0;
   }
 
+  /* It reaches the bottom of the screen, under the menu fixed there (its background behind the
+     menu's rounded corners); what's in it ends above the menu (its height, the player in it
+     included, published by the menu). */
   .app-viewer {
     margin: 0;
     padding: 0;
+    padding-bottom: var(--mobile-nav-height, 5rem);
     overflow-y: auto;
     border-radius: 0;
   }
@@ -380,7 +384,23 @@
     border-radius: 0;
     padding-inline: 0;
     padding-bottom: 1rem;
-    margin-bottom: 3rem;
+  }
+
+  /* The home page is a stage edge to edge (a spell's cover behind it): no strip past its end
+     without the cover. */
+  .dashboard-sections:has(> [data-testid="home-stage"]) {
+    padding-bottom: 0;
+  }
+
+  /* Its cover goes on under the menu too, to the bottom of the screen: the page's room for
+     the menu is kept inside the stage instead (see HomeStage.module.css). */
+  .app-viewer:has([data-testid="home-stage"]) {
+    padding-bottom: 0;
+  }
+
+  /* The fullscreen reader: the menu (the player in it) comes back with the player. */
+  body.fullscreen-reader.fullscreen-player-visible .nav-container {
+    display: flex;
   }
 }
 

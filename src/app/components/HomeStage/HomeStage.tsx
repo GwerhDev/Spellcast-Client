@@ -131,7 +131,7 @@ export const HomeStage = ({ coverUrl, immersive, idle, main, secondary, corner, 
       )}
       <div
         data-testid="home-stage-main"
-        className={s.main}
+        className={`${s.main} ${immersive ? '' : s.mainLoose}`}
         style={immersive ? { paddingBottom: peek?.shown ?? 0, marginBottom: overflow } : undefined}
       >
         {main}
