@@ -113,6 +113,20 @@
   --nhexa-desktop-text-dim: #7b7b7b;
   --nhexa-desktop-skeleton-1: #3c3c3c;
   --nhexa-desktop-skeleton-2: #2f2f2f;
+  /* The apps desktop's hexagons: their shape (corners rounded, 12% of the apothem: a mask
+     scales with its hexagon, the same radius in every front -- a radius can't be a var() inside
+     the SVG, so the masks themselves are the shared values), their glow (its color, strong and
+     soft, and its two radii), its timing, a press's, and the keyboard focus ring's width. */
+  --nhexa-desktop-hex-pointy: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 115.47' preserveAspectRatio='none'%3E%3Cpolygon points='50,6.93 94,32.33 94,83.14 50,108.54 6,83.14 6,32.33' fill='black' stroke='black' stroke-width='12' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --nhexa-desktop-hex-flat: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 86.6' preserveAspectRatio='none'%3E%3Cpolygon points='94,43.3 72,81.41 28,81.41 6,43.3 28,5.2 72,5.2' fill='black' stroke='black' stroke-width='10.39' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --nhexa-desktop-glow: rgba(115, 165, 204, 0.6);
+  --nhexa-desktop-glow-soft: rgba(115, 165, 204, 0.3);
+  --nhexa-desktop-glow-wide: 22px;
+  --nhexa-desktop-glow-tight: 6px;
+  --nhexa-desktop-glow-duration: 0.35s;
+  --nhexa-desktop-glow-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --nhexa-desktop-press-duration: 0.12s;
+  --nhexa-desktop-focus-ring: 3px;
   /* The header's icons (search, notifications, apps...): one gray, one size, one gap, in
      every app's header. */
   --nhexa-desktop-icon: #adadad;

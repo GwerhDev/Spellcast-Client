@@ -66,26 +66,65 @@
   display: none;
 }
 
-/* Each app is a hexagon (pointy top), in a row with the others: their upright sides face each
-   other. Its border is a hexagon behind its face (a clip-path cuts off CSS borders). */
+/* Each app is a hexagon, its corners slightly rounded: a mask (--nhexa-desktop-hex-*) cuts its
+   face, and its border, a hexagon behind the face. The button itself isn't masked: its glow
+   (drop shadows of what it draws, so shaped as the hexagon) isn't cut off. */
 .item {
   --hex-w: 112px;
+  --hex-face-color: var(--nhexa-desktop-surface);
   scroll-snap-align: center;
   flex-shrink: 0;
-  position: relative;
   width: var(--hex-w);
   height: calc(var(--hex-w) * 1.1547);
+  position: relative;
   padding: 1.5px;
   border: none;
   border-radius: 0;
-  background: rgba(255, 255, 255, 0.07);
-  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+  background: transparent;
+  outline: none;
   cursor: pointer;
-  transition: background-color 0.18s ease, transform 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+  /* At rest: no glow (the same filters, nothing in them, so the glow can grow out of it). */
+  filter: drop-shadow(0 0 0 transparent) drop-shadow(0 0 0 transparent) brightness(1);
+  transition:
+    filter var(--nhexa-desktop-glow-duration) var(--nhexa-desktop-glow-ease),
+    transform var(--nhexa-desktop-glow-duration) var(--nhexa-desktop-glow-ease);
+}
+
+/* Its border: the hexagon, behind its face. */
+.item::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.07);
+  -webkit-mask: var(--nhexa-desktop-hex-pointy) center / 100% 100% no-repeat;
+  mask: var(--nhexa-desktop-hex-pointy) center / 100% 100% no-repeat;
+  transition: background-color var(--nhexa-desktop-glow-duration) var(--nhexa-desktop-glow-ease);
+}
+
+/* The keyboard's focus: a ring around the hexagon, following its shape (the hexagon, a little
+   bigger, its middle cut out). */
+.item::after {
+  content: '';
+  position: absolute;
+  inset: calc(-2 * var(--nhexa-desktop-focus-ring));
+  background: var(--app-color);
+  -webkit-mask:
+    var(--nhexa-desktop-hex-pointy) center / 100% 100% no-repeat,
+    var(--nhexa-desktop-hex-pointy) center / calc(100% - 2 * var(--nhexa-desktop-focus-ring)) calc(100% - 2 * var(--nhexa-desktop-focus-ring)) no-repeat;
+  -webkit-mask-composite: xor;
+  mask:
+    var(--nhexa-desktop-hex-pointy) center / 100% 100% no-repeat,
+    var(--nhexa-desktop-hex-pointy) center / calc(100% - 2 * var(--nhexa-desktop-focus-ring)) calc(100% - 2 * var(--nhexa-desktop-focus-ring)) no-repeat;
+  mask-composite: exclude;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--nhexa-desktop-glow-duration) var(--nhexa-desktop-glow-ease);
 }
 
 .face {
   position: relative;
+  z-index: 1;
   overflow: hidden;
   width: 100%;
   height: 100%;
@@ -93,10 +132,14 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
   box-sizing: border-box;
-  background: var(--nhexa-desktop-surface);
-  clip-path: inherit;
+  /* A faint sheen across its face. */
+  background:
+    linear-gradient(160deg, rgba(255, 255, 255, 0.06), transparent 45%),
+    var(--hex-face-color);
+  -webkit-mask: var(--nhexa-desktop-hex-pointy) center / 100% 100% no-repeat;
+  mask: var(--nhexa-desktop-hex-pointy) center / 100% 100% no-repeat;
+  gap: 0.5rem;
 }
 
 .face::before {
@@ -106,49 +149,124 @@
   background: var(--app-color);
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.18s ease;
+  transition: opacity var(--nhexa-desktop-glow-duration) var(--nhexa-desktop-glow-ease);
 }
 
 .face::after {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    105deg,
-    transparent 35%,
-    rgba(255, 255, 255, 0.2) 50%,
-    transparent 65%
-  );
+  background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, 0.18) 50%, transparent 65%);
   background-size: 300% 100%;
   background-position: 200% center;
   pointer-events: none;
   opacity: 0;
 }
 
-.item:hover {
-  background: var(--app-color);
-  transform: translateY(-4px);
+/* Hovered, or focused from the keyboard: it lifts and its glow rises. (The button itself never
+   takes a fill: an app's own button hover would paint its whole box.) */
+.item:hover,
+.item:focus-visible,
+.item:active {
+  background: transparent;
 }
 
-.item:hover .face::before {
+.item:hover,
+.item:focus-visible {
+  transform: translateY(-4px);
+  filter:
+    drop-shadow(0 0 var(--nhexa-desktop-glow-wide) var(--nhexa-desktop-glow-soft))
+    drop-shadow(0 0 var(--nhexa-desktop-glow-tight) var(--nhexa-desktop-glow))
+    brightness(1);
+}
+
+.item:hover::before,
+.item:focus-visible::before {
+  background: var(--app-color);
+}
+
+.item:hover .face::before,
+.item:focus-visible .face::before {
   opacity: 0.12;
 }
 
-.item:hover .face::after {
+.item:hover .face::after,
+.item:focus-visible .face::after {
   opacity: 1;
   animation: appShine 0.5s ease-out forwards;
 }
 
-.item:hover .label {
+.item:hover .label,
+.item:focus-visible .label {
   color: var(--app-color);
 }
 
-.current {
+/* The keyboard's ring (never on a mouse click: that's :focus without -visible). */
+.item:focus-visible::after {
+  opacity: 1;
+}
+
+/* Pressed: briefly a little smaller, and brighter. */
+.item:active {
+  transform: translateY(-2px) scale(0.96);
+  filter:
+    drop-shadow(0 0 var(--nhexa-desktop-glow-wide) var(--nhexa-desktop-glow))
+    drop-shadow(0 0 var(--nhexa-desktop-glow-tight) var(--nhexa-desktop-glow))
+    brightness(1.15);
+  transition-duration: var(--nhexa-desktop-press-duration);
+}
+
+/* The app open now: a steady, subtle glow, its border in its color. */
+.item.current {
+  filter:
+    drop-shadow(0 0 calc(var(--nhexa-desktop-glow-wide) / 2) var(--nhexa-desktop-glow-soft))
+    drop-shadow(0 0 0 transparent)
+    brightness(1);
+}
+
+.item.current::before {
   background: var(--app-color);
 }
 
-.current .face::before {
+.item.current .face::before {
   opacity: 0.1;
+}
+
+.item.current:hover,
+.item.current:focus-visible {
+  filter:
+    drop-shadow(0 0 var(--nhexa-desktop-glow-wide) var(--nhexa-desktop-glow-soft))
+    drop-shadow(0 0 var(--nhexa-desktop-glow-tight) var(--nhexa-desktop-glow))
+    brightness(1);
+}
+
+.item.current:active {
+  filter:
+    drop-shadow(0 0 var(--nhexa-desktop-glow-wide) var(--nhexa-desktop-glow))
+    drop-shadow(0 0 var(--nhexa-desktop-glow-tight) var(--nhexa-desktop-glow))
+    brightness(1.15);
+}
+
+/* Without motion: the states change at once, nothing moves or scales. */
+@media (prefers-reduced-motion: reduce) {
+  .item,
+  .item::before,
+  .item::after,
+  .face::before {
+    transition: none;
+  }
+
+  .item:hover,
+  .item:focus-visible,
+  .item:active {
+    transform: none;
+  }
+
+  .item:hover .face::after,
+  .item:focus-visible .face::after {
+    animation: none;
+    opacity: 0;
+  }
 }
 
 @keyframes appShine {
@@ -235,7 +353,8 @@
   justify-content: center;
   gap: 0.6rem;
   background: var(--nhexa-desktop-surface);
-  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+  -webkit-mask: var(--nhexa-desktop-hex-pointy) center / 100% 100% no-repeat;
+  mask: var(--nhexa-desktop-hex-pointy) center / 100% 100% no-repeat;
 }
 
 .skeletonIcon {
