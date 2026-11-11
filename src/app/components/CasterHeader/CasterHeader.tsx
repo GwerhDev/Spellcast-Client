@@ -1,4 +1,5 @@
 import s from './CasterHeader.module.css';
+import { useState } from 'react';
 import sk from '../Loader/Skeleton.module.css';
 import { useLanguage } from '../../../i18n';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -23,6 +24,9 @@ interface CasterHeaderProps {
 export const CasterHeader = ({ username, profilePic, loader }: CasterHeaderProps) => {
   const { t } = useLanguage();
   const xpPct = Math.min((userXP / XP_CAP) * 100, 100);
+  // A photo that doesn't load is no photo: the initial, not the browser's alt text in its place.
+  const [failedPic, setFailedPic] = useState<string | null>(null);
+  const showPic = !!profilePic && failedPic !== profilePic;
 
   return (
     <div data-testid="caster-header" className={s.header}>
@@ -30,9 +34,9 @@ export const CasterHeader = ({ username, profilePic, loader }: CasterHeaderProps
         <li className={`${s.imgContainer} ${loader ? s.borderAnimate : ''}`}>
           <span className={`${s.imageContainer} ${loader ? sk.skeleton : ''}`}>
             {!loader && (
-              profilePic
-                ? <img data-testid="caster-header-avatar-image" src={profilePic} alt={username} className={s.image} />
-                : <span data-testid="caster-header-avatar-initial">{username?.[0]}</span>
+              showPic
+                ? <img data-testid="caster-header-avatar-image" src={profilePic} alt={username} className={s.image} onError={() => setFailedPic(profilePic ?? null)} />
+                : <span data-testid="caster-header-avatar-initial">{username?.[0]?.toUpperCase()}</span>
             )}
           </span>
         </li>

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { screen } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
 import { renderWithProviders } from '../../../../test/renderWithProviders';
 import { CasterHeader } from '../CasterHeader';
 
@@ -29,5 +29,13 @@ describe('CasterHeader', () => {
     renderWithProviders(<CasterHeader username="Gwerh" loader />);
     expect(screen.queryByTestId('caster-header-username')).not.toBeInTheDocument();
     expect(screen.queryByTestId('caster-header-xp')).not.toBeInTheDocument();
+  });
+
+  // A photo that doesn't load would show the browser's alt text (the whole name) in its place.
+  it("shows the initial, not the name, when the photo doesn't load", () => {
+    renderWithProviders(<CasterHeader username="gwerh" profilePic="https://example.com/gone.png" />);
+    fireEvent.error(screen.getByTestId('caster-header-avatar-image'));
+    expect(screen.queryByTestId('caster-header-avatar-image')).toBeNull();
+    expect(screen.getByTestId('caster-header-avatar-initial')).toHaveTextContent(/^G$/);
   });
 });
