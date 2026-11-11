@@ -320,7 +320,7 @@ export const SpellReader = () => {
         </div>
       </div>
       <div className={s.bodyWrapper}>
-        <div className={s.contentArea}>
+        <div className={`${s.contentArea} ${!fitToWidth ? s.fadeTop : ''}`} data-testid="spell-reader-content-area">
           {renderBody()}
           {activeCompanion && (
             // Each model renders in its own small <canvas>, positioned/z-indexed against

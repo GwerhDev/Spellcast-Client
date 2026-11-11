@@ -134,6 +134,15 @@
   flex-direction: column;
 }
 
+/* Paper mode: the page scrolls up out of sight fading away, not cut off at the top. Masked
+   here, not on the scroll area, so the companions (siblings of it) still sit in front of or
+   behind the sheet: the mask's stacking context holds both. The fade is the scroll area's own
+   top padding, so nothing is faded until the page is scrolled. */
+.fadeTop {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 2rem);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 2rem);
+}
+
 .pagesContainer {
   display: flex;
   flex-shrink: 0;
