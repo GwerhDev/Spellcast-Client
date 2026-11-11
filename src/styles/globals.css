@@ -127,6 +127,12 @@
   display: flex;
   position: relative;
   flex-direction: column;
+  /* The window's own background, behind every route (the reader and the editor too, which
+     don't use .dashboard-sections), but not behind the menu: a glass menu shows the desktop
+     through it. Its corners, the window's right ones (square on a narrow screen, see below). */
+  background: var(--viewer-background);
+  border-top-right-radius: 10px;
+  border-bottom-right-radius: 10px;
 }
 
 .header-app {
@@ -186,7 +192,7 @@
   display: flex;
   overflow-y: auto;
   border-radius: 10px;
-  background: var(--viewer-background);
+
   /* TCORE-124: positioning context for the shared 3D cover-frame Canvas (mounted here in
      DefaultLayout.tsx, see its own comment) -- this box is width:100% of .app-container,
      provably unaffected by the sidebar's rail<->panel width transition (unlike .app-viewer,
@@ -205,6 +211,7 @@
   display: flex;
   overflow: auto;
   flex-direction: column;
+  background: var(--viewer-background);
   scrollbar-gutter: stable;
 }
 
@@ -252,6 +259,11 @@
   flex-grow: 1;
   display: flex;
   background: var(--component-background);
+  /* Its own corners, the window's left ones (not left to the window's clipping: a glass
+     surface's blur isn't always clipped by it). On a narrow screen, its bottom ones are square
+     (see the media query below). */
+  border-top-left-radius: 10px;
+  border-bottom-left-radius: 10px;
 }
 
 .audioplayer-container {
@@ -271,9 +283,11 @@
     margin-inline: 0;
   }
 
+  /* The menu above the page, both in the window: the menu's bar takes its own room at the top
+     (see .nav-container below), the page the rest -- no room kept for a menu fixed outside. */
   .dashboard-container {
     flex-direction: column;
-    margin-top: 3rem;
+    margin-top: 0.25rem;
     border-radius: 0;
   }
 
@@ -326,9 +340,12 @@
 }
 
 @media (max-width: 1024px) {
+
+  /* The menu's bar: as tall as the collapsed menu, its own room above the page. */
   .nav-container {
     width: 100%;
-    height: auto;
+    height: 44px;
+    flex-shrink: 0;
     padding-inline: 0;
     display: flex;
   }
@@ -342,17 +359,16 @@
     z-index: 50;
   }
 
+  /* The menu, from its bar: collapsed it's the bar; open, it reaches down over the page. */
   .aside-container {
-    top: .7rem;
+    top: 0;
     left: 0;
+    right: 0;
     margin: 0;
-    width: 100%;
     z-index: 99;
-    max-height: 90%;
-    position: fixed;
+    max-height: 90dvh;
+    position: absolute;
     display: flex;
-    margin-top: 1.1rem;
-
   }
 
   .aside-inner-container {
