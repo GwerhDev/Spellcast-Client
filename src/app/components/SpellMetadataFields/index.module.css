@@ -82,26 +82,39 @@
 }
 
 .metadataField label {
-  font-size: 0.75rem;
+  font-size: var(--field-label-size);
   color: var(--color-light-400);
 }
 
 .metadataField input,
 .metadataField textarea {
   width: 100%;
-  background: var(--color-dark-300);
-  border: 1px solid var(--color-dark-300);
-  border-radius: 6px;
-  color: var(--color-light-100);
-  padding: 0.5rem;
-  font: inherit;
+  background: var(--field-bg);
+  border: 1px solid var(--field-border);
+  border-radius: var(--field-radius);
+  color: var(--field-text);
+  padding: var(--field-padding);
+  font-family: inherit;
+  font-size: var(--field-font-size);
+  line-height: 1.4;
   resize: vertical;
+  transition: border-color 0.15s ease;
+}
+
+.metadataField input::placeholder,
+.metadataField textarea::placeholder {
+  color: var(--field-placeholder);
+}
+
+.metadataField input:hover,
+.metadataField textarea:hover {
+  border-color: var(--field-border-hover);
 }
 
 .metadataField input:focus,
 .metadataField textarea:focus {
   outline: none;
-  border-color: var(--color-primary);
+  border-color: var(--field-border-focus);
 }
 
 .metadataFieldWide {

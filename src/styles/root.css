@@ -35,6 +35,18 @@
   --color-options-background: #3a3d48;
   --viewer-background: #3f4147;
   --component-background: var(--color-secondary-darker);
+  /* A text field (input, textarea): a hint of a fill, a thin border, the text the size of the
+     interface around it (not the page's). Built on the theme's own tokens, so it follows them. */
+  --field-bg: color-mix(in srgb, var(--color-dark-300) 35%, transparent);
+  --field-border: var(--color-dark-300);
+  --field-border-hover: var(--color-dark-200);
+  --field-border-focus: var(--color-primary);
+  --field-text: var(--color-light-100);
+  --field-placeholder: var(--color-light-400);
+  --field-font-size: 0.8125rem;
+  --field-label-size: 0.7rem;
+  --field-padding: 0.45rem 0.65rem;
+  --field-radius: 6px;
   --component-background-transparency: #dbdbf513;
   --color-primary-accent: #84b4d8;
   --color-secondary-accent: #9b85c8;
