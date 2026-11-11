@@ -11,10 +11,13 @@
   width: 100%;
   padding: 1.5rem;
   border-radius: 10px;
-  background: var(--component-background);
+  background: var(--surface-sheen), var(--surface-bg);
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  -webkit-backdrop-filter: var(--surface-blur);
+  backdrop-filter: var(--surface-blur);
+  box-shadow: var(--surface-rim);
 }
 
 .cardHeader {
@@ -78,12 +81,15 @@
 }
 
 .statCard {
-  background: var(--component-background);
+  background: var(--surface-sheen), var(--surface-bg);
   border-radius: 10px;
   padding: 1.2rem 1.4rem;
   display: flex;
   flex-direction: column;
   gap: 4px;
+  -webkit-backdrop-filter: var(--surface-blur);
+  backdrop-filter: var(--surface-blur);
+  box-shadow: var(--surface-rim);
 }
 
 .statMuted {

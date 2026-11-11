@@ -53,13 +53,17 @@
     gap: 1.5rem;
     padding: 1rem;
     flex-grow: 1;
-    background: var(--component-background);
+    /* Dense glass: read over what it covers (and so is what's inside it). */
+  --surface-bg: var(--surface-bg-dense);
+  background: var(--surface-sheen), var(--surface-bg);
     border-radius: 8px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2), var(--surface-rim);
     display: flex;
     position: relative;
     overflow-y: auto;
     flex-direction: column;
+  -webkit-backdrop-filter: var(--surface-blur);
+  backdrop-filter: var(--surface-blur);
 }
 
 .compact {

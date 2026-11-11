@@ -5,6 +5,7 @@ import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { configureStore, combineReducers, EnhancedStore } from '@reduxjs/toolkit';
 import { LanguageProvider } from '../i18n';
 import { Mode3DProvider } from '../context/Mode3DContext';
+import { GlassProvider } from '../context/GlassContext';
 import spellReaderReducer from '../store/spellReaderSlice';
 import spellUploadReducer from '../store/spellUploadSlice';
 import browserPlayerReducer from '../store/browserPlayerSlice';
@@ -75,9 +76,11 @@ export const renderWithProviders = (ui: React.ReactElement, options: Options = {
             throws outside a Mode3DProvider -- every test render needs one available, same
             as LanguageProvider above, even for tests that never touch the 3D toggle. */}
         <Mode3DProvider>
-          <TestChildren.Provider value={children}>
-            <RouterProvider router={router} />
-          </TestChildren.Provider>
+          <GlassProvider>
+            <TestChildren.Provider value={children}>
+              <RouterProvider router={router} />
+            </TestChildren.Provider>
+          </GlassProvider>
         </Mode3DProvider>
       </LanguageProvider>
     </Provider>

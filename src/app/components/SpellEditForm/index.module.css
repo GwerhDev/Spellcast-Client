@@ -110,10 +110,12 @@
   gap: 1rem;
   padding: 2rem 2.5rem;
   border-radius: 12px;
-  background: var(--component-background);
+  background: var(--surface-sheen), var(--surface-bg);
   border: 1px solid var(--color-dark-300);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), var(--surface-rim);
   min-width: 260px;
+  -webkit-backdrop-filter: var(--surface-blur);
+  backdrop-filter: var(--surface-blur);
 }
 
 .coverPreview {

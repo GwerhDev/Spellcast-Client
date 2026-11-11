@@ -17,13 +17,15 @@
   border-radius: 8px;
   font-weight: bold;
   cursor: pointer;
-  background: var(--component-background);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  background: var(--surface-sheen), var(--surface-bg);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2), var(--surface-rim);
   transition: opacity 0.3s ease-in-out;
+  -webkit-backdrop-filter: var(--surface-blur);
+  backdrop-filter: var(--surface-blur);
 }
 
 .toast.success {
-  background: var(--component-background);
+  background: var(--surface-sheen), var(--surface-bg);
 }
 
 .toast.error {

@@ -42,7 +42,7 @@
   flex-shrink: 0;
   border-radius: 8px;
   border: 0.5px solid var(--color-dark-300);
-  background: var(--component-background);
+  background: var(--surface-sheen), var(--surface-bg);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -54,6 +54,9 @@
   transition: border-color 0.2s ease, color 0.2s ease;
   height: var(--spell-cover-height);
   box-sizing: border-box;
+  -webkit-backdrop-filter: var(--surface-blur);
+  backdrop-filter: var(--surface-blur);
+  box-shadow: var(--surface-rim);
 }
 
 .seeAllCard:focus-visible {
@@ -83,8 +86,11 @@
   flex-shrink: 0;
   border-radius: 8px;
   border: 0.5px solid var(--color-dark-300);
-  background: var(--component-background);
+  background: var(--surface-sheen), var(--surface-bg);
   overflow: hidden;
+  -webkit-backdrop-filter: var(--surface-blur);
+  backdrop-filter: var(--surface-blur);
+  box-shadow: var(--surface-rim);
 }
 
 .skeletonCover {

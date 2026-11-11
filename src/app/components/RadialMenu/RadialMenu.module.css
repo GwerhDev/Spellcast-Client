@@ -56,10 +56,12 @@
   border-radius: 50%;
   font-size: 1.05rem;
   color: var(--color-primary);
-  background: var(--component-background);
+  background: var(--surface-sheen), var(--surface-bg);
   border: 1px solid color-mix(in srgb, var(--color-primary) 35%, transparent);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35), var(--surface-rim);
   transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  -webkit-backdrop-filter: var(--surface-blur);
+  backdrop-filter: var(--surface-blur);
 }
 
 .item:hover .itemIcon,

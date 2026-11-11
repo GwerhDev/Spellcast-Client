@@ -75,7 +75,7 @@ export const NotificationsButton: React.FC = () => {
       </button>
 
       {open && (
-        <div className={s.popover}>
+        <div className={`${s.popover} glass glass-shell`}>
           <div className={s.popoverHeader}>
             <span data-testid="notifications-title" className={s.popoverTitle}>{t.notifications.title}</span>
             {history.length > 0 && (

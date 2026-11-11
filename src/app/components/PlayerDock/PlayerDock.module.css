@@ -47,6 +47,13 @@
     0 0 24px color-mix(in srgb, var(--color-primary) 45%, transparent);
 }
 
+/* Made of glass too (see .glass in globals.css): its light, over the glass's own shadow. */
+:global(html[data-glass]) .dock.highlighted {
+  box-shadow:
+    0 0 0 1px var(--color-primary),
+    0 0 24px color-mix(in srgb, var(--color-primary) 45%, transparent);
+}
+
 .floating.highlighted {
   border-style: solid;
   background: color-mix(in srgb, var(--color-primary) 12%, var(--component-background));

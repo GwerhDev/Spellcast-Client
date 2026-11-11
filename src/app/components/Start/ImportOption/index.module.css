@@ -17,14 +17,17 @@
   transition: border-color 0.3s ease, var(--color-primary) 0.3s ease;
   text-align: center;
   box-sizing: border-box;
-  background: var(--component-background);
+  background: var(--surface-sheen), var(--surface-bg);
   display: flex;
   flex-direction: column;
+  -webkit-backdrop-filter: var(--surface-blur);
+  backdrop-filter: var(--surface-blur);
+  box-shadow: var(--surface-rim);
 }
 
 .dropzone.dragging {
   border-color: var(--color-primary);
-  background: var(--component-background);
+  background: var(--surface-sheen), var(--surface-bg);
   box-shadow: 0 0 20px var(--color-primary);
 }
 
@@ -93,8 +96,11 @@ button.fullWidthBtn {
   font-size: 0.85rem;
   padding: 2rem;
   border-radius: 8px;
-  background: var(--component-background);
+  background: var(--surface-sheen), var(--surface-bg);
   border: 2px dashed var(--color-dark-300);
+  -webkit-backdrop-filter: var(--surface-blur);
+  backdrop-filter: var(--surface-blur);
+  box-shadow: var(--surface-rim);
 }
 
 .processingSpinner {

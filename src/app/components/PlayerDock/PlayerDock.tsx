@@ -72,7 +72,7 @@ export const PlayerDock = ({ children, showEmpty, highlighted, hint, onDragEnter
             <motion.div
               data-testid="player-dock"
               // .audioplayer-container keeps the layout's own rules for this bar (globals.css).
-              className={`audioplayer-container ${s.dock} ${highlighted ? s.highlighted : ''}`}
+              className={`audioplayer-container glass ${s.dock} ${highlighted ? s.highlighted : ''}`}
               initial={barOut}
               animate={barIn}
               exit={barOut}

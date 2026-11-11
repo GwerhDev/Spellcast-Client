@@ -15,7 +15,7 @@
 
 .card {
   flex: 1;
-  background: var(--component-background);
+  background: var(--surface-sheen), var(--surface-bg);
   border-radius: 10px;
   padding: 1.5rem;
   border: none;
@@ -26,6 +26,9 @@
   gap: 1.2rem;
   transition: background-color 0.2s ease-in-out;
   color: inherit;
+  -webkit-backdrop-filter: var(--surface-blur);
+  backdrop-filter: var(--surface-blur);
+  box-shadow: var(--surface-rim);
 }
 
 .card:hover {
@@ -84,11 +87,14 @@
   width: 50px;
   height: 50px;
   border-radius: 50%;
-  background: var(--component-background);
+  background: var(--surface-sheen), var(--surface-bg);
   display: flex;
   align-items: center;
   justify-content: center;
   transition: background-color 0.2s ease-in-out;
+  -webkit-backdrop-filter: var(--surface-blur);
+  backdrop-filter: var(--surface-blur);
+  box-shadow: var(--surface-rim);
 }
 
 .card:hover .ringInner {

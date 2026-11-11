@@ -127,7 +127,7 @@ export default function DefaultLayout() {
           <div className="dashboard-container">
             <nav className="nav-container" ref={navRef}>
               <aside className="aside-container">
-                <div className="aside-inner-container">
+                <div className="aside-inner-container glass">
                   <Sidebar onNavigate={() => { if (window.matchMedia('(max-width: 1024px)').matches) dispatch(setSidebarCollapsed(true)); }} />
                 </div>
               </aside>

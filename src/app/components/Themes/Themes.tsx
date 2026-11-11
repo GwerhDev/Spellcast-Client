@@ -1,5 +1,6 @@
 import { useTheme } from '../../../context/ThemeContext';
 import { useMode3D } from '../../../context/Mode3DContext';
+import { useGlass } from '../../../context/GlassContext';
 import { useLanguage } from '../../../i18n';
 import { ToggleRow } from '../Inputs/ToggleRow';
 import s from './Themes.module.css';
@@ -58,6 +59,7 @@ const SystemThemeIcon = () => (
 export const Themes = () => {
   const { theme, setTheme } = useTheme();
   const { enabled: mode3dEnabled, setEnabled: setMode3dEnabled } = useMode3D();
+  const { enabled: glassEnabled, setEnabled: setGlassEnabled } = useGlass();
   const { t, language, setLanguage } = useLanguage();
 
   const themes = [
@@ -123,6 +125,18 @@ export const Themes = () => {
             description={t.appearance.mode3dDescription}
             value={mode3dEnabled}
             onChange={setMode3dEnabled}
+          />
+        </div>
+
+        <div className={s.settingsSection}>
+          <div className={s.sectionHeader}>
+            <p className={s.sectionTitle}>{t.appearance.glassTitle}</p>
+          </div>
+          <ToggleRow
+            label={t.appearance.glassLabel}
+            description={t.appearance.glassDescription}
+            value={glassEnabled}
+            onChange={setGlassEnabled}
           />
         </div>
 

@@ -20,12 +20,15 @@
   gap: 1rem;
   padding: 1rem 1.2rem;
   border-radius: 10px;
-  background: var(--component-background);
+  background: var(--surface-sheen), var(--surface-bg);
   border: none;
   cursor: pointer;
   color: inherit;
   text-align: left;
   transition: background-color 0.2s ease;
+  -webkit-backdrop-filter: var(--surface-blur);
+  backdrop-filter: var(--surface-blur);
+  box-shadow: var(--surface-rim);
 }
 
 .card:hover {

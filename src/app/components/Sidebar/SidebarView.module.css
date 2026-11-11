@@ -199,6 +199,12 @@
   transition: opacity 0.15s ease;
 }
 
+/* Made of glass (the sidebar's container is, see .glass in globals.css): the panel lets it
+   show through instead of covering it with its own solid color. */
+:global(html[data-glass]) .panel {
+  background: transparent;
+}
+
 .sidebarExpanded .panel {
   opacity: 1;
   pointer-events: auto;

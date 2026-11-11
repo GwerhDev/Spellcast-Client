@@ -5,6 +5,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 
 import { ThemeProvider } from './context/ThemeContext';
 import { Mode3DProvider } from './context/Mode3DContext';
+import { GlassProvider } from './context/GlassContext';
 import { useInitSession } from './hooks/useInitSession';
 
 import { Toast } from './app/components/Toast';
@@ -68,6 +69,7 @@ function App() {
   return (
     <ThemeProvider>
     <Mode3DProvider>
+    <GlassProvider>
       <Routes>
         <Route path="/unauthorized" element={<Unauthorized />} />
         <Route element={<DefaultLayout />}>
@@ -119,6 +121,7 @@ function App() {
         onSetDefault={handleCoverFrameGiftSetDefault}
         onDismiss={handleCoverFrameGiftDismiss}
       />
+    </GlassProvider>
     </Mode3DProvider>
     </ThemeProvider>
   );

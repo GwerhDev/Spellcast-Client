@@ -21,12 +21,15 @@
     align-items: center;
     transition: all 0.3s ease;
     color: var(--color-light-300);
-    background: var(--component-background);
+    background: var(--surface-sheen), var(--surface-bg);
+  -webkit-backdrop-filter: var(--surface-blur);
+  backdrop-filter: var(--surface-blur);
+  box-shadow: var(--surface-rim);
 }
 
 .tabButton:hover {
     color: var(--color-primary);
-    background: var(--component-background);
+    background: var(--surface-sheen), var(--surface-bg);
 }
 
 .tabButton.left {

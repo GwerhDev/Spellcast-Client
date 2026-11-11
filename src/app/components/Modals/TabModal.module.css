@@ -29,11 +29,15 @@
 .modal {
   width: 100%;
   border-radius: 8px;
-  background: var(--component-background);
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  /* Dense glass: read over what it covers (and so is what's inside it). */
+  --surface-bg: var(--surface-bg-dense);
+  background: var(--surface-sheen), var(--surface-bg);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2), var(--surface-rim);
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  -webkit-backdrop-filter: var(--surface-blur);
+  backdrop-filter: var(--surface-blur);
 }
 
 .header {

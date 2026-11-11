@@ -53,11 +53,13 @@
   box-sizing: border-box;
   border-radius: 50%;
   border: 1px solid color-mix(in srgb, var(--color-primary) 55%, transparent);
-  background: var(--component-background);
+  background: var(--surface-sheen), var(--surface-bg);
   color: var(--color-primary);
   font-size: 0.65rem;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.45), var(--surface-rim);
   transition: background 0.15s, color 0.15s;
+  -webkit-backdrop-filter: var(--surface-blur);
+  backdrop-filter: var(--surface-blur);
 }
 
 .nav:hover {

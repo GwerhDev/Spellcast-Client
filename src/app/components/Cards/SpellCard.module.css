@@ -16,7 +16,7 @@
   flex-shrink: 0;
   border-radius: .2rem;
   border: 0.5px solid var(--line);
-  background: var(--component-background);
+  background: var(--surface-sheen), var(--surface-bg);
   cursor: pointer;
   /* No overflow/border-radius clipping here anymore -- .cardClip (the one child that's
      actually part of layout) carries both, so .coverFrameSlot (a sibling, absolutely
@@ -28,6 +28,9 @@
   -webkit-touch-callout: none;
   user-select: none;
   -webkit-user-select: none;
+  -webkit-backdrop-filter: var(--surface-blur);
+  backdrop-filter: var(--surface-blur);
+  box-shadow: var(--surface-rim);
 }
 
 /* Being dragged: the card keeps its exact size (content hidden, not removed) and shows an

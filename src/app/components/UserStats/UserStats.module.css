@@ -14,7 +14,7 @@
 /* ── Card ── */
 .card {
   flex: 1;
-  background: var(--component-background);
+  background: var(--surface-sheen), var(--surface-bg);
   border-radius: 10px;
   padding: 1.5rem;
   border: none;
@@ -25,6 +25,9 @@
   gap: 1.2rem;
   transition: background-color 0.2s ease-in-out;
   color: inherit;
+  -webkit-backdrop-filter: var(--surface-blur);
+  backdrop-filter: var(--surface-blur);
+  box-shadow: var(--surface-rim);
 }
 
 .card:hover {

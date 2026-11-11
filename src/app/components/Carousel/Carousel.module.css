@@ -70,16 +70,18 @@
   border-radius: 50%;
   font-size: 0.8rem;
   color: var(--color-light-100);
-  background: var(--component-background);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+  background: var(--surface-sheen), var(--surface-bg);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35), var(--surface-rim);
   opacity: 0;
   transform: translateY(-50%);
   transition: opacity 0.2s ease, color 0.2s ease;
+  -webkit-backdrop-filter: var(--surface-blur);
+  backdrop-filter: var(--surface-blur);
 }
 
 .arrow:hover {
   color: var(--color-primary);
-  background: var(--component-background);
+  background: var(--surface-sheen), var(--surface-bg);
 }
 
 .previous { left: 0.25rem; }

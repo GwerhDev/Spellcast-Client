@@ -509,6 +509,9 @@ export const es: Translations = {
     mode3dTitle: 'Modo 3D',
     mode3dLabel: 'Activar modo 3D',
     mode3dDescription: 'Experimental — reimagina partes de la interfaz como una escena 3D navegable. Desactivado por defecto.',
+    glassTitle: 'Efectos de cristal',
+    glassLabel: 'Activar efectos de cristal',
+    glassDescription: 'Los paneles, tarjetas y superficies flotantes se vuelven cristal translúcido que difumina lo que hay detrás. Activado por defecto.',
   },
   editorSettings: {
     title: 'Configuración del editor',

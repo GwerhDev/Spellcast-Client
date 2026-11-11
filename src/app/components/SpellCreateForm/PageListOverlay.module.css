@@ -11,10 +11,12 @@
   min-height: 0;
   border-radius: 14px;
   border: 1px solid var(--line);
-  background: var(--component-background);
-  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.4);
+  background: var(--surface-sheen), var(--surface-bg);
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.4), var(--surface-rim);
   overflow: hidden;
   transform-origin: top right;
+  -webkit-backdrop-filter: var(--surface-blur);
+  backdrop-filter: var(--surface-blur);
 }
 
 /* The page list's column beside the page: clipped while it opens or closes by its width,

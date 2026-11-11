@@ -7,12 +7,15 @@
 
 .card {
   width: 100%;
-  background: var(--component-background);
+  background: var(--surface-sheen), var(--surface-bg);
   border-radius: 10px;
   padding: 1.5rem;
   display: flex;
   flex-direction: column;
   gap: 0.8rem;
+  -webkit-backdrop-filter: var(--surface-blur);
+  backdrop-filter: var(--surface-blur);
+  box-shadow: var(--surface-rim);
 }
 
 .cardHeader {

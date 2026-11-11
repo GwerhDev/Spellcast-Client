@@ -18,13 +18,15 @@
   gap: 0.5rem;
   padding: 0.35rem 0.75rem 0.35rem 0.5rem;
   border-radius: 999px;
-  background: var(--component-background);
+  background: var(--surface-sheen), var(--surface-bg);
   border: 1px solid var(--color-dark-300);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), var(--surface-rim);
   cursor: pointer;
   font-size: 0.75rem;
   color: var(--color-light-400);
   transition: border-color 0.2s, color 0.2s;
+  -webkit-backdrop-filter: var(--surface-blur);
+  backdrop-filter: var(--surface-blur);
 }
 
 .chip:hover {
@@ -50,11 +52,13 @@
 .panel {
   pointer-events: all;
   width: 280px;
-  background: var(--component-background);
+  background: var(--surface-sheen), var(--surface-bg);
   border: 1px solid var(--color-dark-300);
   border-radius: 10px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45), var(--surface-rim);
   overflow: hidden;
+  -webkit-backdrop-filter: var(--surface-blur);
+  backdrop-filter: var(--surface-blur);
 }
 
 .panelHeader {
