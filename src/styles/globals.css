@@ -208,6 +208,17 @@
   scrollbar-gutter: stable;
 }
 
+/* A page that scrolls without showing its rail (the altar's): it still scrolls (wheel, keys,
+   touch), and keeps no room for the rail either. */
+.dashboard-sections.scroll-rail-hidden {
+  scrollbar-width: none;
+  scrollbar-gutter: auto;
+}
+
+.dashboard-sections.scroll-rail-hidden::-webkit-scrollbar {
+  display: none;
+}
+
 .nav-container {
   display: flex;
   width: auto;
