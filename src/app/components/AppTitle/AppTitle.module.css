@@ -17,6 +17,13 @@
   white-space: nowrap;
 }
 
+/* Its celeste on hover too, not the global button hover's white. */
+.title:hover,
+.title:focus-visible {
+  color: var(--nhexa-desktop-accent);
+  background: transparent;
+}
+
 .icon {
   width: var(--nhexa-desktop-title-mark);
   height: var(--nhexa-desktop-title-mark);
