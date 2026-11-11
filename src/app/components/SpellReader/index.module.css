@@ -134,13 +134,18 @@
   flex-direction: column;
 }
 
-/* Paper mode: the page scrolls up out of sight fading away, not cut off at the top. Masked
-   here, not on the scroll area, so the companions (siblings of it) still sit in front of or
-   behind the sheet: the mask's stacking context holds both. The fade is the scroll area's own
-   top padding, so nothing is faded until the page is scrolled. */
+/* Paper mode: the page scrolls up out of sight fading away, not cut off at the top -- in a
+   short fade, and never over the scroll bar (the app's 7px one, at the right: a mask layer of
+   its own, solid). Masked on the content area, not on the scroll area, so the companions
+   (siblings of it) still sit in front of or behind the sheet: the mask's stacking context
+   holds both. The fade is within the scroll area's own top padding, so nothing is faded until
+   it scrolls. (The page selector fades its own: see PageList.) */
 .fadeTop {
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 2rem);
-  mask-image: linear-gradient(to bottom, transparent 0, #000 2rem);
+  --fade-mask:
+    linear-gradient(to bottom, transparent 0, #000 1rem) left top / calc(100% - 7px) 100% no-repeat,
+    linear-gradient(#000, #000) right top / 7px 100% no-repeat;
+  -webkit-mask: var(--fade-mask);
+  mask: var(--fade-mask);
 }
 
 .pagesContainer {
@@ -151,6 +156,7 @@
   visibility: visible;
   transition: opacity 0.25s ease, visibility 0.25s ease;
 }
+
 
 :global(body.fullscreen-reader) .pageInfoContainer {
   position: absolute;

@@ -1,20 +1,35 @@
 .pageGrid {
+  /* In a column, the pages scroll up out of sight fading away, not cut off at the top: a short
+     fade within the list's own top padding (nothing faded until it scrolls), never over the
+     scroll bar (the app's 7px one, at the right: a mask layer of its own, solid). */
+  --page-list-fade:
+    linear-gradient(to bottom, transparent 0, #000 1rem) left top / calc(100% - 7px) 100% no-repeat,
+    linear-gradient(#000, #000) right top / 7px 100% no-repeat;
   display: flex;
   flex-direction: column;
   gap: .5rem;
   overflow: auto;
-  padding: .5rem;
+  padding: 1rem .5rem .5rem;
+  -webkit-mask: var(--page-list-fade);
+  mask: var(--page-list-fade);
 }
 
+/* In a row (a narrow screen): no fade, nothing scrolls up. */
 @media (max-width: 768px) {
   .pageGrid {
     flex-direction: row;
+    padding-top: .5rem;
+    -webkit-mask: none;
+    mask: none;
   }
 }
 
 /* One column whatever the screen (over the page on a phone, see PageListOverlay). */
 .pageGrid.pageGridColumn {
   flex-direction: column;
+  padding-top: 1rem;
+  -webkit-mask: var(--page-list-fade);
+  mask: var(--page-list-fade);
 }
 
 

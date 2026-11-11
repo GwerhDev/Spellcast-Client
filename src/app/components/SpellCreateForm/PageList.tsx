@@ -26,7 +26,9 @@ export const PageList: React.FC<PageListProps> = ({ pages, currentPage, onPageCl
     if (!grid) return;
     const active = grid.children[currentPage] as HTMLElement | undefined;
     if (!active) return;
-    grid.scrollTo({ top: active.getBoundingClientRect().top - grid.getBoundingClientRect().top + grid.scrollTop, behavior: 'smooth' });
+    // To its top, below the list's own top padding (where the list may fade out as it scrolls).
+    const padding = parseFloat(getComputedStyle(grid).paddingTop) || 0;
+    grid.scrollTo({ top: active.getBoundingClientRect().top - grid.getBoundingClientRect().top + grid.scrollTop - padding, behavior: 'smooth' });
   }, [currentPage]);
 
   const handleDelete = (e: React.MouseEvent, index: number) => {
