@@ -473,12 +473,12 @@ body.fullscreen-reader.fullscreen-player-visible .reader-top-bar {
       --surface-blur: var(--glass-blur);
       --surface-sheen: var(--glass-sheen);
       --surface-rim: inset 0 1px 0 rgba(255, 255, 255, 0.06), inset 0 0 0 1px rgba(255, 255, 255, 0.03);
-      --surface-bg-dense: color-mix(in srgb, var(--color-secondary-darker) 92%, transparent);
+      --surface-bg-dense: color-mix(in srgb, var(--color-secondary-darker) 95%, transparent);
     }
 
     html.light[data-glass] {
       --surface-rim: inset 0 1px 0 rgba(255, 255, 255, 0.6), inset 0 0 0 1px rgba(255, 255, 255, 0.3);
-      --surface-bg-dense: color-mix(in srgb, var(--color-secondary-lighter) 97%, transparent);
+      --surface-bg-dense: color-mix(in srgb, var(--color-secondary-lighter) 98%, transparent);
     }
 
     html[data-glass] .glass {
@@ -500,4 +500,11 @@ body.fullscreen-reader.fullscreen-player-visible .reader-top-bar {
       box-shadow: 0 10px 32px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.06);
     }
   }
+}
+
+/* Without the glass effects, the player and the menu keep the glass's rim as a border (brighter
+   at its top), so they look the same size and shape either way. */
+html:not([data-glass]) .glass:not(.glass-shell) {
+  border: 1px solid var(--glass-rim);
+  border-top-color: var(--glass-rim-top);
 }

@@ -38,11 +38,11 @@
   /* Glass (the glass effects, when on: see GlassContext and .glass in globals.css): a surface
      tinted with the theme's own, see-through, blurring what's behind it; a rim of light along
      its edge, brighter at its top; a soft sheen inside it and a soft shadow under it. */
-  --glass-bg: color-mix(in srgb, var(--color-secondary-darker) 74%, transparent);
-  --glass-blur: blur(14px) saturate(1.3);
+  --glass-bg: color-mix(in srgb, var(--color-secondary-darker) 84%, transparent);
+  --glass-blur: blur(10px) saturate(1.15);
   --glass-rim: rgba(255, 255, 255, 0.07);
   --glass-rim-top: rgba(255, 255, 255, 0.14);
-  --glass-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0) 45%);
+  --glass-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0) 45%);
   --glass-shadow: 0 10px 32px rgba(0, 0, 0, 0.35);
   /* A surface (a panel, a popover, a section's card...): the component background, solid, unless
      the glass effects are on -- then glass (see html[data-glass] in globals.css). What repeats
@@ -255,10 +255,10 @@ html.light {
   --component-background: var(--color-secondary-lighter);
   /* Light glass over the dark desktop behind the window's edges: more of its own color, or it
      turns gray there. */
-  --glass-bg: color-mix(in srgb, var(--color-secondary-lighter) 92%, transparent);
+  --glass-bg: color-mix(in srgb, var(--color-secondary-lighter) 95%, transparent);
   --glass-rim: rgba(255, 255, 255, 0.4);
   --glass-rim-top: rgba(255, 255, 255, 0.65);
-  --glass-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0) 50%);
+  --glass-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0) 50%);
   --glass-shadow: 0 10px 30px rgba(40, 40, 60, 0.18);
   --component-background-transparency: #ddddea0b;
 
