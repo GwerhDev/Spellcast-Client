@@ -134,7 +134,8 @@
   border-radius: var(--size-2);
   color: var(--text-2);
   text-decoration: none;
-  font-size: 1.05rem;
+  /* A little bigger than the expanded panel's: alone in the rail, the icon is all there is. */
+  font-size: 1.25rem;
   position: relative;
   transition: color 0.15s ease, background-color 0.15s ease;
 }
