@@ -1,6 +1,9 @@
 /* NHEXA shell wordmark -- keep the brand celeste regardless of the app's in-app theme
    (bronze, etc.). Shell elements never follow the app theme token. */
 .title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
   padding: 0;
   background: transparent;
   border: none;
@@ -12,4 +15,10 @@
   font-weight: 700;
   letter-spacing: 0.18em;
   white-space: nowrap;
+}
+
+.icon {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
 }

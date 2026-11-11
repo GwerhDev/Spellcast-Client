@@ -33,6 +33,7 @@ import { AttentionGuardModal } from '../components/Modals/AttentionGuardModal';
 import { onSpellsMigrated } from '../../db';
 import { useMode3D } from '../../context/Mode3DContext';
 import { preloadCover3D } from '../components/Cover3D/lazyCover3D';
+import spellcastIcon from '../../assets/spellcast-logo.svg';
 
 // TCORE-124: the app's ONE shared 3D canvas for cover-frame corners -- mounted once here
 // (not per-route) so every card everywhere that opts into 3D corners (via SpellCard's own
@@ -105,15 +106,14 @@ export default function DefaultLayout() {
       <Desktop />
       <div className="app-window">
         <div className="header-app">
-          {/* The app's icon, above the sidebar's rail, opens Nhexa's apps; its title goes home;
-              the magnifying glass, beside the bell, opens the app's search. */}
-          <span className="header-spacer header-left">
-            <AppSwitcher label={t.desktop.apps} onClick={() => dispatch(toggleMinimized())} />
-          </span>
-          <AppTitle label="Spellcast" onClick={() => navigate('/')} />
+          {/* The app's icon and title, centered, go home; on the right, the magnifying glass
+              opens the app's search, and the apps icon, after the bell, Nhexa's apps. */}
+          <span className="header-spacer" />
+          <AppTitle label="Spellcast" iconSrc={spellcastIcon} onClick={() => navigate('/')} />
           <span className="header-spacer">
             <SearchButton label={t.search.title} onClick={() => dispatch(setShowSearcher(true))} />
             <NotificationsButton />
+            <AppSwitcher label={t.desktop.apps} onClick={() => dispatch(toggleMinimized())} />
           </span>
         </div>
         <motion.div

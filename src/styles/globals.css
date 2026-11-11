@@ -141,6 +141,9 @@
   overflow: visible;
   position: relative;
   gap: .5rem;
+  /* Its icons clear the window's edge (the same on both sides: the title stays centered). */
+  padding-inline: 0.75rem;
+  box-sizing: border-box;
 }
 
 .header-spacer {
@@ -150,13 +153,6 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-}
-
-/* The header's left: the app's brand (AppSwitcher), its icon in a slot as wide as the sidebar's
-   rail below it, so it's centered above it. */
-.header-spacer.header-left {
-  justify-content: flex-start;
-  --app-switcher-slot: 44px;
 }
 
 .title-container {

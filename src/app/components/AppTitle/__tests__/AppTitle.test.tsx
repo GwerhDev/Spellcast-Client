@@ -10,4 +10,9 @@ describe('AppTitle', () => {
     fireEvent.click(screen.getByTestId('app-title'));
     expect(onClick).toHaveBeenCalledTimes(1);
   });
+
+  it("shows the app's icon beside its name", () => {
+    render(<AppTitle label="Spellcast" iconSrc="/spellcast.svg" onClick={() => {}} />);
+    expect(screen.getByTestId('app-title-icon')).toHaveAttribute('src', '/spellcast.svg');
+  });
 });

@@ -1,6 +1,5 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faHexagonNodes } from '@fortawesome/free-solid-svg-icons';
-import spellcastIcon from '../../../assets/spellcast-logo.svg';
 import s from './AppSwitcher.module.css';
 
 interface AppSwitcherProps {
@@ -9,8 +8,8 @@ interface AppSwitcherProps {
   onClick: () => void;
 }
 
-// The header's top-left icon: opens Nhexa's apps (the desktop). Spellcast's own icon, which
-// turns into the apps icon (hexagon nodes) on hover.
+// Opens Nhexa's apps (the desktop): the apps icon (hexagon nodes), at the header's right, after
+// the notifications' bell.
 export const AppSwitcher = ({ label, onClick }: AppSwitcherProps) => (
   <button
     type="button"
@@ -20,11 +19,6 @@ export const AppSwitcher = ({ label, onClick }: AppSwitcherProps) => (
     aria-label={label}
     data-testid="app-switcher-trigger"
   >
-    <span className={s.iconBox}>
-      <span className={s.icons}>
-        <img src={spellcastIcon} alt="" className={s.appIcon} data-testid="app-switcher-app-icon" />
-        <FontAwesomeIcon icon={faHexagonNodes} className={s.appsIcon} data-testid="app-switcher-apps-icon" />
-      </span>
-    </span>
+    <FontAwesomeIcon icon={faHexagonNodes} data-testid="app-switcher-apps-icon" />
   </button>
 );
