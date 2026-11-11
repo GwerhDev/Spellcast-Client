@@ -3,7 +3,7 @@ import { screen, fireEvent } from '@testing-library/react';
 import { renderWithProviders, makeStore } from '../../../../test/renderWithProviders';
 import { SpellReader } from '../index';
 import { Routes, Route } from 'react-router-dom';
-import { setSpellFile, setSpellLoaded } from '../../../../store/spellReaderSlice';
+import { goToPage, setSpellFile, setSpellInfo, setSpellLoaded } from '../../../../store/spellReaderSlice';
 
 // MagicTextEditor / TTSSpellReader use browser APIs not available in jsdom
 vi.mock('../../../../magictext', () => ({
@@ -32,6 +32,16 @@ describe('SpellReader', () => {
     renderWithProviders(<SpellReader />);
     // Default spellReader state has isLoaded = false
     expect(screen.getByTestId('spell-reader-loading')).toBeInTheDocument();
+  });
+
+  it('shows, beside its title, the page being read of how many there are', () => {
+    const store = makeStore();
+    store.dispatch(setSpellFile({ id: 'doc-1', title: 'Test Spell' }));
+    store.dispatch(setSpellInfo({ totalPages: 120 }));
+    store.dispatch(goToPage(3));
+    store.dispatch(setSpellLoaded(true));
+    renderWithProviders(<SpellReader />, { store });
+    expect(screen.getByTestId('spell-reader-page-badge')).toHaveTextContent(/page 3 of 120/i);
   });
 
   it('opens the spell detail modal with the current spell when the info button is clicked', () => {

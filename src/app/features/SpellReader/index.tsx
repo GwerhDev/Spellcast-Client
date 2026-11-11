@@ -30,6 +30,7 @@ import { usePageListToggle } from '../../../hooks/usePageListToggle';
 import { TTSSpellReader, ShareQuoteMenu, type JSONContent, type SpellQuoteSelection } from '../../../magictext';
 import { addApiResponse } from '../../../store/apiResponsesSlice';
 import { useLanguage } from '../../../i18n';
+import { Tag } from '../../components/Tag/Tag';
 
 // three/@react-three/fiber are only downloaded once a companion is actually active —
 // lazy so the reader's default bundle stays free of the 3D stack.
@@ -293,6 +294,12 @@ export const SpellReader = () => {
         <div className={s.titleContainer}>
           <FontAwesomeIcon icon={SPELL_ICON} />
           {spellTitle}
+          {/* Where the reader is in it. */}
+          {isLoaded && totalPages > 0 && (
+            <span data-testid="spell-reader-page-badge">
+              <Tag>{t.spell.pageOf.replace('{n}', String(currentPage || 1)).replace('{total}', String(totalPages))}</Tag>
+            </span>
+          )}
         </div>
         <div className={s.controlsContainer}>
           {isLoaded && (
