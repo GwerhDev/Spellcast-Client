@@ -6,7 +6,10 @@
 
 /* A row that scrolls sideways, its rail hidden (it scrolls by touch, trackpad, shift+wheel,
    keys, or its buttons), snapping to its items. Its edges' fade is a share of its width (a
-   phone's is narrow: a wide fade would cover most of a card), within bounds. */
+   phone's is narrow: a wide fade would cover most of a card), within bounds.
+   `--carousel-gutter` (inherited, none by default): room before its first item and after its
+   last, inside the row. A page that runs it edge to edge sets it to its own gutter: its items
+   start in line with the page's text, and scroll out to the screen's edge. */
 .carousel {
   --fade: clamp(0.75rem, 4vw, 2.5rem);
   --fade-before: 0px;
@@ -18,8 +21,9 @@
   scroll-snap-type: x proximity;
   scrollbar-width: none;
   /* Room for its items' hover lift and glow, not cut off by its own overflow. */
-  padding: 0.5rem 0;
+  padding: 0.5rem var(--carousel-gutter, 0px);
   margin: -0.5rem 0;
+  scroll-padding-inline: var(--carousel-gutter, 0px);
   -webkit-mask-image: linear-gradient(to right, transparent 0, #000 var(--fade-before), #000 calc(100% - var(--fade-after)), transparent 100%);
   mask-image: linear-gradient(to right, transparent 0, #000 var(--fade-before), #000 calc(100% - var(--fade-after)), transparent 100%);
 }
@@ -54,6 +58,15 @@
 
   .carousel > :last-child {
     scroll-snap-align: end;
+  }
+}
+
+/* Narrow (the app's mobile layout): no fade at its edges -- it runs to the screen's edge, and
+   the card cut there already shows there's more. */
+@media (max-width: 1024px) {
+  .carousel {
+    -webkit-mask-image: none;
+    mask-image: none;
   }
 }
 

@@ -145,3 +145,19 @@
 }
 
 /* Each category is a carousel (see Carousel): its cards in one row, scrolling sideways. */
+
+/* Narrow: no gutter around the page, only around what's in it -- its labels keep one, and its
+   carousels run edge to edge, their first card in line with the labels (same as QuickStart). */
+@media (max-width: 1024px) {
+  .body {
+    padding-inline: 0;
+  }
+
+  .sectionLabel {
+    padding-inline: 1.25rem;
+  }
+
+  .section {
+    --carousel-gutter: 1.25rem;
+  }
+}
