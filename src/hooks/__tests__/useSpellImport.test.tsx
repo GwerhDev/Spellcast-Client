@@ -55,7 +55,7 @@ describe('useSpellImport', () => {
     const file = new File(['zip-bytes'], 'My Book.spell');
     await act(async () => { await result.current.importFile(file); });
 
-    expect(importSpellFromFileMock).toHaveBeenCalledWith(file, 'user-1', { keys: [], password: undefined });
+    expect(importSpellFromFileMock).toHaveBeenCalledWith(file, 'user-1', { keys: [], password: undefined }, expect.any(Function));
     // A file that isn't protected never asks for the caster's keys.
     expect(ownAccessKeysMock).not.toHaveBeenCalled();
     expect(store.getState().spellReader.listVersion).toBe(1);
@@ -150,6 +150,25 @@ describe('useSpellImport', () => {
       expect(importSpellFromFileMock.mock.calls.map(call => call[2].password)).toEqual([undefined, 'wrong', 'right']);
       expect(result.current.unlockPrompt).toBeNull();
       expect(store.getState().apiResponses.responses[0].type).toBe('success');
+    });
+
+    it('its prompt goes as soon as the right password opens the file, while the rest still loads', async () => {
+      let finish!: (id: string) => void;
+      importSpellFromFileMock
+        .mockRejectedValueOnce(locked(false))
+        .mockImplementationOnce((_file: File, _user: string, _unlock: unknown, onOpened: () => void) => {
+          onOpened();
+          return new Promise<string>(resolve => { finish = resolve; });
+        });
+      const { result } = renderImport(makeStore('user-1'));
+      let done!: Promise<string | null | undefined>;
+      act(() => { done = result.current.importFile(new File(['x'], 'Locked.spell')); });
+      await vi.waitFor(() => expect(result.current.unlockPrompt).not.toBeNull());
+      act(() => result.current.unlockPrompt!.submit('right'));
+      await vi.waitFor(() => expect(result.current.unlockPrompt).toBeNull());
+      expect(result.current.isImporting).toBe(true);
+      act(() => finish('new-id'));
+      expect(await act(() => done)).toBe('new-id');
     });
 
     it('giving up on its password imports nothing, with no error', async () => {

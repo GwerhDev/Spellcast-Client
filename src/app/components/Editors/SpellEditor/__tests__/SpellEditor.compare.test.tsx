@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { act, fireEvent, screen } from '@testing-library/react';
+import { act, fireEvent, screen, within } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { renderWithProviders } from '../../../../../test/renderWithProviders';
 import type { PdfPanelOptions } from '../index';
@@ -77,6 +77,19 @@ describe('SpellEditor with the original PDF open', () => {
     await act(async () => { vi.advanceTimersByTime(50); });
     expect(screen.getByTestId('original-pdf-none')).toBeInTheDocument();
     expect(screen.queryByTestId('pdf-restore-all-btn')).toBeNull();
+  });
+
+  it('without room, offers to import a PDF on the back of the sheet when the spell has none', async () => {
+    narrow.value = true; editorWidth = 390;
+    const opts = options({ hasOriginal: false, onRestorePage: undefined, onRestoreAll: undefined });
+    renderWithProviders(editor(opts));
+    await act(async () => { vi.advanceTimersByTime(50); });
+    expect(screen.getByTestId('spell-editor-stage').dataset.compare).toBe('flip');
+    const none = screen.getByTestId('original-pdf-none');
+    expect(screen.queryByTestId('original-pdf-sheet')).toBeNull();
+    expect(none).toBeInTheDocument();
+    fireEvent.click(within(none).getByTestId('original-pdf-import-btn'));
+    expect(opts.onReplacePdf).toHaveBeenCalled();
   });
 
   it('without room, turns the sheet over to the PDF, its toolbar in the text toolbar\'s place, and back', async () => {

@@ -136,7 +136,8 @@
    carousel doesn't reflow on load. */
 .skeletonFooter { display: none; }
 
-/* Narrow: the coverflow runs edge to edge, its header keeps a gutter. */
+/* Narrow: the coverflow runs edge to edge, its header keeps a gutter; the header (the link to
+   the Grimoire) goes under the coverflow, not over it (above, it ran into the scene's text). */
 @media (max-width: 1024px) {
   .container {
     padding-inline: 0;
@@ -144,5 +145,6 @@
 
   .header {
     padding-inline: 1rem;
+    order: 1;
   }
 }

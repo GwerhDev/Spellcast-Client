@@ -1,19 +1,12 @@
 import React, { useEffect, useRef, useState, type FocusEvent, type ReactNode } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import s from './HomeStage.module.css';
+import { pageStickyTop, scrollParentOf } from '../../../utils/pageScroll';
 
 // Whether focus landing on an element is keyboard focus (Tab), not a click's: only that
 // keeps the secondary content in view while idle. Unsupported selector: treated as a click.
 const isKeyboardFocus = (el: Element) => {
   try { return el.matches(':focus-visible'); } catch { return false; }
-};
-
-// The nearest ancestor that scrolls: the page's own scroller.
-const scrollParentOf = (el: HTMLElement | null): HTMLElement | null => {
-  for (let node = el?.parentElement ?? null; node; node = node.parentElement) {
-    if (/(auto|scroll)/.test(getComputedStyle(node).overflowY)) return node;
-  }
-  return null;
 };
 
 // Quoted: blob: URLs can contain characters an unquoted url() rejects.
@@ -65,7 +58,14 @@ export const HomeStage = ({ coverUrl, immersive, idle, main, secondary, corner, 
   const [viewHeight, setViewHeight] = useState<number | null>(null);
   useEffect(() => {
     const scroller = scrollParentOf(stageRef.current);
-    if (!scroller || typeof ResizeObserver === 'undefined') return;
+    // The document scrolling (a phone): the window's height, under the header stuck to its top.
+    if (!scroller) {
+      const measure = () => setViewHeight(window.innerHeight - pageStickyTop());
+      measure();
+      window.addEventListener('resize', measure);
+      return () => window.removeEventListener('resize', measure);
+    }
+    if (typeof ResizeObserver === 'undefined') return;
     const measure = () => setViewHeight(scroller.clientHeight);
     measure();
     const observer = new ResizeObserver(measure);

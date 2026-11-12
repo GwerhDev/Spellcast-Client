@@ -142,6 +142,24 @@
 }
 
 @media (max-width: 768px) {
+    .tabContainer {
+        margin-bottom: 1rem;
+    }
+
+    .description {
+        font-size: clamp(0.75rem, 3.2vw, 0.875rem);
+    }
+
+    .voiceList {
+        gap: 0.5rem;
+    }
+
+    .voiceOption {
+        gap: 0.75rem;
+        padding: 0.65rem 0.85rem;
+        font-size: clamp(0.8rem, 3.6vw, 0.95rem);
+    }
+
     .tabButton {
         width: 100%;
         min-width: 90px;

@@ -68,7 +68,9 @@ export function useSpellImport() {
       let keysAsked = false;
       while (spellId === null) {
         try {
-          spellId = await importSpellFromFile(file, userData.id, { keys, password });
+          // The right password: its prompt goes as soon as the file opens, so what shows is
+          // the spell being loaded, not the prompt waiting on the whole import.
+          spellId = await importSpellFromFile(file, userData.id, { keys, password }, () => setPrompt(null));
         } catch (error) {
           if (!(error instanceof SpellLockedError)) throw error;
           // Protected: first the caster's keys it has a slot for (asked for only now, and only

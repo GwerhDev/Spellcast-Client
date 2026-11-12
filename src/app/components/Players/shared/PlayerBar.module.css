@@ -2,6 +2,16 @@
   gap: .5rem;
   display: flex;
   width: 100%;
+  /* Its buttons' sizes: smaller on a narrow phone, never past their usual size (the most a
+     wide screen gets), each button reading its own (see PlayButton, PlaybackControls,
+     VolumeControls, PlayerConfigButton, UnloadSpellButton). */
+  --player-play-size: clamp(42px, 11vw, 48px);
+  --player-play-font: clamp(16px, 4.2vw, 18px);
+  --player-step-font: clamp(15px, 4.6vw, 18px);
+  --player-step-padding: clamp(8px, 2.6vw, 10px) clamp(10px, 3.6vw, 15px);
+  --player-icon-font: clamp(13px, 3.8vw, 15px);
+  --player-icon-padding: clamp(5px, 1.8vw, 7px) clamp(6px, 2vw, 8px);
+  --player-unload-size: clamp(20px, 5.8vw, 22px);
 }
 
 .audioPlayerContainer {
@@ -42,6 +52,20 @@
   align-items: center;
   justify-content: flex-start;
   overflow: hidden;
+}
+
+/* The spell: its cover, title and page. Its voice and its unload button, beside it, take no box
+   of their own on a wide screen (one row, as they always were); see the phone's layout below. */
+.spellInfo {
+  min-width: 0;
+  gap: 0.5rem;
+  display: flex;
+  align-items: center;
+}
+
+.voiceSlot,
+.unloadSlot {
+  display: contents;
 }
 
 .cover {
@@ -120,36 +144,68 @@
   gap: 1rem;
 }
 
-/* A phone: one row can't hold the spell, its buttons, the controls and the volume -- the
-   spell's side was squeezed to a few pixels, its title hidden and its cover crushed. Two
-   rows instead: the spell (cover, title and page, its voice and unload) with the volume
-   and settings beside it, and the playback controls centered under them. */
+/* A phone: one row can't hold the spell, its buttons, the controls and the volume. Two rows
+   instead: on top only the spell (cover, title and page) and its unload button; below, the
+   playback controls across the whole width (the AI voice's progress bar too), with the voice
+   at their left and the volume and settings at their right, level with their buttons. */
 @media (max-width: 768px) {
   .audioPlayerContainer {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    grid-template-areas:
-      "spell side"
-      "controls controls";
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    grid-template-rows: auto auto;
     align-items: center;
     row-gap: 0.15rem;
     padding: 0.4rem 0.75rem 0.25rem;
   }
 
+  /* Its pieces take their places in the grid themselves. */
   .leftSection {
-    grid-area: spell;
+    display: contents;
+  }
+
+  .spellInfo {
+    grid-row: 1;
+    grid-column: 1 / 3;
+  }
+
+  .unloadSlot {
+    grid-row: 1;
+    grid-column: 3;
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  /* The playback controls: whatever else is in the bar (the <audio> elements aren't drawn). */
+  .audioPlayerContainer > :not(.leftSection):not(.rightSection) {
+    grid-row: 2;
+    grid-column: 1 / -1;
+    justify-self: center;
+    width: 100%;
+  }
+
+  /* Beside the controls' buttons, level with them: at the controls' bottom (above the buttons,
+     the AI voice's progress bar runs across), as tall as the play button, their content
+     centered in that height. Over the controls' empty sides. */
+  .voiceSlot,
+  .rightSection {
+    grid-row: 2;
+    align-self: end;
+    height: var(--player-play-size, 3rem);
+    display: flex;
+    align-items: center;
+    position: relative;
+    z-index: 1;
+  }
+
+  .voiceSlot {
+    grid-column: 1;
+    justify-self: start;
   }
 
   .rightSection {
-    grid-area: side;
+    grid-column: 3;
     flex: none;
-  }
-
-  /* The playback controls: whatever is neither side (the <audio> elements aren't drawn). */
-  .audioPlayerContainer > :not(.leftSection):not(.rightSection) {
-    grid-area: controls;
-    justify-self: center;
-    width: 100%;
+    justify-self: end;
   }
 
   .cover,

@@ -99,9 +99,15 @@ describe('HomeStage', () => {
     expect(screen.getByTestId('home-stage-attached').style.height).toBe('640px');
   });
 
-  it('with no scrolling page around it, the cover layer is the window\'s height', () => {
-    render(stage({ coverUrl: 'blob:cover', immersive: true }));
-    expect(screen.getByTestId('home-stage-attached').style.height).toBe('100vh');
+  // No box scrolling around it: the document scrolls (a phone), the header stuck over its top.
+  it('with no scrolling page around it, the cover layer is the window\'s height under the header', () => {
+    document.documentElement.style.setProperty('--page-sticky-top', '25px');
+    try {
+      render(stage({ coverUrl: 'blob:cover', immersive: true }));
+      expect(screen.getByTestId('home-stage-attached').style.height).toBe(`${window.innerHeight - 25}px`);
+    } finally {
+      document.documentElement.style.removeProperty('--page-sticky-top');
+    }
   });
 
   // A long sentence on the altar runs past the scene: the page gets that much longer below

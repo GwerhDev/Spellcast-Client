@@ -3,7 +3,7 @@ import { PageTransition } from '../components/PageTransition';
 import { SpellEditForm } from '../features/SpellEditForm';
 
 export const SpellEdit: React.FC = () => (
-  <PageTransition className="dashboard-sections">
+  <PageTransition className="dashboard-sections editor-page">
     <SpellEditForm />
   </PageTransition>
 );

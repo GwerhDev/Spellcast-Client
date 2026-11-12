@@ -1,11 +1,9 @@
 import { useRef } from 'react';
-import { faFilePdf, faPaperclip } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import s from './index.module.css';
 import { PdfToolbar, type PdfPanelOptions } from './PdfToolbar';
 import { OriginalPdfSheet } from '../OriginalPdfSheet';
 import { ZoomOverlay } from '../Zoom/ZoomOverlay';
-import { PrimaryButton } from '../Buttons/PrimaryButton';
+import { OriginalPdfEmpty } from '../OriginalPdfEmpty';
 import { useZoom } from '../../../hooks/useZoom';
 import { useLanguage } from '../../../i18n';
 import type { OriginalPdf } from '../../../hooks/useOriginalPdf';
@@ -39,13 +37,7 @@ export const OriginalPdfPanel = ({ options, original, pageNumber, width, height 
           {options.hasOriginal ? (
             <OriginalPdfSheet original={original} pageNumber={pageNumber} width={width} height={height} zoom={zoom} />
           ) : (
-            <div data-testid="original-pdf-none" className={s.empty}>
-              <FontAwesomeIcon icon={faFilePdf} className={s.emptyIcon} />
-              <p>{t.spell.noOriginalPdf}</p>
-              <PrimaryButton className={s.emptyAction} icon={faPaperclip} disabled={options.busy} onClick={options.onReplacePdf}>
-                {t.spell.importPdf}
-              </PrimaryButton>
-            </div>
+            <OriginalPdfEmpty className={s.empty} busy={options.busy} onImport={options.onReplacePdf} />
           )}
         </div>
         {options.hasOriginal && (

@@ -58,6 +58,7 @@
 .actionsRow {
   width: 100%;
   display: flex;
+  flex-wrap: wrap;
   justify-content: flex-end;
   gap: 0.5rem;
   margin-bottom: 1rem;

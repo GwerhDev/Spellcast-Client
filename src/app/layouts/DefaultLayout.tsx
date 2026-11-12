@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, lazy, Suspense } from 'react';
 import { motion } from 'framer-motion';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Sidebar } from '../features/Sidebar/Sidebar';
 import { LogoutModal } from '../components/Modals/LogoutModal';
 import { AudioPlayer } from '../features/AudioPlayer';
@@ -55,6 +55,10 @@ export default function DefaultLayout() {
   const minimized = useSelector((state: RootState) => state.desktop.minimized);
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  // When the document scrolls (a phone, see globals.css), a new route starts at its top, as
+  // each page's own scroller used to: the window doesn't keep the last page's scroll.
+  const { pathname } = useLocation();
+  useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
   const { t } = useLanguage();
   const { showModal: showAttentionGuard, handleContinue: handleAttentionGuardContinue } = useAttentionGuard();
   useStorageQuotaWarning();

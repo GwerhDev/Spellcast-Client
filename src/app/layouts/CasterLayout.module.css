@@ -30,7 +30,7 @@
   /* Matches .content's own padding, so the tab bar keeps the same breathing room from the
      edge whether it's sitting in normal flow or stuck mid-scroll, instead of snapping
      flush against it. */
-  top: 1rem;
+  top: calc(var(--page-sticky-top, 0px) + 1rem);
   z-index: 2;
   padding-top: 1px;
 }

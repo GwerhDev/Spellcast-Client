@@ -142,10 +142,10 @@
 .controlButton {
   background-color: transparent;
   border: none;
-  padding: 10px 15px;
+  padding: var(--player-step-padding, 10px 15px);
   border-radius: 5px;
   cursor: pointer;
-  font-size: 18px;
+  font-size: var(--player-step-font, 18px);
   transition: color 0.3s ease;
   display: flex;
   align-items: center;

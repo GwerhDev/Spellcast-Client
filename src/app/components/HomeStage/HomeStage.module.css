@@ -33,7 +33,7 @@
    over it, the cover stays put. */
 .attached {
   position: sticky;
-  top: 0;
+  top: var(--page-sticky-top, 0px);
   overflow: hidden;
 }
 
@@ -91,10 +91,6 @@
   .stage {
     padding-bottom: var(--mobile-nav-height, 5rem);
   }
-
-  .dockAnchor {
-    bottom: var(--mobile-nav-height, 5rem);
-  }
 }
 
 /* Where the page's top right corner hangs from (it takes no room): over everything on the
@@ -107,7 +103,7 @@
 
 .cornerAnchorSticky {
   position: sticky;
-  top: 0;
+  top: var(--page-sticky-top, 0px);
   height: 0;
   z-index: 1;
 }
@@ -137,6 +133,14 @@
   bottom: 0;
   height: 0;
   z-index: 1;
+}
+
+/* Narrow: docked above the menu fixed at the bottom of the screen, not under it (after the rule
+   above: the same specificity, the later one wins). */
+@media (max-width: 1024px) {
+  .dockAnchor {
+    bottom: var(--mobile-nav-height, 5rem);
+  }
 }
 
 /* Peeking: down by --dock-hidden (set inline), what's above its peeking part hidden. A band

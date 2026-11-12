@@ -64,27 +64,5 @@
 }
 
 .empty {
-  margin: auto;
-  max-width: 22rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.9rem;
-  text-align: center;
   color: var(--color-light-400);
-  font-size: 0.9rem;
-  line-height: 1.5;
-}
-
-.empty p {
-  margin: 0;
-}
-
-.emptyIcon {
-  font-size: 2rem;
-  opacity: 0.6;
-}
-
-button.emptyAction {
-  width: auto;
 }

@@ -138,3 +138,11 @@
   display: flex;
   flex-shrink: 0;
 }
+
+/* The back of the turned sheet when the spell has no PDF: no paper, just the offer to
+   import one, centred where the page would be. */
+.pdfNone {
+  display: flex;
+  padding: 1.5rem;
+  color: var(--color-light-400);
+}

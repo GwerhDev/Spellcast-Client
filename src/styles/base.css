@@ -51,17 +51,19 @@ ul {
   flex-direction: column;
 }
 
+/* Headings shrink with a narrow screen and reach their full size (the --size-* tokens) from
+   about 600px up, so a phone never gets a desktop's 48px title. */
 h1 {
-  font-size: var(--size-12);
+  font-size: clamp(1.75rem, 8vw, var(--size-12));
 }
 
 h2 {
-  font-size: var(--size-9);
+  font-size: clamp(1.4rem, 6vw, var(--size-9));
   color: var(--text-color);
 }
 
 h3 {
-  font-size: var(--size-6);
+  font-size: clamp(1.1rem, 4.5vw, var(--size-6));
   color: var(--text-color);
 }
 

@@ -94,6 +94,8 @@
 }
 
 .spellInfo {
+  width: 100%;
+  min-width: 0;
   display: flex;
   align-items: baseline;
   justify-content: space-between;
@@ -101,6 +103,7 @@
 }
 
 .spellTitle {
+  flex: 1;
   font-weight: 600;
   color: var(--text-color-accent);
   min-width: 0;

@@ -251,3 +251,21 @@
   padding: 0.5rem 0.25rem;
   margin: 0;
 }
+
+@media (max-width: 768px) {
+  .row {
+    padding: 0.55rem 0.65rem;
+  }
+
+  .rowLabel {
+    font-size: clamp(0.78rem, 3.5vw, 0.875rem);
+  }
+
+  .rowDescription {
+    font-size: clamp(0.68rem, 3vw, 0.75rem);
+  }
+
+  .soundBgName {
+    font-size: clamp(0.75rem, 3.4vw, 0.82rem);
+  }
+}

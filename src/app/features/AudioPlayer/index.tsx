@@ -18,7 +18,7 @@ import {
   clearPendingSeek,
 } from '../../../store/audioPlayerSlice';
 import { setSoundBgVolume, setMasterVolume } from '../../../store/casterInventorySlice';
-import { goToNextPage, goToPreviousPage, recordReaderActivity, setShowSearcher } from '../../../store/spellReaderSlice';
+import { goToNextPage, goToPreviousPage, recordReaderActivity, openSpellSearcher } from '../../../store/spellReaderSlice';
 import { PlaybackControls } from '../../components/Players/AudioPlayer/PlaybackControls/PlaybackControls';
 import { VolumeControls } from '../../components/Players/AudioPlayer/VolumeControls/VolumeControls';
 import { VoiceSelectorButton } from '../../components/Players/shared/VoiceSelectorButton/VoiceSelectorButton';
@@ -505,8 +505,9 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
     navigate(`/spell/${spellId}/reader`);
   };
 
+  // The page indicator opens the spell's own page search (as the reader's), not the app's.
   const handleSearcher = () => {
-    dispatch(setShowSearcher(true));
+    dispatch(openSpellSearcher());
   };
 
   const isPrevDisabled = isLoaded ? currentPage === 1 : currentTrackIndex === 0;
@@ -629,29 +630,37 @@ export const AudioPlayer: React.FC<PlayerProps> = ({ showVoiceSelectorModal, sho
           />
           <audio data-testid="audio-player-silent-anchor" ref={silentAudioRef} src={SILENT_AUDIO_SRC} loop />
           <section className={s.leftSection}>
-            <div
-              className={s.coverWrap}
-              onClick={spellId ? () => setShowDocDetail(true) : undefined}
-              style={spellId ? { cursor: 'pointer' } : undefined}
-            >
-              {coverUrl
-                ? <img data-testid="audio-player-cover" src={coverUrl} alt="" className={s.cover} />
-                : <div data-testid="audio-player-cover-placeholder" className={s.coverIcon}><FontAwesomeIcon icon={SPELL_ICON} /></div>
-              }
-              {isPlaying && (
-                <div className={s.coverWaveOverlay}>
-                  <Waveform active bars={4} height={14} color="white" />
+            {/* The spell (cover, title and page), its voice, unloading it: one row on a wide screen;
+                on a phone the voice moves down beside the playback controls (PlayerBar.module.css). */}
+            <div className={s.spellInfo}>
+              <div
+                className={s.coverWrap}
+                onClick={spellId ? () => setShowDocDetail(true) : undefined}
+                style={spellId ? { cursor: 'pointer' } : undefined}
+              >
+                {coverUrl
+                  ? <img data-testid="audio-player-cover" src={coverUrl} alt="" className={s.cover} />
+                  : <div data-testid="audio-player-cover-placeholder" className={s.coverIcon}><FontAwesomeIcon icon={SPELL_ICON} /></div>
+                }
+                {isPlaying && (
+                  <div className={s.coverWaveOverlay}>
+                    <Waveform active bars={4} height={14} color="white" />
+                  </div>
+                )}
+              </div>
+              {spellTitle && (
+                <div className={s.spellDetails}>
+                  <p data-testid="audio-player-title" title={spellTitle || ''} onClick={spellId ? handleTitle : undefined} style={spellId ? undefined : { cursor: 'default' }}>{spellTitle}</p>
+                  {spellId && isLoaded && <small onClick={handleSearcher}>{t.spell.page} {currentPage} {t.spell.of} {totalPages}</small>}
                 </div>
               )}
             </div>
-            {spellTitle && (
-              <div className={s.spellDetails}>
-                <p data-testid="audio-player-title" title={spellTitle || ''} onClick={spellId ? handleTitle : undefined} style={spellId ? undefined : { cursor: 'default' }}>{spellTitle}</p>
-                {spellId && isLoaded && <small onClick={handleSearcher}>{t.spell.page} {currentPage} {t.spell.of} {totalPages}</small>}
-              </div>
-            )}
-            <VoiceSelectorButton onClick={() => showVoiceSelectorModal(true)} credentialError={credentialError} />
-            <UnloadSpellButton onClick={() => unloadSpell()} title={t.player.unloadSpell} />
+            <div className={s.voiceSlot}>
+              <VoiceSelectorButton onClick={() => showVoiceSelectorModal(true)} credentialError={credentialError} />
+            </div>
+            <div className={s.unloadSlot}>
+              <UnloadSpellButton onClick={() => unloadSpell()} title={t.player.unloadSpell} />
+            </div>
           </section>
 
           <PlaybackControls

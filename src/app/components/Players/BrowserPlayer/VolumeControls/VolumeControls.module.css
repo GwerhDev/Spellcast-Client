@@ -7,8 +7,8 @@
 }
 
 .volumeIcon {
-  padding: 7px 8px;
-  font-size: 15px;
+  padding: var(--player-icon-padding, 7px 8px);
+  font-size: var(--player-icon-font, 15px);
   border: none;
   cursor: pointer;
   transition: color 0.2s ease;
@@ -22,9 +22,7 @@
 
 /* ── Master slider popup ── */
 .sliderPopup {
-  position: absolute;
-  bottom: calc(100% + 8px);
-  right: 0;
+  /* Placed by floating-ui (fixed, over the page: see VolumeControls). */
   width: 40px;
   height: 140px;
   background: var(--surface-sheen), var(--surface-bg);
@@ -35,7 +33,7 @@
   justify-content: center;
   padding: 12px 0;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), var(--surface-rim);
-  z-index: 100;
+  z-index: 1000;
   -webkit-backdrop-filter: var(--surface-blur);
   backdrop-filter: var(--surface-blur);
 }
@@ -100,15 +98,13 @@
 
 /* ── Mixer popup ── */
 .mixerPopup {
-  position: absolute;
-  bottom: calc(100% + 8px);
-  right: 0;
+  /* Placed by floating-ui (fixed, over the page: see VolumeControls). */
   background: var(--surface-sheen), var(--surface-bg);
   border: 1px solid var(--color-dark-300);
   border-radius: 10px;
   padding: 10px 14px 12px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), var(--surface-rim);
-  z-index: 100;
+  z-index: 1000;
   display: flex;
   flex-direction: column;
   align-items: center;

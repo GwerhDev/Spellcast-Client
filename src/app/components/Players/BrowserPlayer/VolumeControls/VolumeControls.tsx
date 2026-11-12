@@ -1,6 +1,7 @@
 import s from './VolumeControls.module.css';
 import React, { useState, useRef, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { FloatingPortal, autoUpdate, offset, shift, useFloating, useMergeRefs } from '@floating-ui/react';
 import { faVolumeUp, faVolumeMute, faMicrophone, faMusic } from '@fortawesome/free-solid-svg-icons';
 import { useLanguage } from '../../../../../i18n';
 
@@ -64,6 +65,21 @@ export const VolumeControls: React.FC<VolumeControlsProps> = ({
     }
   };
 
+  // The slider and the mixer are drawn over the page (a portal), anchored above the button: in
+  // the phone's menu they opened inside the menu's own box, which clips what it holds (it
+  // grows and shrinks under the finger), and only a sliver of them showed.
+  const popupOpen = (showVolumeSlider && !hasSoundBg) || (showMixer && hasSoundBg);
+  const { refs, floatingStyles } = useFloating({
+    open: popupOpen,
+    placement: 'top-end',
+    strategy: 'fixed',
+    middleware: [offset(8), shift({ padding: 8 })],
+    whileElementsMounted: autoUpdate,
+  });
+  const buttonRef = useMergeRefs([volumeButtonRef, refs.setReference]);
+  const sliderPopupRef = useMergeRefs([volumeSliderRef, refs.setFloating]);
+  const mixerPopupRef = useMergeRefs([mixerRef, refs.setFloating]);
+
   const masterPct = Math.round(masterVolume * 100);
   const voicePct = Math.round(volume * 100);
   const ambientPct = Math.round(soundBgVolume * 100);
@@ -74,16 +90,17 @@ export const VolumeControls: React.FC<VolumeControlsProps> = ({
         data-testid="volume-btn"
         className={s.volumeIcon}
         onClick={handleVolumeButtonClick}
-        ref={volumeButtonRef}
+        ref={buttonRef}
       >
         <FontAwesomeIcon icon={volume === 0 ? faVolumeMute : faVolumeUp} />
       </button>
 
       {showVolumeSlider && !hasSoundBg && (
+        <FloatingPortal>
         <div
           className={s.sliderPopup}
-          style={{ '--volume-value': `${volumePercentage}%` } as React.CSSProperties}
-          ref={volumeSliderRef}
+          style={{ ...floatingStyles, '--volume-value': `${volumePercentage}%` } as React.CSSProperties}
+          ref={sliderPopupRef}
         >
           <input
             type="range"
@@ -96,10 +113,12 @@ export const VolumeControls: React.FC<VolumeControlsProps> = ({
             className={s.verticalSlider}
           />
         </div>
+        </FloatingPortal>
       )}
 
       {showMixer && hasSoundBg && (
-        <div className={s.mixerPopup} ref={mixerRef}>
+        <FloatingPortal>
+        <div className={s.mixerPopup} ref={mixerPopupRef} style={floatingStyles}>
           <p className={s.mixerTitle}>{t.player.mixer}</p>
           <div className={s.mixerFaders}>
 
@@ -159,6 +178,7 @@ export const VolumeControls: React.FC<VolumeControlsProps> = ({
 
           </div>
         </div>
+        </FloatingPortal>
       )}
     </div>
   );

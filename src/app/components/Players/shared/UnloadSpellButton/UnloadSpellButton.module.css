@@ -3,8 +3,8 @@
    regardless of the order CSS Modules bundles them in. */
 button.unload {
   flex-shrink: 0;
-  width: 22px;
-  height: 22px;
+  width: var(--player-unload-size, 22px);
+  height: var(--player-unload-size, 22px);
   padding: 0;
   display: flex;
   align-items: center;

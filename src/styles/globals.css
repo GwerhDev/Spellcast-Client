@@ -249,6 +249,12 @@
   isolation: isolate;
 }
 
+/* The 3D covers' canvas (see CoverFrame3DRoot): over .dashboard-container, the page's area. */
+.cover-frame-3d-root {
+  position: absolute;
+  inset: 0;
+}
+
 .aside-container {
   display: flex;
 }
@@ -401,6 +407,76 @@
   /* The fullscreen reader: the menu (the player in it) comes back with the player. */
   body.fullscreen-reader.fullscreen-player-visible .nav-container {
     display: flex;
+  }
+}
+
+/* Narrow, a page of sections (every route with .dashboard-sections): the document scrolls, as
+   on any site -- not a box inside the window. Nested scrollers on a phone keep the browser's
+   bars from folding away, trap the swipe in whichever box is under the finger and bounce the
+   whole window when one reaches its end. The app's shell stays as it is: the header sticks to
+   the top, the menu stays fixed at the bottom (the page keeps room for it, see .app-viewer).
+   The reader, the editor (.editor-page: its toolbars stay put over the page it scrolls) and
+   the routes without sections keep their own scrollers (they need a fixed height for them). Anything stuck to the top of the page sticks under the header:
+   --page-sticky-top. */
+@media (max-width: 1024px) {
+  html:has(.dashboard-sections:not(.editor-page)) {
+    --page-sticky-top: var(--nhexa-desktop-header-height);
+  }
+
+  /* Never sideways: nothing on a page is meant to scroll that way (clip, not hidden: it doesn't
+     make a scroller of its own, so what sticks keeps sticking to the window). */
+  html:has(.dashboard-sections:not(.editor-page)),
+  html:has(.dashboard-sections:not(.editor-page)) body {
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+    overflow-x: clip;
+  }
+
+  /* A page that scrolls without showing its rail (the altar's, see .scroll-rail-hidden): the
+     document's rail, now that the document is what scrolls. */
+  html:has(.dashboard-sections.scroll-rail-hidden) {
+    scrollbar-width: none;
+  }
+
+  html:has(.dashboard-sections.scroll-rail-hidden)::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* As wide as the window's room, not 100vw: that counts the document's scroll rail too (a
+     window with a rail that takes room), and the page went that much past the window's edge. */
+  html:has(.dashboard-sections:not(.editor-page)) main {
+    width: 100%;
+  }
+
+  /* Flex items, each of them (body is a row, the root's wrapper in it, main in that): without
+     this, whatever on a page doesn't fit (a row of buttons) widened them, and the whole app
+     with them, past the window -- the page's own scroller used to stop that. */
+  html:has(.dashboard-sections:not(.editor-page)) :is(body > *, main, .app-window) {
+    min-width: 0;
+  }
+
+  html:has(.dashboard-sections:not(.editor-page)) :is(.dashboard-container, .app-viewer, .dashboard-sections) {
+    overflow: visible;
+  }
+
+  /* The window still rounds its corners under the header: clip (not a scroller of its own,
+     so what sticks keeps sticking to the window). */
+  html:has(.dashboard-sections:not(.editor-page)) .app-container {
+    overflow: clip;
+  }
+
+  html:has(.dashboard-sections:not(.editor-page)) .header-app {
+    position: sticky;
+    top: 0;
+    z-index: 98;
+    background: var(--nhexa-desktop-surface);
+  }
+
+  /* The 3D covers' canvas covers the screen, not the whole (now as tall as its content) page:
+     the books follow their cards as the page scrolls (see usePageFrames). */
+  html:has(.dashboard-sections:not(.editor-page)) .cover-frame-3d-root {
+    position: fixed;
   }
 }
 

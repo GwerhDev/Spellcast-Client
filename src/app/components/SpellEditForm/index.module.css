@@ -183,8 +183,38 @@
 }
 
 @media (max-width: 768px) {
+  /* The title gets its own row (back, title, version) and the actions wrap below it: side
+     by side, the actions left the title a few letters under the version selector. */
+  .pageInfoContainer {
+    flex-wrap: wrap;
+    gap: 0.25rem 0.5rem;
+    padding: 0.5rem 0.75rem;
+    min-height: 0;
+  }
+
+  .titleContainer {
+    flex: 1 1 calc(100% - 3rem);
+  }
+
+  .titleSizer::after,
+  .spellTitle {
+    font-size: clamp(1rem, 5vw, 1.4rem);
+  }
+
   .editorContainer {
     flex-direction: column;
+  }
+
+  /* Only the editor gives up height to fit the screen; the header and the details above it
+     keep theirs. */
+  .container > :not(.editorContainer) {
+    flex-shrink: 0;
+  }
+
+  /* As tall as the room under the toolbars, not as its content: the sheet scrolls inside the
+     editor and the zoom controls stay at the bottom of what's on screen. */
+  .editorWrapper {
+    min-height: 0;
   }
 
   .pagesContainer {

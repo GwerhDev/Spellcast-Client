@@ -8,6 +8,7 @@ import { pageFrame, type PageMargins } from '../../../../utils/spellPage';
 import { ZoomOverlay } from '../../Zoom/ZoomOverlay';
 import { PaperSheet } from '../../PaperSheet/PaperSheet';
 import { OriginalPdfSheet } from '../../OriginalPdfSheet';
+import { OriginalPdfEmpty } from '../../OriginalPdfEmpty';
 import { OriginalPdfPanel, type PdfPanelOptions } from '../../OriginalPdfPanel';
 import { PdfToolbar } from '../../OriginalPdfPanel/PdfToolbar';
 import { useOriginalPdf } from '../../../../hooks/useOriginalPdf';
@@ -185,7 +186,14 @@ export const SpellEditor: React.FC<SpellEditorProps> = ({
                     </div>
                     {flipMode && (
                       <div className={`${s.face} ${s.faceBack}`} aria-hidden={!showsOriginal || undefined}>
-                        <OriginalPdfSheet original={original} pageNumber={pageNumber} width={paperWidth} height={paperHeight} zoom={zoom} />
+                        {panel?.hasOriginal ? (
+                          <OriginalPdfSheet original={original} pageNumber={pageNumber} width={paperWidth} height={paperHeight} zoom={zoom} />
+                        ) : (
+                          // No PDF, no sheet: the offer to import one, on the editor's own ground.
+                          <div className={s.pdfNone} style={{ width: Math.round(paperWidth * zoom), height: Math.round(paperHeight * zoom) }}>
+                            {panel && <OriginalPdfEmpty busy={panel.busy} onImport={panel.onReplacePdf} />}
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>

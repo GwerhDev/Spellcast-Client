@@ -1,0 +1,24 @@
+.empty {
+  margin: auto;
+  max-width: 22rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.9rem;
+  text-align: center;
+  font-size: clamp(0.8rem, 3.4vw, 0.9rem);
+  line-height: 1.5;
+}
+
+.empty p {
+  margin: 0;
+}
+
+.icon {
+  font-size: 2rem;
+  opacity: 0.6;
+}
+
+button.action {
+  width: auto;
+}

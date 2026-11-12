@@ -28,7 +28,7 @@
 .panelHeader {
   --bar-bg: var(--component-background);
   position: sticky;
-  top: 0;
+  top: var(--page-sticky-top, 0px);
   z-index: 5;
   box-sizing: border-box;
   height: var(--sticky-bar-height);

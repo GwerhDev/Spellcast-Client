@@ -98,9 +98,9 @@ const PageBooks: React.FC = () => {
 export const CoverFrame3DRoot: React.FC = () => (
   <Canvas
     data-testid="cover-frame-3d-root"
+    // Its place (over its container, or the screen on a phone: see globals.css).
+    className="cover-frame-3d-root"
     style={{
-      position: 'absolute',
-      inset: 0,
       // Only draws: the cards under it take the pointer, as they do flat.
       pointerEvents: 'none',
       // Over the page's content, under its chrome (modals, menus, the player); the sidebar

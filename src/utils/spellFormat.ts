@@ -344,8 +344,10 @@ export const readWork = async (
  * browser/user's database, not part of the file. Returns the new spell's id so the caller
  * can navigate to it / invalidate the list. A protected one is opened with what `unlock`
  * gives; when nothing in it opens the file, it throws SpellLockedError (saying what would).
+ * `onOpened` is called as soon as the file is open (a protected one, unlocked), before the
+ * longer part -- reading its pages, PDF and audio and saving them.
  */
-export async function importSpellFromFile(file: File, userId: string, unlock: UnlockWith = {}): Promise<string> {
+export async function importSpellFromFile(file: File, userId: string, unlock: UnlockWith = {}, onOpened?: () => void): Promise<string> {
   let container: Container;
   try {
     container = await openContainer<SpellManifest>(new Uint8Array(await file.arrayBuffer()), unlock);
@@ -354,6 +356,7 @@ export async function importSpellFromFile(file: File, userId: string, unlock: Un
     if (error instanceof SpellContainerError || error instanceof SpellTamperedError) throw new SpellImportError(error.message);
     throw error;
   }
+  onOpened?.();
   const { manifest } = container;
   if (container.version !== SPELL_FORMAT_VERSION || manifest.formatVersion !== SPELL_FORMAT_VERSION) {
     throw new SpellImportError(`Unsupported .spell format version: ${manifest.formatVersion ?? container.version}.`);
