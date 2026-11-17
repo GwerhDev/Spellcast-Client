@@ -65,24 +65,17 @@ button.fullWidthBtn {
 }
 
 .addMoreBtn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  width: 100%;
-  padding: 0.6rem 1rem;
-  border-radius: var(--size-4);
-  background: transparent;
-  border: 1.5px dashed var(--color-dark-300);
-  color: var(--color-light-400);
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: border-color 0.2s, color 0.2s;
+  /* A hexagon button (Buttons/buttonBase), its border faint: adding is the quiet action here,
+     creating the main one. */
+  composes: base from '../../Buttons/buttonBase.module.css';
 }
 
-.addMoreBtn:hover {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
+button.addMoreBtn {
+  width: 100%;
+  max-width: none;
+  font-weight: 500;
+  color: var(--color-light-400);
+  --hex-edge: color-mix(in srgb, var(--line) 60%, transparent);
 }
 
 .processing {

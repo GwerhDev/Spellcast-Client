@@ -12,6 +12,7 @@ import { stop as stopAudio } from '../../../store/audioPlayerSlice';
 import { stop as stopBrowser } from '../../../store/browserPlayerSlice';
 import { saveVoicePreference } from '../../../db/preferences';
 import { useLanguage } from '../../../i18n';
+import { SegmentedTabs } from '../../components/Tabs/SegmentedTabs';
 
 function getBrowserVoiceDocs(): { label: string; url: string } {
   const ua = navigator.userAgent;
@@ -88,21 +89,16 @@ export const VoiceSelectorContent: React.FC<VoiceSelectorContentProps> = ({ onCl
 
   return (
     <>
-      <div className={s.tabContainer}>
-        <button
-          className={`${s.tabButton} ${s.left} ${activeTab === 'browser' ? s.activeTab : ''}`}
-          onClick={() => setActiveTab('browser')}
-        >
-          <FontAwesomeIcon icon={faDesktop} />
-          <span className={s.title}>{t.player.browserVoices}</span>
-        </button>
-        <button
-          className={`${s.tabButton} ${s.right} ${activeTab === 'ai' ? s.activeTab : ''}`}
-          onClick={() => setActiveTab('ai')}
-        >
-          <FontAwesomeIcon icon={faPlug} />
-          <span className={s.title}>{t.player.providerVoices}</span>
-        </button>
+      <div className={s.tabsRow}>
+        <SegmentedTabs
+          tabs={[
+            { id: 'browser', label: t.player.browserVoices, icon: faDesktop },
+            { id: 'ai', label: t.player.providerVoices, icon: faPlug },
+          ]}
+          active={activeTab}
+          onChange={id => setActiveTab(id as 'browser' | 'ai')}
+          compact
+        />
       </div>
 
       <div className={s.descriptionContainer}>

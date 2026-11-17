@@ -1,7 +1,8 @@
 .container {
   width: 100%;
   gap: .75rem;
-  min-height: 50vh;
+  flex: 1;
+  min-height: 0;
   display: flex;
   align-items: stretch;
   flex-direction: column;
@@ -35,7 +36,8 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  max-height: 50vh;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding-right: .25rem;
 }
@@ -95,10 +97,8 @@
   accent-color: var(--color-primary);
 }
 
-.buttonContainer {
-  width: 100%;
-  display: flex;
-  justify-content: flex-end;
-  margin-top: auto;
-  padding-top: .5rem;
+/* A hexagon button (Buttons/buttonBase), as wide as what it says. */
+button.saveButton {
+  width: auto;
+  min-width: 9rem;
 }

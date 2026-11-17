@@ -1,22 +1,108 @@
-.container {
+/* The bar: a hexagon (the app's hexagon buttons', see Buttons/buttonBase), a long one with the
+   desktop hexagon's rounded corners at its ends. Its border and face are drawn behind its tabs,
+   and the bar is masked to that shape, so its end tabs follow its tips. The tabs themselves stay
+   square; the open one is lit, and glows inside the bar. The bar's own glow is its frame's. */
+.frame {
+  --hex-glow: color-mix(in srgb, var(--color-primary) 28%, transparent);
   display: flex;
-  border-radius: 8px;
-  background: var(--surface-sheen), var(--surface-bg);
-  box-shadow: 0 1px 12px rgba(0, 0, 0, 0.212), var(--surface-rim);
-  -webkit-backdrop-filter: var(--surface-blur);
-  backdrop-filter: var(--surface-blur);
+  max-width: 100%;
+  /* Two shadows at rest too (the second with no alpha, in its color: not `transparent`, which is
+     black), so the hover's glow grows from these instead of from dark. */
+  filter:
+    drop-shadow(0 0 calc(var(--nhexa-desktop-glow-wide) / 2) var(--hex-glow))
+    drop-shadow(0 0 0 rgb(from var(--color-primary) r g b / 0));
+  transition: filter var(--nhexa-desktop-glow-duration) var(--nhexa-desktop-glow-ease);
 }
 
+/* Hovered (on a pointer that hovers: a tap has no "leave"), or a tab focused from the keyboard. */
+@media (hover: hover) and (pointer: fine) {
+  .frame:hover {
+    filter:
+      drop-shadow(0 0 var(--nhexa-desktop-glow-wide) var(--hex-glow))
+      drop-shadow(0 0 var(--nhexa-desktop-glow-tight) color-mix(in srgb, var(--color-primary) 40%, transparent));
+  }
+}
+
+.frame:focus-within {
+  filter:
+    drop-shadow(0 0 var(--nhexa-desktop-glow-wide) var(--hex-glow))
+    drop-shadow(0 0 var(--nhexa-desktop-glow-tight) color-mix(in srgb, var(--color-primary) 40%, transparent));
+}
+
+.container {
+  /* As wide as its frame: a full width wherever the bar was one (Caster's), its tabs' width
+     where it's centered (Grimoire's). */
+  flex: 1;
+  --hex-h: 3rem;
+  --hex-border: 1px;
+  --hex-cap: calc(var(--hex-h) * 0.3464);
+  position: relative;
+  isolation: isolate;
+  box-sizing: border-box;
+  min-width: 0;
+  height: var(--hex-h);
+  display: flex;
+  padding: var(--hex-border);
+  -webkit-mask:
+    var(--nhexa-hex-cap-left) left center / auto 100% no-repeat,
+    var(--nhexa-hex-cap-right) right center / auto 100% no-repeat,
+    linear-gradient(#000 0 0) center / calc(100% - 2 * var(--hex-cap) + 4px) 100% no-repeat;
+  mask:
+    var(--nhexa-hex-cap-left) left center / auto 100% no-repeat,
+    var(--nhexa-hex-cap-right) right center / auto 100% no-repeat,
+    linear-gradient(#000 0 0) center / calc(100% - 2 * var(--hex-cap) + 4px) 100% no-repeat;
+}
+
+/* Its border: the whole shape (the bar's mask). */
+.container::before,
+.container::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.container::before {
+  inset: 0;
+  background: color-mix(in srgb, var(--color-primary) 35%, var(--line));
+}
+
+/* Its face: the shape inside the border. */
+.container::after {
+  inset: var(--hex-border);
+  background: var(--surface-sheen), var(--surface-bg);
+  -webkit-backdrop-filter: var(--surface-blur);
+  backdrop-filter: var(--surface-blur);
+  -webkit-mask:
+    var(--nhexa-hex-cap-left) left center / auto 100% no-repeat,
+    var(--nhexa-hex-cap-right) right center / auto 100% no-repeat,
+    linear-gradient(#000 0 0) center / calc(100% - (var(--hex-h) - 2 * var(--hex-border)) * 2 * 0.3464 + 4px) 100% no-repeat;
+  mask:
+    var(--nhexa-hex-cap-left) left center / auto 100% no-repeat,
+    var(--nhexa-hex-cap-right) right center / auto 100% no-repeat,
+    linear-gradient(#000 0 0) center / calc(100% - (var(--hex-h) - 2 * var(--hex-border)) * 2 * 0.3464 + 4px) 100% no-repeat;
+}
+
+/* The tabs, inside the border: cut to the face's shape, so the border shows all around (with
+   arrows, it's the arrows at the ends, and the strip between them is square). */
 .buttonsContainer {
   width: 100%;
   min-width: 0;
   display: flex;
-  border-radius: 8px;
   background: transparent;
+  -webkit-mask:
+    var(--nhexa-hex-cap-left) left center / auto 100% no-repeat,
+    var(--nhexa-hex-cap-right) right center / auto 100% no-repeat,
+    linear-gradient(#000 0 0) center / calc(100% - (var(--hex-h) - 2 * var(--hex-border)) * 2 * 0.3464 + 4px) 100% no-repeat;
+  mask:
+    var(--nhexa-hex-cap-left) left center / auto 100% no-repeat,
+    var(--nhexa-hex-cap-right) right center / auto 100% no-repeat,
+    linear-gradient(#000 0 0) center / calc(100% - (var(--hex-h) - 2 * var(--hex-border)) * 2 * 0.3464 + 4px) 100% no-repeat;
 }
 
 .buttonsContainer.scrollable {
-  border-radius: 0;
+  -webkit-mask: none;
+  mask: none;
   overflow-x: auto;
   scroll-behavior: smooth;
   scrollbar-width: none;
@@ -32,24 +118,21 @@
   flex: 0 0 auto;
 }
 
-/* With arrows at its sides, the strip's ends aren't the bar's ends: the first and last tabs are
-   square too. */
-.buttonsContainer.scrollable .tabButton.left,
-.buttonsContainer.scrollable .tabButton.right {
-  border-radius: 0;
-}
-
 .arrowButton {
   padding: 0;
-  padding-inline: .5rem;
+  padding-inline: calc(var(--hex-cap) * 0.6) .5rem;
   display: flex;
   align-items: center;
   justify-content: center;
   border: none;
-  border-radius: 8px;
+  border-radius: 0;
   background: transparent;
   color: var(--color-light-300);
   cursor: pointer;
+}
+
+.arrowButton:last-child {
+  padding-inline: .5rem calc(var(--hex-cap) * 0.6);
 }
 
 .arrowButton:hover:not(:disabled) {
@@ -61,46 +144,58 @@
   cursor: default;
 }
 
+/* Each tab: square, the bar's height; the end ones keep their label clear of the bar's tips. */
 .tabButton {
   width: 100%;
   min-width: 150px;
+  height: 100%;
   gap: .5rem;
-  padding: 10px 20px;
+  padding: 0 20px;
   font-size: 1rem;
   font-weight: 900;
-  border-radius: 6px;
+  border-radius: 0;
   color: var(--color-light-300);
   border: none;
   display: flex;
   cursor: pointer;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s ease;
   background-color: transparent;
+  transition:
+    color var(--nhexa-desktop-glow-duration) var(--nhexa-desktop-glow-ease),
+    background-color var(--nhexa-desktop-glow-duration) var(--nhexa-desktop-glow-ease),
+    box-shadow var(--nhexa-desktop-glow-duration) var(--nhexa-desktop-glow-ease);
 }
 
-.tabButton:hover {
+.buttonsContainer:not(.scrollable) .tabButton.left {
+  padding-left: calc(20px + var(--hex-cap) / 2);
+}
+
+.buttonsContainer:not(.scrollable) .tabButton.right {
+  padding-right: calc(20px + var(--hex-cap) / 2);
+}
+
+/* Hovered: a tint of the bar's color, its label in it. */
+@media (hover: hover) and (pointer: fine) {
+  .tabButton:not(.active):hover {
+    color: var(--color-primary);
+    background-color: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  }
+}
+
+.tabButton:focus-visible {
+  outline: none;
   color: var(--color-primary);
+  background-color: color-mix(in srgb, var(--color-primary) 14%, transparent);
 }
 
-.tabButton.left {
-  border-top-right-radius: 0;
-  border-bottom-right-radius: 0;
-}
-
-.tabButton.middle {
-  border-radius: 0;
-}
-
-.tabButton.right {
-  border-top-left-radius: 0;
-  border-bottom-left-radius: 0;
-}
-
+/* The open one: filled, and glowing inside the bar. */
 .tabButton.active {
   background: var(--color-primary);
   color: var(--app-white);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow:
+    0 0 var(--nhexa-desktop-glow-wide) color-mix(in srgb, var(--color-primary) 55%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
 .tabButton:not(.active):hover span {
@@ -108,8 +203,13 @@
 }
 
 @media (max-width: 768px) {
+  .frame,
   .container {
     width: 100%;
+  }
+
+  .container {
+    --hex-h: 3.5rem;
   }
 
   .tabButton {
@@ -121,5 +221,12 @@
 
   .title {
     font-size: 9px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .frame,
+  .tabButton {
+    transition: none;
   }
 }

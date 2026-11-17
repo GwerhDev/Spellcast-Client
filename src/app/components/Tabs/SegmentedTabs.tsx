@@ -98,11 +98,13 @@ export const SegmentedTabs: React.FC<SegmentedTabsProps> = ({ tabs, active, onCh
   };
 
   return (
+    // The bar's glow: its shape's (the bar is masked to a hexagon, and a masked box cuts off its
+    // own shadow, so the glow is its frame's).
+    <div className={s.frame} style={compact ? { marginBottom: 0 } : undefined}>
     <div
       ref={containerRef}
       data-testid="segmented-tabs-container"
       className={s.container}
-      style={compact ? { marginBottom: 0 } : undefined}
     >
       {overflowing && (
         <button
@@ -147,6 +149,7 @@ export const SegmentedTabs: React.FC<SegmentedTabsProps> = ({ tabs, active, onCh
           <FontAwesomeIcon icon={faChevronRight} />
         </button>
       )}
+    </div>
     </div>
   );
 };

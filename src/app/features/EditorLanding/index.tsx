@@ -23,20 +23,24 @@ export const EditorLanding = () => {
       <div className={s.selectInner}>
         <SectionHeader icon={EDITOR_ICON} title={t.editor.tagline} subtitle={t.editor.subtitle} align="center" />
         <div className={s.cards}>
-          <div data-testid="editor-create-card" className={s.card} onClick={handleCreateNew}>
-            <FontAwesomeIcon icon={SPELL_ICON} className={s.cardIcon} />
-            <span>
-              <h3 className={s.cardTitle}>{t.editor.create}</h3>
-              <small className={s.description}>{t.editor.createDesc}</small>
+          <button type="button" data-testid="editor-create-card" className={s.card} onClick={handleCreateNew}>
+            <span className={s.face}>
+              <FontAwesomeIcon icon={SPELL_ICON} className={s.cardIcon} />
+              <span>
+                <h3 className={s.cardTitle}>{t.editor.create}</h3>
+                <small className={s.description}>{t.editor.createDesc}</small>
+              </span>
             </span>
-          </div>
-          <div data-testid="editor-edit-card" className={s.card} onClick={() => navigate('/editor/select')}>
-            <FontAwesomeIcon icon={SPELL_EDIT_ICON} className={s.cardIcon} />
-            <span>
-              <h3 className={s.cardTitle}>{t.nav.select}</h3>
-              <small className={s.description}>{t.editor.editDesc}</small>
+          </button>
+          <button type="button" data-testid="editor-edit-card" className={s.card} onClick={() => navigate('/editor/select')}>
+            <span className={s.face}>
+              <FontAwesomeIcon icon={SPELL_EDIT_ICON} className={s.cardIcon} />
+              <span>
+                <h3 className={s.cardTitle}>{t.nav.select}</h3>
+                <small className={s.description}>{t.editor.editDesc}</small>
+              </span>
             </span>
-          </div>
+          </button>
         </div>
       </div>
     </div>

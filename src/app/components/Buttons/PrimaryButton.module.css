@@ -2,44 +2,26 @@
   composes: base from './buttonBase.module.css';
 }
 
-/* The main action: the same chip, with the primary color on its border and text (the
-   surface stays the chip's). `button.` raises these above the composed .base, whose equal
-   specificity would otherwise leave the winner to CSS Modules' bundle order. */
+/* The main action: the same hexagon button, its border and text in the primary color at rest
+   too. `button.` raises these above the composed .base, whose equal specificity would
+   otherwise leave the winner to CSS Modules' bundle order. Each variant only sets its colors
+   (see buttonBase): --hex-color for its hover, focus, tint and glow; --hex-edge its border. */
 button.container {
   color: var(--color-primary);
-  border-color: color-mix(in srgb, var(--color-primary) 60%, transparent);
+  --hex-edge: color-mix(in srgb, var(--color-primary) 60%, transparent);
 }
 
-button.container:hover:not(:disabled),
-button.container:focus-visible {
-  color: var(--color-primary);
-  border-color: var(--color-primary);
-  background: color-mix(in srgb, var(--color-primary) 12%, var(--component-background));
-}
-
-/* Variants: danger is the plain neutral chip turning red on hover (destructive actions
+/* Variants: danger is the plain neutral button turning red on hover (destructive actions
    shouldn't read as the main one); accent is the same idea in bronze. Chained with
    button.container so they outrank its own rules. */
 button.container.danger {
   color: var(--color-light-300);
-  border-color: var(--line);
-}
-
-button.container.danger:hover:not(:disabled),
-button.container.danger:focus-visible {
-  color: var(--color-danger);
-  background: color-mix(in srgb, var(--component-background) 70%, transparent);
-  border-color: color-mix(in srgb, var(--color-danger) 55%, transparent);
+  --hex-color: var(--color-danger);
+  --hex-edge: var(--line);
 }
 
 button.container.accent {
   color: var(--color-accent-bronze-hover);
-  border-color: color-mix(in srgb, var(--color-accent-bronze) 60%, transparent);
-}
-
-button.container.accent:hover:not(:disabled),
-button.container.accent:focus-visible {
-  color: var(--color-accent-bronze-hover);
-  border-color: var(--color-accent-bronze);
-  background: color-mix(in srgb, var(--color-accent-bronze) 12%, var(--component-background));
+  --hex-color: var(--color-accent-bronze);
+  --hex-edge: color-mix(in srgb, var(--color-accent-bronze) 60%, transparent);
 }

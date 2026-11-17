@@ -1,57 +1,6 @@
-.tabContainer {
-  display: flex;
-  border-radius: 8px;
-  margin-bottom: 1.5rem;
-  background: var(--component-background-transparency);
-  backdrop-filter: blur(10px);
-  box-shadow: 0 1px 12px rgba(0, 0, 0, 0.212);
-}
-
-.tabButton {
-    width: 100%;
-    gap: .5rem;
-    padding: 10px 20px;
-    font-size: 1rem;
-    font-weight: 900;
-    border-radius: 6px;
-    border: none;
-    display: flex;
-    cursor: pointer;
-    justify-content: center;
-    align-items: center;
-    transition: all 0.3s ease;
-    color: var(--color-light-300);
-    background: var(--surface-sheen), var(--surface-bg);
-  -webkit-backdrop-filter: var(--surface-blur);
-  backdrop-filter: var(--surface-blur);
-  box-shadow: var(--surface-rim);
-}
-
-.tabButton:hover {
-    color: var(--color-primary);
-    background: var(--surface-sheen), var(--surface-bg);
-}
-
-.tabButton.left {
-    border-top-right-radius: 0;
-    border-bottom-right-radius: 0;
-}
-
-.tabButton.right {
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 0;
-}
-
-.tabButton.activeTab {
-    background: var(--color-primary);
-    color: var(--app-white);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
 
 .descriptionContainer {
     padding: 0 1rem;
-    margin-top: -1rem;
-    margin-bottom: 1rem;
 }
 
 .description {
@@ -67,10 +16,6 @@
 
 .description a:hover {
     text-decoration: underline;
-}
-
-.tabButton:not(.activeTab):hover {
-    color: var(--color-primary);
 }
 
 .voiceList {
@@ -142,7 +87,7 @@
 }
 
 @media (max-width: 768px) {
-    .tabContainer {
+    .tabsRow {
         margin-bottom: 1rem;
     }
 
@@ -158,16 +103,5 @@
         gap: 0.75rem;
         padding: 0.65rem 0.85rem;
         font-size: clamp(0.8rem, 3.6vw, 0.95rem);
-    }
-
-    .tabButton {
-        width: 100%;
-        min-width: 90px;
-        align-items: center;
-        flex-direction: column;
-    }
-
-    .title {
-        font-size: 9px;
     }
 }

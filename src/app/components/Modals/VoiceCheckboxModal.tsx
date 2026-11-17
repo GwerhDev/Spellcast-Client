@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import s from './VoiceCheckboxModal.module.css';
-import { IconButton } from '../Buttons/IconButton';
+import { PrimaryButton } from '../Buttons/PrimaryButton';
 import { faSave } from '@fortawesome/free-solid-svg-icons';
 import { Voice } from 'src/interfaces';
 import { Spinner } from '../Spinner';
@@ -84,7 +84,16 @@ export const VoiceCheckboxModal: React.FC<VoiceCheckboxModalProps> = ({
   }
 
   return (
-    <CustomModal title={t.player.selectVoices} show={show} onClose={onClose}>
+    <CustomModal
+      title={t.player.selectVoices}
+      show={show}
+      onClose={onClose}
+      footer={isLoading ? undefined : (
+        <PrimaryButton className={s.saveButton} icon={faSave} onClick={handleSave} disabled={isSaving}>
+          {isSaving ? t.common.saving : t.common.save}
+        </PrimaryButton>
+      )}
+    >
       <div className={s.container}>
         {isLoading ? (
           <Spinner isLoading={isLoading} />
@@ -126,11 +135,6 @@ export const VoiceCheckboxModal: React.FC<VoiceCheckboxModalProps> = ({
                 </li>
               ))}
             </ul>
-            <div className={s.buttonContainer}>
-              <IconButton variant="primary" icon={faSave} onClick={handleSave} disabled={isSaving}>
-                {isSaving ? t.common.saving : t.common.save}
-              </IconButton>
-            </div>
           </>
         )}
       </div>

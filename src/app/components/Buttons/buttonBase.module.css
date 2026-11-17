@@ -1,35 +1,169 @@
 /* Shared base for PrimaryButton/SecondaryButton/TertiaryButton/ActionButton: every text
-   button is the same chip (translucent surface, hairline border, pill shape, accent on
-   hover) -- the look of Start's Read panel corner buttons. Variants only change the hover
-   tone (danger, accent). IconButton is intentionally excluded: it's auto-sized
-   (icon-only), not full-width like these four, so it doesn't share this shape. */
+   button is Nhexa's hexagon button (NhexaWeb-Client's .hex-button): a long hexagon, the desktop
+   hexagon's rounded corners at each end (kept in proportion however wide it is), its border
+   a hexagon behind its face. Its face is the chip's surface (it follows the theme). Hovered or
+   focused, its border and a tint take its color (--hex-color), a shine sweeps it and it glows in
+   that color; pressed, it shrinks and brightens. The button itself isn't masked: its glow (drop
+   shadows of what it draws) isn't cut off. Variants only set its colors. IconButton is
+   intentionally excluded: it's auto-sized (icon-only). */
 .base {
+  --hex-h: 2.4rem;
+  --hex-border: 1px;
+  --hex-cap: calc(var(--hex-h) * 0.3464);
+  --hex-color: var(--color-primary);
+  --hex-edge: var(--line);
+  --hex-face: color-mix(in srgb, var(--component-background) 70%, transparent);
+  --hex-tint: 0%;
+  position: relative;
+  isolation: isolate;
+  box-sizing: border-box;
   width: 100%;
   max-width: 500px;
+  height: var(--hex-h);
+  min-width: calc(var(--hex-h) * 2 * 0.3464);
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.55rem;
-  padding: 0.55rem 1.1rem;
+  padding: 0 calc(var(--hex-cap) + 0.8rem);
   text-wrap: nowrap;
-  border-radius: 999px;
+  border: none;
+  border-radius: 0;
+  background: transparent;
   font-size: 0.88rem;
   font-weight: 600;
   color: var(--color-light-300);
-  background: color-mix(in srgb, var(--component-background) 70%, transparent);
-  border: 1px solid var(--line);
   cursor: pointer;
-  transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+  /* At rest: no glow (the same filters, nothing in them, so the glow can grow out of it): its
+     own color with no alpha, not `transparent`, which is black -- the glow would go through
+     dark on its way to its color. */
+  filter: drop-shadow(0 0 0 rgb(from var(--hex-color) r g b / 0)) drop-shadow(0 0 0 rgb(from var(--hex-color) r g b / 0)) brightness(1);
+  transition:
+    color var(--nhexa-desktop-glow-duration) var(--nhexa-desktop-glow-ease),
+    filter var(--nhexa-desktop-glow-duration) var(--nhexa-desktop-glow-ease),
+    transform var(--nhexa-desktop-press-duration) var(--nhexa-desktop-glow-ease);
 }
 
-.base:hover:not(:disabled),
+/* Its border (the whole shape) and face (the shape inside it). The straight run between the ends
+   overlaps them by 2px a side: at a width that doesn't fall on a whole pixel, a 1px overlap left
+   a hairline between run and tip, the border behind showing through it. */
+.base::before,
+.base::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.base::before {
+  inset: 0;
+  background: var(--hex-edge);
+  -webkit-mask:
+    var(--nhexa-hex-cap-left) left center / auto 100% no-repeat,
+    var(--nhexa-hex-cap-right) right center / auto 100% no-repeat,
+    linear-gradient(#000 0 0) center / calc(100% - 2 * var(--hex-cap) + 4px) 100% no-repeat;
+  mask:
+    var(--nhexa-hex-cap-left) left center / auto 100% no-repeat,
+    var(--nhexa-hex-cap-right) right center / auto 100% no-repeat,
+    linear-gradient(#000 0 0) center / calc(100% - 2 * var(--hex-cap) + 4px) 100% no-repeat;
+  transition: background var(--nhexa-desktop-glow-duration) var(--nhexa-desktop-glow-ease);
+}
+
+.base::after {
+  inset: var(--hex-border);
+  /* A shine (off to the right until it's hovered), the tint of its color, a faint sheen, its face. */
+  background:
+    linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, 0.16) 50%, transparent 65%) 200% center / 300% 100% no-repeat,
+    linear-gradient(color-mix(in srgb, var(--hex-color) var(--hex-tint), transparent), color-mix(in srgb, var(--hex-color) var(--hex-tint), transparent)),
+    linear-gradient(160deg, rgba(255, 255, 255, 0.06), transparent 45%),
+    var(--hex-face);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  -webkit-mask:
+    var(--nhexa-hex-cap-left) left center / auto 100% no-repeat,
+    var(--nhexa-hex-cap-right) right center / auto 100% no-repeat,
+    linear-gradient(#000 0 0) center / calc(100% - (var(--hex-h) - 2 * var(--hex-border)) * 2 * 0.3464 + 4px) 100% no-repeat;
+  mask:
+    var(--nhexa-hex-cap-left) left center / auto 100% no-repeat,
+    var(--nhexa-hex-cap-right) right center / auto 100% no-repeat,
+    linear-gradient(#000 0 0) center / calc(100% - (var(--hex-h) - 2 * var(--hex-border)) * 2 * 0.3464 + 4px) 100% no-repeat;
+}
+
+/* Hovered (on a pointer that hovers: a tap has no "leave"), or focused from the keyboard. */
+@media (hover: hover) and (pointer: fine) {
+  .base:hover:not(:disabled) {
+    --hex-tint: 12%;
+    --hex-edge: var(--hex-color);
+    color: var(--hex-color);
+    filter:
+      drop-shadow(0 0 var(--nhexa-desktop-glow-wide) color-mix(in srgb, var(--hex-color) 30%, transparent))
+      drop-shadow(0 0 var(--nhexa-desktop-glow-tight) color-mix(in srgb, var(--hex-color) 60%, transparent))
+      brightness(1);
+  }
+
+  .base:hover:not(:disabled)::after {
+    animation: hexShine 0.5s ease-out forwards;
+  }
+}
+
 .base:focus-visible {
-  color: var(--color-primary);
-  border-color: color-mix(in srgb, var(--color-primary) 55%, transparent);
+  --hex-tint: 12%;
+  --hex-edge: var(--hex-color);
+  color: var(--hex-color);
   outline: none;
+  filter:
+    drop-shadow(0 0 var(--nhexa-desktop-glow-wide) color-mix(in srgb, var(--hex-color) 30%, transparent))
+    drop-shadow(0 0 var(--nhexa-desktop-glow-tight) color-mix(in srgb, var(--hex-color) 60%, transparent))
+    brightness(1);
+}
+
+/* Pressed: briefly a little smaller, and brighter. */
+.base:active:not(:disabled) {
+  transform: scale(0.96);
+  filter:
+    drop-shadow(0 0 var(--nhexa-desktop-glow-wide) color-mix(in srgb, var(--hex-color) 60%, transparent))
+    drop-shadow(0 0 var(--nhexa-desktop-glow-tight) color-mix(in srgb, var(--hex-color) 60%, transparent))
+    brightness(1.12);
 }
 
 .base:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* A small one, as wide as what it says (a toolbar's: Grimoire's Add / Select / Download). */
+.compact {
+  --hex-h: 2rem;
+  width: auto;
+  max-width: none;
+  gap: 0.4rem;
+  padding: 0 calc(var(--hex-cap) + 0.6rem);
+  font-size: 0.78rem;
+}
+
+/* What it opens is open now (a panel, a selection): its border, label and a tint in its color. */
+.current {
+  --hex-tint: 12%;
+  --hex-edge: var(--hex-color);
+  color: var(--hex-color);
+}
+
+@keyframes hexShine {
+  from { background-position: 200% center, 0 0, 0 0, 0 0; }
+  to { background-position: -100% center, 0 0, 0 0, 0 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .base {
+    transition: none;
+  }
+
+  .base:active:not(:disabled) {
+    transform: none;
+  }
+
+  .base:hover::after {
+    animation: none;
+  }
 }

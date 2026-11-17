@@ -9,6 +9,9 @@ interface ModalProps {
   onClose: () => void;
   title: string;
   children: React.ReactNode;
+  // The modal's actions (its Save, Cancel...): a bar at its foot that stays in view while the
+  // body above it scrolls. With one, the body is as tall as the modal.
+  footer?: React.ReactNode;
   compact?: boolean;
   // Opt-in entrance/exit: 'enter' fades in as it opens, 'leave' fades back out (the
   // owner closes it once that's done, e.g. after a cover flies back to its card).
@@ -27,7 +30,7 @@ const handleEscape = (e: KeyboardEvent) => {
   openModals[openModals.length - 1].close();
 };
 
-export const CustomModal: React.FC<ModalProps> = ({ show, onClose, title, children, compact, motion }) => {
+export const CustomModal: React.FC<ModalProps> = ({ show, onClose, title, children, footer, compact, motion }) => {
   const onCloseRef = useRef(onClose);
   useEffect(() => { onCloseRef.current = onClose; });
   useEffect(() => {
@@ -51,12 +54,17 @@ export const CustomModal: React.FC<ModalProps> = ({ show, onClose, title, childr
   return createPortal(
     <div className={`${s.overlay} ${motion === 'enter' ? s.overlayEnter : motion === 'leave' ? s.overlayLeave : ''}`} onClick={onClose}>
       <div role="dialog" aria-modal="true" aria-label={title || undefined} className={`${s.container} ${compact ? s.compact : ''} ${motion === 'enter' ? s.enter : motion === 'leave' ? s.leave : ''}`}>
-        <div className={s.modalContent} onClick={(e) => e.stopPropagation()}>
+        <div className={`${s.modalContent} ${footer ? s.withFooter : ''}`} onClick={(e) => e.stopPropagation()}>
           <span className={s.closeButtonContainer}>
             <IconButton data-testid="custom-modal-close" className={s.closeButton} icon={faXmark} onClick={onClose} />
           </span>
           <h3>{title}</h3>
-          {children}
+          {footer ? (
+            <>
+              <div className={s.body}>{children}</div>
+              <div className={s.footer}>{footer}</div>
+            </>
+          ) : children}
         </div>
       </div>
     </div>,

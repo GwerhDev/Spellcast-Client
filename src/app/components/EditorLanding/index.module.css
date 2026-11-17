@@ -25,37 +25,196 @@
   margin: 0;
 }
 
+/* Its two choices as the NHEXA desktop's apps: hexagons, pointy side up. In a row on a wide
+   screen; on a phone a honeycomb zigzag (the first to the left, the second to the right and a
+   quarter of a hexagon lower, fitting into it). */
 .cards {
   display: flex;
-  gap: 1.5rem;
-  flex-wrap: wrap;
+  gap: 6px;
   justify-content: center;
   margin-top: 0.5rem;
+  padding: 1.5rem 1rem 2rem;
 }
 
+/* Each is a hexagon, its corners slightly rounded: a mask (--nhexa-desktop-hex-pointy) cuts its
+   face, and its border, a hexagon behind the face. The button itself isn't masked: its glow
+   (drop shadows of what it draws, so shaped as the hexagon) isn't cut off. */
 .card {
-  width: 180px;
-  height: 180px;
+  --hex-w: 200px;
+  --hex-color: var(--color-primary);
   flex-shrink: 0;
+  width: var(--hex-w);
+  height: calc(var(--hex-w) * 1.1547);
+  position: relative;
+  padding: 1.5px;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  outline: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  /* At rest: no glow (the same filters, nothing in them, so the glow can grow out of it). */
+  filter: drop-shadow(0 0 0 rgb(from var(--hex-color) r g b / 0)) drop-shadow(0 0 0 rgb(from var(--hex-color) r g b / 0)) brightness(1);
+  transition:
+    filter var(--nhexa-desktop-glow-duration) var(--nhexa-desktop-glow-ease),
+    transform var(--nhexa-desktop-glow-duration) var(--nhexa-desktop-glow-ease);
+}
+
+/* Its border: the hexagon, behind its face. */
+.card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--hex-color) 35%, var(--line));
+  -webkit-mask: var(--nhexa-desktop-hex-pointy) center / 100% 100% no-repeat;
+  mask: var(--nhexa-desktop-hex-pointy) center / 100% 100% no-repeat;
+  transition: background-color var(--nhexa-desktop-glow-duration) var(--nhexa-desktop-glow-ease);
+}
+
+.face {
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1rem;
-  border-radius: 12px;
-  border: 1px solid var(--color-dark-300);
+  gap: 0.9rem;
+  padding: 0 18%;
+  box-sizing: border-box;
+  /* A faint sheen across its face. */
   background: var(--surface-sheen), var(--surface-bg);
-  cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
-  padding: 1rem;
   -webkit-backdrop-filter: var(--surface-blur);
   backdrop-filter: var(--surface-blur);
-  box-shadow: var(--surface-rim);
+  -webkit-mask: var(--nhexa-desktop-hex-pointy) center / 100% 100% no-repeat;
+  mask: var(--nhexa-desktop-hex-pointy) center / 100% 100% no-repeat;
 }
 
-.card:hover {
-  border-color: var(--color-primary);
-  background: var(--color-dark-300);
+/* Its tint (none at rest) and the shine that sweeps it. */
+.face::before,
+.face::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.face::before {
+  background: var(--hex-color);
+  transition: opacity var(--nhexa-desktop-glow-duration) var(--nhexa-desktop-glow-ease);
+}
+
+.face::after {
+  background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, 0.18) 50%, transparent 65%);
+  background-size: 300% 100%;
+  background-position: 200% center;
+}
+
+/* Hovered (on a pointer that hovers: a tap has no "leave"), or focused from the keyboard: it
+   lifts, its border takes its color and its glow rises. */
+@media (hover: hover) and (pointer: fine) {
+  .card:hover {
+    transform: translateY(-4px);
+    filter:
+      drop-shadow(0 0 var(--nhexa-desktop-glow-wide) color-mix(in srgb, var(--hex-color) 30%, transparent))
+      drop-shadow(0 0 var(--nhexa-desktop-glow-tight) color-mix(in srgb, var(--hex-color) 60%, transparent))
+      brightness(1);
+  }
+
+  .card:hover::before {
+    background: var(--hex-color);
+  }
+
+  .card:hover .face::before {
+    opacity: 0.12;
+  }
+
+  .card:hover .face::after {
+    opacity: 1;
+    animation: cardShine 0.5s ease-out forwards;
+  }
+}
+
+.card:focus-visible {
+  transform: translateY(-4px);
+  filter:
+    drop-shadow(0 0 var(--nhexa-desktop-glow-wide) color-mix(in srgb, var(--hex-color) 30%, transparent))
+    drop-shadow(0 0 var(--nhexa-desktop-glow-tight) color-mix(in srgb, var(--hex-color) 60%, transparent))
+    brightness(1);
+}
+
+.card:focus-visible::before {
+  background: var(--hex-color);
+}
+
+.card:focus-visible .face::before {
+  opacity: 0.12;
+}
+
+/* Pressed: briefly a little smaller, and brighter. */
+.card:active {
+  transform: translateY(-2px) scale(0.96);
+  filter:
+    drop-shadow(0 0 var(--nhexa-desktop-glow-wide) color-mix(in srgb, var(--hex-color) 60%, transparent))
+    drop-shadow(0 0 var(--nhexa-desktop-glow-tight) color-mix(in srgb, var(--hex-color) 60%, transparent))
+    brightness(1.12);
+  transition-duration: var(--nhexa-desktop-press-duration);
+}
+
+@keyframes cardShine {
+  from { background-position: 200% center; }
+  to { background-position: -100% center; }
+}
+
+/* A phone: the honeycomb zigzag. Neighbors in a honeycomb are half a hexagon (and the gap)
+   apart sideways, each a quarter of one off center; the second a quarter of a hexagon's height
+   into the first's row. */
+@media (max-width: 600px) {
+  .cards {
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+
+  .card {
+    --hex-w: 150px;
+  }
+
+  .card:first-child {
+    translate: calc(var(--hex-w) / -4 - 3px) 0;
+  }
+
+  .card:last-child {
+    translate: calc(var(--hex-w) / 4 + 3px) 0;
+    margin-top: calc(var(--hex-w) * 1.1547 / -4 + 6px);
+  }
+
+  .face {
+    gap: 0.6rem;
+    padding: 0 14%;
+  }
+}
+
+/* Without motion: the states change at once, nothing moves or scales, no shine. */
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .card::before,
+  .face::before {
+    transition: none;
+  }
+
+  .card:hover,
+  .card:focus-visible,
+  .card:active {
+    transform: none;
+  }
+
+  .card:hover .face::after {
+    animation: none;
+  }
 }
 
 .cardIcon {

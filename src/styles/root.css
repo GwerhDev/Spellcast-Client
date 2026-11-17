@@ -149,6 +149,10 @@
   --nhexa-desktop-glow-ease: cubic-bezier(0.22, 1, 0.36, 1);
   --nhexa-desktop-press-duration: 0.12s;
   --nhexa-desktop-focus-ring: 3px;
+  /* A hexagon button's ends (NhexaWeb-Client's hex buttons): the desktop hexagon's rounded
+     corners, tips half as deep; each as wide as 0.3464 of its height (see buttonBase). */
+  --nhexa-hex-cap-left: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 86.6'%3E%3Cpolygon points='6,43.3 16,5.2 300,5.2 300,81.41 16,81.41' fill='black' stroke='black' stroke-width='10.39' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --nhexa-hex-cap-right: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 86.6'%3E%3Cpolygon points='24,43.3 14,5.2 -270,5.2 -270,81.41 14,81.41' fill='black' stroke='black' stroke-width='10.39' stroke-linejoin='round'/%3E%3C/svg%3E");
   /* The header's icons (search, notifications, apps...): one gray, one size, one gap, in
      every app's header. */
   --nhexa-desktop-icon: #adadad;

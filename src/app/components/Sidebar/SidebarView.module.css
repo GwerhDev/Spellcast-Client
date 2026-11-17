@@ -246,6 +246,9 @@
 }
 
 .navItem {
+  /* Its height as it was (fixed: the active one's tip is as wide as a share of it). */
+  --tip-h: 25px;
+  height: var(--tip-h);
   font-size: 0.95rem;
 }
 
@@ -254,6 +257,8 @@
 }
 
 .subItem {
+  --tip-h: 22px;
+  height: var(--tip-h);
   font-size: 0.8rem;
 }
 
@@ -262,9 +267,26 @@
 }
 
 .activeLink {
-  background-color: color-mix(in srgb, var(--color-primary) 16%, transparent);
   color: var(--color-primary);
   position: relative;
+  isolation: isolate;
+}
+
+/* Its tint: rounded at its left, its right end the NHEXA hexagon's rounded tip (as Accounts' and
+   the site's tabs). */
+.activeLink::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: var(--size-1) 0 0 var(--size-1);
+  background: color-mix(in srgb, var(--color-primary) 16%, transparent);
+  -webkit-mask:
+    var(--nhexa-hex-cap-right) right center / auto 100% no-repeat,
+    linear-gradient(#000 0 0) left center / calc(100% - var(--tip-h) * 0.3464 + 2px) 100% no-repeat;
+  mask:
+    var(--nhexa-hex-cap-right) right center / auto 100% no-repeat,
+    linear-gradient(#000 0 0) left center / calc(100% - var(--tip-h) * 0.3464 + 2px) 100% no-repeat;
 }
 
 .activeLink::before {
