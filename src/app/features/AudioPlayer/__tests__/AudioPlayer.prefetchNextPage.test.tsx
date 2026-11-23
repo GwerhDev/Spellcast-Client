@@ -151,4 +151,39 @@ describe('AudioPlayer prefetchNextPage', () => {
     await act(async () => { await Promise.resolve(); await Promise.resolve(); await Promise.resolve(); });
     expect(textToSpeechServiceMock).toHaveBeenCalledTimes(1);
   });
+
+  it("disables play only while the current page's audio is fetched, not while the next page is prefetched", async () => {
+    getCachedAudioMock.mockResolvedValue(null);
+    // Page 1's synthesis resolves when the test says; page 2's (the prefetch) never does.
+    let resolvePage1: ((v: unknown) => void) | null = null;
+    textToSpeechServiceMock
+      .mockImplementationOnce(() => new Promise((resolve) => { resolvePage1 = resolve; }))
+      .mockImplementationOnce(() => new Promise(() => {}));
+
+    renderWithProviders(
+      <AudioPlayer showVoiceSelectorModal={vi.fn()} showPlayerConfigModal={vi.fn()} />,
+      { preloadedState: baseState }
+    );
+    await act(async () => {
+      resolveGetSpellById!({ cover: new Blob(['a']) });
+      await Promise.resolve(); await Promise.resolve(); await Promise.resolve();
+    });
+
+    // The current page is being fetched: nothing to play yet.
+    await waitFor(() => expect(textToSpeechServiceMock).toHaveBeenCalledTimes(1));
+    expect(screen.getByTestId('play-button')).toBeDisabled();
+
+    await act(async () => {
+      resolvePage1!({ blob: new Blob(['audio']), timeline: [{ start: 0, end: 100 }] });
+      await Promise.resolve(); await Promise.resolve(); await Promise.resolve();
+    });
+    await act(async () => {
+      resolveGetSpellById!({ pagesContent: JSON.stringify([{ type: 'doc' }, { type: 'doc' }]) });
+      await Promise.resolve(); await Promise.resolve(); await Promise.resolve();
+    });
+
+    // The next page's prefetch is still in flight, and play is enabled all the same.
+    await waitFor(() => expect(textToSpeechServiceMock).toHaveBeenCalledTimes(2));
+    expect(screen.getByTestId('play-button')).toBeEnabled();
+  });
 });

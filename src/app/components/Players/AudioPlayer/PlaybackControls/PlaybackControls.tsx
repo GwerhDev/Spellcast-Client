@@ -82,7 +82,9 @@ export const PlaybackControls: React.FC<PlaybackControlsProps> = ({
           disabled={disabled || isPrevDisabled}
           className={s.controlButton}
         />
-        <PlayButton isPlaying={isPlaying} onClick={togglePlayPause} disabled={disabled} />
+        {/* While the current page's audio is still being fetched there's nothing to play yet
+            (the next page's prefetch doesn't count: it never sets isFetching). */}
+        <PlayButton isPlaying={isPlaying} onClick={togglePlayPause} disabled={disabled || !!isFetching} />
         <IconButton
           data-testid="playback-next-btn"
           icon={faStepForward}

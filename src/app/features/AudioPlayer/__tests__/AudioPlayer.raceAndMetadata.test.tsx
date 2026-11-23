@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { screen, act, fireEvent, waitFor } from '@testing-library/react';
+import { screen, act, waitFor } from '@testing-library/react';
 import { renderWithProviders } from '../../../../test/renderWithProviders';
 import { AudioPlayer } from '../index';
+import { requestTogglePlay } from '../../../../store/audioPlayerSlice';
 import { goToNextPage, setPageText, setSentences } from '../../../../store/spellReaderSlice';
 
 vi.mock('../../../../db', () => ({
@@ -122,12 +123,13 @@ describe('AudioPlayer pause-during-fetch race (TCORE-81)', () => {
     // calls fetchAndPlay, which is now sitting on our deferred synthesis call.
     await waitFor(() => expect(textToSpeechServiceMock).toHaveBeenCalledTimes(1));
 
-    // User pauses WHILE synthesis is still in flight. isPlaying in Redux is
-    // already false at this point (fetchAndPlay itself never set it true
-    // yet), so the click must register as a real pause via intent tracking,
-    // not get silently swallowed.
-    const button = screen.getByTestId('play-button');
-    await act(async () => { fireEvent.click(button); });
+    // User pauses WHILE synthesis is still in flight. The play button is
+    // disabled meanwhile, but the keyboard shortcut (and the headset) still
+    // toggle. isPlaying in Redux is already false at this point (fetchAndPlay
+    // itself never set it true yet), so the toggle must register as a real
+    // pause via intent tracking, not get silently swallowed.
+    expect(screen.getByTestId('play-button')).toBeDisabled();
+    await act(async () => { store.dispatch(requestTogglePlay()); });
 
     // Synthesis finally resolves.
     await act(async () => {

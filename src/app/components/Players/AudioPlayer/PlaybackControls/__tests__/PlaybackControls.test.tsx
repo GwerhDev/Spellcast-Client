@@ -38,4 +38,17 @@ describe('PlaybackControls', () => {
     expect(screen.getByTestId('playback-previous-btn')).toBeDisabled();
     expect(screen.getByTestId('playback-next-btn')).toBeDisabled();
   });
+
+  it("disables play while the current page's audio is being fetched, and enables it once it's there", () => {
+    const togglePlayPause = vi.fn();
+    const { rerender } = render(<PlaybackControls {...baseProps} togglePlayPause={togglePlayPause} isFetching />);
+    expect(screen.getByTestId('play-button')).toBeDisabled();
+    fireEvent.click(screen.getByTestId('play-button'));
+    expect(togglePlayPause).not.toHaveBeenCalled();
+
+    rerender(<PlaybackControls {...baseProps} togglePlayPause={togglePlayPause} isFetching={false} />);
+    expect(screen.getByTestId('play-button')).toBeEnabled();
+    fireEvent.click(screen.getByTestId('play-button'));
+    expect(togglePlayPause).toHaveBeenCalledTimes(1);
+  });
 });
