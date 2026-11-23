@@ -15,7 +15,6 @@ import { ReaderSettings } from '../components/SpellReader/ReaderSettings';
 import { EditorSettings } from '../components/EditorSettingsPanel/EditorSettings';
 import { AppSwitcher } from '../components/AppSwitcher/AppSwitcher';
 import { AppTitle } from '../components/AppTitle/AppTitle';
-import { SearchButton } from '../components/SearchButton/SearchButton';
 import { useLanguage } from '../../i18n';
 import { VoiceSelectorModal } from '../components/Modals/VoiceSelectorModal';
 import { SoundBackground } from '../components/SoundBackground/SoundBackground';
@@ -26,7 +25,7 @@ import { Desktop } from '../features/Desktop';
 import { useAppDispatch } from 'store/hooks';
 import { setMinimized, toggleMinimized } from 'store/desktopSlice';
 import { setSidebarCollapsed } from 'store/layoutSlice';
-import { invalidateSpellList, setShowSearcher } from 'store/spellReaderSlice';
+import { invalidateSpellList } from 'store/spellReaderSlice';
 import { useAttentionGuard } from '../../hooks/useAttentionGuard';
 import { useStorageQuotaWarning } from '../../hooks/useStorageQuotaWarning';
 import { AttentionGuardModal } from '../components/Modals/AttentionGuardModal';
@@ -119,12 +118,11 @@ export default function DefaultLayout() {
       <Desktop />
       <div className="app-window">
         <div className="header-app">
-          {/* The app's icon and title, centered, go home; on the right, the magnifying glass
-              opens the app's search, and the apps icon, after the bell, Nhexa's apps. */}
+          {/* The app's icon and title, centered, go home; on the right, the bell and, after it,
+              the apps icon, Nhexa's apps. */}
           <span className="header-spacer" />
           <AppTitle label="Spellcast" iconSrc={spellcastIcon} onClick={() => navigate('/')} />
           <span className="header-spacer">
-            <SearchButton label={t.search.title} onClick={() => dispatch(setShowSearcher(true))} />
             <NotificationsButton />
             <AppSwitcher label={t.desktop.apps} onClick={() => dispatch(toggleMinimized())} />
           </span>
