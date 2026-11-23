@@ -5,7 +5,7 @@ import { NavIcon } from '../NavIcon';
 import { spAltar, spCaster, spChest, spChronicle, spEditor, spFullscreen, spGear, spGrimoire, spInfo, spOriginal, spPages, spRaise, spSeal, spSpellEdit, spSpellSearch } from '../../../../icons';
 import {
   ALTAR_BODY, ALTAR_CANDLE_LEFT, CASTER_BODY, CASTER_BOOK, ALTAR_CANDLE_RIGHT, ALTAR_FLAME, CHEST_BODY, CHEST_HASP, CHEST_LID, CHEST_SPARKLES,
-  EDITOR_BODY, EDITOR_FLAME, FULLSCREEN_BL, FULLSCREEN_BR, FULLSCREEN_TL, FULLSCREEN_TR, GEAR, INFO_BODY, INFO_DOT, PAGES_BACK,
+  EDITOR_QUILL, EDITOR_SCROLL, FULLSCREEN_BL, FULLSCREEN_BR, FULLSCREEN_TL, FULLSCREEN_TR, GEAR, INFO_BODY, INFO_DOT, PAGES_BACK,
   PAGES_FRONT, PAGES_MIDDLE, PDF_CORNER, PDF_PAGE, CHRONICLE_HOUR, CHRONICLE_MINUTE, CHRONICLE_RIM, RAISE_ARROW, RAISE_CLOUD, SPELL_EDIT_QUILL, SPELL_EDIT_SCROLL, SPELL_SEARCH_GLASS, SPELL_SEARCH_SCROLL, GRIMOIRE_BASE, GRIMOIRE_CLASP, GRIMOIRE_COVER, GRIMOIRE_PAGES,
 } from '../../../../icons/animated';
 
@@ -55,11 +55,14 @@ describe('NavIcon', () => {
     expect([CHEST_LID, CHEST_HASP, CHEST_BODY].flatMap(subpaths).sort()).toEqual(subpaths(libraryPath).sort());
   });
 
-  it("draws the editor as the library's, its flame added (to catch on hover)", () => {
+  it("draws the editor in parts: its scroll, and its quill apart (to write on hover)", () => {
     render(<NavIcon icon={spEditor} active />);
     expect(screen.getByTestId('nav-icon-editor')).toHaveAttribute('data-active', 'true');
-    expect(screen.getByTestId('nav-icon-editor-flame')).toHaveAttribute('d', EDITOR_FLAME);
-    expect(EDITOR_BODY).toBe(spEditor.icon[4]);
+    expect(screen.getByTestId('nav-icon-editor-quill')).toHaveAttribute('d', EDITOR_QUILL);
+  });
+
+  it("is the library's own editor: its quill and its scroll, nothing added", () => {
+    expect([EDITOR_QUILL, EDITOR_SCROLL].flatMap(subpaths).sort()).toEqual(subpaths(spEditor.icon[4] as string).sort());
   });
 
   it("draws the caster as the library's, a book added below its hem (to rise on hover)", () => {

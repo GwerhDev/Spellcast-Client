@@ -23,7 +23,6 @@
 .altarFlame { transform-origin: 50% 43.75%; }      /* (256, 224) */
 .candleLeft { transform-origin: 14.84% 24.6%; }    /* (76, 126) */
 .candleRight { transform-origin: 85.16% 24.6%; }   /* (436, 126) */
-.editorFlame { transform-origin: 28.52% 65.23%; }   /* (146, 334) */
 
 /* Each candle flickers at its own pace. */
 .flicker.candleLeft { animation-duration: 1.3s; animation-delay: -0.4s; }
@@ -207,6 +206,9 @@
 .active .quill {
   animation: write 0.9s ease-in-out infinite;
 }
+
+/* The editor's quill writes on its scroll the same way, on its own nib. */
+.quill.editorQuill { transform-origin: 41.6% 63.87%; }   /* its nib, (213, 327) */
 
 @keyframes write {
   0%, 100% { transform: rotate(0deg) translateX(0); }

@@ -3,7 +3,7 @@ import { useId, type ReactElement, type ReactNode } from 'react';
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  ALTAR_BODY, ALTAR_CANDLE_LEFT, CASTER_BODY, CASTER_BOOK, CASTER_BOOK_GAP, ALTAR_CANDLE_RIGHT, ALTAR_FLAME, CHEST_BODY, CHEST_HASP, CHEST_LID, CHEST_LID_PLUG, CHEST_PLUG, CHEST_SPARKLES, EDITOR_BODY, EDITOR_FLAME,
+  ALTAR_BODY, ALTAR_CANDLE_LEFT, CASTER_BODY, CASTER_BOOK, CASTER_BOOK_GAP, ALTAR_CANDLE_RIGHT, ALTAR_FLAME, CHEST_BODY, CHEST_HASP, CHEST_LID, CHEST_LID_PLUG, CHEST_PLUG, CHEST_SPARKLES, EDITOR_QUILL, EDITOR_SCROLL,
   FULLSCREEN_BL, FULLSCREEN_BR, FULLSCREEN_TL, FULLSCREEN_TR, GEAR, GRIMOIRE_BASE, GRIMOIRE_CLASP, GRIMOIRE_COVER, GRIMOIRE_PAGES,
   INFO_BODY, INFO_DOT, PAGES_BACK, PAGES_FRONT, PAGES_MIDDLE, SPELL_EDIT_QUILL, SPELL_EDIT_SCROLL, SPELL_SEARCH_GLASS,
   SPELL_SEARCH_SCROLL, RAISE_ARROW, RAISE_CLOUD, PDF_PAGE, PDF_CORNER, CHRONICLE_RIM, CHRONICLE_MINUTE, CHRONICLE_HOUR,
@@ -82,12 +82,11 @@ const ChestIcon = ({ active }: AnimatedProps) => (
   </Svg>
 );
 
-// The editor: its quill on its scroll; hovered (or open), what it writes catches fire beside
-// it, as the altar's flame.
+// The editor: its quill on its scroll; hovered (or open), the quill writes on it.
 const EditorIcon = ({ active }: AnimatedProps) => (
   <Svg name="editor" width={512} active={active}>
-    <path d={EDITOR_BODY} />
-    <Flame d={EDITOR_FLAME} place={s.editorFlame} testId="nav-icon-editor-flame" />
+    <path d={EDITOR_SCROLL} />
+    <path className={`${s.quill} ${s.editorQuill}`} d={EDITOR_QUILL} data-testid="nav-icon-editor-quill" />
   </Svg>
 );
 
