@@ -5,7 +5,8 @@
   border-radius: 6px;
   font-family: var(--font-mono);
   font-weight: 500;
-  letter-spacing: 0.05em;
+  /* Spaced as Spectra's badges (NOW LIVE, SYNC). */
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   white-space: nowrap;
   border: 1px solid transparent;

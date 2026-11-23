@@ -434,8 +434,14 @@
   border-radius: 999px;
   border: 1px dashed color-mix(in srgb, var(--color-light-400) 60%, transparent);
   background: color-mix(in srgb, var(--component-background) 60%, transparent);
-  font-size: 0.8rem;
-  color: var(--color-light-300);
+  /* A hint, as the inscription under the altar's title: spaced mono capitals, but grey, so it
+     stays a hint and doesn't compete with the inscription. */
+  font-family: var(--font-mono);
+  font-feature-settings: 'zero', 'ss01';
+  font-size: 0.66rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-light-400);
   transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
 }
 

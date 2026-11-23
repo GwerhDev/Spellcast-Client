@@ -102,6 +102,9 @@
 }
 
 .meta {
+  /* Its metadata, as Spectra's: mono. */
+  font-family: var(--font-mono);
+  font-feature-settings: 'zero', 'ss01';
   font-size: 0.68rem;
   color: var(--color-light-400);
 }

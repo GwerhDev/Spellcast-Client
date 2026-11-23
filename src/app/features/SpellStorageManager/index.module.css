@@ -42,7 +42,12 @@
 
 .subtitle {
   margin: 0;
-  font-size: 0.9rem;
+  /* As every section's subtitle (see SectionHeader): mono, a little smaller. */
+  font-family: var(--font-mono);
+  font-feature-settings: 'zero', 'ss01';
+  letter-spacing: -0.01em;
+  font-size: 0.8rem;
+  line-height: 1.6;
   color: var(--color-light-400);
 }
 

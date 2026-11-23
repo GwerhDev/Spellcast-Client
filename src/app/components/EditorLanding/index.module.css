@@ -20,7 +20,8 @@
   flex-direction: column;
 }
 
-.selectInner p {
+/* A plain paragraph's color, weightless so the inscription keeps its own. */
+:where(.selectInner p) {
   color: var(--color-light-400);
   margin: 0;
 }

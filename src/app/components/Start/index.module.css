@@ -41,7 +41,8 @@
   flex: 1;
 }
 
-.createContainer p {
+/* A plain paragraph's color, weightless so the inscription and the altar's hint keep their own. */
+:where(.createContainer p) {
   color: var(--color-light-400);
   margin: 0;
 }

@@ -117,6 +117,10 @@
 }
 
 .spellDetails small {
+  /* Page X of Y, as Spectra's counts: mono. */
+  font-family: var(--font-mono);
+  font-feature-settings: 'zero', 'ss01';
+  font-variant-numeric: tabular-nums;
   font-size: 9px;
   cursor: pointer;
 }

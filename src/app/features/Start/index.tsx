@@ -49,7 +49,7 @@ export const Start = ({ immersive = false, idle = false, onFooterOverflow }: Sta
           <AnimatePresence initial={false}>
             {!immersive && (
               <motion.div key="subtitle" {...fold}>
-                <p>{t.start.readSubtitle}</p>
+                <p className="inscription">{t.start.readSubtitle}</p>
               </motion.div>
             )}
           </AnimatePresence>

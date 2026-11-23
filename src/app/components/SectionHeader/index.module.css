@@ -48,8 +48,17 @@
 
 .subtitle {
   margin: 0;
+}
+
+/* A left-aligned header's subtitle is a description, as Spectra's: mono, a little smaller,
+   roomier lines. A centered one is an inscription instead (the global `.inscription`). */
+.header:not(.center) .subtitle {
   max-width: 60ch;
-  font-size: 0.9rem;
+  font-family: var(--font-mono);
+  font-feature-settings: 'zero', 'ss01';
+  font-size: 0.8rem;
+  line-height: 1.6;
+  letter-spacing: -0.01em;
   color: var(--color-light-400);
 }
 

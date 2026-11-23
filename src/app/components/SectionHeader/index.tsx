@@ -26,6 +26,6 @@ export const SectionHeader = ({ icon, title, subtitle, align = 'left', count, ac
       )}
       {action && <span className={s.action}>{action}</span>}
     </div>
-    {subtitle && <p className={s.subtitle}>{subtitle}</p>}
+    {subtitle && <p className={`${s.subtitle} ${align === 'center' ? 'inscription' : ''}`}>{subtitle}</p>}
   </div>
 );

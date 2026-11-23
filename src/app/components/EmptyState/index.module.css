@@ -16,5 +16,10 @@
 .empty p {
   margin: 0;
   max-width: 360px;
-  font-size: 0.9rem;
+  /* As Spectra's notes: mono. */
+  font-family: var(--font-mono);
+  font-feature-settings: 'zero', 'ss01';
+  font-size: 0.8rem;
+  line-height: 1.6;
+  letter-spacing: -0.01em;
 }

@@ -58,6 +58,56 @@
   animation: spellSheen 4.5s ease-in-out infinite;
 }
 
+/* The inscription under a magic title: spaced mono capitals in the primary color, set between
+   two hairlines that end in a secondary-colored star, as carved under a heading. */
+.inscription {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.9rem;
+  margin: 0;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-feature-settings: 'zero', 'ss01';
+  font-size: 0.68rem;
+  line-height: 1.6;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--color-primary) 85%, transparent);
+}
+
+.inscription::before,
+.inscription::after {
+  content: '\2726';
+  flex: 0 0 auto;
+  font-size: 0.7rem;
+  letter-spacing: 0;
+  color: var(--color-secondary);
+  background-repeat: no-repeat;
+  background-size: 48px 1px;
+}
+
+.inscription::before {
+  padding-left: 56px;
+  background-image: linear-gradient(to right, transparent, color-mix(in srgb, var(--color-primary) 50%, transparent));
+  background-position: left center;
+}
+
+.inscription::after {
+  padding-right: 56px;
+  background-image: linear-gradient(to left, transparent, color-mix(in srgb, var(--color-primary) 50%, transparent));
+  background-position: right center;
+}
+
+/* On a phone the words take two lines and the stars would be left adrift at the edges: the
+   inscription goes bare. */
+@media (max-width: 600px) {
+  .inscription::before,
+  .inscription::after {
+    display: none;
+  }
+}
+
 @keyframes spellSheen {
   0% {
     background-position: 175% 0, 0 0;

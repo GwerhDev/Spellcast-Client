@@ -101,7 +101,11 @@
   width: 100%;
   display: flex;
   justify-content: space-between;
-  font-size: 12px;
+  /* As Spectra's times: mono, its digits all one width (they don't jitter as they run). */
+  font-family: var(--font-mono);
+  font-feature-settings: 'zero', 'ss01';
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
   margin-top: 5px;
 }
 

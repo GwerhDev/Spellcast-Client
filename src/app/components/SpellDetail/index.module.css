@@ -251,8 +251,12 @@
 
 .stat dd {
   margin: 0;
-  font-size: 0.88rem;
-  font-weight: 600;
+  /* Its figures (pages, size, dates), as Spectra's: mono. */
+  font-family: var(--font-mono);
+  font-feature-settings: 'zero', 'ss01';
+  font-variant-numeric: tabular-nums;
+  font-size: 0.82rem;
+  font-weight: 500;
   color: var(--color-light-200);
   text-align: right;
 }

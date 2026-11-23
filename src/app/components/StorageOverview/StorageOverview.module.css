@@ -129,7 +129,11 @@
 }
 
 .statValue {
+  /* A figure, as Spectra's: mono. */
+  font-family: var(--font-mono);
+  font-feature-settings: 'zero', 'ss01';
+  font-variant-numeric: tabular-nums;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 500;
   color: var(--text-color-accent);
 }
