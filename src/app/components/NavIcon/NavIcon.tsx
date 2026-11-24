@@ -4,7 +4,7 @@ import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   ALTAR_BODY, ALTAR_CANDLE_LEFT, CASTER_BODY, CASTER_BOOK, CASTER_BOOK_GAP, ALTAR_CANDLE_RIGHT, ALTAR_FLAME, CHEST_BODY, CHEST_HASP, CHEST_LID, CHEST_LID_PLUG, CHEST_PLUG, CHEST_SPARKLES, EDITOR_QUILL, EDITOR_SCROLL,
-  FULLSCREEN_BL, FULLSCREEN_BR, FULLSCREEN_TL, FULLSCREEN_TR, GEAR, GRIMOIRE_BASE, GRIMOIRE_CLASP, GRIMOIRE_COVER, GRIMOIRE_PAGES,
+  FULLSCREEN_BL, FULLSCREEN_BR, FULLSCREEN_TL, FULLSCREEN_TR, GEAR, GRIMOIRE_BASE, GRIMOIRE_CLASP, GRIMOIRE_COVER, GRIMOIRE_COVER_INSIDE, GRIMOIRE_PAGE,
   INFO_BODY, INFO_DOT, PAGES_BACK, PAGES_FRONT, PAGES_MIDDLE, SPELL_EDIT_QUILL, SPELL_EDIT_SCROLL, SPELL_SEARCH_GLASS,
   SPELL_SEARCH_SCROLL, RAISE_ARROW, RAISE_CLOUD, PDF_PAGE, PDF_CORNER, CHRONICLE_RIM, CHRONICLE_MINUTE, CHRONICLE_HOUR,
 } from '../../../icons/animated';
@@ -51,14 +51,26 @@ const AltarIcon = ({ active }: AnimatedProps) => (
   </Svg>
 );
 
-// The grimoire: shut; hovered (or open), its clasp lets go and its cover swings open on its
-// spine, its pages under it.
+// The grimoire: shut; hovered (or open), its clasp lets go and its cover swings over its spine,
+// toward the viewer, to lie open on the left, the book settling at the middle as it opens: open
+// on two pages, the cover's inside on the left, the page it lay on on the right.
 const GrimoireIcon = ({ active }: AnimatedProps) => (
   <Svg name="grimoire" width={448} active={active}>
-    <path className={s.pages} d={GRIMOIRE_PAGES} data-testid="nav-icon-grimoire-pages" />
-    <path d={GRIMOIRE_BASE} />
-    <path className={s.cover} d={GRIMOIRE_COVER} data-testid="nav-icon-grimoire-cover" />
-    <path className={s.clasp} d={GRIMOIRE_CLASP} />
+    <g className={s.tome}>
+      <path className={s.leaf} d={GRIMOIRE_PAGE} data-testid="nav-icon-grimoire-page" />
+      {/* Its pages' edges: under the right-hand page once open. */}
+      <path d={GRIMOIRE_BASE} />
+      <g className={s.cover}>
+        <path className={s.coverFront} d={GRIMOIRE_COVER} data-testid="nav-icon-grimoire-cover" />
+        {/* Its inside: the left-hand page, and the edges of the pages under it (the same edges,
+            mirrored as the cover swings over). */}
+        <g className={s.coverInside}>
+          <path d={GRIMOIRE_COVER_INSIDE} data-testid="nav-icon-grimoire-cover-inside" />
+          <path d={GRIMOIRE_BASE} data-testid="nav-icon-grimoire-cover-inside-edges" />
+        </g>
+      </g>
+      <path className={s.clasp} d={GRIMOIRE_CLASP} />
+    </g>
   </Svg>
 );
 

@@ -50,33 +50,69 @@
   75% { transform: scale(0.97, 1.03) skewX(-1.5deg); }
 }
 
-/* The grimoire. Its cover swings open on its spine (toward the viewer, to the left: narrowed
-   to nearly its edge, slanting as it turns), once its clasp has let go; its pages show under
-   it as it opens. Closing, the other way round. */
+/* The grimoire. Its clasp lets go; its cover swings over its spine toward the viewer, in
+   perspective, and comes to lie on the left, its inside showing once it's past edge-on; the page
+   it lay on shows once it's well off it. Meanwhile the book settles at the middle, narrowed to the
+   right half of the spread (its spine, x 32, to the icon's middle, x 224), and its pages' edges
+   part with it: half stay under the right-hand page, half come over with the cover. Closing, the other way round, the clasp last. */
+.tome,
 .cover,
 .clasp,
-.pages {
+.leaf {
   transform-box: view-box;
 }
 
+.tome,
 .cover {
-  transform-origin: 7.14% 50%;   /* its spine, x 32 */
-  transition: transform 0.4s cubic-bezier(0.45, 0, 0.2, 1) 0.1s;
+  transform-origin: 7.14% 50%;   /* the spine, x 32 */
+}
+
+.tome {
+  transition: transform 0.45s cubic-bezier(0.45, 0, 0.25, 1);
+}
+
+.cover {
+  transform: perspective(900px) rotateY(0deg);
+  transition: transform 0.45s cubic-bezier(0.45, 0, 0.25, 1);
+}
+
+/* Front and inside swap the moment the cover is edge-on: halfway through its swing. */
+.coverInside { opacity: 0; transition: opacity 0s 0.225s; }
+.coverFront { transition: opacity 0s 0.225s; }
+
+/* Hidden under the cover (its cut star and band would show it) until the cover has lifted well
+   off it; closing, from the moment the cover is edge-on, its front turning back over it. */
+.leaf {
+  opacity: 0;
+  transition: opacity 0s 0.225s;
 }
 
 .clasp {
-  transition: transform 0.18s ease-out 0.12s, opacity 0.18s ease-out 0.12s;
+  transition: transform 0.15s ease-out 0.4s, opacity 0.15s ease-out 0.4s;
 }
 
-.pages {
-  opacity: 0;
-  transition: opacity 0.2s ease-out 0.15s;
+:where(a, button:not(:disabled)):hover > .icon .tome,
+.active .tome {
+  transform: translateX(42.86%) scaleX(0.51);
+  transition-delay: 0.1s;
 }
 
 :where(a, button:not(:disabled)):hover > .icon .cover,
 .active .cover {
-  transform: scaleX(0.1) skewY(-14deg);
-  transition-delay: 0.12s;
+  transform: perspective(900px) rotateY(-180deg);
+  transition-delay: 0.1s;
+}
+
+:where(a, button:not(:disabled)):hover > .icon .coverFront,
+.active .coverFront { opacity: 0; transition-delay: 0.325s; }
+
+:where(a, button:not(:disabled)):hover > .icon .coverInside,
+.active .coverInside { opacity: 1; transition-delay: 0.325s; }
+
+:where(a, button:not(:disabled)):hover > .icon .leaf,
+.active .leaf {
+  opacity: 1;
+  transition-delay: 0.27s;
 }
 
 :where(a, button:not(:disabled)):hover > .icon .clasp,
@@ -84,12 +120,6 @@
   transform: translateX(8%);
   opacity: 0;
   transition-delay: 0s;
-}
-
-:where(a, button:not(:disabled)):hover > .icon .pages,
-.active .pages {
-  opacity: 1;
-  transition-delay: 0.18s;
 }
 
 /* The chest. Its lid swings up and back on its hinge, along its back: seen from the front, it
@@ -368,6 +398,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .tome, .cover, .coverFront, .coverInside, .leaf, .clasp,
+  :where(a, button:not(:disabled)):hover > .icon :is(.tome, .cover, .coverFront, .coverInside, .leaf, .clasp),
+  .active :is(.tome, .cover, .coverFront, .coverInside, .leaf, .clasp) { transition: none; }
   .book,
   :where(a, button:not(:disabled)):hover > .icon .book,
   .active .book { transition: none; }

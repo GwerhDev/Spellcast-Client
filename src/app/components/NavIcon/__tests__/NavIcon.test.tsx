@@ -6,7 +6,7 @@ import { spAltar, spCaster, spChest, spChronicle, spEditor, spFullscreen, spGear
 import {
   ALTAR_BODY, ALTAR_CANDLE_LEFT, CASTER_BODY, CASTER_BOOK, ALTAR_CANDLE_RIGHT, ALTAR_FLAME, CHEST_BODY, CHEST_HASP, CHEST_LID, CHEST_SPARKLES,
   EDITOR_QUILL, EDITOR_SCROLL, FULLSCREEN_BL, FULLSCREEN_BR, FULLSCREEN_TL, FULLSCREEN_TR, GEAR, INFO_BODY, INFO_DOT, PAGES_BACK,
-  PAGES_FRONT, PAGES_MIDDLE, PDF_CORNER, PDF_PAGE, CHRONICLE_HOUR, CHRONICLE_MINUTE, CHRONICLE_RIM, RAISE_ARROW, RAISE_CLOUD, SPELL_EDIT_QUILL, SPELL_EDIT_SCROLL, SPELL_SEARCH_GLASS, SPELL_SEARCH_SCROLL, GRIMOIRE_BASE, GRIMOIRE_CLASP, GRIMOIRE_COVER, GRIMOIRE_PAGES,
+  PAGES_FRONT, PAGES_MIDDLE, PDF_CORNER, PDF_PAGE, CHRONICLE_HOUR, CHRONICLE_MINUTE, CHRONICLE_RIM, RAISE_ARROW, RAISE_CLOUD, SPELL_EDIT_QUILL, SPELL_EDIT_SCROLL, SPELL_SEARCH_GLASS, SPELL_SEARCH_SCROLL, GRIMOIRE_BASE, GRIMOIRE_CLASP, GRIMOIRE_COVER, GRIMOIRE_COVER_INSIDE, GRIMOIRE_PAGE,
 } from '../../../../icons/animated';
 
 const subpaths = (d: string) => d.match(/M[^M]*/g) ?? [];
@@ -31,11 +31,12 @@ describe('NavIcon', () => {
     expect([ALTAR_FLAME, ALTAR_CANDLE_LEFT, ALTAR_CANDLE_RIGHT, ALTAR_BODY].flatMap(subpaths).sort()).toEqual(subpaths(libraryPath).sort());
   });
 
-  it('draws the grimoire shut, its pages drawn under its cover (shown as it opens)', () => {
+  it('draws the grimoire shut, its page under its cover and the cover\'s inside on its back (shown as it opens)', () => {
     render(<NavIcon icon={spGrimoire} />);
     expect(screen.getByTestId('nav-icon-grimoire')).toHaveAttribute('viewBox', '0 0 448 512');
     expect(screen.getByTestId('nav-icon-grimoire-cover')).toHaveAttribute('d', GRIMOIRE_COVER);
-    expect(screen.getByTestId('nav-icon-grimoire-pages')).toHaveAttribute('d', GRIMOIRE_PAGES);
+    expect(screen.getByTestId('nav-icon-grimoire-cover-inside')).toHaveAttribute('d', GRIMOIRE_COVER_INSIDE);
+    expect(screen.getByTestId('nav-icon-grimoire-page')).toHaveAttribute('d', GRIMOIRE_PAGE);
   });
 
   it("is the library's own grimoire, every part of it, its pages added", () => {

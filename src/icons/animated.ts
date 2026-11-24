@@ -16,10 +16,13 @@ export const GRIMOIRE_COVER = 'M64 16H384A32 32 0 0 1 416 48V368A32 32 0 0 1 384
 export const GRIMOIRE_CLASP = 'M416 160H424A24 24 0 0 1 448 184V232A24 24 0 0 1 424 256H416Z';
 /** Its pages' edges, below the cover. */
 export const GRIMOIRE_BASE = 'M72 424H400A16 16 0 0 1 416 440V480A16 16 0 0 1 400 496H72A36 36 0 0 1 72 424ZM400 448H112V472H400Z';
-/** Open, its pages under the cover: two, a fold between them, lines of writing on each (not in
- *  the library's closed book). */
-export const GRIMOIRE_PAGES = 'M56 32H392V384H56ZM220 48V368H228V48ZM88 104V120H196V104ZM88 160V176H196V160ZM88 216V232H180V216ZM88 272V288H164V272ZM252 104V120H360V104ZM252 160V176H360V160ZM252 216V232H344V216ZM252 272V288H320V272Z';
-
+/** Open, the page under the cover: the right-hand page, lines of writing from its fold (not in
+ *  the library's closed book). Drawn in the closed book's grid; opening, the book narrows to its
+ *  half of the spread. */
+export const GRIMOIRE_PAGE = 'M40 24H408V392H40ZM96 96V112H336V96ZM96 152V168H336V152ZM96 208V224H296V208ZM96 264V280H336V264ZM96 320V336H256V320Z';
+/** The inside of its cover, seen once it has swung over its spine: the left-hand page. Drawn
+ *  as the cover's back, mirrored, so its lines start at the page's outer edge once it's over. */
+export const GRIMOIRE_COVER_INSIDE = 'M40 24H408V392H40ZM112 96V112H352V96ZM112 152V168H352V152ZM152 208V224H352V208ZM112 264V280H352V264ZM192 320V336H352V320Z';
 /** The chest's lid, banded, a notch left for its hasp; hinged at its back, along its bottom (y 216). */
 export const CHEST_LID = 'M40 216V176C40 112 136 56 256 56C376 56 472 112 472 176V216H300V172H212V216ZM120 83V216H136V77ZM376 77V216H392V83Z';
 /** Its hasp (a keyhole in it), hanging from the lid over the seam: it opens with the lid. */
