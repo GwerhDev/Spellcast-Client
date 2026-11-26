@@ -113,6 +113,40 @@
   border-color: var(--color-primary);
 }
 
+/* Its halo: a light running around the avatar, slowly, primary then secondary, just outside
+   its border (a ring: the rest masked out). */
+@property --halo-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
+.imgContainer::before {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  pointer-events: none;
+  background: conic-gradient(from var(--halo-angle),
+    transparent 0 10%,
+    color-mix(in srgb, var(--color-primary) 80%, transparent) 25%,
+    transparent 40% 60%,
+    color-mix(in srgb, var(--color-secondary) 80%, transparent) 75%,
+    transparent 90%);
+  -webkit-mask: radial-gradient(closest-side, transparent calc(100% - 4px), #000 calc(100% - 3px));
+  mask: radial-gradient(closest-side, transparent calc(100% - 4px), #000 calc(100% - 3px));
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--color-primary) 60%, transparent));
+  animation: halo 9s linear infinite;
+}
+
+@keyframes halo {
+  to { --halo-angle: 360deg; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .imgContainer::before { animation: none; }
+}
+
 .imageContainer {
   width: 100%;
   height: 100%;

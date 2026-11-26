@@ -11,6 +11,17 @@
 
 .emptyIcon {
   font-size: 3rem;
+  /* Floating, slowly, a faint glow under it. */
+  filter: drop-shadow(0 8px 10px color-mix(in srgb, var(--color-primary) 25%, transparent));
+  animation: float 4s ease-in-out infinite;
+}
+
+@keyframes float {
+  50% { transform: translateY(-5px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .emptyIcon { animation: none; }
 }
 
 .empty p {
