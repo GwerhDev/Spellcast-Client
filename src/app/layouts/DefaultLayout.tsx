@@ -28,6 +28,7 @@ import { setSidebarCollapsed } from 'store/layoutSlice';
 import { invalidateSpellList } from 'store/spellReaderSlice';
 import { useAttentionGuard } from '../../hooks/useAttentionGuard';
 import { useStorageQuotaWarning } from '../../hooks/useStorageQuotaWarning';
+import { useGlowCards } from '../../hooks/useGlowCards';
 import { AttentionGuardModal } from '../components/Modals/AttentionGuardModal';
 import { onSpellsMigrated } from '../../db';
 import { useMode3D } from '../../context/Mode3DContext';
@@ -61,6 +62,8 @@ export default function DefaultLayout() {
   const { t } = useLanguage();
   const { showModal: showAttentionGuard, handleContinue: handleAttentionGuardContinue } = useAttentionGuard();
   useStorageQuotaWarning();
+  // The sections' cards catch the pointer's light (see .glow-card in globals.css).
+  useGlowCards();
   // TCORE-124: the shared 3D canvas only mounts (and its lazy chunk only downloads) once
   // the user's own toggle is on -- see CoverFrame3DRoot's own comment. The remaining
   // desktop/motion/low-end/per-card-visibility conditions are each individual card's own

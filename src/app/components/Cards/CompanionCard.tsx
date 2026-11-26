@@ -38,7 +38,7 @@ export const CompanionCard: React.FC<CompanionCardProps> = ({ companion, unlocke
   return (
     <div
       data-testid={`companion-card-${companion.id}`}
-      className={`${s.productCard} ${showActive ? s.productCardActive : ''} ${locked ? s.productCardLocked : ''}`}
+      className={`${s.productCard} glow-card ${showActive ? s.productCardActive : ''} ${locked ? s.productCardLocked : ''}`}
     >
       <div className={s.artwork} style={{ background: companion.thumbnail }}>
         <FontAwesomeIcon icon={faCat} className={s.artworkIcon} />

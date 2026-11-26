@@ -108,6 +108,89 @@
   }
 }
 
+/* A card that catches the light: hovered, a soft light follows the pointer across it and its
+   rim lights up where the pointer is (`--glow-x` / `--glow-y`, set by useGlowCards), and it
+   lifts a little. Opening its section, the cards rise in one after another. For the sections'
+   cards only: never the reader's or the editor's, which stay still to read and write in.
+   The class is doubled to win over each card's own transition. */
+.glow-card.glow-card {
+  position: relative;
+  isolation: isolate;
+  transition:
+    translate 0.25s cubic-bezier(0.2, 0.8, 0.2, 1),
+    background-color 0.2s ease,
+    border-color 0.15s ease,
+    box-shadow 0.2s ease;
+  animation: glowCardRise 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+}
+
+.glow-card::before,
+.glow-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+/* The light across it. */
+.glow-card::after {
+  background: radial-gradient(260px circle at var(--glow-x, 50%) var(--glow-y, 50%),
+    color-mix(in srgb, var(--color-primary) 14%, transparent), transparent 60%);
+}
+
+/* Its rim, lit where the pointer is: the light, masked to a 1px ring. */
+.glow-card::before {
+  padding: 1px;
+  background: radial-gradient(180px circle at var(--glow-x, 50%) var(--glow-y, 50%),
+    color-mix(in srgb, var(--color-primary) 70%, transparent), transparent 70%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .glow-card.glow-card:hover {
+    translate: 0 -2px;
+  }
+
+  .glow-card:hover::before,
+  .glow-card:hover::after {
+    opacity: 1;
+  }
+}
+
+/* Rising in, each a beat after the one before it (among its siblings). */
+/* Among its siblings, or among its wrapper's (a list's item holding just the card). */
+.glow-card:nth-child(2), :nth-child(2) > .glow-card:only-child { animation-delay: 40ms; }
+.glow-card:nth-child(3), :nth-child(3) > .glow-card:only-child { animation-delay: 80ms; }
+.glow-card:nth-child(4), :nth-child(4) > .glow-card:only-child { animation-delay: 120ms; }
+.glow-card:nth-child(5), :nth-child(5) > .glow-card:only-child { animation-delay: 160ms; }
+.glow-card:nth-child(6), :nth-child(6) > .glow-card:only-child { animation-delay: 200ms; }
+.glow-card:nth-child(7), :nth-child(7) > .glow-card:only-child { animation-delay: 240ms; }
+.glow-card:nth-child(n + 8), :nth-child(n + 8) > .glow-card:only-child { animation-delay: 280ms; }
+
+@keyframes glowCardRise {
+  from {
+    opacity: 0;
+    translate: 0 8px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glow-card.glow-card {
+    animation: none;
+  }
+
+  .glow-card.glow-card:hover {
+    translate: none;
+  }
+}
+
 @keyframes spellSheen {
   0% {
     background-position: 175% 0, 0 0;

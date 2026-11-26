@@ -11,7 +11,7 @@ export const AboutLicense = () => {
 
   return (
     <div className={s.container} data-testid="about-license">
-      <div className={s.card}>
+      <div className={`${s.card} glow-card`}>
         <div className={s.cardHeader}>
           <span className={s.cardIcon}><FontAwesomeIcon icon={faScaleBalanced} /></span>
           <span className={s.cardTitle}>{t.about.licenseTitle}</span>
@@ -29,7 +29,7 @@ export const AboutLicense = () => {
         </a>
       </div>
 
-      <div className={s.card}>
+      <div className={`${s.card} glow-card`}>
         <div className={s.cardHeader}>
           <span className={s.cardIcon}><FontAwesomeIcon icon={faCodeBranch} /></span>
           <span className={s.cardTitle}>{t.about.sourceTitle}</span>

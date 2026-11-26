@@ -59,7 +59,7 @@ export const GroupCard = (props: GroupCardProps) => {
   };
 
   return (
-    <li key={group.id} className={s.container}>
+    <li key={group.id} className={`${s.container} glow-card`}>
       <LabeledInput disabled={!editionActive} label={t.groups.labelName} value={name} type="text" placeholder={t.groups.namePlaceholder} name="name" id="name" htmlFor="name" onChange={(e) => setName(e.target.value)} />
       <div className={s.actions}>
         {

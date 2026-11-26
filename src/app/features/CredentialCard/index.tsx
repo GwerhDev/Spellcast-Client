@@ -121,7 +121,7 @@ export const CredentialCard = (props: CredentialCardProps) => {
   };
 
   return (
-    <li data-testid="credential-card" key={credential.id} className={`${s.container} ${isActive ? s.active : ''}`}>
+    <li data-testid="credential-card" key={credential.id} className={`${s.container} glow-card ${isActive ? s.active : ''}`}>
       <LabeledInput disabled={!editionActive} label={t.credentials.labelKey} value={key} type="text" placeholder={t.credentials.keyPlaceholder} name="credential_key" id="credential_key" htmlFor="credential_key" onChange={(e) => setKey(e.target.value)} />
       <LabeledInput disabled={!editionActive} label={t.credentials.labelRegion} value={region} type="text" placeholder={t.credentials.regionPlaceholder} name="credential_region" id="credential_region" htmlFor="credential_region" onChange={(e) => setRegion(e.target.value)} />
 

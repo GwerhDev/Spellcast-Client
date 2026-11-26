@@ -24,7 +24,7 @@ export const SoundBackgroundCard: React.FC<SoundBackgroundCardProps> = ({ asset,
   return (
     <div
       data-testid={`sound-card-${asset.id}`}
-      className={`${s.productCard} ${showActive ? s.productCardActive : ''} ${locked ? s.productCardLocked : ''}`}
+      className={`${s.productCard} glow-card ${showActive ? s.productCardActive : ''} ${locked ? s.productCardLocked : ''}`}
     >
       <div className={s.artwork} style={{ background: SOUND_ARTWORK[asset.id] ?? 'var(--color-dark-300)' }}>
         <FontAwesomeIcon icon={faMusic} className={s.artworkIcon} />

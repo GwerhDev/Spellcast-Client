@@ -31,7 +31,7 @@ export const DirectoryList = () => {
       <ul className={s.list}>
         {settingsDirectoryList.map(({ icon, path }) => (
           <li key={path}>
-            <button className={s.card} onClick={() => navigate(`/caster/${path}`)}>
+            <button className={`${s.card} glow-card`} onClick={() => navigate(`/caster/${path}`)}>
               <span className={s.iconWrap}>
                 <FontAwesomeIcon icon={icon} className={s.icon} />
               </span>

@@ -28,7 +28,7 @@ export const PageBackgroundCard: React.FC<PageBackgroundCardProps> = ({ asset, u
   return (
     <div
       data-testid={`page-card-${asset.id}`}
-      className={`${s.productCard} ${s.pageProductCard} ${showActive ? s.productCardActive : ''} ${locked ? s.productCardLocked : ''}`}
+      className={`${s.productCard} glow-card ${s.pageProductCard} ${showActive ? s.productCardActive : ''} ${locked ? s.productCardLocked : ''}`}
       onClick={() => showEquipControls && unlocked && onAction(asset.id)}
     >
       <div className={s.pageThumbnail} style={thumbStyle}>

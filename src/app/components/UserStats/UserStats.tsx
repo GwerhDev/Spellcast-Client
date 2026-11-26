@@ -11,7 +11,7 @@ export const UserStats = () => {
 
   return (
     <div className={s.statsContainer}>
-      <button className={s.card} onClick={() => navigate('/caster/groups')}>
+      <button className={`${s.card} glow-card`} onClick={() => navigate('/caster/groups')}>
         <div className={s.cardHeader}>
           <span className={s.cardIcon}><FontAwesomeIcon icon={spGroup} /></span>
           <span className={s.cardTitle}>{t.nav.groups}</span>

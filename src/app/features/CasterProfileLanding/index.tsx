@@ -27,7 +27,7 @@ export const CasterProfileLanding = () => {
         <h2 className={s.sectionTitle}>{t.caster.myQuotes}</h2>
         <div className={s.cardGrid}>
           {t.caster.mockQuotes.map((quote, i) => (
-            <div key={i} data-testid="caster-profile-quote-card" className={s.card}>
+            <div key={i} data-testid="caster-profile-quote-card" className={`${s.card} glow-card`}>
               <FontAwesomeIcon icon={faQuoteLeft} className={s.cardIcon} />
               <p className={s.quoteText}>{quote.text}</p>
               <span className={s.quoteSpell}>{quote.spell}</span>
@@ -40,7 +40,7 @@ export const CasterProfileLanding = () => {
         <h2 className={s.sectionTitle}>{t.caster.myGrimoire}</h2>
         <div className={s.cardGrid}>
           {t.caster.mockGrimoire.map((spell, i) => (
-            <div key={i} data-testid="caster-profile-grimoire-card" className={s.card}>
+            <div key={i} data-testid="caster-profile-grimoire-card" className={`${s.card} glow-card`}>
               <FontAwesomeIcon icon={SPELL_ICON} className={s.cardIcon} />
               <span className={s.grimoireTitle}>{spell.title}</span>
               <span className={s.grimoireAuthor}>{spell.author}</span>

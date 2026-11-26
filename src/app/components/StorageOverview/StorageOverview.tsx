@@ -27,7 +27,7 @@ export const StorageOverview: React.FC = () => {
   return (
     <div className={s.container}>
       <div className={s.cards}>
-        <button className={s.card} onClick={() => navigate('/caster/settings/storage/local')}>
+        <button className={`${s.card} glow-card`} onClick={() => navigate('/caster/settings/storage/local')}>
           <div className={s.cardHeader}>
             <span className={s.cardIcon}>
               <FontAwesomeIcon icon={faHardDrive} />
@@ -63,7 +63,7 @@ export const StorageOverview: React.FC = () => {
           </div>
         </button>
 
-        <button className={s.card} onClick={() => navigate('/caster/settings/storage/cloud')}>
+        <button className={`${s.card} glow-card`} onClick={() => navigate('/caster/settings/storage/cloud')}>
           <div className={s.cardHeader}>
             <span className={s.cardIcon}>
               <FontAwesomeIcon icon={faCloud} />
