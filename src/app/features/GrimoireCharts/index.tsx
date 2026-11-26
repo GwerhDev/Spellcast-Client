@@ -16,6 +16,8 @@ import { useAppSelector } from '../../../store/hooks';
 import { Spell } from '../../../interfaces';
 import { SegmentedTabs } from '../../components/Tabs/SegmentedTabs';
 import { useLanguage } from '../../../i18n';
+import { CountUp } from '../../components/CountUp/CountUp';
+import { prefersReducedMotion } from '../../../utils/reducedMotion';
 
 ChartJS.register(CategoryScale, LinearScale, LineElement, PointElement, Filler, Tooltip);
 
@@ -146,6 +148,12 @@ export const GrimoireCharts: React.FC = () => {
   const chartOptions: ChartOptions<'line'> = {
     responsive: true,
     maintainAspectRatio: false,
+    // The line draws itself in, point after point, left to right (still, without motion).
+    animation: prefersReducedMotion() ? false : {
+      duration: 700,
+      easing: 'easeOutQuart',
+      delay: ctx => (ctx.type === 'data' && ctx.mode === 'default' ? ctx.dataIndex * 90 : 0),
+    },
     plugins: { legend: { display: false }, tooltip: { callbacks: {
       label: ctx => ` ${ctx.parsed.y} ${t.overview.docsAdded.toLowerCase()}`,
     }}},
@@ -167,7 +175,7 @@ export const GrimoireCharts: React.FC = () => {
 
   return (
     <div data-testid="grimoire-charts" className={s.chartsContainer}>
-      <div className={s.chartCard}>
+      <div className={`${s.chartCard} glow-card`}>
         <div className={s.cardHeader}>
           <span className={s.cardTitle}>{t.overview.activity}</span>
           <SegmentedTabs tabs={periodTabs} active={period} onChange={id => setPeriod(id as Period)} compact />
@@ -187,8 +195,8 @@ export const GrimoireCharts: React.FC = () => {
 
       <div className={s.statsRow}>
         {statCards.map((card, i) => (
-          <div key={i} className={`${s.statCard} ${card.note ? s.statMuted : ''}`}>
-            <span className={s.statValue}>{card.value}</span>
+          <div key={i} className={`${s.statCard} glow-card ${card.note ? s.statMuted : ''}`}>
+            <span className={s.statValue}>{typeof card.value === 'number' ? <CountUp value={card.value} /> : card.value}</span>
             <span className={s.statLabel}>{card.label}</span>
             {card.note && <span className={s.statNote}>{t.overview.readingTracking}</span>}
           </div>

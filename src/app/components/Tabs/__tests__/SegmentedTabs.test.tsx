@@ -105,4 +105,28 @@ describe('SegmentedTabs', () => {
     fireEvent.scroll(scrollEl);
     expect(screen.getByTestId('segmented-tabs-arrow-left')).toBeInTheDocument();
   });
+
+  it('without a layout to measure, the open tab fills itself (no gliding piece)', () => {
+    render(<SegmentedTabs tabs={tabs} active="text" onChange={vi.fn()} />);
+    expect(screen.queryByTestId('segmented-tabs-indicator')).not.toBeInTheDocument();
+  });
+
+  it('places the gliding fill on the open tab, and moves it to the next one opened', () => {
+    const place: Record<string, { left: number; width: number }> = { text: { left: 0, width: 150 }, import: { left: 150, width: 170 } };
+    const tabOf = (el: HTMLElement) => el.dataset.testid?.replace('segmented-tab-', '') ?? '';
+    const left = vi.spyOn(HTMLElement.prototype, 'offsetLeft', 'get').mockImplementation(function (this: HTMLElement) { return place[tabOf(this)]?.left ?? 0; });
+    const width = vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockImplementation(function (this: HTMLElement) { return place[tabOf(this)]?.width ?? 0; });
+
+    const { rerender } = render(<SegmentedTabs tabs={tabs} active="text" onChange={vi.fn()} />);
+    const indicator = screen.getByTestId('segmented-tabs-indicator');
+    expect(indicator.style.left).toBe('0px');
+    expect(indicator.style.width).toBe('150px');
+
+    rerender(<SegmentedTabs tabs={tabs} active="import" onChange={vi.fn()} />);
+    expect(screen.getByTestId('segmented-tabs-indicator').style.left).toBe('150px');
+    expect(screen.getByTestId('segmented-tabs-indicator').style.width).toBe('170px');
+
+    left.mockRestore();
+    width.mockRestore();
+  });
 });

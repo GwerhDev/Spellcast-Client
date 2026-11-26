@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChevronLeft, faChevronRight } from '@fortawesome/free-solid-svg-icons';
@@ -91,6 +91,32 @@ export const SegmentedTabs: React.FC<SegmentedTabsProps> = ({ tabs, active, onCh
     el.scrollTo?.({ left: Math.max(0, left), behavior: 'smooth' });
   }, [active, overflowing]);
 
+  // The open tab's fill is one piece that glides from tab to tab. Measured before paint, so it
+  // starts where it belongs (it only glides once it's been placed); until it can be measured (no
+  // layout yet), the open tab fills itself instead.
+  const [indicator, setIndicator] = useState<{ left: number; width: number } | null>(null);
+  const [gliding, setGliding] = useState(false);
+
+  const placeIndicator = useCallback(() => {
+    const tab = scrollRef.current?.querySelector<HTMLElement>(`[data-testid="segmented-tab-${active}"]`);
+    setIndicator(tab && tab.offsetWidth > 0 ? { left: tab.offsetLeft, width: tab.offsetWidth } : null);
+  }, [active]);
+
+  useLayoutEffect(() => {
+    placeIndicator();
+    const el = scrollRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(placeIndicator);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [placeIndicator, tabs, overflowing]);
+
+  useEffect(() => {
+    if (!indicator || gliding) return;
+    const frame = requestAnimationFrame(() => setGliding(true));
+    return () => cancelAnimationFrame(frame);
+  }, [indicator, gliding]);
+
   const scrollByPage = (direction: 1 | -1) => {
     const el = scrollRef.current;
     if (!el) return;
@@ -122,8 +148,16 @@ export const SegmentedTabs: React.FC<SegmentedTabsProps> = ({ tabs, active, onCh
       <span
         ref={scrollRef}
         data-testid="segmented-tabs-scroll"
-        className={`${s.buttonsContainer} ${overflowing ? s.scrollable : ''}`}
+        className={`${s.buttonsContainer} ${overflowing ? s.scrollable : ''} ${indicator ? s.withIndicator : ''}`}
       >
+        {indicator && (
+          <span
+            data-testid="segmented-tabs-indicator"
+            className={`${s.indicator} ${gliding ? s.indicatorGliding : ''}`}
+            style={{ left: indicator.left, width: indicator.width }}
+            aria-hidden="true"
+          />
+        )}
         {tabs.map((tab, i) => (
           <button
             key={tab.id}

@@ -86,6 +86,7 @@
 /* The tabs, inside the border: cut to the face's shape, so the border shows all around (with
    arrows, it's the arrows at the ends, and the strip between them is square). */
 .buttonsContainer {
+  position: relative;
   width: 100%;
   min-width: 0;
   display: flex;
@@ -229,4 +230,38 @@
   .tabButton {
     transition: none;
   }
+}
+
+/* The open tab's fill, as one piece gliding to it (see SegmentedTabs): drawn under the tabs, and
+   the open tab then lets it show instead of filling itself. */
+.indicator {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: var(--color-primary);
+  box-shadow:
+    0 0 var(--nhexa-desktop-glow-wide) color-mix(in srgb, var(--color-primary) 55%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+.indicatorGliding {
+  transition:
+    left 0.35s cubic-bezier(0.3, 0.9, 0.3, 1),
+    width 0.35s cubic-bezier(0.3, 0.9, 0.3, 1);
+}
+
+.tabButton {
+  position: relative;
+  z-index: 1;
+}
+
+.withIndicator .tabButton.active {
+  background: transparent;
+  box-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .indicatorGliding { transition: none; }
 }
