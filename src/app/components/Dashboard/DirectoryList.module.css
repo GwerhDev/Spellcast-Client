@@ -31,8 +31,10 @@
   box-shadow: var(--surface-rim);
 }
 
+/* Hovered: a touch of the primary color over its own face (in either theme; the track color
+   it used to take is a dark gray in the light one). */
 .card:hover {
-  background-color: var(--surface-track);
+  background-color: color-mix(in srgb, var(--color-primary) 8%, var(--component-background));
 }
 
 .iconWrap {
